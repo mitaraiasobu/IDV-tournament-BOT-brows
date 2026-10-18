@@ -55,7 +55,7 @@
     content: ""; position: absolute; left: -22px; width: 22px; top: 50%; border-top: 3px solid var(--line); }
   .round.final .match::after { content: ""; position: absolute; right: -22px; width: 22px; top: 50%;
                                border-top: 3px solid var(--line); }
-  /* 1回戦が5試合以上（9〜16チーム）のときは、その列だけカードを小さくする */
+  /* ラウンド1が5試合以上（9〜16チーム）のときは、その列だけカードを小さくする */
   .round.dense .slot { padding: 3px 0; }
   .round.dense .mhead { padding: 2px 12px; font-size: 12px; }
   .round.dense .badge { font-size: 11px; padding: 0 8px; }
@@ -63,7 +63,7 @@
   .round.dense .team .score { font-size: 22px; }
   .round.dense .mfoot { display: none; }
   .round.dense .dqtag { font-size: 11px; }
-  /* 1回戦が9試合以上（17〜32チーム）：カード1枚を約45pxにする（試合ヘッダーは省く） */
+  /* ラウンド1が9試合以上（17〜32チーム）：カード1枚を約45pxにする（試合ヘッダーは省く） */
   .round.xdense .slot { padding: 2px 0; }
   .round.xdense .match { border-width: 1px; border-radius: 8px; }
   .round.xdense .mhead { display: none; }
