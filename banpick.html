@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BAN/PICK</title>
+<style>
+  :root {
+    --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
+    --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+               font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif; }
+  html[data-bg="transparent"], html[data-bg="transparent"] body { background: transparent; }
+
+  /* 配信用：1920x1080 の固定ステージ（ウィンドウに合わせて拡縮） */
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+  #bg { position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 50% 35%, var(--glow), var(--bg) 72%); }
+  html[data-bg="transparent"] #bg { display: none; }
+  #bgmedia { position: absolute; inset: 0; overflow: hidden; }
+  #bgmedia > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; pointer-events: none; }
+  #screen { position: absolute; inset: 0; }
+
+  /* ── BAN/PICK の画面 ── */
+  .hdr { position: absolute; height: 78px; display: flex; align-items: center; justify-content: center;
+         background: var(--panel); border: 2px solid var(--line); font-size: 40px; font-weight: 800;
+         letter-spacing: .04em; color: var(--text); }
+  .sq { position: absolute; width: 78px; height: 78px; background: var(--panel); border: 2px solid var(--line);
+        display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .sq img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .sq.used img, .sq.used .emo { filter: grayscale(1) brightness(.85); }
+  .sq .lock { font-size: 30px; opacity: .55; }
+  .sq .emo { font-size: 44px; }
+
+  .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 296px; display: flex; gap: 8px; padding: 0 4px 0 0; }
+  .surv { flex: 0 0 760px; display: flex; gap: 6px; }
+  .hunt { flex: 1; display: flex; }
+  .card { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column;
+          background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 3px double var(--accent); }
+  .card .art { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card .art img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .card .art .emo { font-size: 110px; }
+  .card .art .q { font-size: 90px; color: var(--sub); opacity: .5; }
+  .card .cap { height: 52px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 24px;
+               font-weight: 700; border-top: 2px solid var(--accent); background: var(--panel); white-space: nowrap;
+               overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+  .hunt .card .art img { object-fit: contain; }
+
+  .center { flex: 0 0 412px; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 3px double var(--accent);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8px 12px; }
+  .center .ttl { font-size: 38px; font-weight: 800; letter-spacing: .04em; line-height: 1.1; }
+  .center .st { font-size: 34px; font-weight: 800; color: var(--accent); letter-spacing: .08em; margin-bottom: 8px; }
+  .center .vs { display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 40px; font-weight: 800; }
+  .center .vs .tm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .center .vs .mid { flex: none; padding: 0 12px; font-size: 44px; font-style: italic; }
+  .center .role { display: flex; width: 100%; justify-content: space-between; font-size: 15px; color: var(--sub); letter-spacing: .12em; }
+  .center .sc { display: flex; width: 100%; justify-content: space-between; margin-top: 4px; }
+  .center .sc div { flex: 1; font-size: 64px; font-weight: 900; line-height: 1; }
+  .center .sc small { display: block; font-size: 22px; font-weight: 800; letter-spacing: .06em; margin-top: 2px; }
+  .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
+  .center .map b { color: var(--text); }
+
+  /* ── ルール表示（「試合準備開始」が押されるまで） ── */
+  .rules { position: absolute; left: 230px; top: 90px; width: 1460px; height: 900px; background: var(--panel);
+           border: 3px double var(--accent); padding: 30px 46px; overflow: hidden; }
+  .rules .k { font-size: 24px; color: var(--accent); font-weight: 800; letter-spacing: .2em; }
+  .rules h1 { margin: 6px 0 4px; font-size: 52px; line-height: 1.15; }
+  .rules .next { font-size: 28px; color: var(--sub); margin-bottom: 18px; }
+  .rules h2 { margin: 18px 0 6px; font-size: 26px; color: var(--accent); border-left: 8px solid var(--accent); padding-left: 14px; }
+  .rules li { font-size: 28px; line-height: 1.55; list-style: none; }
+  .rules ul { margin: 0; padding: 0 0 0 22px; }
+  .idle { position: absolute; left: 0; right: 0; top: 460px; text-align: center; font-size: 46px; font-weight: 800;
+          letter-spacing: .08em; color: var(--sub); }
+
+  /* ── キャラに対応する画像・動画（中央の空いた場所） ── */
+  #media { position: absolute; left: 470px; top: 120px; width: 980px; height: 560px; display: flex;
+           align-items: center; justify-content: center; transition: opacity .5s; opacity: 0; pointer-events: none; }
+  #media.on { opacity: 1; }
+  #media > * { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border: 0; }
+  #msg { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 22px; color: var(--sub); }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/";</script>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="bgmedia"></div>
+  <div id="screen"></div>
+  <div id="media"></div>
+  <div id="msg"></div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
+  var POLL_MS = 2000, MEDIA_MS = 10000;
+  var screenEl = document.getElementById("screen");
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function arr(x) { return Array.isArray(x) ? x : (x && typeof x === "object" ? Object.keys(x).map(function (k) { return x[k]; }) : []); }
+
+  // ── ウィンドウに合わせて拡縮 ──
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var st = document.getElementById("stage");
+    st.style.transform = "scale(" + s + ")";
+    st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
+    st.style.top = Math.max(0, (window.innerHeight - 1080 * s) / 2) + "px";
+  }
+  window.addEventListener("resize", fit);
+  fit();
+
+  // ── 大会のテーマカラー：ベース色（背景）とアクセント色から、パネル・線・文字の色を作る（未設定なら標準の色） ──
+  function hex2rgb(h) { var n = parseInt(h.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function rgb2css(c) { return "rgb(" + c.map(function (v) { return Math.round(v); }).join(",") + ")"; }
+  function mix(a, b, t) { return [0, 1, 2].map(function (i) { return a[i] + (b[i] - a[i]) * t; }); }
+  function lum(c) {
+    var f = c.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+  }
+  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow"];
+  function applyTheme(th) {
+    var root = document.documentElement.style;
+    THEME_VARS.forEach(function (p) { root.removeProperty(p); });
+    if (!th || !th.base || !th.accent) return;
+    var base = hex2rgb(th.base), acc = hex2rgb(th.accent);
+    var text = lum(base) > 0.45 ? [22, 26, 38] : [236, 239, 246];
+    root.setProperty("--bg", th.base);
+    root.setProperty("--panel", rgb2css(mix(base, text, 0.08)));
+    root.setProperty("--panel2", rgb2css(mix(base, text, 0.16)));
+    root.setProperty("--line", rgb2css(mix(base, text, 0.32)));
+    root.setProperty("--chip", rgb2css(mix(base, text, 0.18)));
+    root.setProperty("--text", rgb2css(text));
+    root.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
+    root.setProperty("--accent", th.accent);
+    root.setProperty("--glow", rgb2css(mix(base, acc, 0.34)));          // 背景の光：ベース色にアクセント色をなじませた色
+  }
+
+  // ── 画像（読み込めなければ、キャラごとの絵文字） ──
+  function imgUrl(p) { return p.split("/").map(encodeURIComponent).join("/"); }
+  function emoji(item) { return el("div", "emo", item.emoji || (item.name || "?").slice(0, 1)); }
+  function art(item, box) {
+    if (item.img) {
+      var im = new Image();
+      im.alt = item.name || "";
+      im.draggable = false;
+      im.onerror = function () { im.remove(); box.appendChild(emoji(item)); };
+      im.src = imgUrl(item.img);
+      box.appendChild(im);
+    } else {
+      box.appendChild(emoji(item));
+    }
+  }
+
+  // ── 画像・動画・YouTube を1つの要素にする ──
+  function mediaEl(m, loop) {
+    if (m.kind === "image") {
+      var im = new Image(); im.src = m.url; im.alt = ""; im.draggable = false; return im;
+    }
+    if (m.kind === "video") {
+      var v = document.createElement("video");
+      v.src = m.url; v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+      v.play && v.play().catch(function () {});
+      return v;
+    }
+    if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) {
+      var f = document.createElement("iframe");
+      // 再生ボタンなどの操作部品を出さない設定（controls=0 など）で埋め込む。クリックも受け付けない
+      f.src = "https://www.youtube-nocookie.com/embed/" + m.id + "?autoplay=1&mute=1&controls=0&loop=1&playlist=" + m.id +
+              "&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3&showinfo=0";
+      f.allow = "autoplay; encrypted-media"; f.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+      f.tabIndex = -1;
+      return f;
+    }
+    return null;
+  }
+
+  // ── 背景の画像・動画（設定されていれば。内容が変わったときだけ入れ替える） ──
+  var bgSig = null;
+  function setBackground(bg) {
+    var sig = JSON.stringify(bg || null);
+    if (sig === bgSig) return;
+    bgSig = sig;
+    var box = document.getElementById("bgmedia");
+    box.replaceChildren();
+    if (bg) { var e = mediaEl(bg); if (e) box.appendChild(e); }
+  }
+
+  // ── PICKされたキャラに対応する画像・動画（複数あれば10秒ごとに次へ） ──
+  var mediaSig = null, mediaTimer = null, mediaIdx = 0, mediaList = [];
+  function showMediaItem() {
+    var box = document.getElementById("media");
+    box.classList.remove("on");
+    setTimeout(function () {
+      box.replaceChildren();
+      var e = mediaList.length ? mediaEl(mediaList[mediaIdx % mediaList.length]) : null;
+      if (e) { box.appendChild(e); box.classList.add("on"); }
+    }, mediaList.length > 1 ? 450 : 0);
+  }
+  function setMedia(list) {
+    var sig = JSON.stringify(list);
+    if (sig === mediaSig) return;
+    mediaSig = sig;
+    mediaList = list;
+    mediaIdx = 0;
+    if (mediaTimer) { clearInterval(mediaTimer); mediaTimer = null; }
+    showMediaItem();
+    if (list.length > 1) {
+      mediaTimer = setInterval(function () { mediaIdx = (mediaIdx + 1) % mediaList.length; showMediaItem(); }, MEDIA_MS);
+    }
+  }
+
+  // ── 部品 ──
+  function sq(x, y, item, kind) {      // 小さな四角：BANされたキャラ（item あり）／まだ空き（鍵）
+    var b = el("div", "sq" + (item ? " used" : ""));
+    b.style.left = x + "px"; b.style.top = y + "px";
+    if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
+    return b;
+  }
+  function slots(group) {
+    var g = group || {};
+    var items = arr(g.items);
+    var n = Math.max(g.slots || 0, items.length);
+    var out = [];
+    for (var i = 0; i < n; i++) out.push(items[i] || null);
+    return out;
+  }
+  function card(item, cap) {
+    var c = el("div", "card");
+    var a = el("div", "art");
+    if (item) art(item, a); else a.appendChild(el("div", "q", "？"));
+    c.appendChild(a);
+    c.appendChild(el("div", "cap", item ? item.name : cap || ""));
+    return c;
+  }
+  function teamName(t) { return (t && (t.abbr || t.name)) || "?"; }
+
+  function renderBp(lv) {
+    var root = el("div");
+    screenEl.replaceChildren(root);
+    var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
+    // 左上：サバイバー側のグローバルBAN（4列）。右上：ハンター側（1列）
+    if (gs.active) {
+      var h1 = el("div", "hdr", "GLOBAL BAN"); h1.style.cssText = "left:22px;top:20px;width:380px;";
+      root.appendChild(h1);
+      slots(gs).forEach(function (it, i) {
+        root.appendChild(sq(22 + (i % 4) * 92, 120 + Math.floor(i / 4) * 92, it));
+      });
+    }
+    if (gh.active) {
+      var h2 = el("div", "hdr", "GLOBAL BAN"); h2.style.cssText = "left:1618px;top:20px;width:280px;";
+      root.appendChild(h2);
+      slots(gh).forEach(function (it, i) { root.appendChild(sq(1820, 120 + i * 92, it)); });
+    }
+    // 下：BANされたキャラ。左＝サバイバー側がBANしたハンター、右＝ハンター側がBANしたサバイバー
+    slots(lv.hunter_bans).forEach(function (it, i) { root.appendChild(sq(22 + i * 92, 680, it)); });
+    var sb = slots(lv.survivor_bans);
+    sb.forEach(function (it, i) { root.appendChild(sq(1900 - 78 - (sb.length - 1 - i) * 92, 680, it)); });
+
+    var bar = el("div", "bar");
+    var surv = el("div", "surv");
+    var sp = slots(lv.survivor_picks);
+    sp.forEach(function (it) { surv.appendChild(card(it)); });
+    bar.appendChild(surv);
+
+    var c = el("div", "center");
+    c.appendChild(el("div", "ttl", lv.title || ""));
+    c.appendChild(el("div", "st", lv.status === "STANDBY" ? "STANDBY" : "BAN / PICK"));
+    var vs = el("div", "vs");
+    vs.appendChild(el("div", "tm", teamName(lv.survivor)));
+    vs.appendChild(el("div", "mid", "VS"));
+    vs.appendChild(el("div", "tm", teamName(lv.hunter)));
+    c.appendChild(vs);
+    var role = el("div", "role");
+    role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
+    c.appendChild(role);
+    var sc = el("div", "sc");
+    [lv.survivor, lv.hunter].forEach(function (t) {
+      var d = el("div", null, String((t && t.points) || 0));
+      d.appendChild(el("small", null, "W" + ((t && t.wins) || 0) + " D" + ((t && t.draws) || 0)));
+      sc.appendChild(d);
+    });
+    c.appendChild(sc);
+    var mapLine = lv.map ? lv.map.name : null;
+    if (mapLine) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, mapLine)); c.appendChild(mp); }
+    bar.appendChild(c);
+
+    var hunt = el("div", "hunt");
+    var hp = slots(lv.hunter_pick);
+    (hp.length ? hp : [null]).forEach(function (it) { hunt.appendChild(card(it)); });
+    bar.appendChild(hunt);
+    root.appendChild(bar);
+  }
+
+  function renderRules(r) {
+    var root = el("div");
+    var box = el("div", "rules");
+    box.appendChild(el("div", "k", "NEXT MATCH"));
+    box.appendChild(el("h1", null, r.match || ""));
+    box.appendChild(el("div", "next", "次に行う枠：" + (r.next || "")));
+    function section(title, lines) {
+      lines = arr(lines);
+      if (!lines.length) return;
+      box.appendChild(el("h2", null, title));
+      var ul = el("ul");
+      lines.forEach(function (t) { ul.appendChild(el("li", null, t)); });
+      box.appendChild(ul);
+    }
+    section("BAN/PICKの手順", r.steps);
+    section("このラウンドのルール", r.round);
+    section("全試合に適用されるルール", r.global);
+    root.appendChild(box);
+    screenEl.replaceChildren(root);
+  }
+
+  function renderIdle(data) {
+    var root = el("div");
+    root.appendChild(el("div", "idle", data.title || ""));
+    screenEl.replaceChildren(root);
+  }
+
+  var lastSig = null;
+  function render(data) {
+    if (!data) data = { state: "idle" };
+    var sig = JSON.stringify(data, function (k, v) { return k === "generated_at" ? undefined : v; });
+    if (sig === lastSig) return;
+    lastSig = sig;
+    applyTheme(data.theme);
+    setBackground(data.bg);
+    var media = [];
+    if (data.state === "bp") {
+      renderBp(data.live || {});
+      media = arr((data.live || {}).media);
+    } else if (data.state === "rules") {
+      renderRules(data.rules || {});
+    } else if (data.state === "play") {
+      screenEl.replaceChildren();                       // 試合が始まったら、BAN/PICKの表示は消す
+    } else {
+      renderIdle(data);
+    }
+    setMedia(media);
+    document.getElementById("msg").textContent = "";
+  }
+
+  // ── データの読み込み：URLの ?t=（大会ごとの12文字）の大会だけ、数秒おきに読み直す ──
+  function load() {
+    var base = window.TOURNAMENT_DATA_BASE;
+    var key = params.get("t") || "";
+    if (!/^[A-Za-z0-9]{12}$/.test(key)) {
+      document.getElementById("msg").textContent = "このページは、大会のURL（主催者から案内されたもの）から開いてください。";
+      return false;
+    }
+    function tick() {
+      fetch(base + key + "/banpick.json?t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { render(d); })
+        .catch(function () {
+          if (lastSig === null) document.getElementById("msg").textContent = "データを読み込めませんでした。しばらくしてからもう一度開いてください。";
+        });
+    }
+    tick();
+    setInterval(tick, POLL_MS);
+    return true;
+  }
+
+  if (window.BANPICK_DATA_EMBEDDED) render(window.BANPICK_DATA_EMBEDDED);      // 動作確認用（データを直接埋め込んだとき）
+  else if (window.TOURNAMENT_DATA_BASE) load();
+  else document.getElementById("msg").textContent = "データの場所が設定されていません。";
+})();
+</script>
+</body>
+</html>
