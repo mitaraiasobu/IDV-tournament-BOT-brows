@@ -24,17 +24,6 @@
            display: flex; flex-direction: column; padding: 34px 60px 26px; overflow: hidden;
            background-repeat: no-repeat; background-position: center; background-size: 100% 100%; }
 
-  /* ════════ ダウンロード版だけに出る、ダウンロード状況の案内とPNG保存・背景画像の設定 ════════ */
-  /* トーナメント表本体（#stage）は90%に縮小して下にずらして表示し、その分ここに上の帯としてスペースを空ける
-     （実際の高さは折り返し方次第で変わるので、JS側の fit() が offsetHeight を毎回測って隙間を合わせる）。 */
-  #snapToolbar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 50; gap: 14px;
-                 align-items: center; justify-content: center; font-size: 14px; flex-wrap: wrap;
-                 background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,0)); padding: 12px 24px; }
-  #snapToolbar .snapnote { color: var(--sub); background: rgba(0,0,0,.55); padding: 6px 12px; border-radius: 8px;
-                           max-width: 640px; line-height: 1.5; }
-  #snapToolbar button { font: inherit; font-size: 14px; cursor: pointer; color: var(--text); background: var(--panel);
-                        border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; white-space: nowrap; }
-  #snapToolbar button:hover { background: var(--panel2); }
   .top { height: 92px; flex: none; display: flex; align-items: center; justify-content: space-between; }
   .top h1 { margin: 0; font-size: 56px; letter-spacing: .06em; border-left: 10px solid var(--accent); padding-left: 22px; }
   .top .sub { font-size: 22px; color: var(--sub); letter-spacing: .22em; }
@@ -232,14 +221,6 @@
   <div id="details"></div>
 </div>
 
-<div id="snapToolbar">
-  <div class="snapnote">🕒 これはダウンロード時点のスナップショットです。自動更新はされません。最新の状態を見るには、
-    BOTでもう一度「トーナメント表をブラウザで表示」からダウンロードし直してください。</div>
-  <button id="bgBtn" type="button">🖼 背景画像を設定</button>
-  <button id="pngBtn" type="button">📷 PNGとして保存</button>
-  <input id="bgFile" type="file" accept="image/*" style="display:none">
-</div>
-
 <!-- Botが自動出力する tournament.js（window.TOURNAMENT_DATA）を3秒おきに読み直す -->
 <script>
 (function () {
@@ -248,7 +229,6 @@
   if (DETAILS) document.body.classList.add("details");
   if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
   var POLL_MS = 3000, last = null;
-  var IS_SNAPSHOT = false;   // ダウンロードして開いた単体HTMLのときだけtrue（#stageを90%に縮小して下にずらす）
   var BADGE = { pending: "対戦相手待ち", ready: "未試合", in_progress: "試合中", extension: "延長戦",
                 undecided: "判断待ち", finished: "勝敗確定" };
   var ROUNDS = 3;   // 現在の大会のラウンド数（render で更新）
@@ -269,20 +249,12 @@
     document.documentElement.className = flowNow ? "flow" : "stage";
     if (flowNow) {
       st.style.transform = ""; st.style.left = ""; st.style.top = "";
-      var tb = IS_SNAPSHOT ? document.getElementById("snapToolbar") : null;
-      st.style.paddingTop = tb ? (tb.offsetHeight + 8) + "px" : "";            // ダウンロード版の上の帯と重ならないように
       return;
     }
-    st.style.paddingTop = "";
-    var gap = 0;
-    if (IS_SNAPSHOT) {
-      var toolbar = document.getElementById("snapToolbar");
-      gap = toolbar ? toolbar.offsetHeight : 0;    // 折り返し方で高さが変わるので、実際の高さを毎回測る
-    }
-    var s = Math.min(window.innerWidth / 1920, (window.innerHeight - gap) / 1080) * (IS_SNAPSHOT ? 0.9 : 1);
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
     st.style.transform = "scale(" + s + ")";
     st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
-    st.style.top = (gap + Math.max(0, (window.innerHeight - gap - 1080 * s) / 2)) + "px";
+    st.style.top = Math.max(0, (window.innerHeight - 1080 * s) / 2) + "px";
   }
   window.addEventListener("resize", fit);
   fit();
@@ -643,54 +615,8 @@
     document.head.appendChild(s);
   }
 
-  // ── ダウンロードして開いた単体HTML（埋め込みデータあり）：一度描画するだけで、以後は読み直さない ──
-  function setupSnapshotTools() {
-    document.getElementById("snapToolbar").style.display = "flex";
-    IS_SNAPSHOT = true;
-    fit();
-    var tbar = document.getElementById("snapToolbar");
-    if (window.ResizeObserver && tbar) new ResizeObserver(fit).observe(tbar);       // 上の帯の高さが変わったら（折り返しなど）、表の位置も合わせ直す
-    var stage = document.getElementById("stage");
-    document.getElementById("bgBtn").addEventListener("click", function () {
-      document.getElementById("bgFile").click();
-    });
-    document.getElementById("bgFile").addEventListener("change", function (e) {
-      var file = e.target.files && e.target.files[0];
-      if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function () { stage.style.backgroundImage = "url(" + reader.result + ")"; };
-      reader.readAsDataURL(file);
-    });
-    document.getElementById("pngBtn").addEventListener("click", function () {
-      function run() {
-        var oldT = stage.style.transform, oldL = stage.style.left, oldTop = stage.style.top;
-        stage.style.transform = "none"; stage.style.left = "0px"; stage.style.top = "0px";
-        window.html2canvas(stage, { width: 1920, height: 1080, backgroundColor: null }).then(function (canvas) {
-          stage.style.transform = oldT; stage.style.left = oldL; stage.style.top = oldTop;
-          canvas.toBlob(function (blob) {
-            var a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = (document.title || "トーナメント表") + ".png";
-            a.click();
-          });
-        });
-      }
-      if (window.html2canvas) { run(); return; }
-      var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-      s.onload = run;
-      s.onerror = function () { alert("PNG化ライブラリの読み込みに失敗しました。インターネット接続を確認してください。"); };
-      document.head.appendChild(s);
-    });
-  }
-
-  if (window.TOURNAMENT_DATA_EMBEDDED) {
-    setupSnapshotTools();
-    render(window.TOURNAMENT_DATA_EMBEDDED);
-  } else {
-    load();
-    setInterval(load, POLL_MS);
-  }
+  load();
+  setInterval(load, POLL_MS);
 })();
 </script>
 </body>
