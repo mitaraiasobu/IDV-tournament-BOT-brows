@@ -10,23 +10,34 @@
     --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  html, body { margin: 0; background: var(--bg); color: var(--text);
                font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif; }
   html[data-bg="transparent"], html[data-bg="transparent"] body { background: transparent; }
 
-  /* 配信用：1920x1080 の固定ステージ（ウィンドウに合わせて拡縮） */
+  /* 表示は2種類：
+     stage … 横長の画面（OBSの1920x1080など）でのBAN/PICKの画面。1920x1080の固定ステージを、画面に合わせて拡縮する（スクロールなし）
+     flow  … ルール表示と、縦長・狭い画面（スマホ）。画面の幅に合わせて文字の大きさ・並びが変わり、はみ出したらスクロールできる */
+  html.stage, html.stage body { height: 100%; overflow: hidden; }
+  html.flow { font-size: clamp(15px, 1.5vw, 32px); }
+  html.flow, html.flow body { min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+  @media (max-width: 900px) { html.flow { font-size: clamp(16px, 4.3vw, 22px); } }
+
   #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
-  #bg { position: absolute; inset: 0;
-        background: radial-gradient(ellipse at 50% 35%, var(--glow), var(--bg) 72%); }
+  html.flow #stage { position: relative; width: auto; height: auto; transform: none !important; left: auto !important;
+                     top: auto !important; overflow: visible; min-height: 100vh; }
+  #bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 35%, var(--glow), var(--bg) 72%); }
   html[data-bg="transparent"] #bg { display: none; }
   #bgmedia { position: absolute; inset: 0; overflow: hidden; }
   #bgmedia > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; pointer-events: none; }
+  html.flow #bg, html.flow #bgmedia { position: fixed; z-index: 0; }
   #screen { position: absolute; inset: 0; }
+  html.flow #screen { position: relative; inset: auto; z-index: 1; }
+  #msg { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 22px; color: var(--sub); z-index: 2; }
+  html.flow #msg { position: relative; bottom: auto; padding: 1em; font-size: .9em; }
 
-  /* ── BAN/PICK の画面 ── */
+  /* ═══ stage：BAN/PICK の画面（1920x1080） ═══ */
   .hdr { position: absolute; height: 78px; display: flex; align-items: center; justify-content: center;
-         background: var(--panel); border: 2px solid var(--line); font-size: 40px; font-weight: 800;
-         letter-spacing: .04em; color: var(--text); }
+         background: var(--panel); border: 2px solid var(--line); font-size: 40px; font-weight: 800; letter-spacing: .04em; }
   .sq { position: absolute; width: 78px; height: 78px; background: var(--panel); border: 2px solid var(--line);
         display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .sq img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
@@ -62,35 +73,83 @@
   .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
   .center .map b { color: var(--text); }
 
-  /* ── ルール表示（「試合準備開始」が押されるまで／同時進行のラウンド／対戦カード待ち） ── */
-  .rules { position: absolute; left: 110px; top: 60px; width: 1700px; height: 960px; background: var(--panel);
-           border: 3px double var(--accent); padding: 34px 50px; overflow: hidden; display: flex; flex-direction: column; }
-  .rules .head { display: flex; align-items: center; gap: 22px; }
-  .rules .head h1 { margin: 0; font-size: 84px; line-height: 1.05; letter-spacing: .04em; }
-  .rules .pill { font-size: 34px; font-weight: 800; padding: 4px 22px; border-radius: 999px; border: 3px solid var(--accent);
-                 color: var(--accent); white-space: nowrap; }
-  .rules .pill.mode { margin-left: auto; color: var(--text); border-color: var(--line); background: var(--chip); }
-  .rules .vs { margin-top: 10px; font-size: 46px; font-weight: 800; }
-  .rules .vs small { font-size: 28px; color: var(--sub); font-weight: 600; margin-left: 18px; }
-  .rules .note { margin-top: 14px; padding: 12px 22px; font-size: 28px; line-height: 1.4; border-left: 8px solid var(--accent);
-                 background: var(--chip); }
-  .rules .cols { margin-top: 20px; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
-  .rules h2 { margin: 0 0 10px; font-size: 32px; color: var(--accent); letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
-  .rules .sec { margin-bottom: 22px; }
-  .rules .row { display: flex; gap: 16px; align-items: baseline; padding: 7px 0; font-size: 30px; line-height: 1.45; }
-  .rules .row .lb { flex: none; min-width: 190px; font-weight: 800; color: var(--accent); }
-  .rules .row .tx { flex: 1; min-width: 0; }
-  .rules ol { margin: 0; padding: 0 0 0 44px; }
-  .rules ol li { font-size: 30px; line-height: 1.55; }
-  .rules .none { font-size: 28px; color: var(--sub); }  .idle { position: absolute; left: 0; right: 0; top: 460px; text-align: center; font-size: 46px; font-weight: 800;
-          letter-spacing: .08em; color: var(--sub); }
-
-  /* ── キャラに対応する画像・動画（中央の空いた場所） ── */
+  /* キャラに対応する画像・動画（stageでは中央の空いた場所。flowでは、見出しの下） */
   #media { position: absolute; left: 470px; top: 120px; width: 980px; height: 560px; display: flex;
-           align-items: center; justify-content: center; transition: opacity .5s; opacity: 0; pointer-events: none; }
+           align-items: center; justify-content: center; transition: opacity .5s; opacity: 0; pointer-events: none; z-index: 1; }
   #media.on { opacity: 1; }
   #media > * { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border: 0; }
-  #msg { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 22px; color: var(--sub); }
+  html.flow #media { position: relative; left: auto; top: auto; width: 100%; height: auto; aspect-ratio: 16 / 9;
+                     max-height: 55vh; margin: 0 auto; }
+  html.flow #media:not(.on) { display: none; }
+
+  /* ═══ flow：スマホなど狭い画面のBAN/PICKの画面（幅に合わせて並べる） ═══ */
+  .cp { max-width: 70em; margin: 0 auto; padding: .8em; display: flex; flex-direction: column; gap: .8em; }
+  .cp .box { background: var(--panel); border: 2px double var(--accent); padding: .7em .9em; }
+  .cp .head { text-align: center; }
+  .cp .head .ttl { font-size: 1.5em; font-weight: 800; letter-spacing: .04em; }
+  .cp .head .st { font-size: 1.1em; font-weight: 800; color: var(--accent); letter-spacing: .08em; }
+  .cp .vs { display: flex; align-items: center; justify-content: space-between; gap: .5em; margin-top: .4em; font-size: 1.5em; font-weight: 800; }
+  .cp .vs .tm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .cp .vs .mid { flex: none; font-style: italic; }
+  .cp .role { display: flex; justify-content: space-between; font-size: .7em; color: var(--sub); letter-spacing: .12em; }
+  .cp .sc { display: flex; justify-content: space-between; }
+  .cp .sc div { flex: 1; font-size: 2.6em; font-weight: 900; line-height: 1.1; text-align: center; }
+  .cp .sc small { display: block; font-size: .38em; font-weight: 800; letter-spacing: .06em; }
+  .cp .map { margin-top: .3em; text-align: center; color: var(--sub); }
+  .cp .map b { color: var(--text); }
+  .cp h3 { margin: 0 0 .45em; font-size: 1em; color: var(--accent); letter-spacing: .08em; }
+  .cp .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.4em, 1fr)); gap: .5em; }
+  .cp .hunt1 { max-width: 14em; }
+  .cp .card { aspect-ratio: 3 / 4.4; min-width: 0; }
+  .cp .card .art .emo { font-size: 3.4em; }
+  .cp .card .art .q { font-size: 2.6em; }
+  .cp .card .cap { height: auto; min-height: 2em; font-size: .85em; white-space: normal; padding: .2em .3em; text-align: center; }
+  .cp .hunt1 .card .art img { object-fit: contain; }
+  .cp .smalls { display: flex; flex-wrap: wrap; gap: .4em; }
+  .cp .fsq { width: 3.6em; height: 3.6em; background: var(--panel2); border: 2px solid var(--line);
+             display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .cp .fsq img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .cp .fsq.used img, .cp .fsq.used .emo { filter: grayscale(1) brightness(.85); }
+  .cp .fsq .lock { font-size: 1.2em; opacity: .55; }
+  .cp .fsq .emo { font-size: 1.8em; }
+  .cp .two { display: grid; grid-template-columns: 1fr 1fr; gap: .8em; }
+  @media (max-width: 600px) { .cp .two { grid-template-columns: 1fr; } }
+
+  /* ═══ flow：ルール表示（待機中） ═══ */
+  .rv { max-width: 96em; margin: 0 auto; padding: 1em; }
+  .rv .box { background: var(--panel); border: 3px double var(--accent); padding: 1em 1.3em; }
+  .rv .head { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .8em; }
+  .rv .head h1 { margin: 0; font-size: 2.6em; line-height: 1.1; letter-spacing: .04em; }
+  .rv .pill { font-size: 1.1em; font-weight: 800; padding: .1em .8em; border-radius: 999px; border: 2px solid var(--accent);
+              color: var(--accent); white-space: nowrap; }
+  .rv .pill.mode { margin-left: auto; color: var(--text); border-color: var(--line); background: var(--chip); }
+  .rv .vs { margin-top: .3em; font-size: 1.5em; font-weight: 800; overflow-wrap: anywhere; }
+  .rv .vs small { font-size: .6em; color: var(--sub); font-weight: 600; margin-left: .7em; }
+  .rv .note { margin-top: .6em; padding: .45em .8em; line-height: 1.45; border-left: .3em solid var(--accent); background: var(--chip); }
+  .rv .tabs { display: flex; flex-wrap: wrap; gap: .4em; margin-bottom: .8em; }
+  .rv .tabs button { font: inherit; font-weight: 800; cursor: pointer; padding: .35em .9em; border-radius: .6em;
+                     border: 2px solid var(--line); background: var(--chip); color: var(--text); }
+  .rv .tabs button.on { background: var(--accent); border-color: var(--accent); color: #111; }
+  .rv .tabs .hint { align-self: center; font-size: .8em; color: var(--sub); }
+  .rv .cols { margin-top: .9em; display: grid; gap: .6em 1.6em; grid-template-columns: 1.15fr 1fr;
+              grid-template-areas: "global steps" "round steps"; align-items: start; }
+  .rv .c-global { grid-area: global; } .rv .c-round { grid-area: round; } .rv .c-steps { grid-area: steps; }
+  @media (max-width: 900px) {
+    .rv .cols { grid-template-columns: 1fr; grid-template-areas: "global" "round" "steps"; }
+    .rv .head h1 { font-size: 2em; }
+    .rv .pill { white-space: normal; text-align: center; }
+    .rv .pill.mode { margin-left: 0; }
+    .rv .tabs button { padding: .3em .7em; }
+  }
+  .rv h2 { margin: 0 0 .35em; font-size: 1.1em; color: var(--accent); letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: .15em; }
+  .rv .sec { margin-bottom: .5em; }
+  .rv .row { display: flex; gap: .8em; align-items: baseline; padding: .25em 0; line-height: 1.45; }
+  .rv .row .lb { flex: none; min-width: 6.5em; font-weight: 800; color: var(--accent); }
+  .rv .row .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .rv ol { margin: 0; padding: 0 0 0 1.6em; }
+  .rv ol li { line-height: 1.55; }
+  .rv .none { color: var(--sub); }
+  .idle { padding: 30vh 1em 0; text-align: center; font-size: 1.8em; font-weight: 800; letter-spacing: .08em; color: var(--sub); }
 </style>
 </head>
 <body>
@@ -108,7 +167,10 @@
   var params = new URLSearchParams(location.search);
   if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
   var POLL_MS = 2000, MEDIA_MS = 10000;
+  var root = document.documentElement;
+  var stageEl = document.getElementById("stage");
   var screenEl = document.getElementById("screen");
+  var mediaBox = document.getElementById("media");
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -118,16 +180,22 @@
   }
   function arr(x) { return Array.isArray(x) ? x : (x && typeof x === "object" ? Object.keys(x).map(function (k) { return x[k]; }) : []); }
 
-  // ── ウィンドウに合わせて拡縮 ──
-  function fit() {
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-    var st = document.getElementById("stage");
-    st.style.transform = "scale(" + s + ")";
-    st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
-    st.style.top = Math.max(0, (window.innerHeight - 1080 * s) / 2) + "px";
+  // ── 表示の種類：BAN/PICKの画面で、横長なら stage（1920x1080を拡縮）／ルール表示・縦長・狭い画面は flow ──
+  var lastData = null, kind = "flow";
+  function wantKind(data) {
+    if (data && data.state === "bp" && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
+    return "flow";
   }
-  window.addEventListener("resize", fit);
-  fit();
+  function fit() {
+    if (kind !== "stage") return;
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stageEl.style.transform = "scale(" + s + ")";
+    stageEl.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
+    stageEl.style.top = Math.max(0, (window.innerHeight - 1080 * s) / 2) + "px";
+  }
+  window.addEventListener("resize", function () {
+    if (lastData && wantKind(lastData) !== kind) render(lastData, true); else fit();
+  });
 
   // ── 大会のテーマカラー：ベース色（背景）とアクセント色から、パネル・線・文字の色を作る（未設定なら標準の色） ──
   function hex2rgb(h) { var n = parseInt(h.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
@@ -139,20 +207,20 @@
   }
   var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow"];
   function applyTheme(th) {
-    var root = document.documentElement.style;
-    THEME_VARS.forEach(function (p) { root.removeProperty(p); });
+    var st = root.style;
+    THEME_VARS.forEach(function (p) { st.removeProperty(p); });
     if (!th || !th.base || !th.accent) return;
     var base = hex2rgb(th.base), acc = hex2rgb(th.accent);
     var text = lum(base) > 0.45 ? [22, 26, 38] : [236, 239, 246];
-    root.setProperty("--bg", th.base);
-    root.setProperty("--panel", rgb2css(mix(base, text, 0.08)));
-    root.setProperty("--panel2", rgb2css(mix(base, text, 0.16)));
-    root.setProperty("--line", rgb2css(mix(base, text, 0.32)));
-    root.setProperty("--chip", rgb2css(mix(base, text, 0.18)));
-    root.setProperty("--text", rgb2css(text));
-    root.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
-    root.setProperty("--accent", th.accent);
-    root.setProperty("--glow", rgb2css(mix(base, acc, 0.34)));          // 背景の光：ベース色にアクセント色をなじませた色
+    st.setProperty("--bg", th.base);
+    st.setProperty("--panel", rgb2css(mix(base, text, 0.08)));
+    st.setProperty("--panel2", rgb2css(mix(base, text, 0.16)));
+    st.setProperty("--line", rgb2css(mix(base, text, 0.32)));
+    st.setProperty("--chip", rgb2css(mix(base, text, 0.18)));
+    st.setProperty("--text", rgb2css(text));
+    st.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
+    st.setProperty("--accent", th.accent);
+    st.setProperty("--glow", rgb2css(mix(base, acc, 0.34)));
   }
 
   // ── 画像（読み込めなければ、キャラごとの絵文字） ──
@@ -172,7 +240,7 @@
   }
 
   // ── 画像・動画・YouTube を1つの要素にする ──
-  function mediaEl(m, loop) {
+  function mediaEl(m) {
     if (m.kind === "image") {
       var im = new Image(); im.src = m.url; im.alt = ""; im.draggable = false; return im;
     }
@@ -209,12 +277,11 @@
   // ── PICKされたキャラに対応する画像・動画（複数あれば10秒ごとに次へ） ──
   var mediaSig = null, mediaTimer = null, mediaIdx = 0, mediaList = [];
   function showMediaItem() {
-    var box = document.getElementById("media");
-    box.classList.remove("on");
+    mediaBox.classList.remove("on");
     setTimeout(function () {
-      box.replaceChildren();
+      mediaBox.replaceChildren();
       var e = mediaList.length ? mediaEl(mediaList[mediaIdx % mediaList.length]) : null;
-      if (e) { box.appendChild(e); box.classList.add("on"); }
+      if (e) { mediaBox.appendChild(e); mediaBox.classList.add("on"); }
     }, mediaList.length > 1 ? 450 : 0);
   }
   function setMedia(list) {
@@ -231,12 +298,6 @@
   }
 
   // ── 部品 ──
-  function sq(x, y, item, kind) {      // 小さな四角：BANされたキャラ（item あり）／まだ空き（鍵）
-    var b = el("div", "sq" + (item ? " used" : ""));
-    b.style.left = x + "px"; b.style.top = y + "px";
-    if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
-    return b;
-  }
   function slots(group) {
     var g = group || {};
     var items = arr(g.items);
@@ -245,6 +306,7 @@
     for (var i = 0; i < n; i++) out.push(items[i] || null);
     return out;
   }
+  function teamName(t) { return (t && (t.abbr || t.name)) || "?"; }
   function card(item, cap) {
     var c = el("div", "card");
     var a = el("div", "art");
@@ -253,36 +315,35 @@
     c.appendChild(el("div", "cap", item ? item.name : cap || ""));
     return c;
   }
-  function teamName(t) { return (t && (t.abbr || t.name)) || "?"; }
 
-  function renderBp(lv) {
-    var root = el("div");
-    screenEl.replaceChildren(root);
+  // ═══ stage：BAN/PICKの画面（1920x1080） ═══
+  function sq(x, y, item) {
+    var b = el("div", "sq" + (item ? " used" : ""));
+    b.style.left = x + "px"; b.style.top = y + "px";
+    if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
+    return b;
+  }
+  function renderBpStage(lv) {
+    var wrap = el("div");
     var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
-    // 左上：サバイバー側のグローバルBAN（4列）。右上：ハンター側（1列）
     if (gs.active) {
       var h1 = el("div", "hdr", "GLOBAL BAN"); h1.style.cssText = "left:22px;top:20px;width:380px;";
-      root.appendChild(h1);
-      slots(gs).forEach(function (it, i) {
-        root.appendChild(sq(22 + (i % 4) * 92, 120 + Math.floor(i / 4) * 92, it));
-      });
+      wrap.appendChild(h1);
+      slots(gs).forEach(function (it, i) { wrap.appendChild(sq(22 + (i % 4) * 92, 120 + Math.floor(i / 4) * 92, it)); });
     }
     if (gh.active) {
       var h2 = el("div", "hdr", "GLOBAL BAN"); h2.style.cssText = "left:1618px;top:20px;width:280px;";
-      root.appendChild(h2);
-      slots(gh).forEach(function (it, i) { root.appendChild(sq(1820, 120 + i * 92, it)); });
+      wrap.appendChild(h2);
+      slots(gh).forEach(function (it, i) { wrap.appendChild(sq(1820, 120 + i * 92, it)); });
     }
-    // 下：BANされたキャラ。左＝サバイバー側がBANしたハンター、右＝ハンター側がBANしたサバイバー
-    slots(lv.hunter_bans).forEach(function (it, i) { root.appendChild(sq(22 + i * 92, 680, it)); });
+    slots(lv.hunter_bans).forEach(function (it, i) { wrap.appendChild(sq(22 + i * 92, 680, it)); });
     var sb = slots(lv.survivor_bans);
-    sb.forEach(function (it, i) { root.appendChild(sq(1900 - 78 - (sb.length - 1 - i) * 92, 680, it)); });
+    sb.forEach(function (it, i) { wrap.appendChild(sq(1900 - 78 - (sb.length - 1 - i) * 92, 680, it)); });
 
     var bar = el("div", "bar");
     var surv = el("div", "surv");
-    var sp = slots(lv.survivor_picks);
-    sp.forEach(function (it) { surv.appendChild(card(it)); });
+    slots(lv.survivor_picks).forEach(function (it) { surv.appendChild(card(it)); });
     bar.appendChild(surv);
-
     var c = el("div", "center");
     c.appendChild(el("div", "ttl", lv.title || ""));
     c.appendChild(el("div", "st", lv.status === "STANDBY" ? "STANDBY" : "BAN / PICK"));
@@ -301,37 +362,123 @@
       sc.appendChild(d);
     });
     c.appendChild(sc);
-    var mapLine = lv.map ? lv.map.name : null;
-    if (mapLine) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, mapLine)); c.appendChild(mp); }
+    if (lv.map) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); c.appendChild(mp); }
     bar.appendChild(c);
-
     var hunt = el("div", "hunt");
     var hp = slots(lv.hunter_pick);
     (hp.length ? hp : [null]).forEach(function (it) { hunt.appendChild(card(it)); });
     bar.appendChild(hunt);
-    root.appendChild(bar);
+    wrap.appendChild(bar);
+    screenEl.replaceChildren(wrap);
+    stageEl.appendChild(mediaBox);                      // キャラの画像・動画は、中央の空いた場所に
   }
 
+  // ═══ flow：スマホなど狭い画面のBAN/PICKの画面 ═══
+  function fsq(item) {
+    var b = el("div", "fsq" + (item ? " used" : ""));
+    if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
+    return b;
+  }
+  function smalls(list) {
+    var d = el("div", "smalls");
+    list.forEach(function (it) { d.appendChild(fsq(it)); });
+    return d;
+  }
+  function renderBpFlow(lv) {
+    var wrap = el("div", "cp");
+    var head = el("div", "box head");
+    head.appendChild(el("div", "ttl", lv.title || ""));
+    head.appendChild(el("div", "st", lv.status === "STANDBY" ? "STANDBY" : "BAN / PICK"));
+    var vs = el("div", "vs");
+    vs.appendChild(el("div", "tm", teamName(lv.survivor)));
+    vs.appendChild(el("div", "mid", "VS"));
+    vs.appendChild(el("div", "tm", teamName(lv.hunter)));
+    head.appendChild(vs);
+    var role = el("div", "role");
+    role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
+    head.appendChild(role);
+    var sc = el("div", "sc");
+    [lv.survivor, lv.hunter].forEach(function (t) {
+      var d = el("div", null, String((t && t.points) || 0));
+      d.appendChild(el("small", null, "W" + ((t && t.wins) || 0) + " D" + ((t && t.draws) || 0)));
+      sc.appendChild(d);
+    });
+    head.appendChild(sc);
+    if (lv.map) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); head.appendChild(mp); }
+    wrap.appendChild(head);
+    wrap.appendChild(mediaBox);                          // キャラの画像・動画は、見出しの下に
+    var sp = el("div", "box");
+    sp.appendChild(el("h3", null, "サバイバー PICK"));
+    var g = el("div", "grid");
+    slots(lv.survivor_picks).forEach(function (it) { g.appendChild(card(it)); });
+    sp.appendChild(g);
+    wrap.appendChild(sp);
+    var hp = el("div", "box");
+    hp.appendChild(el("h3", null, "ハンター PICK"));
+    var h1 = el("div", "hunt1");
+    var hs = slots(lv.hunter_pick);
+    (hs.length ? hs : [null]).forEach(function (it) { h1.appendChild(card(it)); });
+    hp.appendChild(h1);
+    wrap.appendChild(hp);
+    var two = el("div", "two");
+    var b1 = el("div", "box"); b1.appendChild(el("h3", null, "BAN：ハンター（サバイバー側）")); b1.appendChild(smalls(slots(lv.hunter_bans)));
+    var b2 = el("div", "box"); b2.appendChild(el("h3", null, "BAN：サバイバー（ハンター側）")); b2.appendChild(smalls(slots(lv.survivor_bans)));
+    two.appendChild(b1); two.appendChild(b2);
+    wrap.appendChild(two);
+    var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
+    if (gs.active || gh.active) {
+      var gw = el("div", "two");
+      if (gs.active) { var x1 = el("div", "box"); x1.appendChild(el("h3", null, "GLOBAL BAN（サバイバー）")); x1.appendChild(smalls(slots(gs))); gw.appendChild(x1); }
+      if (gh.active) { var x2 = el("div", "box"); x2.appendChild(el("h3", null, "GLOBAL BAN（ハンター）")); x2.appendChild(smalls(slots(gh))); gw.appendChild(x2); }
+      wrap.appendChild(gw);
+    }
+    screenEl.replaceChildren(wrap);
+  }
+
+  // ═══ flow：ルール表示（待機中）。開催日より前は、全ラウンドの情報を載せて、見たいラウンドを選べる ═══
+  var chosenRound = null, lastRules = null;
   function renderRules(r) {
-    var root = el("div");
-    var box = el("div", "rules");
+    lastRules = r;
+    var rounds = arr(r.rounds);
+    var entry = r, focus = true;
+    if (rounds.length) {
+      if (chosenRound === null || !rounds.some(function (x) { return x.no === chosenRound; })) chosenRound = r.round_no;
+      var found = rounds.filter(function (x) { return x.no === chosenRound; })[0];
+      if (found) { entry = found; focus = chosenRound === r.round_no; }
+    }
+    var name = entry.name || entry.round || "";
+    var wrap = el("div", "rv");
+    var box = el("div", "box");
+    if (rounds.length > 1) {
+      var tabs = el("div", "tabs");
+      rounds.forEach(function (x) {
+        var b = el("button", x.no === chosenRound ? "on" : null, x.name);
+        b.type = "button";
+        b.onclick = function () { chosenRound = x.no; renderRules(lastRules); };
+        tabs.appendChild(b);
+      });
+      tabs.appendChild(el("span", "hint", "← 見たいラウンドを選べます"));
+      box.appendChild(tabs);
+    }
     var head = el("div", "head");
-    head.appendChild(el("h1", null, r.round || ""));
-    head.appendChild(el("span", "pill", r.format || ""));
-    head.appendChild(el("span", "pill mode", r.mode === "sequential" ? "順番進行（1試合ずつ）" : "同時進行"));
+    head.appendChild(el("h1", null, name));
+    head.appendChild(el("span", "pill", entry.format || ""));
+    head.appendChild(el("span", "pill mode", entry.mode === "sequential" ? "順番進行（1試合ずつ）" : "同時進行"));
     box.appendChild(head);
-    if (r.match) {
+    if (focus && r.match) {
       var vs = el("div", "vs", r.match);
       if (r.next) vs.appendChild(el("small", null, "次に行う枠：" + r.next));
       box.appendChild(vs);
     }
-    if (r.note) box.appendChild(el("div", "note", r.note));
-    var cols = el("div", "cols");
-    function section(parent, title, body) {
-      var s = el("div", "sec");
+    var note = focus ? r.note : (entry.mode === "sequential"
+      ? "このラウンドは1試合ずつ順番に行います。各試合のBAN/PICKは、試合準備が始まったらここに表示します。"
+      : "このラウンドは同時進行です。すべての試合が同じ時刻に始まります。");
+    if (note) box.appendChild(el("div", "note", note));
+    function section(cls, title, body) {
+      var s = el("div", "sec " + cls);
       s.appendChild(el("h2", null, title));
       s.appendChild(body);
-      parent.appendChild(s);
+      return s;
     }
     function rows(list, emptyText) {
       list = arr(list);
@@ -345,46 +492,47 @@
       });
       return d;
     }
-    var left = el("div"), right = el("div");
-    section(left, "このラウンドのルール", rows(r.round_rows, "特別なルールはありません"));
-    var steps = arr(r.steps);
+    var cols = el("div", "cols");
+    cols.appendChild(section("c-global", "全試合に共通のルール", rows(r.global_rows, "特別なルールはありません")));
+    cols.appendChild(section("c-round", "このラウンドのルール", rows(entry.round_rows, "特別なルールはありません")));
+    var steps = arr(entry.steps);
     if (steps.length) {
       var ol = el("ol");
       steps.forEach(function (t) { ol.appendChild(el("li", null, t)); });
-      section(left, "BAN/PICKの手順", ol);
+      cols.appendChild(section("c-steps", "BAN/PICKの手順", ol));
     }
-    section(right, "全試合に共通のルール", rows(r.global_rows, "特別なルールはありません"));
-    cols.appendChild(left); cols.appendChild(right);
     box.appendChild(cols);
-    root.appendChild(box);
-    screenEl.replaceChildren(root);
+    wrap.appendChild(box);
+    screenEl.replaceChildren(wrap);
   }
+
   function renderIdle(data) {
-    var root = el("div");
-    root.appendChild(el("div", "idle", data.title || ""));
-    screenEl.replaceChildren(root);
+    screenEl.replaceChildren(el("div", "idle", data.title || ""));
   }
 
   var lastSig = null;
-  function render(data) {
+  function render(data, force) {
     if (!data) data = { state: "idle" };
     var sig = JSON.stringify(data, function (k, v) { return k === "generated_at" ? undefined : v; });
-    if (sig === lastSig) return;
+    if (sig === lastSig && !force) return;
     lastSig = sig;
+    lastData = data;
     applyTheme(data.theme);
     setBackground(data.bg);
+    kind = wantKind(data);
+    root.className = kind;
     var media = [];
     if (data.state === "bp") {
-      renderBp(data.live || {});
+      if (kind === "stage") renderBpStage(data.live || {}); else renderBpFlow(data.live || {});
       media = arr((data.live || {}).media);
-    } else if (data.state === "rules") {
-      renderRules(data.rules || {});
-    } else if (data.state === "play") {
-      screenEl.replaceChildren();                       // 試合が始まったら、BAN/PICKの表示は消す
     } else {
-      renderIdle(data);
+      if (data.state === "rules") renderRules(data.rules || {});
+      else if (data.state === "play") screenEl.replaceChildren();          // 試合が始まったら、BAN/PICKの表示は消える
+      else renderIdle(data);
+      stageEl.appendChild(mediaBox);
     }
     setMedia(media);
+    fit();
     document.getElementById("msg").textContent = "";
   }
 
@@ -409,6 +557,7 @@
     return true;
   }
 
+  root.className = "flow";
   if (window.BANPICK_DATA_EMBEDDED) render(window.BANPICK_DATA_EMBEDDED);      // 動作確認用（データを直接埋め込んだとき）
   else if (window.TOURNAMENT_DATA_BASE) load();
   else document.getElementById("msg").textContent = "データの場所が設定されていません。";
