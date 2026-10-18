@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" class="stage">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,8 +12,11 @@
     --chip: #2c3345; --champbg: #3a2c0a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  html, body { margin: 0; background: var(--bg); color: var(--text);
                font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif; }
+  /* 表示は2種類：stage＝横長の画面（OBSの1920x1080など）。1920x1080の固定ステージを、画面に合わせて拡縮する（スクロールなし）
+                  flow＝縦長・狭い画面（スマホなど）。画面の幅に合わせて文字の大きさ・並びが変わり、縦に並べて、スクロールできる */
+  html.stage, html.stage body { height: 100%; overflow: hidden; }
   html[data-bg="transparent"], html[data-bg="transparent"] body { background: transparent; }
 
   /* ════════ 配信用：1920x1080 固定ステージ（ウィンドウに合わせて拡縮） ════════ */
@@ -143,7 +146,7 @@
   .teamcell.empty { border-style: dashed; color: var(--lose); font-weight: 400; font-style: italic; justify-content: center; }
 
   /* ════════ 詳細ページ（?view=details）：通常のスクロール表示 ════════ */
-  body.details { overflow: auto; }
+  html.stage body.details { overflow: auto; }
   body.details #stage { display: none; }
   body:not(.details) #detailsPage { display: none; }
   #detailsPage { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
@@ -165,7 +168,51 @@
   td.num { font-variant-numeric: tabular-nums; }
   .none { color: var(--sub); font-size: 13px; }
   .reason { color: var(--sub); font-size: 12px; margin-top: 8px; }
-</style>
+  /* ════════ flow：縦長・狭い画面（スマホなど）。ラウンドを縦に並べ、幅に合わせて文字を大きくし、スクロールできる ════════ */
+  html.flow { font-size: clamp(15px, 1.5vw, 30px); }
+  @media (max-width: 900px) { html.flow { font-size: clamp(15px, 4vw, 20px); } }
+  html.flow, html.flow body { min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+  html.flow #stage { position: relative; left: auto !important; top: auto !important; width: auto; height: auto;
+                     transform: none !important; display: block; padding: .8em; overflow: visible; background-image: none !important; }
+  html.flow .top { height: auto; flex-wrap: wrap; gap: .3em .8em; padding: .3em 0 .6em; }
+  html.flow .top h1 { font-size: 1.7em; padding-left: .5em; border-left-width: .25em; overflow-wrap: anywhere; }
+  html.flow .top .sub { font-size: .7em; letter-spacing: .15em; }
+  html.flow .bracket { display: flex; flex-direction: column; gap: 1.2em; }
+  html.flow .round, html.flow .round.champ, html.flow .bracket.wide .round.champ { width: 100%; }
+  html.flow .round h2 { height: auto; font-size: 1.1em; margin-bottom: .4em; }
+  html.flow .round h2 small { font-size: .7em; }
+  html.flow .col, html.flow .group { display: block; flex: none; }
+  html.flow .group::after, html.flow .round .match::before, html.flow .round .match::after,
+  html.flow .round.champ .box::before { display: none !important; }
+  html.flow .round .slot { display: block; padding: .25em 0 !important; }
+  html.flow .round .match { border-width: 2px !important; border-radius: .7em !important; }
+  html.flow .round .mhead { display: flex !important; padding: .35em .8em !important; font-size: .8em !important; }
+  html.flow .round .badge { font-size: .8em !important; padding: .1em .7em !important; }
+  html.flow .round .team { font-size: 1.05em !important; padding: .45em .8em !important; line-height: 1.3 !important; gap: .5em !important; }
+  html.flow .round .team .score { font-size: 1.3em !important; min-width: 1.2em !important; }
+  html.flow .round .team .tname { white-space: normal; overflow-wrap: anywhere; }
+  html.flow .round .abbr { display: inline !important; }
+  html.flow .round .dqtag { font-size: .7em !important; }
+  html.flow .round .mfoot { display: flex !important; padding: .4em .8em !important; min-height: 0; font-size: .8em !important; }
+  html.flow .champ .box { padding: 1em; }
+  html.flow .champ .box .trophy { font-size: 3em; }
+  html.flow .champ .box .label { font-size: .8em; }
+  html.flow .champ .box .cname { font-size: 1.4em; }
+  html.flow .nowbar { height: auto; white-space: normal; flex-wrap: wrap; font-size: 1em; padding: .6em .8em; margin: .8em 0; }
+  html.flow .nowbar .next { font-size: .8em; }
+  html.flow .nowbar .item + .item { padding-left: .8em; }
+  html.flow .msg { padding: 3em 0; font-size: 1.1em; }
+  html.flow .regboard { padding-top: 0; gap: .8em; }
+  html.flow .regboard .count { font-size: 1.3em; text-align: center; }
+  html.flow .regboard .count b { font-size: 2.4em; }
+  html.flow .regboard .hint { font-size: .9em; }
+  html.flow .teamgrid { grid-template-columns: repeat(auto-fill, minmax(11em, 1fr)) !important; gap: .5em; }
+  html.flow .teamcell { height: auto !important; font-size: 1em !important; padding: .5em .8em; }
+  html.flow body:not(.details) #detailsPage { display: block; }
+  html.flow #detailsPage { padding: .5em .8em 3em; }
+  html.flow #detailsPage h1 { font-size: 1.2em; }
+  html.flow .dcard { overflow-x: auto; }
+  html.flow table { font-size: .85em; }</style>
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/";</script>
@@ -216,13 +263,23 @@
   // ── 1920x1080 を表示領域いっぱいに拡縮（OBSが1920x1080なら等倍） ──
   function fit() {
     if (DETAILS) return;
+    var st = document.getElementById("stage");
+    // 縦長・狭い画面（スマホなど）は、固定サイズに縮めずに、縦に並べる表示（flow）にする
+    var flowNow = window.innerWidth / Math.max(1, window.innerHeight) < 1.25;
+    document.documentElement.className = flowNow ? "flow" : "stage";
+    if (flowNow) {
+      st.style.transform = ""; st.style.left = ""; st.style.top = "";
+      var tb = IS_SNAPSHOT ? document.getElementById("snapToolbar") : null;
+      st.style.paddingTop = tb ? (tb.offsetHeight + 8) + "px" : "";            // ダウンロード版の上の帯と重ならないように
+      return;
+    }
+    st.style.paddingTop = "";
     var gap = 0;
     if (IS_SNAPSHOT) {
       var toolbar = document.getElementById("snapToolbar");
       gap = toolbar ? toolbar.offsetHeight : 0;    // 折り返し方で高さが変わるので、実際の高さを毎回測る
     }
     var s = Math.min(window.innerWidth / 1920, (window.innerHeight - gap) / 1080) * (IS_SNAPSHOT ? 0.9 : 1);
-    var st = document.getElementById("stage");
     st.style.transform = "scale(" + s + ")";
     st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
     st.style.top = (gap + Math.max(0, (window.innerHeight - gap - 1080 * s) / 2)) + "px";
@@ -591,6 +648,8 @@
     document.getElementById("snapToolbar").style.display = "flex";
     IS_SNAPSHOT = true;
     fit();
+    var tbar = document.getElementById("snapToolbar");
+    if (window.ResizeObserver && tbar) new ResizeObserver(fit).observe(tbar);       // 上の帯の高さが変わったら（折り返しなど）、表の位置も合わせ直す
     var stage = document.getElementById("stage");
     document.getElementById("bgBtn").addEventListener("click", function () {
       document.getElementById("bgFile").click();
