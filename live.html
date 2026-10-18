@@ -83,7 +83,17 @@
   #media > * { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border: 0; }
   html.flow #media { position: fixed; inset: 0; }
   html.flow #media:not(.on) { display: none; }
-  html.flow #media iframe { width: min(100vw, 177.78vh); height: min(100vh, 56.25vw); }       /* YouTubeは16:9のまま、画面に収まる最大の大きさ */
+  /* YouTube：独自のプレーヤー枠（YouTubeの再生画面は、そのまま出さない）。16:9のまま画面に収まる最大の大きさにして、枠より外は切る。
+     中のYouTubeの画面は、少し拡大して、上のタイトル・チャンネルのアイコン／下の透かしなどが出る縁を、枠の外に押し出す。
+     再生中以外（読み込み・一時停止・終了）は、黒い幕で全部隠す。クリックも受け付けない */
+  .ytwrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: transparent; pointer-events: none; }
+  .ytbox { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; aspect-ratio: 16 / 9;
+           overflow: hidden; background: #000; }
+  html.flow .ytbox { max-width: calc(100vh * 16 / 9); }
+  .ytbox iframe, .ytbox .ythost { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; pointer-events: none;
+                                   transform: scale(var(--ytzoom, 1.2)); transform-origin: 50% 50%; }
+  .ytcover { position: absolute; inset: 0; background: #000; opacity: 1; transition: opacity .7s; pointer-events: none; z-index: 2; }
+  .ytcover.off { opacity: 0; }
   /* ═══ flow：スマホなど狭い画面のBAN/PICKの画面（幅に合わせて並べる） ═══ */
   .cp { max-width: 70em; margin: 0 auto; padding: .8em; display: flex; flex-direction: column; gap: .8em; }
   .cp .box { background: var(--panel); border: 2px double var(--accent); padding: .7em .9em; }
@@ -244,6 +254,49 @@
     }
   }
 
+  // ── YouTube：独自のプレーヤー（YouTubeのIFrame Player APIで再生だけして、ボタン・タイトル・チャンネルのアイコン・おすすめなどは出さない） ──
+  var ytLoading = null;
+  function loadYT() {
+    if (ytLoading) return ytLoading;
+    ytLoading = new Promise(function (resolve) {
+      if (window.YT && window.YT.Player) { resolve(); return; }
+      var prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () { if (prev) prev(); resolve(); };
+      var s = document.createElement("script");
+      s.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(s);
+    });
+    return ytLoading;
+  }
+  function youtubePlayer(id) {
+    var wrap = el("div", "ytwrap");
+    var box = el("div", "ytbox");
+    var host = el("div", "ythost");
+    var cover = el("div", "ytcover");
+    box.appendChild(host); box.appendChild(cover); wrap.appendChild(box);
+    loadYT().then(function () {
+      var timer = null;
+      function show() { clearTimeout(timer); timer = setTimeout(function () { cover.classList.add("off"); }, 1200); }   // 再生が始まって、少したってから幕を上げる
+      function hide() { clearTimeout(timer); cover.classList.remove("off"); }
+      /* eslint-disable-next-line no-new */
+      new YT.Player(host, {
+        videoId: id, width: "100%", height: "100%",
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0, playsinline: 1,
+                      mute: 1, loop: 1, playlist: id, cc_load_policy: 0, origin: location.origin },
+        events: {
+          onReady: function (e) { e.target.mute(); e.target.playVideo(); },
+          onStateChange: function (e) {
+            if (e.data === 1) show();                                   // 再生中
+            else if (e.data === 0) { hide(); e.target.seekTo(0); e.target.playVideo(); }   // 終わったら、おすすめ画面を出さずに、最初から
+            else hide();                                                // 読み込み・一時停止など：全部隠す
+          },
+          onError: function () { hide(); }
+        }
+      });
+    });
+    return wrap;
+  }
+
   // ── 画像・動画・YouTube を1つの要素にする ──
   function mediaEl(m) {
     if (m.kind === "image") {
@@ -256,16 +309,7 @@
       v.play && v.play().catch(function () {});
       return v;
     }
-    if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) {
-      var f = document.createElement("iframe");
-      // 再生ボタンなどの操作部品を出さない設定（controls=0 など）で埋め込む。クリックも受け付けない
-      f.src = "https://www.youtube-nocookie.com/embed/" + m.id + "?autoplay=1&mute=1&controls=0&loop=1&playlist=" + m.id +
-              "&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3&showinfo=0";
-      f.allow = "autoplay; encrypted-media"; f.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
-      f.tabIndex = -1;
-      return f;
-    }
-    return null;
+    if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) return youtubePlayer(m.id);    return null;
   }
 
   // ── 背景の画像・動画（設定されていれば。内容が変わったときだけ入れ替える） ──
