@@ -62,16 +62,27 @@
   .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
   .center .map b { color: var(--text); }
 
-  /* ── ルール表示（「試合準備開始」が押されるまで） ── */
-  .rules { position: absolute; left: 230px; top: 90px; width: 1460px; height: 900px; background: var(--panel);
-           border: 3px double var(--accent); padding: 30px 46px; overflow: hidden; }
-  .rules .k { font-size: 24px; color: var(--accent); font-weight: 800; letter-spacing: .2em; }
-  .rules h1 { margin: 6px 0 4px; font-size: 52px; line-height: 1.15; }
-  .rules .next { font-size: 28px; color: var(--sub); margin-bottom: 18px; }
-  .rules h2 { margin: 18px 0 6px; font-size: 26px; color: var(--accent); border-left: 8px solid var(--accent); padding-left: 14px; }
-  .rules li { font-size: 28px; line-height: 1.55; list-style: none; }
-  .rules ul { margin: 0; padding: 0 0 0 22px; }
-  .idle { position: absolute; left: 0; right: 0; top: 460px; text-align: center; font-size: 46px; font-weight: 800;
+  /* ── ルール表示（「試合準備開始」が押されるまで／同時進行のラウンド／対戦カード待ち） ── */
+  .rules { position: absolute; left: 110px; top: 60px; width: 1700px; height: 960px; background: var(--panel);
+           border: 3px double var(--accent); padding: 34px 50px; overflow: hidden; display: flex; flex-direction: column; }
+  .rules .head { display: flex; align-items: center; gap: 22px; }
+  .rules .head h1 { margin: 0; font-size: 84px; line-height: 1.05; letter-spacing: .04em; }
+  .rules .pill { font-size: 34px; font-weight: 800; padding: 4px 22px; border-radius: 999px; border: 3px solid var(--accent);
+                 color: var(--accent); white-space: nowrap; }
+  .rules .pill.mode { margin-left: auto; color: var(--text); border-color: var(--line); background: var(--chip); }
+  .rules .vs { margin-top: 10px; font-size: 46px; font-weight: 800; }
+  .rules .vs small { font-size: 28px; color: var(--sub); font-weight: 600; margin-left: 18px; }
+  .rules .note { margin-top: 14px; padding: 12px 22px; font-size: 28px; line-height: 1.4; border-left: 8px solid var(--accent);
+                 background: var(--chip); }
+  .rules .cols { margin-top: 20px; flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+  .rules h2 { margin: 0 0 10px; font-size: 32px; color: var(--accent); letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+  .rules .sec { margin-bottom: 22px; }
+  .rules .row { display: flex; gap: 16px; align-items: baseline; padding: 7px 0; font-size: 30px; line-height: 1.45; }
+  .rules .row .lb { flex: none; min-width: 190px; font-weight: 800; color: var(--accent); }
+  .rules .row .tx { flex: 1; min-width: 0; }
+  .rules ol { margin: 0; padding: 0 0 0 44px; }
+  .rules ol li { font-size: 30px; line-height: 1.55; }
+  .rules .none { font-size: 28px; color: var(--sub); }  .idle { position: absolute; left: 0; right: 0; top: 460px; text-align: center; font-size: 46px; font-weight: 800;
           letter-spacing: .08em; color: var(--sub); }
 
   /* ── キャラに対応する画像・動画（中央の空いた場所） ── */
@@ -304,24 +315,50 @@
   function renderRules(r) {
     var root = el("div");
     var box = el("div", "rules");
-    box.appendChild(el("div", "k", "NEXT MATCH"));
-    box.appendChild(el("h1", null, r.match || ""));
-    box.appendChild(el("div", "next", "次に行う枠：" + (r.next || "")));
-    function section(title, lines) {
-      lines = arr(lines);
-      if (!lines.length) return;
-      box.appendChild(el("h2", null, title));
-      var ul = el("ul");
-      lines.forEach(function (t) { ul.appendChild(el("li", null, t)); });
-      box.appendChild(ul);
+    var head = el("div", "head");
+    head.appendChild(el("h1", null, r.round || ""));
+    head.appendChild(el("span", "pill", r.format || ""));
+    head.appendChild(el("span", "pill mode", r.mode === "sequential" ? "順番進行（1試合ずつ）" : "同時進行"));
+    box.appendChild(head);
+    if (r.match) {
+      var vs = el("div", "vs", r.match);
+      if (r.next) vs.appendChild(el("small", null, "次に行う枠：" + r.next));
+      box.appendChild(vs);
     }
-    section("BAN/PICKの手順", r.steps);
-    section("このラウンドのルール", r.round);
-    section("全試合に適用されるルール", r.global);
+    if (r.note) box.appendChild(el("div", "note", r.note));
+    var cols = el("div", "cols");
+    function section(parent, title, body) {
+      var s = el("div", "sec");
+      s.appendChild(el("h2", null, title));
+      s.appendChild(body);
+      parent.appendChild(s);
+    }
+    function rows(list, emptyText) {
+      list = arr(list);
+      var d = el("div");
+      if (!list.length) d.appendChild(el("div", "none", emptyText));
+      list.forEach(function (x) {
+        var row = el("div", "row");
+        row.appendChild(el("span", "lb", x.label || ""));
+        row.appendChild(el("span", "tx", x.text || ""));
+        d.appendChild(row);
+      });
+      return d;
+    }
+    var left = el("div"), right = el("div");
+    section(left, "このラウンドのルール", rows(r.round_rows, "特別なルールはありません"));
+    var steps = arr(r.steps);
+    if (steps.length) {
+      var ol = el("ol");
+      steps.forEach(function (t) { ol.appendChild(el("li", null, t)); });
+      section(left, "BAN/PICKの手順", ol);
+    }
+    section(right, "全試合に共通のルール", rows(r.global_rows, "特別なルールはありません"));
+    cols.appendChild(left); cols.appendChild(right);
+    box.appendChild(cols);
     root.appendChild(box);
     screenEl.replaceChildren(root);
   }
-
   function renderIdle(data) {
     var root = el("div");
     root.appendChild(el("div", "idle", data.title || ""));
