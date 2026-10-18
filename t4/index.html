@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トーナメント表</title>
+<style>
+  :root {
+    --bg: #12141a; --panel: #1b1f29; --panel2: #232836; --text: #eceff6; --sub: #98a1b5;
+    --line: #3a4258; --accent: #ffb020; --win: #2ecc71; --lose: #6b7387; --hot: #ff5c7a;
+    --ext: #b388ff; --warn: #ffb020;
+    --chip: #2c3345; --champbg: #3a2c0a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+               font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif; }
+  html[data-bg="transparent"], html[data-bg="transparent"] body { background: transparent; }
+
+  /* ════════ 配信用：1920x1080 固定ステージ（ウィンドウに合わせて拡縮） ════════ */
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+           display: flex; flex-direction: column; padding: 34px 60px 26px; overflow: hidden;
+           background-repeat: no-repeat; background-position: center; background-size: 100% 100%; }
+
+  /* ════════ ダウンロード版だけに出る、ダウンロード状況の案内とPNG保存・背景画像の設定 ════════ */
+  /* トーナメント表本体（#stage）は90%に縮小して下にずらして表示し、その分ここに上の帯としてスペースを空ける
+     （実際の高さは折り返し方次第で変わるので、JS側の fit() が offsetHeight を毎回測って隙間を合わせる）。 */
+  #snapToolbar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 50; gap: 14px;
+                 align-items: center; justify-content: center; font-size: 14px; flex-wrap: wrap;
+                 background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,0)); padding: 12px 24px; }
+  #snapToolbar .snapnote { color: var(--sub); background: rgba(0,0,0,.55); padding: 6px 12px; border-radius: 8px;
+                           max-width: 640px; line-height: 1.5; }
+  #snapToolbar button { font: inherit; font-size: 14px; cursor: pointer; color: var(--text); background: var(--panel);
+                        border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; white-space: nowrap; }
+  #snapToolbar button:hover { background: var(--panel2); }
+  .top { height: 92px; flex: none; display: flex; align-items: center; justify-content: space-between; }
+  .top h1 { margin: 0; font-size: 56px; letter-spacing: .06em; border-left: 10px solid var(--accent); padding-left: 22px; }
+  .top .sub { font-size: 22px; color: var(--sub); letter-spacing: .22em; }
+
+  .bracket { --rw: 460px; flex: 1; min-height: 0; display: flex; gap: 40px; }
+  .round { display: flex; flex-direction: column; width: var(--rw); flex: none; }
+  .round.champ { width: 300px; }
+  .bracket.wide .round.champ { width: 260px; }
+  .round h2 { margin: 0; height: 44px; font-size: 24px; color: var(--sub); font-weight: 600; letter-spacing: .1em;
+              display: flex; gap: 12px; align-items: center; }
+  .round h2 small { font-size: 15px; padding: 1px 10px; border: 1px solid var(--line); border-radius: 999px; }
+  .col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .group { flex: 1; display: flex; flex-direction: column; position: relative; min-height: 0; }
+  .group::after { content: ""; position: absolute; right: -20px; width: 20px; top: 25%; bottom: 25%;
+                  border: 3px solid var(--line); border-left: 0; pointer-events: none; }
+  .slot { flex: 1; display: flex; align-items: center; padding: 6px 0; min-height: 0; }
+
+  .match { position: relative; width: 100%; background: var(--panel); border: 2px solid var(--line);
+           border-radius: 14px; overflow: hidden; }
+  .round:not(.first) .match::before, .round.champ .box::before {
+    content: ""; position: absolute; left: -22px; width: 22px; top: 50%; border-top: 3px solid var(--line); }
+  .round.final .match::after { content: ""; position: absolute; right: -22px; width: 22px; top: 50%;
+                               border-top: 3px solid var(--line); }
+  /* 1回戦が5試合以上（9〜16チーム）のときは、その列だけカードを小さくする */
+  .round.dense .slot { padding: 3px 0; }
+  .round.dense .mhead { padding: 2px 12px; font-size: 12px; }
+  .round.dense .badge { font-size: 11px; padding: 0 8px; }
+  .round.dense .team { padding: 3px 12px; font-size: 19px; }
+  .round.dense .team .score { font-size: 22px; }
+  .round.dense .mfoot { display: none; }
+  .round.dense .dqtag { font-size: 11px; }
+  /* 1回戦が9試合以上（17〜32チーム）：カード1枚を約45pxにする（試合ヘッダーは省く） */
+  .round.xdense .slot { padding: 2px 0; }
+  .round.xdense .match { border-width: 1px; border-radius: 8px; }
+  .round.xdense .mhead { display: none; }
+  .round.xdense .team { padding: 2px 10px; font-size: 15px; line-height: 1.15; gap: 6px; }
+  .round.xdense .team .score { font-size: 16px; min-width: 18px; }
+  .round.xdense .abbr { display: none; }
+  .round.xdense .team.win .tname::after { content: ""; }
+  /* 17試合以上（33チーム〜）：さらに小さく */
+  .round.xxdense .slot { padding: 1px 0; }
+  .round.xxdense .team { padding: 0 6px; font-size: 10px; line-height: 1.1; gap: 4px; }
+  .round.xxdense .team .score { font-size: 11px; min-width: 12px; }
+  .mhead { display: flex; justify-content: space-between; align-items: center; padding: 6px 16px;
+           font-size: 16px; color: var(--sub); background: var(--panel2); letter-spacing: .05em; }
+  .badge { padding: 2px 12px; border-radius: 999px; font-size: 15px; font-weight: 700; white-space: nowrap;
+           background: var(--chip); color: var(--sub); }
+  .st-in_progress { border-color: rgba(255,92,122,.55); }
+  .st-in_progress .badge { background: rgba(255,92,122,.2); color: var(--hot); }
+  .st-in_progress .badge::before { content: "● "; animation: blink 1.2s infinite; }
+  .st-extension .badge { background: rgba(179,136,255,.2); color: var(--ext); }
+  .st-undecided .badge { background: rgba(255,176,32,.2); color: var(--warn); }
+  .st-finished .badge { background: rgba(46,204,113,.18); color: var(--win); }
+  .by-dq .badge { background: rgba(255,92,122,.2); color: var(--hot); }
+  @keyframes blink { 50% { opacity: .2; } }
+
+  .team { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--line);
+          font-size: 27px; font-weight: 700; }
+  .mhead + .team { border-top: 0; }
+  .team .tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team .score { font-size: 34px; line-height: 1.1; font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+  .team.win { background: linear-gradient(90deg, rgba(46,204,113,.24), transparent 80%); box-shadow: inset 6px 0 0 var(--win); }
+  .team.win .tname::after { content: " ✔"; color: var(--win); }
+  .team.lose { color: var(--lose); opacity: .5; }
+  .team.tbd .tname { color: var(--sub); font-weight: 400; font-style: italic; }
+  .team.dq .tname { text-decoration: line-through; }
+  .team.bye .tname { color: var(--sub); font-weight: 400; font-style: italic; }
+  .st-finished.is-bye { border-style: dashed; }
+  .abbr { font-size: .62em; font-weight: 600; color: var(--sub); letter-spacing: .06em; margin-left: 6px; }
+  .dqtag { font-size: 15px; font-weight: 700; background: var(--hot); color: #fff; padding: 1px 10px; border-radius: 6px; }
+  .mfoot { min-height: 34px; padding: 6px 16px 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+           border-top: 1px dashed var(--line); font-size: 15px; color: var(--sub); }
+  .chip { padding: 1px 9px; border-radius: 6px; background: var(--chip); color: var(--sub); font-variant-numeric: tabular-nums; }
+  .chip b { color: var(--text); }
+  .chip.wip { background: transparent; border: 1px dashed var(--line); }
+  .chip.ext { background: rgba(179,136,255,.18); color: var(--ext); font-weight: 700; }
+  .chip.adm { background: rgba(255,176,32,.18); color: var(--warn); font-weight: 700; }
+
+  .champ .box { position: relative; text-align: center; padding: 36px 16px; border-radius: 16px; width: 100%;
+                border: 2px solid var(--accent); background: linear-gradient(160deg, var(--champbg), var(--panel)); }
+  .champ .box .trophy { font-size: 72px; line-height: 1; }
+  .champ .box .label { font-size: 16px; color: var(--accent); letter-spacing: .3em; margin: 10px 0; }
+  .champ .box .cname { font-size: 34px; font-weight: 800; word-break: break-all; }
+  .champ .box.empty { border-color: var(--line); background: var(--panel); color: var(--sub); }
+  .champ .box.empty .label { color: var(--sub); }
+
+  .nowbar { height: 64px; flex: none; margin-top: 10px; display: flex; gap: 16px; align-items: center;
+            background: var(--panel); border: 2px solid var(--line); border-radius: 12px; padding: 0 22px;
+            font-size: 24px; overflow: hidden; white-space: nowrap; }
+  .nowbar .lbl { font-weight: 800; letter-spacing: .12em; color: var(--hot); }
+  .nowbar .item { display: flex; gap: 10px; align-items: baseline; }
+  .nowbar .item + .item { padding-left: 20px; border-left: 2px solid var(--line); }
+  .nowbar .next { color: var(--sub); font-size: 20px; }
+  .nowbar.champion { border-color: var(--accent); color: var(--accent); font-weight: 800; justify-content: center; }
+  .nowbar.idle { color: var(--sub); justify-content: center; }
+
+  .msg { padding: 120px 0; text-align: center; color: var(--sub); font-size: 28px; width: 100%; }
+
+  /* チーム登録受付中（抽選前） */
+  .regboard { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 26px; padding-top: 14px; }
+  .regboard .count { font-size: 44px; font-weight: 800; letter-spacing: .06em; }
+  .regboard .count b { color: var(--accent); font-size: 96px; font-variant-numeric: tabular-nums; margin: 0 8px; }
+  .regboard .hint { font-size: 24px; color: var(--sub); }
+  .teamgrid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .teamcell { border: 2px solid var(--line); border-radius: 12px; background: var(--panel); padding: 12px 18px;
+              display: flex; align-items: center; gap: 12px; height: 66px; font-size: 26px; font-weight: 700; overflow: hidden; }
+  .teamcell .ab { font-size: .7em; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 0 8px; }
+  .teamcell .tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .teamcell.empty { border-style: dashed; color: var(--lose); font-weight: 400; font-style: italic; justify-content: center; }
+
+  /* ════════ 詳細ページ（?view=details）：通常のスクロール表示 ════════ */
+  body.details { overflow: auto; }
+  body.details #stage { display: none; }
+  body:not(.details) #detailsPage { display: none; }
+  #detailsPage { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
+  #detailsPage h1 { font-size: 26px; margin: 0 0 6px; }
+  .dcard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .dcard > .dhead { padding: 10px 14px; background: var(--panel2); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .dhead .dtitle { font-weight: 700; }
+  .dhead .dsub { color: var(--sub); font-size: 12px; }
+  .dbody { padding: 6px 14px 12px; }
+  .dset { margin-top: 10px; }
+  .dset .sh { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-weight: 700; }
+  .dset .sh .res { font-weight: 600; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--sub); }
+  .dset .sh .res.w { background: rgba(46,204,113,.16); color: var(--win); }
+  .dset .sh .tot { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--sub); font-weight: 400; }
+  .tag-ext { color: var(--ext); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--sub); font-weight: 500; font-size: 11px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .none { color: var(--sub); font-size: 13px; }
+  .reason { color: var(--sub); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_URL = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/t4.json";</script>
+
+<div id="stage">
+  <div class="top">
+    <h1 id="title">トーナメント表</h1>
+    <div class="sub" id="sub">SINGLE ELIMINATION</div>
+  </div>
+  <div id="bracket" class="bracket"></div>
+  <div id="nowbar" class="nowbar idle"></div>
+</div>
+
+<div id="detailsPage">
+  <h1 id="dtitle">試合結果の詳細</h1>
+  <div class="reason" id="updated"></div>
+  <div id="details"></div>
+</div>
+
+<div id="snapToolbar">
+  <div class="snapnote">🕒 これはダウンロード時点のスナップショットです。自動更新はされません。最新の状態を見るには、
+    BOTでもう一度「トーナメント表をブラウザで表示」からダウンロードし直してください。</div>
+  <button id="bgBtn" type="button">🖼 背景画像を設定</button>
+  <button id="pngBtn" type="button">📷 PNGとして保存</button>
+  <input id="bgFile" type="file" accept="image/*" style="display:none">
+</div>
+
+<!-- Botが自動出力する tournament.js（window.TOURNAMENT_DATA）を3秒おきに読み直す -->
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var DETAILS = params.get("view") === "details";
+  if (DETAILS) document.body.classList.add("details");
+  if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
+  var POLL_MS = 3000, last = null;
+  var IS_SNAPSHOT = false;   // ダウンロードして開いた単体HTMLのときだけtrue（#stageを90%に縮小して下にずらす）
+  var BADGE = { pending: "対戦相手待ち", ready: "未試合", in_progress: "試合中", extension: "延長戦",
+                undecided: "判断待ち", finished: "勝敗確定" };
+  var ROUNDS = 3;   // 現在の大会のラウンド数（render で更新）
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // ── 1920x1080 を表示領域いっぱいに拡縮（OBSが1920x1080なら等倍） ──
+  function fit() {
+    if (DETAILS) return;
+    var gap = 0;
+    if (IS_SNAPSHOT) {
+      var toolbar = document.getElementById("snapToolbar");
+      gap = toolbar ? toolbar.offsetHeight : 0;    // 折り返し方で高さが変わるので、実際の高さを毎回測る
+    }
+    var s = Math.min(window.innerWidth / 1920, (window.innerHeight - gap) / 1080) * (IS_SNAPSHOT ? 0.9 : 1);
+    var st = document.getElementById("stage");
+    st.style.transform = "scale(" + s + ")";
+    st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
+    st.style.top = (gap + Math.max(0, (window.innerHeight - gap - 1080 * s) / 2)) + "px";
+  }
+  window.addEventListener("resize", fit);
+  fit();
+
+  // ── 大会のテーマカラー：ベース色（背景）とアクセント色から、パネル・線・文字の色を作る（未設定なら標準の色） ──
+  function hex2rgb(h) { var n = parseInt(h.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function rgb2css(c) { return "rgb(" + c.map(function (v) { return Math.round(v); }).join(",") + ")"; }
+  function mix(a, b, t) { return [0, 1, 2].map(function (i) { return a[i] + (b[i] - a[i]) * t; }); }
+  function lum(c) {
+    var f = c.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+  }
+  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--lose", "--chip", "--champbg"];
+  function applyTheme(th) {
+    var root = document.documentElement.style;
+    THEME_VARS.forEach(function (p) { root.removeProperty(p); });
+    if (!th || !th.base || !th.accent) return;
+    var base = hex2rgb(th.base), acc = hex2rgb(th.accent);
+    var text = lum(base) > 0.45 ? [22, 26, 38] : [236, 239, 246];            // 明るい背景なら暗い文字、暗い背景なら明るい文字
+    root.setProperty("--bg", th.base);
+    root.setProperty("--panel", rgb2css(mix(base, text, 0.07)));
+    root.setProperty("--panel2", rgb2css(mix(base, text, 0.13)));
+    root.setProperty("--line", rgb2css(mix(base, text, 0.30)));
+    root.setProperty("--chip", rgb2css(mix(base, text, 0.16)));
+    root.setProperty("--text", rgb2css(text));
+    root.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
+    root.setProperty("--lose", rgb2css(mix(base, text, 0.50)));
+    root.setProperty("--accent", th.accent);
+    root.setProperty("--champbg", rgb2css(mix(base, acc, 0.28)));
+  }
+
+  function sideName(m, side) { var t = m["team_" + side]; return t ? t.name : "未定"; }
+
+  // ── ステージ（配信用） ──
+  function teamRow(m, side) {
+    var t = m["team_" + side];
+    var cls = "team";
+    if (!t) cls += " tbd";
+    else if (t.bye) cls += " bye";
+    else if (m.winner === side) cls += " win";
+    else if (m.winner) cls += " lose";
+    if (t && t.dq) cls += " dq";
+    var row = el("div", cls);
+    var nm = el("span", "tname", t ? t.name : "未定");
+    if (t && !t.bye && t.abbr) nm.appendChild(el("span", "abbr", t.abbr));
+    row.appendChild(nm);
+    if (t && t.dq) row.appendChild(el("span", "dqtag", "失格"));
+    var showScore = t && !t.bye && m.team_a && m.team_b && !m.bye;
+    row.appendChild(el("span", "score", showScore ? String(m.set_wins[side]) : ""));
+    return row;
+  }
+
+  function chip(cls, a, b, winSide) {
+    var c = el("span", "chip " + cls);
+    var x = el(winSide === "a" ? "b" : "span", null, String(a));
+    var y = el(winSide === "b" ? "b" : "span", null, String(b));
+    c.appendChild(x); c.appendChild(document.createTextNode("-")); c.appendChild(y);
+    return c;
+  }
+
+  function matchCard(m) {
+    var card = el("div", "match st-" + m.status + (m.by_dq ? " by-dq" : "") + (m.bye ? " is-bye" : ""));
+    var head = el("div", "mhead");
+    var label = m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1);
+    head.appendChild(el("span", null, m.bye ? label : label + " · " + m.format));
+    head.appendChild(el("span", "badge", m.bye && m.status === "finished" ? "不戦勝" :
+                                         m.by_dq && m.status === "finished" ? "失格勝ち" : BADGE[m.status]));
+    card.appendChild(head);
+    card.appendChild(teamRow(m, "a"));
+    card.appendChild(teamRow(m, "b"));
+    if (m.team_a && m.team_b && !m.bye && (m.sets.length || m.extension_needed || m.status === "undecided")) {
+      var f = el("div", "mfoot");
+      m.sets.forEach(function (s) {
+        if (s.complete) {
+          var c = chip("", s.points.a, s.points.b, s.result === "draw" ? null : s.result);
+          c.insertBefore(document.createTextNode("S" + s.set_no + "　"), c.firstChild);
+          f.appendChild(c);
+        } else {
+          f.appendChild(el("span", "chip wip", "S" + s.set_no + "　…"));
+        }
+      });
+      if (m.extension_needed) {
+        var ex = m.extension || {};
+        f.appendChild(el("span", "chip ext", "延長戦" + (ex.winner ? " ✔" : "")));
+      }
+      if (m.status === "undecided") f.appendChild(el("span", "chip adm", "管理者判断待ち"));
+      else if (m.decided_by_admin && !m.by_dq) f.appendChild(el("span", "chip adm", "管理者判断"));
+      card.appendChild(f);
+    }
+    return card;
+  }
+
+  function slot(node) { var s = el("div", "slot"); s.appendChild(node); return s; }
+  function group(nodes) { var g = el("div", "group"); nodes.forEach(function (n) { g.appendChild(slot(n)); }); return g; }
+  function roundCol(cls, title, fmt, body) {
+    var c = el("section", "round " + cls);
+    var h = el("h2", null, title);
+    if (fmt) h.appendChild(el("small", null, fmt));
+    c.appendChild(h);
+    var col = el("div", "col");
+    body.forEach(function (b) { col.appendChild(b); });
+    c.appendChild(col);
+    return c;
+  }
+
+  function renderNow(data) {
+    var bar = document.getElementById("nowbar");
+    bar.replaceChildren();
+    var live = data.matches.filter(function (m) {
+      return m.team_a && m.team_b && !m.bye && (m.status === "in_progress" || m.status === "extension" || m.status === "undecided");
+    });
+    if (data.phase === "registration") {
+      bar.className = "nowbar idle";
+      bar.textContent = "チーム登録受付中　" + data.registered_teams + " / " + data.team_count + " チーム";
+    } else if (data.champion) {
+      bar.className = "nowbar champion";
+      bar.textContent = "🏆 優勝　" + data.champion.name;
+    } else if (live.length) {
+      bar.className = "nowbar";
+      bar.appendChild(el("span", "lbl", "NOW"));
+      live.slice(0, 3).forEach(function (m) {
+        var it = el("span", "item");
+        it.appendChild(el("span", null, sideName(m, "a") + " vs " + sideName(m, "b")));
+        var nx = m.status === "undecided" ? "管理者判断待ち" : (m.next ? "次：" + m.next : "");
+        if (nx) it.appendChild(el("span", "next", nx));
+        bar.appendChild(it);
+      });
+    } else {
+      bar.className = "nowbar idle";
+      bar.textContent = "次の試合をお待ちください";
+    }
+  }
+
+  // ── 詳細ページ ──
+  function halfRow(h) {
+    var tr = el("tr");
+    tr.appendChild(el("td", null, h.half_label));
+    tr.appendChild(el("td", null, h.hunter.name));
+    tr.appendChild(el("td", "num", h.hangs + "吊り　" + h.hunter_points + "pt"));
+    tr.appendChild(el("td", null, h.survivor.name));
+    tr.appendChild(el("td", "num", h.escapes + "逃げ　" + h.survivor_points + "pt"));
+    tr.appendChild(el("td", "num", h.time || ""));
+    return tr;
+  }
+  function halvesTable(halves) {
+    var t = el("table"), thead = el("thead"), hr = el("tr");
+    ["", "ハンター", "吊り", "サバイバー", "逃げ", "時間"].forEach(function (x) { hr.appendChild(el("th", null, x)); });
+    thead.appendChild(hr); t.appendChild(thead);
+    var tb = el("tbody");
+    halves.forEach(function (h) { tb.appendChild(halfRow(h)); });
+    t.appendChild(tb);
+    return t;
+  }
+  function detailCard(m) {
+    var c = el("div", "dcard");
+    var head = el("div", "dhead");
+    head.appendChild(el("span", "dtitle", m.round_name + "　" + sideName(m, "a") + " vs " + sideName(m, "b")));
+    head.appendChild(el("span", "dsub", m.format + " · " + m.status_label));
+    if (m.winner) head.appendChild(el("span", "dsub", "勝者：" + sideName(m, m.winner) + "（" + m.reason + "）"));
+    c.appendChild(head);
+    var body = el("div", "dbody");
+    m.sets.forEach(function (s) {
+      var box = el("div", "dset"), sh = el("div", "sh");
+      sh.appendChild(el("span", null, "第" + s.set_no + "セット"));
+      if (s.complete) {
+        var res = s.result === "draw" ? "引き分け" : sideName(m, s.result) + " 勝利";
+        sh.appendChild(el("span", "res" + (s.result === "draw" ? "" : " w"), res));
+        sh.appendChild(el("span", "tot", sideName(m, "a") + " " + s.points.a + " - " + s.points.b + " " + sideName(m, "b")));
+      } else {
+        sh.appendChild(el("span", "res", "前半戦のみ"));
+      }
+      box.appendChild(sh);
+      box.appendChild(halvesTable(s.halves));
+      body.appendChild(box);
+    });
+    if (m.extension) {
+      var eb = el("div", "dset"), eh = el("div", "sh");
+      eh.appendChild(el("span", "tag-ext", "延長戦"));
+      if (m.extension.winner) eh.appendChild(el("span", "res w", sideName(m, m.extension.winner) + " 勝利"));
+      else if (m.extension.undecided) eh.appendChild(el("span", "res", "時間まで同一・管理者判断待ち"));
+      else if (m.extension.need_time) eh.appendChild(el("span", "res", "時間の入力待ち"));
+      eb.appendChild(eh);
+      if (m.extension.halves.length) eb.appendChild(halvesTable(m.extension.halves));
+      if (m.extension.reason) eb.appendChild(el("div", "reason", m.extension.reason));
+      body.appendChild(eb);
+    }
+    if (!m.sets.length && !m.extension) body.appendChild(el("div", "none", m.by_dq ? "失格により確定（結果の登録なし）" : "まだ結果は登録されていません。"));
+    c.appendChild(body);
+    return c;
+  }
+
+  // チーム登録受付中（抽選前）の画面
+  function renderRegistration(data, bracket) {
+    bracket.className = "regboard";
+    var count = el("div", "count");
+    count.appendChild(document.createTextNode("チーム登録受付中"));
+    count.appendChild(el("b", null, String(data.registered_teams)));
+    count.appendChild(document.createTextNode("/ " + data.team_count + " チーム"));
+    bracket.appendChild(count);
+    bracket.appendChild(el("div", "hint", "全チームがそろうと、組み合わせを抽選します"));
+    var grid = el("div", "teamgrid");
+    // 多いチームでも1画面に収まるよう、7行までに収まる列数にする（16チーム以下は4列のまま）
+    var cols = Math.max(4, Math.ceil(data.team_count / 7));
+    grid.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
+    var cellH = cols <= 5 ? 66 : cols <= 8 ? 46 : 32;
+    var fs = cols <= 5 ? 26 : cols <= 8 ? 19 : 14;
+    for (var i = 0; i < data.team_count; i++) {
+      var t = data.teams[i];
+      var cell = el("div", "teamcell" + (t ? "" : " empty"));
+      cell.style.height = cellH + "px";
+      cell.style.fontSize = fs + "px";
+      if (t) { cell.appendChild(el("span", "ab", t.abbr)); cell.appendChild(el("span", "tn", t.name)); }
+      else cell.textContent = "募集中";
+      grid.appendChild(cell);
+    }
+    bracket.appendChild(grid);
+  }
+
+  // トーナメント表（ラウンド数・試合数は大会ごとに変わる）
+  function renderBracket(data, bracket) {
+    var rounds = data.rounds;
+    ROUNDS = rounds.length;
+    var byRound = {};
+    data.matches.forEach(function (m) { (byRound[m.round] = byRound[m.round] || []).push(m); });
+    bracket.className = "bracket" + (ROUNDS >= 4 ? " wide" : "");
+    // ラウンドが増えるほど列を細くして、1920px（余白を除いて1800px）に収める。5ラウンド＝17〜32チーム、6ラウンド＝33〜64チーム
+    var champW = ROUNDS >= 4 ? 260 : 300, gap = ROUNDS >= 6 ? 24 : 40;
+    var colW = Math.floor((1800 - champW - gap * ROUNDS) / ROUNDS);
+    bracket.style.gap = gap + "px";
+    bracket.style.setProperty("--rw", (ROUNDS <= 2 ? 560 : Math.min(460, colW)) + "px");
+    rounds.forEach(function (rd) {
+      var ms = byRound[rd.round] || [];
+      var isFinal = rd.round === ROUNDS;
+      var body = [];
+      if (isFinal) {
+        ms.forEach(function (m) { body.push(slot(matchCard(m))); });
+      } else {
+        for (var i = 0; i < ms.length; i += 2) {
+          body.push(group(ms.slice(i, i + 2).map(matchCard)));      // 2試合ずつ束ねて次のラウンドへ線をつなぐ
+        }
+      }
+      var cls = "r" + rd.round + (rd.round === 1 ? " first" : "") + (isFinal ? " final" : "") +
+                (ms.length > 16 ? " dense xdense xxdense" : ms.length > 8 ? " dense xdense" : ms.length > 4 ? " dense" : "");
+      bracket.appendChild(roundCol(cls, isFinal ? "決勝" : rd.name, rd.format, body));
+    });
+    var box = el("div", "box" + (data.champion ? "" : " empty"));
+    box.appendChild(el("div", "trophy", "🏆"));
+    box.appendChild(el("div", "label", "CHAMPION"));
+    box.appendChild(el("div", "cname", data.champion ? data.champion.name : "未定"));
+    bracket.appendChild(roundCol("champ", "優勝", "", [slot(box)]));
+  }
+
+  function render(data) {
+    if (!data) return;
+    document.getElementById("updated").textContent = "更新 " + (data.generated_at || "").replace("T", " ").slice(0, 19);
+    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme]);
+    if (sig === last) return;
+    last = sig;
+    applyTheme(data.theme);
+    var title = data.title || "トーナメント表";
+    document.getElementById("title").textContent = title;
+    document.getElementById("dtitle").textContent = title + "　試合結果の詳細";
+    document.title = title;
+    document.getElementById("sub").textContent =
+      data.team_count ? "SINGLE ELIMINATION · " + data.team_count + " TEAMS" : "SINGLE ELIMINATION";
+
+    var bracket = document.getElementById("bracket");
+    bracket.replaceChildren();
+    var det = document.getElementById("details");
+    det.replaceChildren();
+
+    if (data.phase === "none" || !data.rounds || !data.rounds.length) {
+      bracket.className = "bracket";
+      bracket.appendChild(el("div", "msg", "大会の準備中です"));
+      document.getElementById("nowbar").className = "nowbar idle";
+      document.getElementById("nowbar").textContent = "";
+      det.appendChild(el("div", "none", "現在の大会はまだありません。"));
+      return;
+    }
+    if (data.phase === "registration") renderRegistration(data, bracket);
+    else renderBracket(data, bracket);
+    renderNow(data);
+
+    var any = false;
+    data.matches.forEach(function (m) {
+      if (m.bye) return;
+      if (m.sets.length || m.extension || m.by_dq) { det.appendChild(detailCard(m)); any = true; }
+    });
+    if (!any) det.appendChild(el("div", "none", data.phase === "registration"
+      ? "チーム登録受付中です（" + data.registered_teams + " / " + data.team_count + " チーム）。" : "まだ登録された結果はありません。"));
+  }
+  // Firebase Realtime Database は、空の配列・null・空の値を保存しない（読み出すと項目ごと消える）ので、
+  // 外部のデータ置き場から読んだデータは、描画の前に「あるはずの項目」を補ってから使う。
+  function normalize(d) {
+    d.teams = d.teams || []; d.rounds = d.rounds || []; d.matches = d.matches || [];
+    if (d.champion === undefined) d.champion = null;
+    if (d.theme === undefined) d.theme = null;
+    function fillHalf(h) {
+      ["hunter", "survivor", "hunter_side", "time_sec", "time"].forEach(function (k) { if (h[k] === undefined) h[k] = null; });
+    }
+    d.matches.forEach(function (m) {
+      ["team_a", "team_b", "winner", "winner_id", "extension", "next"].forEach(function (k) { if (m[k] === undefined) m[k] = null; });
+      ["by_dq", "bye", "decided_by_admin", "extension_needed"].forEach(function (k) { if (m[k] === undefined) m[k] = false; });
+      m.sets = m.sets || [];
+      m.set_wins = m.set_wins || { a: 0, b: 0 };
+      m.total_points = m.total_points || { a: 0, b: 0 };
+      if (m.reason === undefined) m.reason = "";
+      m.sets.forEach(function (s) {
+        s.halves = s.halves || [];
+        if (s.points === undefined) s.points = null;
+        if (s.result === undefined) s.result = null;
+        s.halves.forEach(fillHalf);
+      });
+      if (m.extension) {
+        m.extension.halves = m.extension.halves || [];
+        if (m.extension.winner === undefined) m.extension.winner = null;
+        m.extension.halves.forEach(fillHalf);
+      }
+    });
+    return d;
+  }
+  function load() {
+    // 公開サイト用：データを別の場所（外部のJSON）から読み込む設定があれば、そちらを読む（window.TOURNAMENT_DATA_URL）
+    if (window.TOURNAMENT_DATA_URL) {
+      var u = window.TOURNAMENT_DATA_URL;
+      fetch(u + (u.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { if (data) render(normalize(data)); })
+        .catch(function () {
+          if (last === null) {
+            document.getElementById("bracket").replaceChildren(el("div", "msg", "大会のデータを読み込めませんでした。しばらくしてからもう一度開いてください。"));
+          }
+        });
+      return;
+    }
+    var s = document.createElement("script");
+    s.src = "tournament.js?t=" + Date.now();
+    s.onload = function () { render(window.TOURNAMENT_DATA); s.remove(); };
+    s.onerror = function () {
+      s.remove();
+      if (last === null) {
+        var b = document.getElementById("bracket");
+        b.replaceChildren(el("div", "msg", "大会のデータがまだありません。しばらくしてからもう一度開いてください（管理者の方：Botを起動して、Discordで大会を作成すると自動で作られます）。"));
+      }
+    };
+    document.head.appendChild(s);
+  }
+
+  // ── ダウンロードして開いた単体HTML（埋め込みデータあり）：一度描画するだけで、以後は読み直さない ──
+  function setupSnapshotTools() {
+    document.getElementById("snapToolbar").style.display = "flex";
+    IS_SNAPSHOT = true;
+    fit();
+    var stage = document.getElementById("stage");
+    document.getElementById("bgBtn").addEventListener("click", function () {
+      document.getElementById("bgFile").click();
+    });
+    document.getElementById("bgFile").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () { stage.style.backgroundImage = "url(" + reader.result + ")"; };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById("pngBtn").addEventListener("click", function () {
+      function run() {
+        var oldT = stage.style.transform, oldL = stage.style.left, oldTop = stage.style.top;
+        stage.style.transform = "none"; stage.style.left = "0px"; stage.style.top = "0px";
+        window.html2canvas(stage, { width: 1920, height: 1080, backgroundColor: null }).then(function (canvas) {
+          stage.style.transform = oldT; stage.style.left = oldL; stage.style.top = oldTop;
+          canvas.toBlob(function (blob) {
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = (document.title || "トーナメント表") + ".png";
+            a.click();
+          });
+        });
+      }
+      if (window.html2canvas) { run(); return; }
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+      s.onload = run;
+      s.onerror = function () { alert("PNG化ライブラリの読み込みに失敗しました。インターネット接続を確認してください。"); };
+      document.head.appendChild(s);
+    });
+  }
+
+  if (window.TOURNAMENT_DATA_EMBEDDED) {
+    setupSnapshotTools();
+    render(window.TOURNAMENT_DATA_EMBEDDED);
+  } else {
+    load();
+    setInterval(load, POLL_MS);
+  }
+})();
+</script>
+</body>
+</html>
