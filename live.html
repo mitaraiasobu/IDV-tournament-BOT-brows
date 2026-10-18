@@ -154,6 +154,8 @@
     .rv .pill { white-space: normal; text-align: center; }
     .rv .pill.mode { margin-left: 0; }
     .rv .tabs button { padding: .3em .7em; }
+    .rv .row { flex-direction: column; gap: .05em; padding: .4em 0; }            /* スマホでは、タイトル（ラベル）と内容を横に並べず、改行して縦に並べる */
+    .rv .row .lb { min-width: 0; }
   }
   .rv h2 { margin: 0 0 .35em; font-size: 1.1em; color: var(--accent); letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: .15em; }
   .rv .sec { margin-bottom: .5em; }
