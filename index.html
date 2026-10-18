@@ -119,6 +119,7 @@
   .nowbar .next { color: var(--sub); font-size: 20px; }
   .nowbar.champion { border-color: var(--accent); color: var(--accent); font-weight: 800; justify-content: center; }
   .nowbar.idle { color: var(--sub); justify-content: center; }
+  .nowbar.hidden { display: none; }
 
   .msg { padding: 120px 0; text-align: center; color: var(--sub); font-size: 28px; width: 100%; }
 
@@ -367,8 +368,7 @@
       return m.team_a && m.team_b && !m.bye && (m.status === "in_progress" || m.status === "extension" || m.status === "undecided");
     });
     if (data.phase === "registration") {
-      bar.className = "nowbar idle";
-      bar.textContent = "チーム登録受付中　" + data.registered_teams + " / " + data.team_count + " チーム";
+      bar.className = "nowbar hidden";                 // 登録受付中の「◯ / ◯ チーム」は、ページの真ん中に大きく出ているので、ここでは重ねて出さない
     } else if (data.champion) {
       bar.className = "nowbar champion";
       bar.textContent = "🏆 優勝　" + data.champion.name;
@@ -543,8 +543,7 @@
       if (m.bye) return;
       if (m.sets.length || m.extension || m.by_dq) { det.appendChild(detailCard(m)); any = true; }
     });
-    if (!any) det.appendChild(el("div", "none", data.phase === "registration"
-      ? "チーム登録受付中です（" + data.registered_teams + " / " + data.team_count + " チーム）。" : "まだ登録された結果はありません。"));
+    if (!any) det.appendChild(el("div", "none", "まだ登録された結果はありません。"));
   }
   // Firebase Realtime Database は、空の配列・null・空の値を保存しない（読み出すと項目ごと消える）ので、
   // 外部のデータ置き場から読んだデータは、描画の前に「あるはずの項目」を補ってから使う。
