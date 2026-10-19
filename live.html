@@ -311,6 +311,64 @@
   html.flow .rs-next { grid-area: next; position: static; transform: none; height: auto; padding: .5em .8em; justify-self: end; gap: .8em; }
   html.flow .rs-next .nx, html.flow .rs-next .nt { font-size: 1.1em; }
   html.flow .rs-next .sl { height: 1.4em; }
+  /* ═══════════════ デザイン：シンプル（もとの「ゴシック」）。紺のガラスのようなパネルと金色の縁取り。色は、すべてテーマカラーから作る ═══════════════ */
+  /* BAN/PICKの画面は、基本のスタイルのまま。文字だけ、標準の太字に戻す（筆のようなフォント・斜体にしない） */
+  html[data-design="simple"].stage .hdr { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
+  html[data-design="simple"].stage .card .cap { font-family: inherit; }
+  html[data-design="simple"].stage .center .ttl { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
+  html[data-design="simple"].stage .center .sc div { font-family: inherit; font-style: normal; font-size: 72px; font-weight: 900; }
+  /* 成績の画面：金色の枠の中に、チーム2つと、セットごとの得点 */
+  html[data-design="simple"].stage .rs { font-family: inherit; }
+  html[data-design="simple"].stage .rs::before { inset: auto; left: 170px; right: 170px; top: 235px; bottom: 150px; background: none; border: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+        box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 20%, transparent), 0 20px 50px rgba(0,0,0,.5); }
+  html[data-design="simple"].stage .rs::after, html[data-design="simple"].stage .rs-tag { display: none; }
+  html[data-design="simple"].stage .rs-title { left: 0; right: 0; top: 40px; text-align: center; transform: none; white-space: normal; filter: drop-shadow(0 4px 14px rgba(0,0,0,.55)); }
+  html[data-design="simple"].stage .rs-title .big, html[data-design="simple"].stage .rs-title .small { position: static; display: inline; transform: none; font-family: inherit; font-style: normal; font-weight: 900;
+        font-size: 120px; letter-spacing: .02em; text-shadow: none; color: transparent; -webkit-background-clip: text; background-clip: text;
+        background-image: linear-gradient(180deg, var(--gold2), var(--accent) 60%, color-mix(in srgb, var(--accent) 60%, black)); }
+  html[data-design="simple"].stage .rs-title .small { margin-left: .3em; }
+  html[data-design="simple"].stage .rs-title::after { left: 50%; right: auto; width: 560px; margin-left: -280px; bottom: -8px; height: 4px; transform: none;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  html[data-design="simple"].stage .rs-team { top: 235px; width: 400px; height: 695px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        padding: 36px 10px 20px; text-align: center; background: var(--tc); background-image: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 40%, rgba(0,0,0,.28));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  html[data-design="simple"].stage .rs-team.a { left: 170px; } html[data-design="simple"].stage .rs-team.b { right: 170px; left: auto; }
+  html[data-design="simple"].stage .rs-team .art, html[data-design="simple"].stage .rs-team.b .art { position: static; left: auto; width: auto; height: auto; clip-path: none; background: none; overflow: visible;
+        display: flex; flex-direction: column; align-items: center; }
+  html[data-design="simple"].stage .rs-team .art::before, html[data-design="simple"].stage .rs-team .art::after { display: none; }
+  html[data-design="simple"].stage .rs-team .logo, html[data-design="simple"].stage .rs-team.b .logo { position: static; width: 170px; height: 170px; border: 6px solid rgba(255,255,255,.9); background: none;
+        font-family: inherit; font-size: 56px; font-weight: 900; order: -1; }
+  html[data-design="simple"].stage .rs-team .tn, html[data-design="simple"].stage .rs-team.b .tn { position: static; transform: none; margin-top: 28px; font-family: inherit; font-size: 64px; font-weight: 800; text-shadow: none; line-height: 1.1; }
+  html[data-design="simple"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="simple"].stage .rs-team .tn.s { font-size: 44px; }
+  html[data-design="simple"].stage .rs-team .wl, html[data-design="simple"].stage .rs-team.b .wl { position: static; transform: none; background: none; padding: 0; min-width: 0; font-family: inherit; font-style: normal;
+        font-size: 84px; font-weight: 900; letter-spacing: 0; line-height: 1.1; min-height: 1.1em; color: #fff; }
+  html[data-design="simple"].stage .rs-team .wl:empty { display: block; }
+  html[data-design="simple"].stage .rs-team .wl.win { color: color-mix(in srgb, var(--gold2) 85%, white); } html[data-design="simple"].stage .rs-team .wl.lose { background: none; color: #fff; }
+  html[data-design="simple"].stage .rs-team .ptbox, html[data-design="simple"].stage .rs-team.a .ptbox, html[data-design="simple"].stage .rs-team.b .ptbox { position: static; transform: none; width: auto; height: auto; background: none; border: 0; box-shadow: none; }
+  html[data-design="simple"].stage .rs-team .pt { position: static; font-family: inherit; font-style: normal; font-size: 190px; font-weight: 900; line-height: 1; color: #fff; }
+  html[data-design="simple"].stage .rs-team .cap { display: none; }
+  html[data-design="simple"].stage .rs-rows { left: 570px; top: 235px; width: 780px; height: 695px; gap: 0; background: var(--ink); }
+  html[data-design="simple"].stage .rs-row { transform: none; flex-direction: column; justify-content: center; gap: 0; border: 0; border-bottom: 3px solid rgba(255,255,255,.18); box-shadow: none;
+        background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(40,50,80,.35), rgba(0,0,0,.55)); }
+  html[data-design="simple"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="simple"].stage .rs-row .lb { position: static; font-family: inherit; font-style: normal; font-size: 40px; font-weight: 800; letter-spacing: .02em; color: #fff; }
+  html[data-design="simple"].stage .rs-row .lb::before, html[data-design="simple"].stage .rs-row .lb::after { content: none; }
+  html[data-design="simple"].stage .rs-row .sc { font-family: inherit; font-style: normal; font-size: 110px; font-weight: 900; line-height: 1.05; padding: 0; gap: .3em; color: #fff; }
+  html[data-design="simple"].stage .rs-row .sc i { width: auto; height: auto; background: none; transform: none; }
+  html[data-design="simple"].stage .rs-row .sc i::before { content: "-"; }
+  html[data-design="simple"].stage .rs-next { right: 60px; bottom: 44px; height: auto; padding: 0; background: none; border: 0; box-shadow: none; transform: none; gap: .5em; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+  html[data-design="simple"].stage .rs-next .nx, html[data-design="simple"].stage .rs-next .nt { font-family: inherit; font-size: 48px; font-weight: 900; letter-spacing: .04em; color: var(--accent); }
+  html[data-design="simple"].stage .rs-next .nx::before { margin-right: .2em; }
+  html[data-design="simple"].stage .rs-next .sl { display: none; }
+  @keyframes dropInS { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes riseS { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpS { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="simple"].stage .rs.enter .rs-title { animation: dropInS .7s ease-out both; }
+  html[data-design="simple"].stage .rs.enter .rs-row { animation: riseS .6s ease-out both; }
+  html[data-design="simple"].stage .rs.enter .rs-next { animation: fadeUpS .8s 1s ease-out both; }
+  html[data-design="simple"].stage .rs.enter::before { animation: fadeUpS .8s ease-out both; }
+  html[data-design="simple"].flow .rs-title .big, html[data-design="simple"].flow .rs-title .small, html[data-design="simple"].flow .rs-row .lb, html[data-design="simple"].flow .rs-row .sc,
+  html[data-design="simple"].flow .rs-team .pt, html[data-design="simple"].flow .rs-next .nx, html[data-design="simple"].flow .rs { font-family: inherit; font-style: normal; text-shadow: none; }
   /* ═══════════════ デザイン：ファンタジー（深い緑と金の縁取り・飾り罫・明朝のような文字）。金色は、テーマのアクセント色から作る ═══════════════ */
   html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 72%, #d8c48a); --cream: color-mix(in srgb, var(--text) 88%, #f3e7c6);
         --fa: "Cinzel", "Shippori Mincho", "Noto Serif JP", "Yu Mincho", serif; --fb: "Cormorant Garamond", "Shippori Mincho", "Noto Serif JP", "Yu Mincho", serif;
