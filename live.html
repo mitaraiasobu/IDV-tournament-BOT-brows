@@ -178,7 +178,7 @@
   html.clear #bg, html.clear #bgmedia, html.clear #media, html.clear #screen, html.clear #msg { display: none; }
   html.clear, html.clear body { background: transparent; }
 
-  /* ═══ 成績の画面（TODAY'S RESULT） ═══ */
+  /* ═══ 成績の画面（ROUND 1 RESULT など） ═══ */
   .rs { position: absolute; inset: 0; --ta: #6aa84f; --tb: #8a63b5; }
   html.flow .rs { position: relative; inset: auto; padding: .8em; max-width: 60em; margin: 0 auto; }
   .rs-title { position: absolute; left: 0; right: 0; top: 40px; text-align: center; font-size: 120px; font-weight: 900; letter-spacing: .02em;
@@ -618,7 +618,7 @@
     screenEl.replaceChildren(el("div", "idle", data.title || ""));
   }
 
-  // ═══ 成績の画面（TODAY'S RESULT）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
+  // ═══ 成績の画面（ROUND 1 RESULT など）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
   function logoBox(t) {
     var b = el("div", "logo");
     if (t && t.logo) { var im = new Image(); im.src = t.logo; im.alt = ""; b.appendChild(im); }     // チームのロゴ（いずれ実装。あれば表示する）
@@ -635,8 +635,9 @@
     return p;
   }
   function renderResult(res) {
-    var wrap = el("div", "rs enter");
-    wrap.appendChild(el("div", "rs-title", "TODAY'S RESULT"));
+    var again = screenEl.firstChild && screenEl.firstChild.classList && screenEl.firstChild.classList.contains("rs");
+    var wrap = el("div", "rs" + (again ? "" : " enter"));                              // もう成績の画面が出ているときは、入場のアニメーションをやり直さない（データの更新で2回動いてしまうため）
+    wrap.appendChild(el("div", "rs-title", res.title || ((res.round || "") + " RESULT")));
     var board = el("div", "rs-board");
     board.appendChild(teamPanel(res.a, "a"));
     var rows = el("div", "rs-rows");
