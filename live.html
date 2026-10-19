@@ -311,6 +311,52 @@
   html.flow .rs-next { grid-area: next; position: static; transform: none; height: auto; padding: .5em .8em; justify-self: end; gap: .8em; }
   html.flow .rs-next .nx, html.flow .rs-next .nt { font-size: 1.1em; }
   html.flow .rs-next .sl { height: 1.4em; }
+  /* ═══════════════ ロック：右肩あがり。座標は、描いてもらったSVG（1651x953）を、1.1333倍にしたもの ═══════════════ */
+  html[data-design="rock"].stage .rs-rows { left: 676px; top: 101px; width: 605px; height: 782px; display: block; gap: 0; }
+  html[data-design="rock"].stage .rs-row:nth-child(1) { position: absolute; left: 0px; top: 0px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
+        clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
+        background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(2) { position: absolute; left: 5px; top: 172px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
+        clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
+        background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(3) { position: absolute; left: 16px; top: 339px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
+        clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
+        background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(4) { position: absolute; left: 37px; top: 503px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
+        clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
+        background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row .lb { left: 85px; top: 110px; transform: rotate(-13deg); transform-origin: 0 100%; font-size: 34px; }
+  html[data-design="rock"].stage .rs-row .sc { position: absolute; left: 125px; width: 340px; top: 91px; justify-content: center; transform: rotate(-12deg); font-size: 138px; padding: 0; gap: 22px; }
+  html[data-design="rock"].stage .rs-row .sc i { transform: skewX(-24deg); }
+  html[data-design="rock"].stage .rs-team.a { left: 42px; top: 223px; width: 659px; height: 777px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
+  html[data-design="rock"].stage .rs-team.a .art { position: absolute; left: 0px; top: 0px; width: 659px; height: 722px; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); border: 0; }
+  html[data-design="rock"].stage .rs-team.a .ptbox { position: absolute; left: 192px; top: 361px; width: 413px; height: 416px; right: auto; top: 361px; transform: none; border: 0; clip-path: polygon(413px 0px, 50px 224px, 0px 416px, 349px 314px);
+        background: linear-gradient(120deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 92%, transparent) 60%, color-mix(in srgb, var(--accent) 26%, var(--ink))); box-shadow: none; }
+  html[data-design="rock"].stage .rs-team.b { left: 1269px; top: 42px; width: 608px; height: 823px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
+  html[data-design="rock"].stage .rs-team.b .art { position: absolute; left: 0px; top: 0px; width: 579px; height: 633px; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); border: 0; }
+  html[data-design="rock"].stage .rs-team.b .ptbox { position: absolute; left: 98px; top: 323px; width: 510px; height: 501px; right: auto; top: 323px; transform: none; border: 0; clip-path: polygon(510px 0px, 96px 246px, 0px 501px, 431px 383px);
+        background: linear-gradient(120deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 92%, transparent) 60%, color-mix(in srgb, var(--accent) 26%, var(--ink))); box-shadow: none; }
+  html[data-design="rock"].stage .rs-team.a .logo { left: 85px; top: 471px; bottom: auto; width: 131px; height: 131px; font-size: 46px; }
+  html[data-design="rock"].stage .rs-team.a .tn { left: 74px; right: auto; width: 499px; top: auto; bottom: 276px; transform: rotate(-15deg); transform-origin: 0 100%; }
+  html[data-design="rock"].stage .rs-team.a .wl { left: 128px; top: 142px; right: auto; bottom: auto; transform: rotate(-11deg); }
+  html[data-design="rock"].stage .rs-team.b .logo { left: 387px; top: 72px; right: auto; bottom: auto; width: 131px; height: 131px; font-size: 46px; }
+  html[data-design="rock"].stage .rs-team.b .tn { left: 88px; right: auto; width: 431px; top: auto; bottom: 224px; transform: rotate(-11deg); transform-origin: 0 100%; }
+  html[data-design="rock"].stage .rs-team.b .wl { left: 104px; top: 128px; right: auto; bottom: auto; transform: rotate(-9deg); }
+  html[data-design="rock"].stage .rs-team.a .pt { position: absolute; left: 74px; top: 84px; width: 340px; transform: rotate(-11deg); font-size: 210px; }
+  html[data-design="rock"].stage .rs-team.a .cap { display: block; left: 33px; bottom: 30px; top: auto; transform: rotate(-15deg); transform-origin: 0 100%; }
+  html[data-design="rock"].stage .rs-team.b .pt { position: absolute; left: 130px; top: 146px; width: 340px; transform: rotate(-11deg); font-size: 210px; }
+  html[data-design="rock"].stage .rs-team.b .cap { display: block; left: 33px; bottom: 13px; top: auto; transform: rotate(-15deg); transform-origin: 0 100%; }
+  html[data-design="rock"].stage .rs-team .cap::after { content: ""; display: block; width: 102px; height: 16px; margin-top: 6px; background: repeating-linear-gradient(100deg, var(--text) 0 3px, transparent 3px 8px); opacity: .55; }
+  html[data-design="rock"].stage .rs-next { left: 1237px; top: 865px; width: 644px; height: 174px; right: auto; bottom: auto; padding: 0; display: block; transform: none; border: 0; box-shadow: none; clip-path: polygon(88px 75px, 0px 174px, 582px 102px, 644px 0px);
+        background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--accent) 24%, var(--ink))); }
+  html[data-design="rock"].stage .rs-next .nx { position: absolute; left: 130px; bottom: 37px; transform: rotate(-9deg); transform-origin: 0 100%; font-size: 34px; letter-spacing: .2em; }
+  html[data-design="rock"].stage .rs-next .sl { position: absolute; left: 281px; top: 61px; width: 3px; height: 73px; transform: skewX(24deg); }
+  html[data-design="rock"].stage .rs-next .nt { position: absolute; left: 340px; bottom: 46px; transform: rotate(-9deg); transform-origin: 0 100%; font-size: 29px; letter-spacing: .02em; white-space: nowrap; }
+  @keyframes rowInR { from { transform: translateX(80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpR { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="rock"].stage .rs.enter .rs-row { animation: rowInR .55s ease-out both; }
+  html[data-design="rock"].stage .rs.enter .rs-next { animation: fadeUpR .8s 1.1s ease-out both; }
+  html[data-design="rock"].flow .rs-row { clip-path: none; }
   /* ═══════════════ デザイン：シンプル（もとの「ゴシック」）。紺のガラスのようなパネルと金色の縁取り。色は、すべてテーマカラーから作る ═══════════════ */
   /* BAN/PICKの画面は、基本のスタイルのまま。文字だけ、標準の太字に戻す（筆のようなフォント・斜体にしない） */
   html[data-design="simple"].stage .hdr { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
@@ -996,7 +1042,7 @@
     lastSig = sig;
     lastData = data;
     applyTheme(data.theme);
-    root.setAttribute("data-design", data.design || "standard");
+    root.setAttribute("data-design", data.design || "rock");
     setBackground(data.bg);
     kind = wantKind(data);
     root.className = kind;
