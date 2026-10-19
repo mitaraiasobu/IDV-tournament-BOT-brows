@@ -7,17 +7,21 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- パンク／ロックなフォント（Rubik Distressed）・縦に長い太字（Anton）・筆のような漢字（Yuji Boku）。専用のフォントを用意したら、--disp / --cond を差し替える -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;800;900&family=Rubik+Distressed&family=Yuji+Boku&family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;700&family=Shippori+Mincho:wght@500;700&display=swap">
+<!-- 縦に長い太字（Anton）・筆のような漢字（Yuji Boku）。英字（Edo SZ）・かな（チカラヅヨク）は、下の @font-face（assets/rock）。 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;800;900&family=Yuji+Boku&family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;700&family=Shippori+Mincho:wght@500;700&display=swap">
 <style>
+  /* ロックのフォント（公開サイトの assets/rock に置く）：英字＝Edo SZ、かな（ひらがな・カタカナ）＝851チカラヅヨク。漢字は Yuji Boku */
+  @font-face { font-family: "Edo SZ"; src: url("assets/rock/edosz.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "851Kana"; src: url("assets/rock/851chikara-dzuyoku-kanaA.ttf") format("truetype");
+               unicode-range: U+3040-309F, U+30A0-30FF, U+31F0-31FF, U+FF66-FF9F; font-display: swap; }
   :root {
     --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
     --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
     --gold2: color-mix(in srgb, var(--accent) 55%, white); --red: #e0485a;
-    --ta: #6aa84f; --tb: #8a63b5;                                   /* チームの色（いまは緑と紫。のちに、チーム自身が登録する） */
+    --ta: #6aa84f; --tb: #8a63b5; --hue: 40deg;   /* バナー画像の赤を、アクセントカラーの色相に回す角度 */                                   /* チームの色（いまは緑と紫。のちに、チーム自身が登録する） */
     --glass: linear-gradient(180deg, color-mix(in srgb, var(--panel2) 94%, transparent), color-mix(in srgb, var(--panel) 96%, transparent));
     --edge: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 10px 30px rgba(0,0,0,.45);
-    --disp: "Rubik Distressed", "Yuji Boku", "Potta One", "Yu Gothic UI", sans-serif;       /* 大きい文字：英数字は、パンク／ロックなかすれた文字。漢字は筆のような文字（Yuji Boku）を太くして使う */
+    --disp: "Edo SZ", "851Kana", "Yuji Boku", "Potta One", "Yu Gothic UI", sans-serif;       /* 大きい文字：英字は Edo SZ、かなは チカラヅヨク、漢字は筆のような文字（Yuji Boku）を太くして使う */
     --cond: "Anton", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;   /* 数字・ラベル用（縦に長い、ポスターのような太字） */
   }
   * { box-sizing: border-box; }
@@ -312,63 +316,59 @@
   html.flow .rs-next { grid-area: next; position: static; transform: none; height: auto; padding: .5em .8em; justify-self: end; gap: .8em; }
   html.flow .rs-next .nx, html.flow .rs-next .nt { font-size: 1.1em; }
   html.flow .rs-next .sl { height: 1.4em; }
-  /* ═══════════════ ロック：右肩あがり。座標は、描いてもらったSVG（1651x953）を、1.1333倍にしたもの。図形は平行に整え、図形の中には、別の色の図形（平行四辺形の敷き詰め）を置く ═══════════════ */
+  /* ═══════════════ ロック：右肩あがり。座標は、描いてもらったSVG（1651x953）を、1.1333倍にしたもの。模様は、用意してもらった画像（assets/rock）。 ═══════════════ */
+  html[data-design="rock"] #bg { background: radial-gradient(ellipse at 50% 30%, var(--glow), var(--bg) 70%); }
+  html[data-design="rock"] #bg::before { content: ""; position: absolute; inset: 0; background-color: var(--accent); background-image: url(assets/rock/scratch.webp); background-size: cover; background-position: center; background-blend-mode: multiply; mix-blend-mode: screen; opacity: .75; pointer-events: none; }
+  html[data-design="rock"].stage .rs::before, html[data-design="rock"].stage .rs::after { display: none; }
   html[data-design="rock"].stage .rs { font-synthesis: none; }
-  html[data-design="rock"].stage .rs-rows { left: 670px; top: 106px; width: 605px; height: 782px; display: block; gap: 0; }
-  html[data-design="rock"].stage .rs-row:nth-child(1) { position: absolute; left: 0px; top: 0px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
-        clip-path: polygon(72px 118px, 0px 279px, 495px 162px, 567px 0px);
-        background: linear-gradient(114.0deg, transparent 0 113.4px, var(--accent) 113.4px 125.4px, transparent 125.4px), repeating-linear-gradient(114.0deg, transparent 0 46px, color-mix(in srgb, var(--text) 7%, transparent) 46px 92px), repeating-linear-gradient(166.6deg, transparent 0 52px, color-mix(in srgb, var(--accent) 10%, transparent) 52px 104px), var(--ink); }
+  html[data-design="rock"].stage .rs-rows { left: 670px; top: 106px; width: 605px; height: 782px; display: block; gap: 0; z-index: 1; }
+  html[data-design="rock"].stage .rs-row:nth-child(1) { position: absolute; left: 0px; top: 0px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block; clip-path: none; overflow: visible; background: none; }
+  html[data-design="rock"].stage .rs-row:nth-child(1)::before { content: ""; position: absolute; left: 0; top: 0; width: 1728px; height: 910px; background: url(assets/rock/banner.webp) 0 0 / 100% 100% no-repeat; transform-origin: 0 0; transform: matrix(0.38695, -0.01843, 0.06646, 0.34280, -76.61, -21.23); filter: hue-rotate(var(--hue, 0deg)); pointer-events: none; }
   html[data-design="rock"].stage .rs-row:nth-child(1) .sc { position: absolute; left: 284px; top: 149px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.220, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 181; --fit-min: 40; --fit-max: 130; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
   html[data-design="rock"].stage .rs-row:nth-child(1) .lb { position: absolute; left: 133px; top: 124px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
-  html[data-design="rock"].stage .rs-row:nth-child(2) { position: absolute; left: 12px; top: 168px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
-        clip-path: polygon(72px 118px, 0px 279px, 495px 162px, 567px 0px);
-        background: linear-gradient(114.0deg, transparent 0 113.4px, var(--accent) 113.4px 125.4px, transparent 125.4px), repeating-linear-gradient(114.0deg, transparent 0 46px, color-mix(in srgb, var(--text) 7%, transparent) 46px 92px), repeating-linear-gradient(166.6deg, transparent 0 52px, color-mix(in srgb, var(--accent) 10%, transparent) 52px 104px), var(--ink); }
+  html[data-design="rock"].stage .rs-row:nth-child(2) { position: absolute; left: 12px; top: 168px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block; clip-path: none; overflow: visible; background: none; }
+  html[data-design="rock"].stage .rs-row:nth-child(2)::before { content: ""; position: absolute; left: 0; top: 0; width: 1728px; height: 910px; background: url(assets/rock/banner.webp) 0 0 / 100% 100% no-repeat; transform-origin: 0 0; transform: matrix(0.38695, -0.01843, 0.06646, 0.34280, -76.61, -21.23); filter: hue-rotate(var(--hue, 0deg)); pointer-events: none; }
   html[data-design="rock"].stage .rs-row:nth-child(2) .sc { position: absolute; left: 284px; top: 149px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.220, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 181; --fit-min: 40; --fit-max: 130; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
   html[data-design="rock"].stage .rs-row:nth-child(2) .lb { position: absolute; left: 133px; top: 124px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
-  html[data-design="rock"].stage .rs-row:nth-child(3) { position: absolute; left: 25px; top: 335px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
-        clip-path: polygon(72px 118px, 0px 279px, 495px 162px, 567px 0px);
-        background: linear-gradient(114.0deg, transparent 0 113.4px, var(--accent) 113.4px 125.4px, transparent 125.4px), repeating-linear-gradient(114.0deg, transparent 0 46px, color-mix(in srgb, var(--text) 7%, transparent) 46px 92px), repeating-linear-gradient(166.6deg, transparent 0 52px, color-mix(in srgb, var(--accent) 10%, transparent) 52px 104px), var(--ink); }
+  html[data-design="rock"].stage .rs-row:nth-child(3) { position: absolute; left: 25px; top: 335px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block; clip-path: none; overflow: visible; background: none; }
+  html[data-design="rock"].stage .rs-row:nth-child(3)::before { content: ""; position: absolute; left: 0; top: 0; width: 1728px; height: 910px; background: url(assets/rock/banner.webp) 0 0 / 100% 100% no-repeat; transform-origin: 0 0; transform: matrix(0.38695, -0.01843, 0.06646, 0.34280, -76.61, -21.23); filter: hue-rotate(var(--hue, 0deg)); pointer-events: none; }
   html[data-design="rock"].stage .rs-row:nth-child(3) .sc { position: absolute; left: 284px; top: 149px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.220, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 181; --fit-min: 40; --fit-max: 130; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
   html[data-design="rock"].stage .rs-row:nth-child(3) .lb { position: absolute; left: 133px; top: 124px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
-  html[data-design="rock"].stage .rs-row:nth-child(4) { position: absolute; left: 37px; top: 503px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
-        clip-path: polygon(72px 118px, 0px 279px, 495px 162px, 567px 0px);
-        background: linear-gradient(114.0deg, transparent 0 113.4px, var(--accent) 113.4px 125.4px, transparent 125.4px), repeating-linear-gradient(114.0deg, transparent 0 46px, color-mix(in srgb, var(--text) 7%, transparent) 46px 92px), repeating-linear-gradient(166.6deg, transparent 0 52px, color-mix(in srgb, var(--accent) 10%, transparent) 52px 104px), var(--ink); }
+  html[data-design="rock"].stage .rs-row:nth-child(4) { position: absolute; left: 37px; top: 503px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block; clip-path: none; overflow: visible; background: none; }
+  html[data-design="rock"].stage .rs-row:nth-child(4)::before { content: ""; position: absolute; left: 0; top: 0; width: 1728px; height: 910px; background: url(assets/rock/banner.webp) 0 0 / 100% 100% no-repeat; transform-origin: 0 0; transform: matrix(0.38695, -0.01843, 0.06646, 0.34280, -76.61, -21.23); filter: hue-rotate(var(--hue, 0deg)); pointer-events: none; }
   html[data-design="rock"].stage .rs-row:nth-child(4) .sc { position: absolute; left: 284px; top: 149px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.220, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 181; --fit-min: 40; --fit-max: 130; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
   html[data-design="rock"].stage .rs-row:nth-child(4) .lb { position: absolute; left: 133px; top: 124px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
   html[data-design="rock"].stage .rs-row .sc i { width: .3em; height: .08em; transform: none; }
-  html[data-design="rock"].stage .rs-row .lb::before, html[data-design="rock"].stage .rs-row .lb::after { margin: 0 .25em; }
+  html[data-design="rock"].stage .rs-row .lb::before, html[data-design="rock"].stage .rs-row .lb::after { content: none; }
   html[data-design="rock"].stage .rs-title { left: 0; top: 0; width: 1920px; height: 1080px; transform: none; pointer-events: none; }
   html[data-design="rock"].stage .rs-title::after { display: none; }
   html[data-design="rock"].stage .rs-title .big { position: absolute; left: 373px; top: 137px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.244, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 530; --fit-min: 40; --fit-max: 260; line-height: 1; letter-spacing: -.01em; margin: 0; }
   html[data-design="rock"].stage .rs-title .small { position: absolute; left: 625px; top: 175px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.960, -0.281, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 214; --fit-min: 24; --fit-max: 140; line-height: 1; margin: 0; }
   html[data-design="rock"].stage .rs-team.a { left: 42px; top: 223px; width: 659px; height: 777px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
   html[data-design="rock"].stage .rs-team.a .art { position: absolute; left: 0px; top: 0px; width: 659px; height: 722px; clip-path: none; overflow: visible; border: 0; background: none; }
-  html[data-design="rock"].stage .rs-team.a .art::before { content: ""; position: absolute; inset: 0; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px);
-        background: repeating-linear-gradient(114.0deg, transparent 0 64px, rgba(0,0,0,.20) 64px 128px), repeating-linear-gradient(166.6deg, transparent 0 72px, rgba(255,255,255,.09) 72px 144px), var(--tc); }
-  html[data-design="rock"].stage .rs-team.a .art::after { content: ""; position: absolute; inset: 0; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); }
+  html[data-design="rock"].stage .rs-team.a .art::before { content: ""; position: absolute; inset: 0; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); background: var(--tc); }
+  html[data-design="rock"].stage .rs-team.a .art::after { content: ""; position: absolute; inset: 0; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); background: url(assets/rock/darkgrunge.webp) 20% 60% / cover no-repeat; mix-blend-mode: soft-light; filter: brightness(2.6) contrast(1.35); opacity: 1; pointer-events: none; }
   html[data-design="rock"].stage .rs-team.a .ptbox { position: absolute; left: 203px; top: 361px; width: 402px; height: 416px; right: auto; transform: none; border: 0; clip-path: polygon(402px 0px, 39px 224px, 0px 416px, 338px 314px); box-shadow: none;
-        background: repeating-linear-gradient(101.6deg, transparent 0 40px, color-mix(in srgb, var(--text) 6%, transparent) 40px 80px), repeating-linear-gradient(163deg, transparent 0 44px, color-mix(in srgb, var(--accent) 11%, transparent) 44px 88px), var(--ink); }
+        background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 20% 60%; background-blend-mode: screen; }
   html[data-design="rock"].stage .rs-team.a .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); }
   html[data-design="rock"].stage .rs-team.a .cimg img, html[data-design="rock"].stage .rs-team.a .cimg .emo { position: absolute; left: 151px; top: -20px; width: 508px; height: 454px; object-fit: cover; object-position: 50% 12%; display: block; -webkit-mask-image: radial-gradient(ellipse at 50% 46%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse at 50% 46%, #000 62%, transparent 100%); }
   html[data-design="rock"].stage .rs-team.a .logo { left: 135px; top: 366px; right: auto; bottom: auto; width: 206px; height: 206px;
         overflow: visible; font-size: 74px; border-width: 4px; z-index: 3; }
-  html[data-design="rock"].stage .rs-team.a .tn { position: absolute; left: 22px; top: 379px; right: auto; bottom: auto; width: auto; margin: 0; white-space: pre; text-align: left; transform: translate(0, -50%) matrix(0.952, -0.306, -0.150, 1, 0, 0); transform-origin: 0 50%; font-size: 150px; line-height: .9; z-index: 2; letter-spacing: -.01em; }
+  html[data-design="rock"].stage .rs-team.a .tn { position: absolute; left: 22px; top: 379px; right: auto; bottom: auto; width: auto; margin: 0; white-space: pre; text-align: left; transform: translate(0, -50%) matrix(0.952, -0.306, -0.150, 1, 0, 0); transform-origin: 0 50%; font-size: 120px; line-height: .92; z-index: 50; letter-spacing: -.01em; }
   html[data-design="rock"].stage .rs-team.b { left: 1269px; top: 42px; width: 608px; height: 823px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
   html[data-design="rock"].stage .rs-team.b .art { position: absolute; left: 0px; top: 0px; width: 579px; height: 633px; clip-path: none; overflow: visible; border: 0; background: none; }
-  html[data-design="rock"].stage .rs-team.b .art::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px);
-        background: repeating-linear-gradient(114.0deg, transparent 0 64px, rgba(0,0,0,.20) 64px 128px), repeating-linear-gradient(166.6deg, transparent 0 72px, rgba(255,255,255,.09) 72px 144px), var(--tc); }
-  html[data-design="rock"].stage .rs-team.b .art::after { content: ""; position: absolute; inset: 0; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); }
+  html[data-design="rock"].stage .rs-team.b .art::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); background: var(--tc); }
+  html[data-design="rock"].stage .rs-team.b .art::after { content: ""; position: absolute; inset: 0; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); background: url(assets/rock/darkgrunge.webp) 80% 40% / cover no-repeat; mix-blend-mode: soft-light; filter: brightness(2.6) contrast(1.35); opacity: 1; pointer-events: none; }
   html[data-design="rock"].stage .rs-team.b .ptbox { position: absolute; left: 142px; top: 323px; width: 466px; height: 501px; right: auto; transform: none; border: 0; clip-path: polygon(466px 0px, 52px 246px, 0px 501px, 388px 383px); box-shadow: none;
-        background: repeating-linear-gradient(101.6deg, transparent 0 40px, color-mix(in srgb, var(--text) 6%, transparent) 40px 80px), repeating-linear-gradient(163deg, transparent 0 44px, color-mix(in srgb, var(--accent) 11%, transparent) 44px 88px), var(--ink); }
+        background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 80% 40%; background-blend-mode: screen; }
   html[data-design="rock"].stage .rs-team.b .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); }
   html[data-design="rock"].stage .rs-team.b .cimg img, html[data-design="rock"].stage .rs-team.b .cimg .emo { position: absolute; left: -85px; top: -24px; width: 525px; height: 568px; object-fit: cover; object-position: 50% 12%; display: block; -webkit-mask-image: radial-gradient(ellipse at 50% 46%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse at 50% 46%, #000 62%, transparent 100%); }
   html[data-design="rock"].stage .rs-team.b .logo { left: 379px; top: 102px; right: auto; bottom: auto; width: 206px; height: 206px;
         overflow: visible; font-size: 74px; border-width: 4px; z-index: 3; }
-  html[data-design="rock"].stage .rs-team.b .tn { position: absolute; left: 589px; top: 375px; right: auto; bottom: auto; width: auto; margin: 0; white-space: pre; text-align: right; transform: translate(-100%, -50%) matrix(0.907, -0.421, -0.150, 1, 0, 0); transform-origin: 100% 50%; font-size: 150px; line-height: .9; z-index: 2; letter-spacing: -.01em; }
+  html[data-design="rock"].stage .rs-team.b .tn { position: absolute; left: 589px; top: 312px; right: auto; bottom: auto; width: auto; margin: 0; white-space: pre; text-align: right; transform: translate(-100%, -50%) matrix(0.907, -0.421, -0.150, 1, 0, 0); transform-origin: 100% 50%; font-size: 120px; line-height: .92; z-index: 50; letter-spacing: -.01em; }
   html[data-design="rock"].stage .rs-team .logo img { border-radius: 50%; }
-  html[data-design="rock"].stage .rs-team { z-index: 4; } html[data-design="rock"].stage .rs-rows { z-index: 1; }
-  html[data-design="rock"].stage .tn .cjk { font-size: .86em; }
   html[data-design="rock"].stage .rs-team .logo::after { content: none; }
+  html[data-design="rock"].stage .tn .cjk { font-size: .9em; }
   html[data-design="rock"].stage .rs-team .cimg .emo { display: flex; align-items: center; justify-content: center; font-size: 330px; }
   html[data-design="rock"].stage .rs-team.a .wl { left: 128px; top: 142px; right: auto; bottom: auto; transform: matrix(0.982, -0.191, -0.150, 1, 0, 0); transform-origin: 0 100%; font-style: normal; z-index: 3; }
   html[data-design="rock"].stage .rs-team.b .wl { left: 412px; top: 38px; right: auto; bottom: auto; transform: matrix(0.988, -0.156, -0.150, 1, 0, 0); transform-origin: 0 100%; font-style: normal; z-index: 3; }
@@ -385,7 +385,7 @@
   html[data-design="rock"].stage .rs-team.a .ptbox::after { content: ""; position: absolute; left: 15px; top: 325px; width: 101px; height: 62px; background: var(--text); opacity: .6; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 89.19 54.83' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M3.00 51.83L5.59 43.97'/><path d='M11.06 48.49L17.22 29.76'/><path d='M19.12 45.14L25.28 26.41'/><path d='M27.18 41.80L33.34 23.07'/><path d='M35.24 38.45L41.40 19.72'/><path d='M43.30 35.11L49.46 16.38'/><path d='M51.36 31.76L57.52 13.03'/><path d='M59.42 28.42L65.58 9.69'/><path d='M67.48 25.07L73.64 6.34'/><path d='M75.54 21.73L81.70 3.00'/><path d='M83.60 18.39L86.19 10.52'/></g></svg>") center / 100% 100% no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 89.19 54.83' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M3.00 51.83L5.59 43.97'/><path d='M11.06 48.49L17.22 29.76'/><path d='M19.12 45.14L25.28 26.41'/><path d='M27.18 41.80L33.34 23.07'/><path d='M35.24 38.45L41.40 19.72'/><path d='M43.30 35.11L49.46 16.38'/><path d='M51.36 31.76L57.52 13.03'/><path d='M59.42 28.42L65.58 9.69'/><path d='M67.48 25.07L73.64 6.34'/><path d='M75.54 21.73L81.70 3.00'/><path d='M83.60 18.39L86.19 10.52'/></g></svg>") center / 100% 100% no-repeat; }
   html[data-design="rock"].stage .rs-team.b .ptbox::after { content: ""; position: absolute; left: 264px; top: 341px; width: 101px; height: 62px; background: var(--text); opacity: .6; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 89.19 54.83' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M3.00 51.83L5.59 43.97'/><path d='M11.06 48.49L17.22 29.76'/><path d='M19.12 45.14L25.28 26.41'/><path d='M27.18 41.80L33.34 23.07'/><path d='M35.24 38.45L41.40 19.72'/><path d='M43.30 35.11L49.46 16.38'/><path d='M51.36 31.76L57.52 13.03'/><path d='M59.42 28.42L65.58 9.69'/><path d='M67.48 25.07L73.64 6.34'/><path d='M75.54 21.73L81.70 3.00'/><path d='M83.60 18.39L86.19 10.52'/></g></svg>") center / 100% 100% no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 89.19 54.83' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M3.00 51.83L5.59 43.97'/><path d='M11.06 48.49L17.22 29.76'/><path d='M19.12 45.14L25.28 26.41'/><path d='M27.18 41.80L33.34 23.07'/><path d='M35.24 38.45L41.40 19.72'/><path d='M43.30 35.11L49.46 16.38'/><path d='M51.36 31.76L57.52 13.03'/><path d='M59.42 28.42L65.58 9.69'/><path d='M67.48 25.07L73.64 6.34'/><path d='M75.54 21.73L81.70 3.00'/><path d='M83.60 18.39L86.19 10.52'/></g></svg>") center / 100% 100% no-repeat; }
   html[data-design="rock"].stage .rs-next { left: 1250px; top: 867px; width: 644px; height: 173px; right: auto; bottom: auto; padding: 0; display: block; transform: none; border: 0; box-shadow: none; clip-path: polygon(75px 73px, 0px 173px, 570px 100px, 644px 0px);
-        background: linear-gradient(126.8deg, transparent 0 66%, color-mix(in srgb, var(--accent) 24%, transparent) 66% 100%), repeating-linear-gradient(126.8deg, transparent 0 40px, color-mix(in srgb, var(--text) 6%, transparent) 40px 80px), repeating-linear-gradient(172.7deg, transparent 0 36px, color-mix(in srgb, var(--accent) 9%, transparent) 36px 72px), var(--ink); }
+        background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 70% 50%; background-blend-mode: screen; }
   html[data-design="rock"].stage .rs-next::before { content: ""; position: absolute; left: 76px; top: 83px; width: 40px; height: 58px; background: var(--accent); clip-path: polygon(5px 0px, 40px 29px, 0px 58px); transform: none; font-size: 0; }
   html[data-design="rock"].stage .rs-next .nx::before { content: none; }
   html[data-design="rock"].stage .rs-next .nx { position: absolute; left: 188px; top: 99px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.990, -0.144, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 134; --fit-min: 16; --fit-max: 48; font-weight: 800; letter-spacing: .12em; }
@@ -396,7 +396,10 @@
   @keyframes fadeUpR { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
   html[data-design="rock"].stage .rs.enter .rs-row { animation: rowInR .55s ease-out both; }
   html[data-design="rock"].stage .rs.enter .rs-next { animation: fadeUpR .8s 1.1s ease-out both; }
+  html[data-design="rock"].stage .rs.enter .rs-team.a { animation: inL .8s cubic-bezier(.2,.8,.2,1) .1s backwards; }
+  html[data-design="rock"].stage .rs.enter .rs-team.b { animation: inR .8s cubic-bezier(.2,.8,.2,1) .1s backwards; }
   html[data-design="rock"].flow .rs-row { clip-path: none; }
+  html[data-design="rock"].flow .rs-row::before { display: none; }
   /* ═══════════════ デザイン：シンプル（もとの「ゴシック」）。紺のガラスのようなパネルと金色の縁取り。色は、すべてテーマカラーから作る ═══════════════ */
   /* BAN/PICKの画面は、基本のスタイルのまま。文字だけ、標準の太字に戻す（筆のようなフォント・斜体にしない） */
   html[data-design="simple"].stage .hdr { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
@@ -620,7 +623,15 @@
     var f = c.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
     return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
   }
-  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow"];
+  function hueOf(c) {
+    var r = c[0] / 255, g = c[1] / 255, b = c[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, hu = 0;
+    if (d > 0) {
+      if (mx === r) hu = ((g - b) / d) % 6; else if (mx === g) hu = (b - r) / d + 2; else hu = (r - g) / d + 4;
+      hu *= 60; if (hu < 0) hu += 360;
+    }
+    return hu;
+  }
+  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow", "--hue"];
   function applyTheme(th) {
     var st = root.style;
     THEME_VARS.forEach(function (p) { st.removeProperty(p); });
@@ -635,6 +646,7 @@
     st.setProperty("--text", rgb2css(text));
     st.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
     st.setProperty("--accent", th.accent);
+    st.setProperty("--hue", hueOf(acc).toFixed(0) + "deg");           // 赤いバナー画像を、アクセントカラーの色相に
     st.setProperty("--glow", rgb2css(mix(base, acc, 0.34)));
   }
 
@@ -957,24 +969,71 @@
   }
 
   // ═══ 成績の画面（ROUND 1 RESULT など）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
-  // 漢字・かなの部分を <span class="cjk"> で囲む（ロックのデザインで、太くする）
+  // 漢字の部分を <span class="cjk"> で囲む（ロックのデザインで、太くする。かな（ひらがな・カタカナ）は、別のフォントなので囲まない）
+  var KANJI = "\\u4e00-\\u9fff\\u3005\\u3006";
   function cjkWrap(node) {
     var text = node.textContent;
-    if (!/[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(text)) return;
+    var rx = new RegExp("([" + KANJI + "]+)");
+    if (!rx.test(text)) return;
     node.textContent = "";
-    text.split(/([\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+)/).forEach(function (part) {
+    text.split(rx).forEach(function (part) {
       if (!part) return;
-      if (/^[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+$/.test(part)) node.appendChild(el("span", "cjk", part));
+      if (new RegExp("^[" + KANJI + "]+$").test(part)) node.appendChild(el("span", "cjk", part));
       else node.appendChild(document.createTextNode(part));
     });
   }
-  // 改行できる場所：スペース、小文字から大文字に切り替わるところ（LittleRascals → Little / Rascals）。名前の長さで文字の大きさは変えない
-  // （ロックのデザインでは、そこで改行する。ほかのデザインでは、改行は空白になるので、スペースだけ）
-  function breakName(name) {
-    var rock = root.getAttribute("data-design") === "rock";
-    var s = name.replace(/ +/g, "\n");
-    if (rock) s = s.replace(/([a-z])([A-Z])/g, "$1\n$2");
-    return s;
+  // チーム名の改行（ロックのデザイン）。文字の大きさは、名前の長さで変えない。
+  //  1. 幅に収まるなら、改行しない
+  //  2. 収まらないなら、改行できる場所（スペース／小文字→大文字／ひらがな・カタカナ・漢字・英字の切り替わり／「チーム」「戦隊」などの単語の前）のうち、
+  //     いちばん長い行が短くなる場所で分ける。まだ収まらなければ、さらに分ける
+  //  3. 改行できる場所が無ければ、適当に（真ん中で）分ける
+  var NAME_WORDS = ["チーム", "戦隊", "軍団", "部隊", "連合", "同盟", "一族", "クラン", "ギルド", "ファミリー", "スターズ", "ボーイズ", "ガールズ", "ブラザーズ"];
+  var NAME_MAXW = 640;
+  function scriptOf(ch) {
+    if (/[\u3040-\u309f]/.test(ch)) return "h";
+    if (/[\u30a0-\u30ff\u31f0-\u31ff\uff66-\uff9f]/.test(ch)) return "k";
+    if (/[\u4e00-\u9fff\u3005\u3006]/.test(ch)) return "c";
+    if (/[A-Za-z]/.test(ch)) return "l";
+    if (/[0-9\uff10-\uff19]/.test(ch)) return "n";
+    return "o";
+  }
+  function breakPoints(s) {                          // sの i 文字目の手前で切れる、の i の一覧
+    var set = {};
+    for (var i = 1; i < s.length; i++) {
+      var a = s.charAt(i - 1), b = s.charAt(i);
+      if (a === " ") { set[i] = 1; continue; }
+      if (b === " ") continue;
+      if (/[a-z]/.test(a) && /[A-Z]/.test(b)) set[i] = 1;
+      var sa = scriptOf(a), sb = scriptOf(b);
+      if (sa !== sb && sa !== "o" && sb !== "o") set[i] = 1;
+    }
+    NAME_WORDS.forEach(function (wd) { var k = s.indexOf(wd); while (k > 0) { set[k] = 1; k = s.indexOf(wd, k + 1); } });
+    return Object.keys(set).map(Number).sort(function (x, y) { return x - y; });
+  }
+  function splitLines(raw, measure, maxw) {
+    var lines = [raw.replace(/ +/g, " ").trim()];
+    for (var guard = 0; guard < 6; guard++) {
+      var wi = -1, ww = 0;
+      for (var i = 0; i < lines.length; i++) { var w0 = measure(lines[i]); if (w0 > ww) { ww = w0; wi = i; } }
+      if (ww <= maxw) break;
+      var l = lines[wi];
+      if (l.replace(/ /g, "").length < 2) break;
+      var best = -1, bestW = Infinity;
+      breakPoints(l).forEach(function (p) {
+        var sc = Math.max(measure(l.slice(0, p).trim()), measure(l.slice(p).trim()));
+        if (sc < bestW) { bestW = sc; best = p; }
+      });
+      if (best < 0) best = Math.ceil(l.length / 2);   // 改行できる場所が無い：適当に
+      lines.splice(wi, 1, l.slice(0, best).trim(), l.slice(best).trim());
+    }
+    return lines;
+  }
+  function layoutName(e) {
+    var raw = e.getAttribute("data-raw") || e.textContent;
+    var set = function (txt) { e.textContent = txt; cjkWrap(e); };
+    if (!(root.getAttribute("data-design") === "rock" && root.classList.contains("stage"))) { set(raw.replace(/ +/g, " ")); return; }
+    var lines = splitLines(raw, function (txt) { set(txt); return e.offsetWidth; }, NAME_MAXW);
+    set(lines.join("\n"));
   }
   function logoBox(t) {
     var b = el("div", "logo");
@@ -986,8 +1045,10 @@
     var p = el("div", "rs-team " + cls);
     var art_ = el("div", "art");
     var name = (t && t.name) || "";
-    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), breakName(name)));
-    cjkWrap(art_.lastChild);    // 長い名前は、小さくして収める
+    var tnEl = el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name);
+    tnEl.setAttribute("data-raw", name);
+    art_.appendChild(tnEl);
+    layoutName(tnEl);    // 長い名前は、小さくして収める
     art_.appendChild(logoBox(t));
     p.appendChild(art_);
     p.appendChild(el("div", "wl " + (t && t.result ? t.result : ""), t && t.result === "win" ? "WIN" : t && t.result === "lose" ? "LOSE" : ""));   // 勝敗が決まる前は、空欄
@@ -1041,6 +1102,8 @@
   }
   // ロックのデザイン：文字の幅が、決められた長さ（--fit）になるように、文字の大きさを決める（--fit が無いデザインは、何もしない）
   function fitAll(root_) {
+    var names = root_.querySelectorAll(".rs-team .tn");
+    for (var ni = 0; ni < names.length; ni++) layoutName(names[ni]);
     var list = root_.querySelectorAll(".rs-title .big, .rs-title .small, .rs-row .lb, .rs-row .sc, .rs-team .tn, .rs-team .cap b, .rs-team .cap span, .rs-next .nx, .rs-next .nt");
     for (var i = 0; i < list.length; i++) {
       var e = list[i];
