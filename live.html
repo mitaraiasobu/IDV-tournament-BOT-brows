@@ -360,6 +360,8 @@
   html[data-design="rock"].stage .rs-team.a .ptbox { position: absolute; left: 203px; top: 361px; width: 402px; height: 416px; right: auto; transform: none; border: 0; clip-path: polygon(402px 0px, 39px 224px, 0px 416px, 338px 314px); box-shadow: none;
         background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 20% 60%; background-blend-mode: screen; }
   html[data-design="rock"].stage .rs-team.a .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); }
+  html[data-design="rock"].stage .rs-team.a .cimg.surv { --ct-h: 1149px; --ct-m: 0.19; --ct-min: 0.85; --ct-max: 1.4; --ct-p: 1.0; --ct-w: 589px; --ct-cx: 405px; --ct-edge: 48px; }
+  html[data-design="rock"].stage .rs-team.a .cimg.hunt { --ct-h: 1105px; --ct-m: 0.41; --ct-min: 0.4; --ct-max: 2.4; --ct-p: 1.25; --ct-w: 725px; --ct-cx: 405px; --ct-edge: 48px; }
   html[data-design="rock"].stage .rs-team.a .cimg.surv img, html[data-design="rock"].stage .rs-team.a .cimg.surv .emo { position: absolute; left: 405px; top: 48px; height: 1149px; width: auto; max-width: none; transform: translateX(-50%); display: block; }
   html[data-design="rock"].stage .rs-team.a .cimg.hunt img, html[data-design="rock"].stage .rs-team.a .cimg.hunt .emo { position: absolute; left: 405px; top: 48px; height: 1105px; width: auto; max-width: none; transform: translateX(-50%); display: block; }
   html[data-design="rock"].stage .rs-team.a .logo { left: 135px; top: 366px; right: auto; bottom: auto; width: 206px; height: 206px;
@@ -372,6 +374,8 @@
   html[data-design="rock"].stage .rs-team.b .ptbox { position: absolute; left: 142px; top: 323px; width: 466px; height: 501px; right: auto; transform: none; border: 0; clip-path: polygon(466px 0px, 52px 246px, 0px 501px, 388px 383px); box-shadow: none;
         background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 80% 40%; background-blend-mode: screen; }
   html[data-design="rock"].stage .rs-team.b .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); }
+  html[data-design="rock"].stage .rs-team.b .cimg.surv { --ct-h: 1149px; --ct-m: 0.19; --ct-min: 0.85; --ct-max: 1.4; --ct-p: 1.0; --ct-w: 589px; --ct-cx: 177px; --ct-edge: 56px; }
+  html[data-design="rock"].stage .rs-team.b .cimg.hunt { --ct-h: 1105px; --ct-m: 0.41; --ct-min: 0.4; --ct-max: 2.4; --ct-p: 1.25; --ct-w: 725px; --ct-cx: 177px; --ct-edge: 56px; }
   html[data-design="rock"].stage .rs-team.b .cimg.surv img, html[data-design="rock"].stage .rs-team.b .cimg.surv .emo { position: absolute; left: 177px; top: 56px; height: 1149px; width: auto; max-width: none; transform: translateX(-50%); display: block; }
   html[data-design="rock"].stage .rs-team.b .cimg.hunt img, html[data-design="rock"].stage .rs-team.b .cimg.hunt .emo { position: absolute; left: 177px; top: 56px; height: 1105px; width: auto; max-width: none; transform: translateX(-50%); display: block; }
   html[data-design="rock"].stage .rs-team.b .logo { left: 379px; top: 102px; right: auto; bottom: auto; width: 206px; height: 206px;
@@ -1000,6 +1004,55 @@
   }
 
   // ═══ 成績の画面（ROUND 1 RESULT など）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
+  // ═══ キャラ画像の大きさ：キャラごとに違う姿勢・太さでも、同じくらいの存在感になるようにそろえる ═══
+  // 画像の「見える部分」（透明ではない画素）を調べて、①頭のてっぺんを、図形の上辺に合わせる ②上半身の太さ（上から40%の、不透明な画素の数の平均）が、
+  // 基準（サバイバー／ハンター別）になるように、拡大・縮小する（細いキャラは大きく、太いキャラは小さく。範囲は --ct-min〜--ct-max）。
+  // 調べられないとき（別のサイトの画像など）は、高さを基準のままにする。
+  var CHAR_CACHE = {};
+  function charMetrics(im) {
+    var key = im.currentSrc || im.src;
+    if (CHAR_CACHE.hasOwnProperty(key)) return CHAR_CACHE[key];
+    var out = null;
+    try {
+      var H = 200, W = Math.max(1, Math.round(im.naturalWidth * H / im.naturalHeight));
+      var cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+      var cx = cv.getContext("2d"); cx.drawImage(im, 0, 0, W, H);
+      var d = cx.getImageData(0, 0, W, H).data, rows = [], top = -1, bot = -1, minX = W, maxX = -1;
+      for (var y = 0; y < H; y++) {
+        var cnt = 0;
+        for (var x = 0; x < W; x++) {
+          if (d[(y * W + x) * 4 + 3] > 40) { cnt++; if (x < minX) minX = x; if (x > maxX) maxX = x; }
+        }
+        rows.push(cnt);
+        if (cnt) { if (top < 0) top = y; bot = y; }
+      }
+      if (top >= 0) {
+        var bh = bot - top + 1, n = Math.max(1, Math.floor(bh * 0.4)), sum = 0;
+        for (var k = 0; k < n; k++) sum += rows[top + k];
+        out = { top: top / H, left: minX / W, right: (maxX + 1) / W, m: (sum / n) / bh };
+      }
+    } catch (e) { out = null; }
+    CHAR_CACHE[key] = out;
+    return out;
+  }
+  function sizeChar(ci) {
+    var im = ci.querySelector("img");
+    if (!im) return;
+    function go() {
+      var cs = getComputedStyle(ci);
+      var baseH = parseFloat(cs.getPropertyValue("--ct-h"));
+      if (!baseH || !im.naturalHeight) return;                                   // ロック以外のデザイン
+      var refM = parseFloat(cs.getPropertyValue("--ct-m")) || 0.2, fmin = parseFloat(cs.getPropertyValue("--ct-min")) || 1, fmax = parseFloat(cs.getPropertyValue("--ct-max")) || 1;
+      var pw = parseFloat(cs.getPropertyValue("--ct-p")) || 1, cxp = parseFloat(cs.getPropertyValue("--ct-cx")) || 0, edge = parseFloat(cs.getPropertyValue("--ct-edge")) || 0;
+      var mt = charMetrics(im), f = 1, tp = 0, cxr = 0.5;
+      if (mt) { f = Math.max(fmin, Math.min(fmax, Math.pow(refM / Math.max(0.05, mt.m), pw))); tp = mt.top; cxr = (mt.left + mt.right) / 2; }
+      var h = baseH * f, w = h * im.naturalWidth / im.naturalHeight, wcap = parseFloat(cs.getPropertyValue("--ct-w"));
+      if (mt && wcap && (mt.right - mt.left) * w > wcap) { var kk = wcap / ((mt.right - mt.left) * w); h *= kk; w *= kk; }          // 横に広いキャラは、見える部分の幅が、この幅（--ct-w）に収まるまで縮める
+      im.style.height = h + "px"; im.style.width = w + "px"; im.style.transform = "none";
+      im.style.left = (cxp - cxr * w) + "px"; im.style.top = (edge - tp * h) + "px";
+    }
+    if (im.complete && im.naturalHeight) go(); else im.addEventListener("load", go);
+  }
   // 漢字の部分を <span class="cjk"> で囲む（ロックのデザインで、太くする。かな（ひらがな・カタカナ）は、別のフォントなので囲まない）
   var KANJI = "\\u4e00-\\u9fff\\u3005\\u3006";
   function cjkWrap(node) {
@@ -1083,7 +1136,7 @@
     art_.appendChild(logoBox(t));
     p.appendChild(art_);
     p.appendChild(el("div", "wl " + (t && t.result ? t.result : ""), t && t.result === "win" ? "WIN" : t && t.result === "lose" ? "LOSE" : ""));   // 勝敗が決まる前は、空欄
-    if (t && t.char) { var ci = el("div", "cimg " + (t.char.kind === "hunter" ? "hunt" : "surv")); art(t.char, ci); art_.appendChild(ci); }          // キャラの画像（ロックのデザインで出る）
+    if (t && t.char) { var ci = el("div", "cimg " + (t.char.kind === "hunter" ? "hunt" : "surv")); art(t.char, ci); art_.appendChild(ci); sizeChar(ci); }          // キャラの画像（ロックのデザインで出る）
     var box = el("div", "ptbox");
     var pts = String((t && t.points) || 0);
     box.appendChild(el("div", "pt" + (pts.length >= 3 ? " d3" : pts.length === 2 ? " d2" : ""), pts));
