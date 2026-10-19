@@ -384,7 +384,7 @@
   html[data-design="rock"].stage .rs-next .nt { position: absolute; left: 455px; top: 76px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.993, -0.117, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 254; --fit-min: 14; --fit-max: 44; font-weight: 800; letter-spacing: .03em; }
   html[data-design="rock"].stage .rs-next .sl { position: absolute; left: 281px; top: 61px; width: 3px; height: 73px; transform: skewX(24deg); display: block; }
   html[data-design="rock"].stage .rs { font-synthesis: none; }
-  html[data-design="rock"].stage .cjk { font-weight: 900; font-synthesis: weight; -webkit-text-stroke: .05em currentColor; paint-order: stroke fill; }
+  html[data-design="rock"].stage .cjk { font-weight: 900; font-synthesis: weight; -webkit-text-stroke: .03em currentColor; paint-order: stroke fill; }
   @keyframes rowInR { from { transform: translateX(80px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes fadeUpR { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
   html[data-design="rock"].stage .rs.enter .rs-row { animation: rowInR .55s ease-out both; }
@@ -961,6 +961,15 @@
       else node.appendChild(document.createTextNode(part));
     });
   }
+  // 長い名前は、2行にする（スペースで／漢字・かなの名前は、真ん中で。ロックのデザインだけ。ほかのデザインでは、改行は空白になるので、日本語の名前は分けない）
+  function breakName(name) {
+    if (name.length > 8 && name.indexOf(" ") >= 0) return name.replace(" ", "\n");
+    if (root.getAttribute("data-design") === "rock" && name.length >= 6 && name.indexOf(" ") < 0 && /[\u3000-\u9fff]/.test(name)) {
+      var half = Math.ceil(name.length / 2);
+      return name.slice(0, half) + "\n" + name.slice(half);
+    }
+    return name;
+  }
   function logoBox(t) {
     var b = el("div", "logo");
     if (t && t.logo) { var im = new Image(); im.src = t.logo; im.alt = ""; b.appendChild(im); }     // チームのロゴ（いずれ実装。あれば表示する）
@@ -971,7 +980,7 @@
     var p = el("div", "rs-team " + cls);
     var art_ = el("div", "art");
     var name = (t && t.name) || "";
-    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name.length > 8 ? name.replace(" ", "\n") : name));
+    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), breakName(name)));
     cjkWrap(art_.lastChild);    // 長い名前は、小さくして収める
     art_.appendChild(logoBox(t));
     p.appendChild(art_);
