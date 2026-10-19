@@ -216,6 +216,7 @@
   .rs::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: var(--noise);
                mix-blend-mode: overlay; opacity: .5; }
   .rs > * { position: absolute; }
+  .rs-team .cimg { display: none; }
   .rs-tag { font-size: 17px; font-weight: 600; letter-spacing: .3em; color: color-mix(in srgb, var(--text) 62%, transparent); line-height: 1.5; font-style: normal; white-space: pre-line; }
   .rs-tag.tr { right: 40px; top: 34px; text-align: right; } .rs-tag.bl { left: 40px; bottom: 28px; }
   .rs-title { left: 36px; top: 4px; white-space: nowrap; transform: skewX(-6deg) rotate(-3deg); transform-origin: 0 100%; z-index: 3; }
@@ -311,47 +312,77 @@
   html.flow .rs-next { grid-area: next; position: static; transform: none; height: auto; padding: .5em .8em; justify-self: end; gap: .8em; }
   html.flow .rs-next .nx, html.flow .rs-next .nt { font-size: 1.1em; }
   html.flow .rs-next .sl { height: 1.4em; }
-  /* ═══════════════ ロック：右肩あがり。座標は、描いてもらったSVG（1651x953）を、1.1333倍にしたもの ═══════════════ */
+  /* ═══════════════ ロック：右肩あがり。座標は、描いてもらったSVG（1651x953）を、1.1333倍にしたもの。文字の幅は、二重線の長さに合わせて自動で決める ═══════════════ */
   html[data-design="rock"].stage .rs-rows { left: 676px; top: 101px; width: 605px; height: 782px; display: block; gap: 0; }
   html[data-design="rock"].stage .rs-row:nth-child(1) { position: absolute; left: 0px; top: 0px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
         clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(1) .sc { position: absolute; left: 278px; top: 153px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 198; --fit-min: 40; --fit-max: 140; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
+  html[data-design="rock"].stage .rs-row:nth-child(1) .lb { position: absolute; left: 127px; top: 130px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
   html[data-design="rock"].stage .rs-row:nth-child(2) { position: absolute; left: 5px; top: 172px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
         clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(2) .sc { position: absolute; left: 275px; top: 153px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 198; --fit-min: 40; --fit-max: 140; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
+  html[data-design="rock"].stage .rs-row:nth-child(2) .lb { position: absolute; left: 127px; top: 130px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
   html[data-design="rock"].stage .rs-row:nth-child(3) { position: absolute; left: 16px; top: 339px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
         clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
+  html[data-design="rock"].stage .rs-row:nth-child(3) .sc { position: absolute; left: 269px; top: 155px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 198; --fit-min: 40; --fit-max: 140; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
+  html[data-design="rock"].stage .rs-row:nth-child(3) .lb { position: absolute; left: 127px; top: 130px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
   html[data-design="rock"].stage .rs-row:nth-child(4) { position: absolute; left: 37px; top: 503px; width: 567px; height: 279px; flex: none; transform: none; border: 0; box-shadow: none; display: block;
         clip-path: polygon(66px 123px, 0px 279px, 489px 167px, 567px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 90%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, var(--ink))); }
-  html[data-design="rock"].stage .rs-row .lb { left: 85px; top: 110px; transform: matrix(0.972, -0.236, -0.43, 1, 0, 0); transform-origin: 0 100%; font-style: normal; font-size: 34px; }
-  html[data-design="rock"].stage .rs-row .sc { position: absolute; left: 125px; width: 340px; top: 91px; justify-content: center; transform: matrix(0.972, -0.236, -0.43, 1, 0, 0); transform-origin: 50% 100%; font-style: normal; font-size: 138px; padding: 0; gap: 22px; }
-  html[data-design="rock"].stage .rs-row .sc i { transform: none; }
+  html[data-design="rock"].stage .rs-row:nth-child(4) .sc { position: absolute; left: 279px; top: 152px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.981, -0.194, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 198; --fit-min: 40; --fit-max: 140; display: flex; align-items: center; justify-content: center; padding: 0; gap: .14em; line-height: 1; font-weight: 800; }
+  html[data-design="rock"].stage .rs-row:nth-child(4) .lb { position: absolute; left: 127px; top: 130px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.242, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 113; --fit-min: 12; --fit-max: 36; font-weight: 800; letter-spacing: .04em; }
+  html[data-design="rock"].stage .rs-row .sc i { width: .3em; height: .08em; transform: none; }
+  html[data-design="rock"].stage .rs-row .lb::before, html[data-design="rock"].stage .rs-row .lb::after { margin: 0 .25em; }
+  html[data-design="rock"].stage .rs-title { left: 0; top: 0; width: 1920px; height: 1080px; transform: none; pointer-events: none; }
+  html[data-design="rock"].stage .rs-title::after { display: none; }
+  html[data-design="rock"].stage .rs-title .big { position: absolute; left: 373px; top: 137px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.970, -0.244, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 530; --fit-min: 40; --fit-max: 260; line-height: 1; letter-spacing: -.01em; margin: 0; }
+  html[data-design="rock"].stage .rs-title .small { position: absolute; left: 625px; top: 175px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.960, -0.281, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 214; --fit-min: 24; --fit-max: 140; line-height: 1; margin: 0; }
   html[data-design="rock"].stage .rs-team.a { left: 42px; top: 223px; width: 659px; height: 777px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
   html[data-design="rock"].stage .rs-team.a .art { position: absolute; left: 0px; top: 0px; width: 659px; height: 722px; clip-path: polygon(6px 284px, 106px 103px, 659px 0px, 575px 346px, 0px 722px); border: 0; }
-  html[data-design="rock"].stage .rs-team.a .ptbox { position: absolute; left: 192px; top: 361px; width: 413px; height: 416px; right: auto; top: 361px; transform: none; border: 0; clip-path: polygon(413px 0px, 50px 224px, 0px 416px, 349px 314px);
+  html[data-design="rock"].stage .rs-team.a .ptbox { position: absolute; left: 192px; top: 361px; width: 413px; height: 416px; right: auto; transform: none; border: 0; clip-path: polygon(413px 0px, 50px 224px, 0px 416px, 349px 314px);
         background: linear-gradient(120deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 92%, transparent) 60%, color-mix(in srgb, var(--accent) 26%, var(--ink))); box-shadow: none; }
+  html[data-design="rock"].stage .rs-team.a .cimg { display: block; position: absolute; left: 260px; top: 77px; width: 291px; height: 260px; overflow: hidden; z-index: 1;
+        -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse at 50% 45%, #000 52%, transparent 100%); }
+  html[data-design="rock"].stage .rs-team.a .logo { left: 135px; top: 366px; right: auto; bottom: auto; width: 206px; height: 206px;
+        overflow: visible; font-size: 74px; border-width: 4px; z-index: 3; }
+  html[data-design="rock"].stage .rs-team.a .tn { position: absolute; left: 163px; top: 355px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.952, -0.306, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 228; --fit-min: 24; --fit-max: 84; white-space: pre; text-align: center; line-height: .95; z-index: 2; }
   html[data-design="rock"].stage .rs-team.b { left: 1269px; top: 42px; width: 608px; height: 823px; right: auto; background: none; clip-path: none; padding: 0; overflow: visible; display: block; }
   html[data-design="rock"].stage .rs-team.b .art { position: absolute; left: 0px; top: 0px; width: 579px; height: 633px; clip-path: polygon(0px 206px, 62px 71px, 579px 0px, 528px 346px, 54px 633px); border: 0; }
-  html[data-design="rock"].stage .rs-team.b .ptbox { position: absolute; left: 98px; top: 323px; width: 510px; height: 501px; right: auto; top: 323px; transform: none; border: 0; clip-path: polygon(510px 0px, 96px 246px, 0px 501px, 431px 383px);
+  html[data-design="rock"].stage .rs-team.b .ptbox { position: absolute; left: 98px; top: 323px; width: 510px; height: 501px; right: auto; transform: none; border: 0; clip-path: polygon(510px 0px, 96px 246px, 0px 501px, 431px 383px);
         background: linear-gradient(120deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--panel) 92%, transparent) 60%, color-mix(in srgb, var(--accent) 26%, var(--ink))); box-shadow: none; }
-  html[data-design="rock"].stage .rs-team.a .logo { left: 85px; top: 471px; bottom: auto; width: 131px; height: 131px; font-size: 46px; }
-  html[data-design="rock"].stage .rs-team.a .tn { left: 74px; right: auto; width: 499px; top: auto; bottom: 276px; transform: matrix(0.983, -0.187, -0.52, 1, 0, 0); transform-origin: 0 100%; }
-  html[data-design="rock"].stage .rs-team.a .wl { left: 128px; top: 142px; right: auto; bottom: auto; transform: matrix(0.983, -0.187, -0.52, 1, 0, 0); transform-origin: 0 100%; font-style: normal; }
-  html[data-design="rock"].stage .rs-team.b .logo { left: 387px; top: 72px; right: auto; bottom: auto; width: 131px; height: 131px; font-size: 46px; }
-  html[data-design="rock"].stage .rs-team.b .tn { left: 88px; right: auto; width: 431px; top: auto; bottom: 224px; transform: matrix(0.99, -0.137, -0.46, 1, 0, 0); transform-origin: 0 100%; }
-  html[data-design="rock"].stage .rs-team.b .wl { left: 104px; top: 128px; right: auto; bottom: auto; transform: matrix(0.99, -0.137, -0.46, 1, 0, 0); transform-origin: 0 100%; font-style: normal; }
-  html[data-design="rock"].stage .rs-team.a .pt { position: absolute; left: 74px; top: 84px; width: 340px; transform: matrix(0.951, -0.309, -0.22, 1, 0, 0); transform-origin: 50% 100%; font-style: normal; font-size: 210px; }
-  html[data-design="rock"].stage .rs-team.a .cap { display: block; left: 33px; bottom: 30px; top: auto; transform: matrix(0.951, -0.309, -0.22, 1, 0, 0); transform-origin: 0 100%; font-style: normal; }
-  html[data-design="rock"].stage .rs-team.b .pt { position: absolute; left: 130px; top: 146px; width: 340px; transform: matrix(0.951, -0.309, -0.22, 1, 0, 0); transform-origin: 50% 100%; font-style: normal; font-size: 210px; }
-  html[data-design="rock"].stage .rs-team.b .cap { display: block; left: 33px; bottom: 13px; top: auto; transform: matrix(0.951, -0.309, -0.22, 1, 0, 0); transform-origin: 0 100%; font-style: normal; }
-  html[data-design="rock"].stage .rs-team .cap::after { content: ""; display: block; width: 102px; height: 16px; margin-top: 6px; background: repeating-linear-gradient(100deg, var(--text) 0 3px, transparent 3px 8px); opacity: .55; }
+  html[data-design="rock"].stage .rs-team.b .cimg { display: block; position: absolute; left: 27px; top: 97px; width: 300px; height: 325px; overflow: hidden; z-index: 1;
+        -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse at 50% 45%, #000 52%, transparent 100%); }
+  html[data-design="rock"].stage .rs-team.b .logo { left: 379px; top: 102px; right: auto; bottom: auto; width: 206px; height: 206px;
+        overflow: visible; font-size: 74px; border-width: 4px; z-index: 3; }
+  html[data-design="rock"].stage .rs-team.b .tn { position: absolute; left: 405px; top: 353px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.907, -0.421, -0.150, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 189; --fit-min: 24; --fit-max: 84; white-space: pre; text-align: center; line-height: .95; z-index: 2; }
+  html[data-design="rock"].stage .rs-team .logo::after { content: ""; position: absolute; inset: -4px; border: 4px solid #000; border-radius: 50%; transform: translate(26px, 5px); pointer-events: none; }
+  html[data-design="rock"].stage .rs-team .logo img { border-radius: 50%; }
+  html[data-design="rock"].stage .rs-team .cimg img, html[data-design="rock"].stage .rs-team .cimg .emo { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
+  html[data-design="rock"].stage .rs-team .cimg .emo { display: flex; align-items: center; justify-content: center; font-size: 160px; }
+  html[data-design="rock"].stage .rs-team.a .wl { left: 128px; top: 142px; right: auto; bottom: auto; transform: matrix(0.982, -0.191, -0.150, 1, 0, 0); transform-origin: 0 100%; font-style: normal; z-index: 3; }
+  html[data-design="rock"].stage .rs-team.b .wl { left: 412px; top: 38px; right: auto; bottom: auto; transform: matrix(0.988, -0.156, -0.150, 1, 0, 0); transform-origin: 0 100%; font-style: normal; z-index: 3; }
+  html[data-design="rock"].stage .rs-team.a .pt { position: absolute; left: 284px; top: 214px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.966, -0.259, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; font-weight: 800; font-size: 270px; line-height: 1; }
+  html[data-design="rock"].stage .rs-team.b .pt { position: absolute; left: 181px; top: 327px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.966, -0.259, -0.120, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; font-weight: 800; font-size: 270px; line-height: 1; }
+  html[data-design="rock"].stage .rs-team .pt.d2 { font-size: 200px; } html[data-design="rock"].stage .rs-team .pt.d3 { font-size: 140px; }
+  html[data-design="rock"].stage .rs-team.a .cap { display: block; position: static; transform: none; }
+  html[data-design="rock"].stage .rs-team.a .cap b { position: absolute; left: 66px; top: 310px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.967, -0.254, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 31; --fit-min: 12; --fit-max: 34; display: block; font-weight: 800; letter-spacing: .06em; }
+  html[data-design="rock"].stage .rs-team.a .cap span { position: absolute; left: 107px; top: 328px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.967, -0.254, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 139; --fit-min: 9; --fit-max: 24; display: block; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-design="rock"].stage .rs-team.b .cap { display: block; position: static; transform: none; }
+  html[data-design="rock"].stage .rs-team.b .cap b { position: absolute; left: 331px; top: 319px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.968, -0.250, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 40; --fit-min: 12; --fit-max: 34; display: block; font-weight: 800; letter-spacing: .06em; }
+  html[data-design="rock"].stage .rs-team.b .cap span { position: absolute; left: 349px; top: 354px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.968, -0.250, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 79; --fit-min: 9; --fit-max: 24; display: block; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  html[data-design="rock"].stage .rs-team .cap::after { content: none; }
+  html[data-design="rock"].stage .rs-team.a .ptbox::after { content: ""; position: absolute; left: 23px; top: 352px; width: 100px; height: 29px; transform: skewX(-18deg); background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 8px); opacity: .5; }
+  html[data-design="rock"].stage .rs-team.b .ptbox::after { content: ""; position: absolute; left: 306px; top: 375px; width: 95px; height: 27px; transform: skewX(-18deg); background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 8px); opacity: .5; }
   html[data-design="rock"].stage .rs-next { left: 1237px; top: 865px; width: 644px; height: 174px; right: auto; bottom: auto; padding: 0; display: block; transform: none; border: 0; box-shadow: none; clip-path: polygon(88px 75px, 0px 174px, 582px 102px, 644px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--accent) 24%, var(--ink))); }
-  html[data-design="rock"].stage .rs-next .nx { position: absolute; left: 130px; bottom: 37px; transform: matrix(0.99, -0.13, -0.6, 1, 0, 0); transform-origin: 0 100%; font-style: normal; font-size: 34px; letter-spacing: .2em; }
-  html[data-design="rock"].stage .rs-next .sl { position: absolute; left: 281px; top: 61px; width: 3px; height: 73px; transform: skewX(24deg); }
-  html[data-design="rock"].stage .rs-next .nt { position: absolute; left: 340px; bottom: 46px; transform: matrix(0.99, -0.13, -0.6, 1, 0, 0); transform-origin: 0 100%; font-style: normal; font-size: 29px; letter-spacing: .02em; white-space: nowrap; }
+  html[data-design="rock"].stage .rs-next::before { content: "▶"; position: absolute; left: 88px; top: 79px; font-size: 40px; line-height: 1; color: var(--accent); transform: matrix(0.990, -0.139, -0.200, 1, 0, 0); }
+  html[data-design="rock"].stage .rs-next .nx::before { content: none; }
+  html[data-design="rock"].stage .rs-next .nx { position: absolute; left: 201px; top: 101px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.990, -0.144, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 134; --fit-min: 16; --fit-max: 48; font-weight: 800; letter-spacing: .12em; }
+  html[data-design="rock"].stage .rs-next .nt { position: absolute; left: 455px; top: 76px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.993, -0.117, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 254; --fit-min: 14; --fit-max: 44; font-weight: 800; letter-spacing: .03em; }
+  html[data-design="rock"].stage .rs-next .sl { position: absolute; left: 281px; top: 61px; width: 3px; height: 73px; transform: skewX(24deg); display: block; }
   @keyframes rowInR { from { transform: translateX(80px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes fadeUpR { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
   html[data-design="rock"].stage .rs.enter .rs-row { animation: rowInR .55s ease-out both; }
@@ -925,17 +956,19 @@
   }
   function teamPanel(t, cls) {
     var p = el("div", "rs-team " + cls);
-    var art = el("div", "art");
+    var art_ = el("div", "art");
     var name = (t && t.name) || "";
-    art.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name));    // 長い名前は、小さくして収める
-    art.appendChild(logoBox(t));
-    p.appendChild(art);
+    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name.length > 8 ? name.replace(" ", "\n") : name));    // 長い名前は、小さくして収める
+    art_.appendChild(logoBox(t));
+    p.appendChild(art_);
     p.appendChild(el("div", "wl " + (t && t.result ? t.result : ""), t && t.result === "win" ? "WIN" : t && t.result === "lose" ? "LOSE" : ""));   // 勝敗が決まる前は、空欄
+    if (t && t.char) { var ci = el("div", "cimg"); art(t.char, ci); art_.appendChild(ci); }          // キャラの画像（ロックのデザインで出る）
     var box = el("div", "ptbox");
-    box.appendChild(el("div", "pt", String((t && t.points) || 0)));
+    var pts = String((t && t.points) || 0);
+    box.appendChild(el("div", "pt" + (pts.length >= 3 ? " d3" : pts.length === 2 ? " d2" : ""), pts));
     var cap = el("div", "cap");
     cap.appendChild(el("b", null, (t && t.abbr) || ""));
-    cap.appendChild(document.createTextNode(name));
+    cap.appendChild(el("span", null, name));
     box.appendChild(cap);
     p.appendChild(box);
     return p;
@@ -974,6 +1007,23 @@
       wrap.appendChild(nx);
     }
     screenEl.replaceChildren(wrap);
+    fitAll(wrap);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitAll(wrap); });      // フォントが読み込まれたあとで、もう一度
+  }
+  // ロックのデザイン：文字の幅が、決められた長さ（--fit）になるように、文字の大きさを決める（--fit が無いデザインは、何もしない）
+  function fitAll(root_) {
+    var list = root_.querySelectorAll(".rs-title .big, .rs-title .small, .rs-row .lb, .rs-row .sc, .rs-team .tn, .rs-team .cap b, .rs-team .cap span, .rs-next .nx, .rs-next .nt");
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      e.style.fontSize = "";
+      var cs = getComputedStyle(e);
+      var want = parseFloat(cs.getPropertyValue("--fit"));
+      if (!want) continue;
+      var lo = parseFloat(cs.getPropertyValue("--fit-min")) || 8, hi = parseFloat(cs.getPropertyValue("--fit-max")) || 400;
+      e.style.fontSize = "100px";
+      var natural = e.offsetWidth || 1;
+      e.style.fontSize = Math.max(lo, Math.min(hi, 100 * want / natural)).toFixed(1) + "px";
+    }
   }
 
   // ═══ 「試合開始」が押されたあと：BAN/PICKを5秒ごとに1手順ずつ出して（最後の手順は10秒）、アニメーションで透明にする ═══
