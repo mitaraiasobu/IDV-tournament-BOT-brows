@@ -14,6 +14,11 @@
   @font-face { font-family: "Edo SZ"; src: url("assets/rock/edosz.ttf") format("truetype"); font-display: swap; }
   @font-face { font-family: "851Kana"; src: url("assets/rock/851chikara-dzuyoku-kanaA.ttf") format("truetype");
                unicode-range: U+3040-309F, U+30A0-30FF, U+31F0-31FF, U+FF66-FF9F; font-display: swap; }
+  /* ゴシック（ゴスロリ）のフォント：公開サイトの Gothic フォルダ。チーム名など＝漢字は黒薔薇ゴシック・それ以外（かな・英数字）は刻明朝／タイトル・見出し・数字＝反逆 */
+  @font-face { font-family: "GName"; src: url("Gothic/font_1_kokumr_1.00_rls.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "GName"; src: url("Gothic/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype");
+               unicode-range: U+3005-3006, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF; font-display: swap; }
+  @font-face { font-family: "Hangyaku"; src: url("Gothic/hangyaku-font/Hangyaku-0vRGR.ttf") format("truetype"); font-display: swap; }
   :root {
     --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
     --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
@@ -601,6 +606,373 @@
   html[data-design="fantasy"].stage .center .sc div { font-size: 72px; }
   html[data-design="fantasy"] .rv .box, html[data-design="fantasy"] .cp .box { border: 3px double var(--gold); background: color-mix(in srgb, var(--ink) 90%, transparent); }
   html[data-design="fantasy"] .rv h1, html[data-design="fantasy"] .rv h2, html[data-design="fantasy"] .cp .head .ttl { font-family: var(--fa); font-weight: 600; letter-spacing: .06em; }
+  /* ═══════════════ デザイン：ゴシック（ゴスロリ）。黒と薔薇色・レースの縁・ダマスク柄。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
+        --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
+        --fb: "GName", "Yu Mincho", serif;                      /* チーム名など：漢字＝黒薔薇ゴシック、かな・英数字＝刻明朝 */
+        --ink: color-mix(in srgb, var(--bg) 62%, black);
+        --star-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 38px 38px no-repeat; --star-mask-s: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 22px 22px no-repeat;
+        --lace-t: radial-gradient(circle at 50% 100%, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) top left / 18px 9px repeat-x;
+        --lace-b: radial-gradient(circle at 50% 0, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) bottom left / 18px 9px repeat-x;
+        --lace-ts: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
+        --lace-bs: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
+  html[data-design="gothic"] #bg { background: radial-gradient(ellipse at 50% 36%, color-mix(in srgb, var(--bg) 78%, var(--accent)), var(--bg) 72%); }
+  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; background: var(--accent); opacity: .15; pointer-events: none;
+        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; }
+  html[data-design="gothic"] #bg::after { background-image: var(--noise-f); mix-blend-mode: overlay; opacity: .45; }
+  html[data-design="gothic"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
+  html[data-design="gothic"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
+  html[data-design="gothic"].stage .card::after, html[data-design="gothic"].stage .center::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-ts), var(--lace-bs); }
+  html[data-design="gothic"].stage .rs::after, html[data-design="gothic"].stage .rs-team::after, html[data-design="gothic"].stage .rs-rows::after, html[data-design="gothic"].stage .rs-next::after { content: ""; position: absolute; pointer-events: none; z-index: 5;
+        background: var(--gold); -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  html[data-design="gothic"].stage .rs::after { inset: 1px; }
+  html[data-design="gothic"].stage .rs-team::after, html[data-design="gothic"].stage .rs-rows::after, html[data-design="gothic"].stage .rs-next::after { inset: -19px; }
+  html[data-design="gothic"].stage .card::before, html[data-design="gothic"].stage .center::before { content: ""; display: block; position: absolute; inset: 3px; height: auto; pointer-events: none; z-index: 3;
+        background: var(--gold); -webkit-mask: var(--star-mask-s); mask: var(--star-mask-s); }
+
+  /* ── 成績の画面 ── */
+  html[data-design="gothic"].stage .rs { font-family: var(--fb); }
+  html[data-design="gothic"].stage .rs::before { inset: 20px; background: none; border: 3px double var(--gold); border-radius: 0; opacity: 1; }
+  html[data-design="gothic"].stage .rs-tag { display: none; }
+  html[data-design="gothic"].stage .rs-title { left: 0; right: 0; top: 78px; text-align: center; transform: none; }
+  html[data-design="gothic"].stage .rs-title .big, html[data-design="gothic"].stage .rs-title .small {
+        position: static; display: inline; transform: none; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 120px; letter-spacing: .06em;
+        text-transform: none; color: var(--gold); text-shadow: 0 4px 18px rgba(0,0,0,.55);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 55%, white), var(--gold) 55%, color-mix(in srgb, var(--gold) 70%, black));
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  html[data-design="gothic"].stage .rs-title .small { margin-left: .3em; }
+  html[data-design="gothic"].stage .rs-title::before { content: "✠ ❦ ✠"; position: absolute; left: 0; right: 0; top: -52px; text-align: center; font-size: 34px;
+        letter-spacing: .5em; color: var(--gold); transform: none; }
+  html[data-design="gothic"].stage .rs-title::after { left: 50%; right: auto; width: 920px; margin-left: -460px; bottom: -34px; height: 2px; transform: none;
+        background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); }
+  html[data-design="gothic"].stage .rs-team { top: 270px; width: 452px; height: 640px; }
+  html[data-design="gothic"].stage .rs-team.a { left: 198px; } html[data-design="gothic"].stage .rs-team.b { right: 198px; left: auto; }
+  html[data-design="gothic"].stage .rs-team .art, html[data-design="gothic"].stage .rs-team.b .art {
+        left: 0; top: 0; width: 100%; height: 100%; clip-path: none; border: 3px double var(--gold); border-radius: 0;
+        background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 46%, black), color-mix(in srgb, var(--tc) 20%, black) 85%);
+        box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-team .art::before { background: var(--lace-t), var(--lace-b), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
+  html[data-design="gothic"].stage .rs-team .art::after { opacity: .5; mix-blend-mode: overlay; }
+  html[data-design="gothic"].stage .rs-team .logo, html[data-design="gothic"].stage .rs-team.b .logo {
+        left: 50%; right: auto; top: 46px; bottom: auto; width: 168px; height: 168px; margin-left: -84px; border: 3px double var(--gold);
+        box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--ink) 45%, transparent);
+        font-family: var(--fa); font-size: 64px; font-weight: 600; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-team .tn, html[data-design="gothic"].stage .rs-team.b .tn {
+        left: 18px; right: 18px; top: 268px; bottom: auto; transform: none; text-align: center; font-family: var(--fb); font-weight: 400; font-size: 60px;
+        line-height: 1.08; color: var(--cream); text-shadow: 0 3px 10px rgba(0,0,0,.5); letter-spacing: .01em; }
+  html[data-design="gothic"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="gothic"].stage .rs-team .tn.s { font-size: 42px; }
+  html[data-design="gothic"].stage .rs-team .tn::after { content: ""; display: block; margin: 20px auto 0; width: 300px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  html[data-design="gothic"].stage .rs-team .wl, html[data-design="gothic"].stage .rs-team.b .wl {
+        left: 0; right: 0; top: 16px; bottom: auto; padding: 0; background: none; transform: none; text-align: center; font-family: var(--fa); font-style: normal;
+        font-size: 30px; letter-spacing: .4em; color: var(--gold); }
+  html[data-design="gothic"].stage .rs-team .wl.lose { background: none; color: color-mix(in srgb, var(--cream) 60%, transparent); }
+  html[data-design="gothic"].stage .rs-team .ptbox, html[data-design="gothic"].stage .rs-team.a .ptbox, html[data-design="gothic"].stage .rs-team.b .ptbox {
+        left: 0; right: 0; top: auto; bottom: 28px; width: auto; height: 220px; transform: none; background: none; border: 0; box-shadow: none; }
+  html[data-design="gothic"].stage .rs-team .pt { top: 0; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 200px; color: var(--cream);
+        text-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-team .cap { display: none; }
+  html[data-design="gothic"].stage .rs-rows { left: 658px; top: 280px; width: 604px; height: 620px; gap: 0; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-row { transform: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 65%, transparent); background: none; box-shadow: none;
+        flex-direction: column; justify-content: center; gap: 0; }
+  html[data-design="gothic"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="gothic"].stage .rs-row .lb { position: static; font-family: var(--fa); font-style: normal; font-weight: 500; font-size: 28px; letter-spacing: .22em; color: var(--cream); margin-top: 6px; }
+  html[data-design="gothic"].stage .rs-row .lb::before { content: "✠"; margin-right: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .lb::after { content: "✠"; margin-left: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .sc { font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 86px; padding: 0; gap: 30px; color: var(--cream); line-height: 1.05; }
+  html[data-design="gothic"].stage .rs-row .sc i { width: 26px; height: 4px; transform: none; background: var(--cream); opacity: .85; }
+  html[data-design="gothic"].stage .rs-next { right: 96px; bottom: 62px; height: 84px; padding: 0 50px 0 40px; transform: none; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 94%, transparent); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-next .nx { font-family: var(--fa); font-weight: 600; font-size: 34px; letter-spacing: .14em; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-next .nx::before { color: var(--gold); }
+  html[data-design="gothic"].stage .rs-next .sl { transform: none; width: 2px; background: color-mix(in srgb, var(--gold) 70%, transparent); }
+  html[data-design="gothic"].stage .rs-next .nt { font-family: var(--fb); font-weight: 700; font-size: 38px; color: var(--cream); }
+  @keyframes dropInF { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes rowInF { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpF { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="gothic"].stage .rs.enter .rs-title { animation: dropInF .8s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-row { animation: rowInF .6s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-next { animation: fadeUpF .8s 1.1s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter::before, html[data-design="gothic"].stage .rs.enter::after { animation: fadeUpF .9s ease-out both; }
+  /* 縦長・狭い画面：飾りは省いて、文字と色だけ */
+  html[data-design="gothic"].flow .rs { font-family: var(--fb); }
+  html[data-design="gothic"].flow .rs-title .big, html[data-design="gothic"].flow .rs-title .small, html[data-design="gothic"].flow .rs-row .lb, html[data-design="gothic"].flow .rs-row .sc,
+  html[data-design="gothic"].flow .rs-team .pt, html[data-design="gothic"].flow .rs-next .nx { font-family: var(--fa); font-style: normal; text-shadow: none; }
+  html[data-design="gothic"].flow .rs-team, html[data-design="gothic"].flow .rs-rows { border: 2px solid var(--gold); }
+  html[data-design="gothic"].flow .rs-row .lb::before, html[data-design="gothic"].flow .rs-row .lb::after { content: "✠"; color: var(--gold); margin: 0 .4em; }
+
+  /* ── BAN/PICKの画面 ── */
+  html[data-design="gothic"].stage .hdr { font-family: var(--fa); font-style: normal; font-weight: 600; border-bottom: 3px double var(--gold); color: var(--gold); letter-spacing: .2em; }
+  html[data-design="gothic"].stage .sq { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 90%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .sq.used { border-color: var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .card, html[data-design="gothic"].stage .center { border: 3px double var(--gold); border-radius: 0; overflow: hidden;
+        background: radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--panel2) 90%, transparent), color-mix(in srgb, var(--ink) 96%, transparent));
+        box-shadow: 0 14px 34px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .card::before { background: none; }
+  html[data-design="gothic"].stage .card .art { background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%); }
+  html[data-design="gothic"].stage .card .cap { font-family: var(--fb); font-weight: 700; letter-spacing: .06em; font-size: 28px; border-top: 1px solid var(--gold);
+        background: color-mix(in srgb, var(--ink) 90%, transparent); color: var(--cream); text-shadow: none; }
+  html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .vs, html[data-design="gothic"].stage .center .sc div {
+        font-family: var(--fa); font-style: normal; font-weight: 600; color: var(--cream); letter-spacing: .1em; }
+  html[data-design="gothic"].stage .center .ttl { font-size: 34px; color: var(--gold); }
+  html[data-design="gothic"].stage .center .st { font-family: var(--fa); border-color: color-mix(in srgb, var(--gold) 70%, transparent); color: var(--gold); letter-spacing: .3em; font-size: 22px; }
+  html[data-design="gothic"].stage .center .vs .mid { font-style: normal; color: var(--gold); text-shadow: none; }
+  html[data-design="gothic"].stage .center .sc div { font-size: 72px; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 3px double var(--gold); background: color-mix(in srgb, var(--ink) 90%, transparent); }
+  html[data-design="gothic"] .rv h1, html[data-design="gothic"] .cp .head .ttl { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; }
+  html[data-design="gothic"] .rv h2, html[data-design="gothic"] .cp h3 { font-family: var(--fb); font-weight: 400; letter-spacing: .08em; }
+  /* ═══════════════ デザイン：ゴシック（ゴスロリ）。黒と薔薇色・レースの縁・ダマスク柄。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
+        --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
+        --fb: "GName", "Yu Mincho", serif;                      /* チーム名など：漢字＝黒薔薇ゴシック、かな・英数字＝刻明朝 */
+        --ink: color-mix(in srgb, var(--bg) 62%, black);
+        --star-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 22px 22px no-repeat; --star-mask-s: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 14px 14px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 14px 14px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 14px 14px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='none' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 14px 14px no-repeat;
+        --lace-t: radial-gradient(circle at 50% 100%, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) top left / 18px 9px repeat-x;
+        --lace-b: radial-gradient(circle at 50% 0, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) bottom left / 18px 9px repeat-x;
+        --lace-ts: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
+        --lace-bs: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
+  html[data-design="gothic"] #bg { background: radial-gradient(ellipse at 50% 36%, color-mix(in srgb, var(--bg) 78%, var(--accent)), var(--bg) 72%); }
+  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; background: var(--accent); opacity: .15; pointer-events: none;
+        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; }
+  html[data-design="gothic"] #bg::after { background-image: var(--noise-f); mix-blend-mode: overlay; opacity: .45; }
+  html[data-design="gothic"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
+  html[data-design="gothic"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
+  html[data-design="gothic"].stage .card::after, html[data-design="gothic"].stage .center::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-ts), var(--lace-bs); }
+  html[data-design="gothic"].stage .rs::after, html[data-design="gothic"].stage .rs-team::after, html[data-design="gothic"].stage .rs-rows::after, html[data-design="gothic"].stage .rs-next::after { content: ""; position: absolute; pointer-events: none; z-index: 5;
+        background: var(--gold); -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  html[data-design="gothic"].stage .rs::after { inset: 9px; }
+  html[data-design="gothic"].stage .rs-team::after, html[data-design="gothic"].stage .rs-rows::after, html[data-design="gothic"].stage .rs-next::after { inset: -11px; }
+  html[data-design="gothic"].stage .card::before, html[data-design="gothic"].stage .center::before { content: ""; display: block; position: absolute; inset: 3px; height: auto; pointer-events: none; z-index: 3;
+        background: var(--gold); -webkit-mask: var(--star-mask-s); mask: var(--star-mask-s); }
+
+  /* ── 成績の画面 ── */
+  html[data-design="gothic"].stage .rs { font-family: var(--fb); }
+  html[data-design="gothic"].stage .rs::before { inset: 20px; background: none; border: 3px double var(--gold); border-radius: 0; opacity: 1; }
+  html[data-design="gothic"].stage .rs-tag { display: none; }
+  html[data-design="gothic"].stage .rs-title { left: 0; right: 0; top: 78px; text-align: center; transform: none; }
+  html[data-design="gothic"].stage .rs-title .big, html[data-design="gothic"].stage .rs-title .small {
+        position: static; display: inline; transform: none; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 120px; letter-spacing: .06em;
+        text-transform: none; color: var(--gold); text-shadow: 0 4px 18px rgba(0,0,0,.55);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 55%, white), var(--gold) 55%, color-mix(in srgb, var(--gold) 70%, black));
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  html[data-design="gothic"].stage .rs-title .small { margin-left: .3em; }
+  html[data-design="gothic"].stage .rs-title::before { content: "✠ ❦ ✠"; position: absolute; left: 0; right: 0; top: -52px; text-align: center; font-size: 34px;
+        letter-spacing: .5em; color: var(--gold); transform: none; }
+  html[data-design="gothic"].stage .rs-title::after { left: 50%; right: auto; width: 920px; margin-left: -460px; bottom: -34px; height: 2px; transform: none;
+        background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); }
+  html[data-design="gothic"].stage .rs-team { top: 270px; width: 452px; height: 640px; }
+  html[data-design="gothic"].stage .rs-team.a { left: 198px; } html[data-design="gothic"].stage .rs-team.b { right: 198px; left: auto; }
+  html[data-design="gothic"].stage .rs-team .art, html[data-design="gothic"].stage .rs-team.b .art {
+        left: 0; top: 0; width: 100%; height: 100%; clip-path: none; border: 3px double var(--gold); border-radius: 0;
+        background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 46%, black), color-mix(in srgb, var(--tc) 20%, black) 85%);
+        box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-team .art::before { background: var(--lace-t), var(--lace-b), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
+  html[data-design="gothic"].stage .rs-team .art::after { opacity: .5; mix-blend-mode: overlay; }
+  html[data-design="gothic"].stage .rs-team .logo, html[data-design="gothic"].stage .rs-team.b .logo {
+        left: 50%; right: auto; top: 46px; bottom: auto; width: 168px; height: 168px; margin-left: -84px; border: 3px double var(--gold);
+        box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--ink) 45%, transparent);
+        font-family: var(--fa); font-size: 64px; font-weight: 600; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-team .tn, html[data-design="gothic"].stage .rs-team.b .tn {
+        left: 18px; right: 18px; top: 268px; bottom: auto; transform: none; text-align: center; font-family: var(--fb); font-weight: 400; font-size: 60px;
+        line-height: 1.08; color: var(--cream); text-shadow: 0 3px 10px rgba(0,0,0,.5); letter-spacing: .01em; }
+  html[data-design="gothic"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="gothic"].stage .rs-team .tn.s { font-size: 42px; }
+  html[data-design="gothic"].stage .rs-team .tn::after { content: ""; display: block; margin: 20px auto 0; width: 300px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  html[data-design="gothic"].stage .rs-team .wl, html[data-design="gothic"].stage .rs-team.b .wl {
+        left: 0; right: 0; top: 16px; bottom: auto; padding: 0; background: none; transform: none; text-align: center; font-family: var(--fa); font-style: normal;
+        font-size: 30px; letter-spacing: .4em; color: var(--gold); }
+  html[data-design="gothic"].stage .rs-team .wl.lose { background: none; color: color-mix(in srgb, var(--cream) 60%, transparent); }
+  html[data-design="gothic"].stage .rs-team .ptbox, html[data-design="gothic"].stage .rs-team.a .ptbox, html[data-design="gothic"].stage .rs-team.b .ptbox {
+        left: 0; right: 0; top: auto; bottom: 28px; width: auto; height: 220px; transform: none; background: none; border: 0; box-shadow: none; }
+  html[data-design="gothic"].stage .rs-team .pt { top: 0; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 200px; color: var(--cream);
+        text-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-team .cap { display: none; }
+  html[data-design="gothic"].stage .rs-rows { left: 658px; top: 280px; width: 604px; height: 620px; gap: 0; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-row { transform: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 65%, transparent); background: none; box-shadow: none;
+        flex-direction: column; justify-content: center; gap: 0; }
+  html[data-design="gothic"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="gothic"].stage .rs-row .lb { position: static; font-family: var(--fa); font-style: normal; font-weight: 500; font-size: 28px; letter-spacing: .22em; color: var(--cream); margin-top: 6px; }
+  html[data-design="gothic"].stage .rs-row .lb::before { content: "✠"; margin-right: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .lb::after { content: "✠"; margin-left: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .sc { font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 86px; padding: 0; gap: 30px; color: var(--cream); line-height: 1.05; }
+  html[data-design="gothic"].stage .rs-row .sc i { width: 26px; height: 4px; transform: none; background: var(--cream); opacity: .85; }
+  html[data-design="gothic"].stage .rs-next { right: 96px; bottom: 62px; height: 84px; padding: 0 50px 0 40px; transform: none; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 94%, transparent); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-next .nx { font-family: var(--fa); font-weight: 600; font-size: 34px; letter-spacing: .14em; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-next .nx::before { color: var(--gold); }
+  html[data-design="gothic"].stage .rs-next .sl { transform: none; width: 2px; background: color-mix(in srgb, var(--gold) 70%, transparent); }
+  html[data-design="gothic"].stage .rs-next .nt { font-family: var(--fb); font-weight: 700; font-size: 38px; color: var(--cream); }
+  @keyframes dropInF { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes rowInF { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpF { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="gothic"].stage .rs.enter .rs-title { animation: dropInF .8s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-row { animation: rowInF .6s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-next { animation: fadeUpF .8s 1.1s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter::before, html[data-design="gothic"].stage .rs.enter::after { animation: fadeUpF .9s ease-out both; }
+  /* 縦長・狭い画面：飾りは省いて、文字と色だけ */
+  html[data-design="gothic"].flow .rs { font-family: var(--fb); }
+  html[data-design="gothic"].flow .rs-title .big, html[data-design="gothic"].flow .rs-title .small, html[data-design="gothic"].flow .rs-row .lb, html[data-design="gothic"].flow .rs-row .sc,
+  html[data-design="gothic"].flow .rs-team .pt, html[data-design="gothic"].flow .rs-next .nx { font-family: var(--fa); font-style: normal; text-shadow: none; }
+  html[data-design="gothic"].flow .rs-team, html[data-design="gothic"].flow .rs-rows { border: 2px solid var(--gold); }
+  html[data-design="gothic"].flow .rs-row .lb::before, html[data-design="gothic"].flow .rs-row .lb::after { content: "✠"; color: var(--gold); margin: 0 .4em; }
+
+  /* ── BAN/PICKの画面 ── */
+  html[data-design="gothic"].stage .hdr { font-family: var(--fa); font-style: normal; font-weight: 600; border-bottom: 3px double var(--gold); color: var(--gold); letter-spacing: .2em; }
+  html[data-design="gothic"].stage .sq { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 90%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .sq.used { border-color: var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .card, html[data-design="gothic"].stage .center { border: 3px double var(--gold); border-radius: 0; overflow: hidden;
+        background: radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--panel2) 90%, transparent), color-mix(in srgb, var(--ink) 96%, transparent));
+        box-shadow: 0 14px 34px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .card::before { background: none; }
+  html[data-design="gothic"].stage .card .art { background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%); }
+  html[data-design="gothic"].stage .card .cap { font-family: var(--fb); font-weight: 700; letter-spacing: .06em; font-size: 28px; border-top: 1px solid var(--gold);
+        background: color-mix(in srgb, var(--ink) 90%, transparent); color: var(--cream); text-shadow: none; }
+  html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .vs, html[data-design="gothic"].stage .center .sc div {
+        font-family: var(--fa); font-style: normal; font-weight: 600; color: var(--cream); letter-spacing: .1em; }
+  html[data-design="gothic"].stage .center .ttl { font-size: 34px; color: var(--gold); }
+  html[data-design="gothic"].stage .center .st { font-family: var(--fa); border-color: color-mix(in srgb, var(--gold) 70%, transparent); color: var(--gold); letter-spacing: .3em; font-size: 22px; }
+  html[data-design="gothic"].stage .center .vs .mid { font-style: normal; color: var(--gold); text-shadow: none; }
+  html[data-design="gothic"].stage .center .sc div { font-size: 72px; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 3px double var(--gold); background: color-mix(in srgb, var(--ink) 90%, transparent); }
+  html[data-design="gothic"] .rv h1, html[data-design="gothic"] .cp .head .ttl { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; }
+  html[data-design="gothic"] .rv h2, html[data-design="gothic"] .cp h3 { font-family: var(--fb); font-weight: 400; letter-spacing: .08em; }
+  /* ═══════════════ デザイン：ゴシック（ゴスロリ）。黒と薔薇色・レースの縁・ダマスク柄。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
+        --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
+        --fb: "GName", "Yu Mincho", serif;                      /* チーム名など：漢字＝黒薔薇ゴシック、かな・英数字＝刻明朝 */
+        --ink: color-mix(in srgb, var(--bg) 62%, black);
+        --lace-t: radial-gradient(circle at 50% 100%, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) top left / 18px 9px repeat-x;
+        --lace-b: radial-gradient(circle at 50% 0, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) bottom left / 18px 9px repeat-x;
+        --lace-ts: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
+        --lace-bs: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
+  html[data-design="gothic"] #bg { background: radial-gradient(ellipse at 50% 36%, color-mix(in srgb, var(--bg) 78%, var(--accent)), var(--bg) 72%); }
+  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; background: var(--accent); opacity: .15; pointer-events: none;
+        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; }
+  html[data-design="gothic"] #bg::after { background-image: var(--noise-f); mix-blend-mode: overlay; opacity: .45; }
+  html[data-design="gothic"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
+  html[data-design="gothic"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
+  html[data-design="gothic"].stage .card::after, html[data-design="gothic"].stage .center::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-ts), var(--lace-bs); }
+  html[data-design="gothic"].stage .rs::after { display: none; }
+
+  /* ── 成績の画面 ── */
+  html[data-design="gothic"].stage .rs { font-family: var(--fb); }
+  html[data-design="gothic"].stage .rs::before { inset: 20px; background: none; border: 3px double var(--gold); border-radius: 0; opacity: 1; }
+  html[data-design="gothic"].stage .rs-tag { display: none; }
+  html[data-design="gothic"].stage .rs-title { left: 0; right: 0; top: 78px; text-align: center; transform: none; }
+  html[data-design="gothic"].stage .rs-title .big, html[data-design="gothic"].stage .rs-title .small {
+        position: static; display: inline; transform: none; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 120px; letter-spacing: .06em;
+        text-transform: none; color: var(--gold); text-shadow: 0 4px 18px rgba(0,0,0,.55);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 55%, white), var(--gold) 55%, color-mix(in srgb, var(--gold) 70%, black));
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  html[data-design="gothic"].stage .rs-title .small { margin-left: .3em; }
+  html[data-design="gothic"].stage .rs-title::before { content: "✠ ❦ ✠"; position: absolute; left: 0; right: 0; top: -52px; text-align: center; font-size: 34px;
+        letter-spacing: .5em; color: var(--gold); transform: none; }
+  html[data-design="gothic"].stage .rs-title::after { left: 50%; right: auto; width: 920px; margin-left: -460px; bottom: -34px; height: 2px; transform: none;
+        background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); }
+  html[data-design="gothic"].stage .rs-team { top: 270px; width: 452px; height: 640px; }
+  html[data-design="gothic"].stage .rs-team.a { left: 198px; } html[data-design="gothic"].stage .rs-team.b { right: 198px; left: auto; }
+  html[data-design="gothic"].stage .rs-team .art, html[data-design="gothic"].stage .rs-team.b .art {
+        left: 0; top: 0; width: 100%; height: 100%; clip-path: none; border: 3px double var(--gold); border-radius: 0;
+        background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 46%, black), color-mix(in srgb, var(--tc) 20%, black) 85%);
+        box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-team .art::before { background: var(--lace-t), var(--lace-b), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
+  html[data-design="gothic"].stage .rs-team .art::after { opacity: .5; mix-blend-mode: overlay; }
+  html[data-design="gothic"].stage .rs-team .logo, html[data-design="gothic"].stage .rs-team.b .logo {
+        left: 50%; right: auto; top: 46px; bottom: auto; width: 168px; height: 168px; margin-left: -84px; border: 3px double var(--gold);
+        box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--ink) 45%, transparent);
+        font-family: var(--fa); font-size: 64px; font-weight: 600; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-team .tn, html[data-design="gothic"].stage .rs-team.b .tn {
+        left: 18px; right: 18px; top: 268px; bottom: auto; transform: none; text-align: center; font-family: var(--fb); font-weight: 400; font-size: 60px;
+        line-height: 1.08; color: var(--cream); text-shadow: 0 3px 10px rgba(0,0,0,.5); letter-spacing: .01em; }
+  html[data-design="gothic"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="gothic"].stage .rs-team .tn.s { font-size: 42px; }
+  html[data-design="gothic"].stage .rs-team .tn::after { content: ""; display: block; margin: 20px auto 0; width: 300px; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  html[data-design="gothic"].stage .rs-team .wl, html[data-design="gothic"].stage .rs-team.b .wl {
+        left: 0; right: 0; top: 16px; bottom: auto; padding: 0; background: none; transform: none; text-align: center; font-family: var(--fa); font-style: normal;
+        font-size: 30px; letter-spacing: .4em; color: var(--gold); }
+  html[data-design="gothic"].stage .rs-team .wl.lose { background: none; color: color-mix(in srgb, var(--cream) 60%, transparent); }
+  html[data-design="gothic"].stage .rs-team .ptbox, html[data-design="gothic"].stage .rs-team.a .ptbox, html[data-design="gothic"].stage .rs-team.b .ptbox {
+        left: 0; right: 0; top: auto; bottom: 28px; width: auto; height: 220px; transform: none; background: none; border: 0; box-shadow: none; }
+  html[data-design="gothic"].stage .rs-team .pt { top: 0; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 200px; color: var(--cream);
+        text-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-team .cap { display: none; }
+  html[data-design="gothic"].stage .rs-rows { left: 658px; top: 280px; width: 604px; height: 620px; gap: 0; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .rs-row { transform: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 65%, transparent); background: none; box-shadow: none;
+        flex-direction: column; justify-content: center; gap: 0; }
+  html[data-design="gothic"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="gothic"].stage .rs-row .lb { position: static; font-family: var(--fa); font-style: normal; font-weight: 500; font-size: 28px; letter-spacing: .22em; color: var(--cream); margin-top: 6px; }
+  html[data-design="gothic"].stage .rs-row .lb::before { content: "✠"; margin-right: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .lb::after { content: "✠"; margin-left: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="gothic"].stage .rs-row .sc { font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 86px; padding: 0; gap: 30px; color: var(--cream); line-height: 1.05; }
+  html[data-design="gothic"].stage .rs-row .sc i { width: 26px; height: 4px; transform: none; background: var(--cream); opacity: .85; }
+  html[data-design="gothic"].stage .rs-next { right: 96px; bottom: 62px; height: 84px; padding: 0 50px 0 40px; transform: none; border: 3px double var(--gold); border-radius: 0;
+        background: color-mix(in srgb, var(--ink) 94%, transparent); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .rs-next .nx { font-family: var(--fa); font-weight: 600; font-size: 34px; letter-spacing: .14em; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-next .nx::before { color: var(--gold); }
+  html[data-design="gothic"].stage .rs-next .sl { transform: none; width: 2px; background: color-mix(in srgb, var(--gold) 70%, transparent); }
+  html[data-design="gothic"].stage .rs-next .nt { font-family: var(--fb); font-weight: 700; font-size: 38px; color: var(--cream); }
+  @keyframes dropInF { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes rowInF { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpF { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="gothic"].stage .rs.enter .rs-title { animation: dropInF .8s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-row { animation: rowInF .6s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter .rs-next { animation: fadeUpF .8s 1.1s ease-out both; }
+  html[data-design="gothic"].stage .rs.enter::before, html[data-design="gothic"].stage .rs.enter::after { animation: fadeUpF .9s ease-out both; }
+  /* 縦長・狭い画面：飾りは省いて、文字と色だけ */
+  html[data-design="gothic"].flow .rs { font-family: var(--fb); }
+  html[data-design="gothic"].flow .rs-title .big, html[data-design="gothic"].flow .rs-title .small, html[data-design="gothic"].flow .rs-row .lb, html[data-design="gothic"].flow .rs-row .sc,
+  html[data-design="gothic"].flow .rs-team .pt, html[data-design="gothic"].flow .rs-next .nx { font-family: var(--fa); font-style: normal; text-shadow: none; }
+  html[data-design="gothic"].flow .rs-team, html[data-design="gothic"].flow .rs-rows { border: 2px solid var(--gold); }
+  html[data-design="gothic"].flow .rs-row .lb::before, html[data-design="gothic"].flow .rs-row .lb::after { content: "✠"; color: var(--gold); margin: 0 .4em; }
+
+  /* ── BAN/PICKの画面 ── */
+  html[data-design="gothic"].stage .hdr { font-family: var(--fa); font-style: normal; font-weight: 600; border-bottom: 3px double var(--gold); color: var(--gold); letter-spacing: .2em; }
+  html[data-design="gothic"].stage .sq { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 90%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .sq.used { border-color: var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="gothic"].stage .card, html[data-design="gothic"].stage .center { border: 2px solid var(--gold); border-radius: 0; overflow: hidden;
+        background: radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--panel2) 90%, transparent), color-mix(in srgb, var(--ink) 96%, transparent));
+        box-shadow: 0 14px 34px rgba(0,0,0,.55); }
+  html[data-design="gothic"].stage .card::before { background: none; }
+  html[data-design="gothic"].stage .card .art { background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%); }
+  html[data-design="gothic"].stage .card .cap { font-family: var(--fb); font-weight: 700; letter-spacing: .06em; font-size: 28px; border-top: 1px solid var(--gold);
+        background: color-mix(in srgb, var(--ink) 90%, transparent); color: var(--cream); text-shadow: none; }
+  html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .vs, html[data-design="gothic"].stage .center .sc div {
+        font-family: var(--fa); font-style: normal; font-weight: 600; color: var(--cream); letter-spacing: .1em; }
+  html[data-design="gothic"].stage .center .ttl { font-size: 34px; color: var(--gold); }
+  html[data-design="gothic"].stage .center .st { font-family: var(--fa); border-color: color-mix(in srgb, var(--gold) 70%, transparent); color: var(--gold); letter-spacing: .3em; font-size: 22px; }
+  html[data-design="gothic"].stage .center .vs .mid { font-style: normal; color: var(--gold); text-shadow: none; }
+  html[data-design="gothic"].stage .center .sc div { font-size: 72px; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 3px double var(--gold); background: color-mix(in srgb, var(--ink) 90%, transparent); }
+  html[data-design="gothic"] .rv h1, html[data-design="gothic"] .cp .head .ttl { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; }
+  html[data-design="gothic"] .rv h2, html[data-design="gothic"] .cp h3 { font-family: var(--fb); font-weight: 400; letter-spacing: .08em; }
+  /* ゴシック固有：ロゴの縁・勝敗・ルール画面の飾り */
+  html[data-design="gothic"].stage .rs-team .wl { font-family: var(--fa); font-weight: 400; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 92%, transparent); position: relative; }
+  html[data-design="gothic"] .rv .head h1 { text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  html[data-design="gothic"] .rv .pill { border-radius: 0; border-color: var(--gold); color: var(--gold); font-family: var(--fb); }
+  html[data-design="gothic"] .rv h2 { border-bottom: 1px solid var(--gold); }
+  /* ゴシック固有：ロゴの縁・勝敗・ルール画面の飾り */
+  html[data-design="gothic"].stage .rs-team .wl { font-family: var(--fa); font-weight: 400; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 92%, transparent); position: relative; }
+  html[data-design="gothic"] .rv .head h1 { text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  html[data-design="gothic"] .rv .pill { border-radius: 0; border-color: var(--gold); color: var(--gold); font-family: var(--fb); }
+  html[data-design="gothic"] .rv h2 { border-bottom: 1px solid var(--gold); }
+  html[data-design="gothic"] .rv .box::after, html[data-design="gothic"] .cp .box::after { content: ""; position: absolute; inset: -11px; pointer-events: none; background: var(--gold);
+        -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  /* ゴシック固有：ロゴの縁・勝敗・ルール画面の飾り */
+  html[data-design="gothic"].stage .rs-team .wl { font-family: var(--fa); font-weight: 400; }
+  html[data-design="gothic"] .rv .box, html[data-design="gothic"] .cp .box { border: 2px solid var(--gold); border-radius: 6px; background: color-mix(in srgb, var(--ink) 92%, transparent); position: relative; }
+  html[data-design="gothic"] .rv .head h1 { text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  html[data-design="gothic"] .rv .pill { border-radius: 999px; border-color: var(--gold); color: var(--gold); font-family: var(--fb); }
+  html[data-design="gothic"] .rv h2 { border-bottom: 1px solid var(--gold); }
+  html[data-design="gothic"] .rv .box::after, html[data-design="gothic"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
+        -webkit-mask: var(--star-mask); mask: var(--star-mask); }
   .idle { padding: 30vh 1em 0; text-align: center; font-size: 1.8em; font-weight: 800; letter-spacing: .08em; color: var(--sub); }
 </style>
 </head>
