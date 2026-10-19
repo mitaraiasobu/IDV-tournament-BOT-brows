@@ -170,7 +170,7 @@
   @keyframes popIn { 0% { transform: scale(.4); opacity: 0; filter: brightness(2.2); } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; filter: none; } }
   .pop { animation: popIn .6s ease-out both; }
   @keyframes bpIn { from { opacity: 0; } to { opacity: 1; } }       /* transform は使わない（absolute の子の基準が、高さ0の枠に変わってしまうため） */
-  .bpwrap { animation: bpIn .6s ease-out both; }
+  .bpwrap.in { animation: bpIn .6s ease-out both; }      /* 最初に出るときだけ。5秒ごとの手順の切り替えでは、画面全体を点滅させない */
   /* 終わりのアニメーション：BAN/PICKの画面が、上へ流れて消え、背景も透明になる。そのあとは、すべて透明（後ろのゲーム画面が見える） */
   @keyframes wipeOut { to { transform: translateY(-110%); opacity: 0; } }
   html.leaving #screen { animation: wipeOut 1s ease-in both; }
@@ -435,7 +435,7 @@
     return b;
   }
   function renderBpStage(lv, k) {
-    var wrap = el("div", "bpwrap");
+    var wrap = el("div", "bpwrap" + (bpFresh ? " in" : ""));
     var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
     if (gs.active) {
       var h1 = el("div", "hdr", "GLOBAL BAN"); h1.style.cssText = "left:22px;top:20px;width:380px;";
@@ -497,7 +497,7 @@
     return d;
   }
   function renderBpFlow(lv, k) {
-    var wrap = el("div", "cp bpwrap");
+    var wrap = el("div", "cp bpwrap" + (bpFresh ? " in" : ""));
     var head = el("div", "box head");
     head.appendChild(el("div", "ttl", lv.title || ""));
     head.appendChild(el("div", "st", k >= (lv.n_steps || 1) - 1 ? "STANDBY" : "BAN / PICK"));
@@ -668,7 +668,10 @@
     });
     return out;
   }
+  var bpFresh = true;
   function renderPlayStep(lv, k) {
+    var cur = screenEl.firstChild;
+    bpFresh = !(cur && cur.classList && cur.classList.contains("bpwrap"));         // もう手順の画面が出ているなら、ふわっと出る動きはしない
     if (kind === "stage") renderBpStage(lv, k); else renderBpFlow(lv, k);
     setMedia(mediaForStep(lv, k));
     fit();
