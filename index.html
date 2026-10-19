@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>トーナメント表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;800;900&family=Yuji+Boku&display=swap">
 <style>
   :root {
     --bg: #12141a; --panel: #1b1f29; --panel2: #232836; --text: #eceff6; --sub: #98a1b5;
@@ -202,7 +205,33 @@
   html.flow #detailsPage { padding: .5em .8em 3em; }
   html.flow #detailsPage h1 { font-size: 1.2em; }
   html.flow .dcard { overflow-x: auto; }
-  html.flow table { font-size: .85em; }</style>
+  html.flow table { font-size: .85em; }
+  /* ═══════════════ ロック：トーナメント表（BAN/PICK配信ページの「ロック」と同じ雰囲気。名前・数字だけロックのフォントで、選手・チーム名は読みやすいまま） ═══════════════ */
+  @font-face { font-family: "Edo SZ"; src: url("assets/rock/edosz.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "851Kana"; src: url("assets/rock/851chikara-dzuyoku-kanaA.ttf") format("truetype");
+               unicode-range: U+3040-309F, U+30A0-30FF, U+31F0-31FF, U+FF66-FF9F; font-display: swap; }
+  html[data-design="rock"] { --disp: "Edo SZ", "851Kana", "Yuji Boku", "Yu Gothic UI", sans-serif; --cond: "Anton", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
+    --ink: color-mix(in srgb, var(--bg) 55%, black); --red: #e0485a;
+    --rock-grad: linear-gradient(160deg, color-mix(in srgb, var(--accent) 84%, white), var(--accent) 45%, color-mix(in srgb, var(--accent) 62%, var(--bg)));
+    --grunge: url(assets/rock/darkgrunge.webp); }
+  html[data-design="rock"] #stage::before { content: ""; position: absolute; inset: 0; background: var(--rock-grad); opacity: .8; pointer-events: none;
+    -webkit-mask: url(assets/rock/scratch_alpha.webp) center / cover no-repeat; mask: url(assets/rock/scratch_alpha.webp) center / cover no-repeat; }
+  html[data-bg="transparent"] #stage::before { display: none; }
+  html[data-design="rock"] #stage > * { position: relative; z-index: 1; }
+  html[data-design="rock"] .top h1 { font-family: var(--disp); font-weight: 400; text-shadow: .06em .06em 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+  html[data-design="rock"] .top .sub, html[data-design="rock"] .round h2, html[data-design="rock"] .nowbar .lbl, html[data-design="rock"] .champ .box .label { font-family: var(--cond); font-weight: 800; }
+  html[data-design="rock"] .match, html[data-design="rock"] .teamcell, html[data-design="rock"] .nowbar, html[data-design="rock"] .champ .box {
+    border: 0; border-radius: 0; background-color: var(--ink); background-image: var(--grunge); background-size: cover; background-position: 60% 50%; background-blend-mode: screen;
+    box-shadow: inset 5px 0 0 var(--accent); }
+  html[data-design="rock"] .champ .box.empty { box-shadow: inset 5px 0 0 var(--line); }
+  html[data-design="rock"] .st-in_progress { box-shadow: inset 5px 0 0 var(--hot); }
+  html[data-design="rock"] .st-extension { box-shadow: inset 5px 0 0 var(--ext); }
+  html[data-design="rock"] .st-finished { box-shadow: inset 5px 0 0 var(--win); }
+  html[data-design="rock"] .mhead { background: color-mix(in srgb, var(--accent) 20%, var(--ink)); font-family: var(--cond); font-weight: 800; }
+  html[data-design="rock"] .badge, html[data-design="rock"] .chip, html[data-design="rock"] .dqtag { border-radius: 0; }
+  html[data-design="rock"] .team .score, html[data-design="rock"] .regboard .count b { font-family: var(--cond); font-weight: 400; }
+  html[data-design="rock"] .champ .box .cname { font-family: var(--disp); font-weight: 400; }
+</style>
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/";</script>
@@ -510,10 +539,11 @@
   function render(data) {
     if (!data) return;
     document.getElementById("updated").textContent = "更新 " + (data.generated_at || "").replace("T", " ").slice(0, 19);
-    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme]);
+    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design]);
     if (sig === last) return;
     last = sig;
     applyTheme(data.theme);
+    document.documentElement.setAttribute("data-design", data.design || "rock");
     var title = data.title || "トーナメント表";
     document.getElementById("title").textContent = title;
     document.getElementById("dtitle").textContent = title + "　試合結果の詳細";
