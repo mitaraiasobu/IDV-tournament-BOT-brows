@@ -31,8 +31,8 @@
   #bgmedia { position: absolute; inset: 0; overflow: hidden; }
   #bgmedia > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; pointer-events: none; }
   html.flow #bg, html.flow #bgmedia { position: fixed; z-index: 0; }
-  #screen { position: absolute; inset: 0; }
-  html.flow #screen { position: relative; inset: auto; z-index: 1; }
+  #screen { position: absolute; inset: 0; z-index: 2; }
+  html.flow #screen { position: relative; inset: auto; z-index: 2; }
   #msg { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 22px; color: var(--sub); z-index: 2; }
   html.flow #msg { position: relative; bottom: auto; padding: 1em; font-size: .9em; }
 
@@ -76,11 +76,12 @@
   .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
   .center .map b { color: var(--text); }
 
-  /* キャラに対応する画像・動画：ブラウザ画面いっぱいに、縦横の比率は変えずに（切り取らずに全体を）出す。画面のいちばん上に重ねる */
-  #media { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-           transition: opacity .5s; opacity: 0; pointer-events: none; z-index: 5; }
+  /* キャラに対応する画像・動画：他の要素よりも**下の層**に、画面の背景として出す。縦横の比率は変えずに、画面を埋めるまで拡大する
+     （長いほうの辺に合わせて拡大。はみ出した分は切る）。カードなどの表示は、この上に重なる */
+  #media { position: absolute; inset: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;
+           transition: opacity .5s; opacity: 0; pointer-events: none; z-index: 1; }
   #media.on { opacity: 1; }
-  #media > * { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border: 0; }
+  #media > * { width: 100%; height: 100%; object-fit: cover; border: 0; }
   html.flow #media { position: fixed; inset: 0; }
   html.flow #media:not(.on) { display: none; }
   /* YouTube：独自のプレーヤー枠（YouTubeの再生画面は、そのまま出さない）。16:9のまま画面に収まる最大の大きさにして、枠より外は切る。
@@ -89,7 +90,7 @@
   .ytwrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: transparent; pointer-events: none; }
   .ytbox { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; aspect-ratio: 16 / 9;
            overflow: hidden; background: #000; }
-  html.flow .ytbox { max-width: calc(100vh * 16 / 9); }
+  html.flow .ytbox { width: max(100vw, calc(100vh * 16 / 9)); }               /* 画面を埋めるまで拡大（長辺に合わせる）。はみ出しは切る */
   .ytbox iframe, .ytbox .ythost { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; pointer-events: none;
                                    transform: scale(var(--ytzoom, 1.2)); transform-origin: 50% 50%; }
   .ytcover { position: absolute; inset: 0; background: #000; opacity: 1; transition: opacity .7s; pointer-events: none; z-index: 2; }
@@ -165,6 +166,62 @@
   .rv ol { margin: 0; padding: 0 0 0 1.6em; }
   .rv ol li { line-height: 1.55; }
   .rv .none { color: var(--sub); }
+  /* ═══ アニメーション ═══ */
+  @keyframes popIn { 0% { transform: scale(.4); opacity: 0; filter: brightness(2.2); } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; filter: none; } }
+  .pop { animation: popIn .6s ease-out both; }
+  @keyframes bpIn { from { opacity: 0; } to { opacity: 1; } }       /* transform は使わない（absolute の子の基準が、高さ0の枠に変わってしまうため） */
+  .bpwrap { animation: bpIn .6s ease-out both; }
+  /* 終わりのアニメーション：BAN/PICKの画面が、上へ流れて消え、背景も透明になる。そのあとは、すべて透明（後ろのゲーム画面が見える） */
+  @keyframes wipeOut { to { transform: translateY(-110%); opacity: 0; } }
+  html.leaving #screen { animation: wipeOut 1s ease-in both; }
+  html.leaving #bg, html.leaving #bgmedia, html.leaving #media { opacity: 0; transition: opacity 1s .2s; }
+  html.clear #bg, html.clear #bgmedia, html.clear #media, html.clear #screen, html.clear #msg { display: none; }
+  html.clear, html.clear body { background: transparent; }
+
+  /* ═══ 成績の画面（TODAY'S RESULT） ═══ */
+  .rs { position: absolute; inset: 0; --ta: #6aa84f; --tb: #8a63b5; }
+  html.flow .rs { position: relative; inset: auto; padding: .8em; max-width: 60em; margin: 0 auto; }
+  .rs-title { position: absolute; left: 0; right: 0; top: 40px; text-align: center; font-size: 120px; font-weight: 900; letter-spacing: .02em;
+              color: var(--accent); text-shadow: 0 4px 20px rgba(0,0,0,.5); }
+  .rs-board { position: absolute; left: 170px; right: 170px; top: 235px; bottom: 150px; display: grid;
+              grid-template-columns: 400px 1fr 400px; border: 3px solid rgba(255,255,255,.12); }
+  .rs-team { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 36px 10px 20px; text-align: center; }
+  .rs-team.a { background: var(--ta); } .rs-team.b { background: var(--tb); }
+  .rs-team .logo { width: 170px; height: 170px; border-radius: 50%; border: 6px solid rgba(255,255,255,.9); display: flex; align-items: center;
+                   justify-content: center; font-size: 56px; font-weight: 900; color: #fff; overflow: hidden; }
+  .rs-team .logo img { width: 100%; height: 100%; object-fit: cover; }
+  .rs-team .tn { font-size: 64px; font-weight: 800; color: #fff; line-height: 1.1; overflow-wrap: anywhere; }
+  .rs-team .wl { font-size: 84px; font-weight: 900; min-height: 1.1em; color: #fff; }
+  .rs-team .wl.win { color: #ffd27a; } .rs-team .wl.lose { color: #fff; }
+  .rs-team .pt { font-size: 190px; font-weight: 900; color: #fff; line-height: 1; }
+  .rs-rows { display: grid; grid-template-rows: repeat(4, 1fr); background: #0a0f1f; }
+  .rs-row { display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 3px solid rgba(255,255,255,.18);
+            background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(40,50,80,.35), rgba(0,0,0,.55)); }
+  .rs-row:last-child { border-bottom: 0; }
+  .rs-row .lb { font-size: 40px; font-weight: 800; color: #fff; letter-spacing: .02em; }
+  .rs-row .sc { font-size: 110px; font-weight: 900; color: #fff; line-height: 1.05; }
+  .rs-next { position: absolute; right: 60px; bottom: 44px; font-size: 48px; font-weight: 900; color: var(--accent); letter-spacing: .04em;
+             text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+  @keyframes inL { from { transform: translateX(-120%); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes inR { from { transform: translateX(120%); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes drop { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes rise { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUp { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .rs.enter .rs-title { animation: drop .7s ease-out both; }
+  .rs.enter .rs-team.a { animation: inL .9s cubic-bezier(.2,.8,.2,1) both; }
+  .rs.enter .rs-team.b { animation: inR .9s cubic-bezier(.2,.8,.2,1) both; }
+  .rs.enter .rs-row { animation: rise .6s ease-out both; }
+  .rs.enter .rs-next { animation: fadeUp .8s 1s ease-out both; }
+  /* 縦長・狭い画面：成績を縦に並べる（チーム2つを横に、その下にセットごとの得点） */
+  html.flow .rs-title, html.flow .rs-board, html.flow .rs-next { position: static; }
+  html.flow .rs-title { font-size: 2em; padding: .3em 0 .4em; }
+  html.flow .rs-board { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "a b" "rows rows"; gap: 0; }
+  html.flow .rs-team.a { grid-area: a; } html.flow .rs-team.b { grid-area: b; } html.flow .rs-rows { grid-area: rows; grid-template-rows: none; }
+  html.flow .rs-team { padding: .8em .4em; gap: .3em; }
+  html.flow .rs-team .logo { width: 3.6em; height: 3.6em; font-size: 1.1em; border-width: 3px; }
+  html.flow .rs-team .tn { font-size: 1.3em; } html.flow .rs-team .wl { font-size: 1.5em; } html.flow .rs-team .pt { font-size: 3.6em; }
+  html.flow .rs-row { padding: .4em 0; } html.flow .rs-row .lb { font-size: .9em; } html.flow .rs-row .sc { font-size: 2.2em; }
+  html.flow .rs-next { text-align: right; font-size: 1.2em; padding: .8em .2em 0; }
   .idle { padding: 30vh 1em 0; text-align: center; font-size: 1.8em; font-weight: 800; letter-spacing: .08em; color: var(--sub); }
 </style>
 </head>
@@ -199,8 +256,9 @@
   // ── 表示の種類：BAN/PICKの画面で、横長なら stage（1920x1080を拡縮）／ルール表示・縦長・狭い画面は flow ──
   var lastData = null, kind = "flow";
   function wantKind(data) {
-    if (params.get("layout") === "stage" && data && data.state === "bp") return "stage";      // 確認用：URLに &layout=stage を付けると、画面の形に関係なく1920x1080の表示にする
-    if (data && data.state === "bp" && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
+    var big = data && (data.state === "play" || data.state === "result");                  // BAN/PICKの画面・成績の画面
+    if (params.get("layout") === "stage" && big) return "stage";      // 確認用：URLに &layout=stage を付けると、画面の形に関係なく1920x1080の表示にする
+    if (big && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
     return "flow";
   }
   function fit() {
@@ -222,7 +280,7 @@
     var f = c.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
     return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
   }
-  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow"];
+  var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--chip", "--glow", "--ta", "--tb"];
   function applyTheme(th) {
     var st = root.style;
     THEME_VARS.forEach(function (p) { st.removeProperty(p); });
@@ -238,6 +296,8 @@
     st.setProperty("--sub", rgb2css(mix(base, text, 0.62)));
     st.setProperty("--accent", th.accent);
     st.setProperty("--glow", rgb2css(mix(base, acc, 0.34)));
+    st.setProperty("--ta", th.accent);                                           // 成績の画面の、左右のチームの色（アクセント色と、それに紫を混ぜた色）
+    st.setProperty("--tb", rgb2css(mix(acc, [139, 99, 181], 0.6)));
   }
 
   // ── 画像（読み込めなければ、キャラごとの絵文字） ──
@@ -349,57 +409,57 @@
   }
 
   // ── 部品 ──
-  function slots(group) {
+  // k＝いま何手順目まで出すか（0から）。各キャラの s（何手順目か）が k より後のものは、まだ出さない（空きの枠＝鍵のまま）
+  function slots(group, k) {
     var g = group || {};
-    var items = arr(g.items);
-    var n = Math.max(g.slots || 0, items.length);
+    var items = arr(g.items).filter(function (x) { return x && (k === undefined || x.s === undefined || x.s <= k); });
+    var n = Math.max(g.slots || 0, arr(g.items).length);
     var out = [];
     for (var i = 0; i < n; i++) out.push(items[i] || null);
     return out;
   }
   function teamName(t) { return (t && (t.abbr || t.name)) || "?"; }
-  function card(item, cap) {
-    var c = el("div", "card");
+  function card(item, cap, k) {
+    var c = el("div", "card" + (item && k !== undefined && item.s === k ? " pop" : ""));
     var a = el("div", "art");
     if (item) art(item, a); else a.appendChild(el("div", "q", "？"));
     c.appendChild(a);
     c.appendChild(el("div", "cap", cap !== undefined ? cap : (item ? item.name : "")));          // カードの下は、選手名
     return c;
   }
-
   // ═══ stage：BAN/PICKの画面（1920x1080） ═══
-  function sq(x, y, item) {
-    var b = el("div", "sq" + (item ? " used" : ""));
+  function sq(x, y, item, k) {
+    var b = el("div", "sq" + (item ? " used" : "") + (item && k !== undefined && item.s === k ? " pop" : ""));
     b.style.left = x + "px"; b.style.top = y + "px";
     if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
     return b;
   }
-  function renderBpStage(lv) {
-    var wrap = el("div");
+  function renderBpStage(lv, k) {
+    var wrap = el("div", "bpwrap");
     var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
     if (gs.active) {
       var h1 = el("div", "hdr", "GLOBAL BAN"); h1.style.cssText = "left:22px;top:20px;width:380px;";
       wrap.appendChild(h1);
-      slots(gs).forEach(function (it, i) { wrap.appendChild(sq(22 + (i % 4) * 92, 120 + Math.floor(i / 4) * 92, it)); });
+      slots(gs).forEach(function (it, i) { wrap.appendChild(sq(22 + (i % 4) * 92, 120 + Math.floor(i / 4) * 92, it, k)); });
     }
     if (gh.active) {
       var h2 = el("div", "hdr", "GLOBAL BAN"); h2.style.cssText = "left:1618px;top:20px;width:280px;";
       wrap.appendChild(h2);
-      slots(gh).forEach(function (it, i) { wrap.appendChild(sq(1820, 120 + i * 92, it)); });
+      slots(gh).forEach(function (it, i) { wrap.appendChild(sq(1820, 120 + i * 92, it, k)); });
     }
     // BANされたキャラ：サバイバーのBANは、サバイバーのPICKの上（左）に。ハンターのBANは、ハンターのPICKの上（右）に
-    slots(lv.survivor_bans).forEach(function (it, i) { wrap.appendChild(sq(22 + i * 92, 680, it)); });
-    var hb = slots(lv.hunter_bans);
-    hb.forEach(function (it, i) { wrap.appendChild(sq(1900 - 78 - (hb.length - 1 - i) * 92, 680, it)); });
+    slots(lv.survivor_bans, k).forEach(function (it, i) { wrap.appendChild(sq(22 + i * 92, 680, it, k)); });
+    var hb = slots(lv.hunter_bans, k);
+    hb.forEach(function (it, i) { wrap.appendChild(sq(1900 - 78 - (hb.length - 1 - i) * 92, 680, it, k)); });
 
     var bar = el("div", "bar");
     var surv = el("div", "surv");
     var spn = lv.survivor_players === undefined ? null : arr(lv.survivor_players);          // カードの下は選手名（選手がいない枠は空欄）
-    slots(lv.survivor_picks).forEach(function (it, i) { surv.appendChild(card(it, spn ? (spn[i] || "") : undefined)); });
+    slots(lv.survivor_picks, k).forEach(function (it, i) { surv.appendChild(card(it, spn ? (spn[i] || "") : undefined, k)); });
     bar.appendChild(surv);
     var c = el("div", "center");
     c.appendChild(el("div", "ttl", lv.title || ""));
-    c.appendChild(el("div", "st", lv.status === "STANDBY" ? "STANDBY" : "BAN / PICK"));
+    c.appendChild(el("div", "st", k >= (lv.n_steps || 1) - 1 ? "STANDBY" : "BAN / PICK"));
     var vs = el("div", "vs");
     vs.appendChild(el("div", "tm", teamName(lv.survivor)));
     vs.appendChild(el("div", "mid", "VS"));
@@ -415,33 +475,32 @@
       sc.appendChild(d);
     });
     c.appendChild(sc);
-    if (lv.map) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); c.appendChild(mp); }
+    if (lv.map && lv.map.s <= k) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); c.appendChild(mp); }
     bar.appendChild(c);
     var hunt = el("div", "hunt");
-    var hp = slots(lv.hunter_pick);
-    (hp.length ? hp : [null]).forEach(function (it) { hunt.appendChild(card(it, lv.hunter_player === undefined ? undefined : (lv.hunter_player || ""))); });
+    var hp = slots(lv.hunter_pick, k);
+    (hp.length ? hp : [null]).forEach(function (it) { hunt.appendChild(card(it, lv.hunter_player === undefined ? undefined : (lv.hunter_player || ""), k)); });
     bar.appendChild(hunt);
     wrap.appendChild(bar);
     screenEl.replaceChildren(wrap);
-    stageEl.appendChild(mediaBox);                      // キャラの画像・動画は、中央の空いた場所に
   }
 
   // ═══ flow：スマホなど狭い画面のBAN/PICKの画面 ═══
-  function fsq(item) {
-    var b = el("div", "fsq" + (item ? " used" : ""));
+  function fsq(item, k) {
+    var b = el("div", "fsq" + (item ? " used" : "") + (item && k !== undefined && item.s === k ? " pop" : ""));
     if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
     return b;
   }
-  function smalls(list) {
+  function smalls(list, k) {
     var d = el("div", "smalls");
-    list.forEach(function (it) { d.appendChild(fsq(it)); });
+    list.forEach(function (it) { d.appendChild(fsq(it, k)); });
     return d;
   }
-  function renderBpFlow(lv) {
-    var wrap = el("div", "cp");
+  function renderBpFlow(lv, k) {
+    var wrap = el("div", "cp bpwrap");
     var head = el("div", "box head");
     head.appendChild(el("div", "ttl", lv.title || ""));
-    head.appendChild(el("div", "st", lv.status === "STANDBY" ? "STANDBY" : "BAN / PICK"));
+    head.appendChild(el("div", "st", k >= (lv.n_steps || 1) - 1 ? "STANDBY" : "BAN / PICK"));
     var vs = el("div", "vs");
     vs.appendChild(el("div", "tm", teamName(lv.survivor)));
     vs.appendChild(el("div", "mid", "VS"));
@@ -457,25 +516,24 @@
       sc.appendChild(d);
     });
     head.appendChild(sc);
-    if (lv.map) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); head.appendChild(mp); }
+    if (lv.map && lv.map.s <= k) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); head.appendChild(mp); }
     wrap.appendChild(head);
-    wrap.appendChild(mediaBox);                          // キャラの画像・動画は、見出しの下に
     var sp = el("div", "box");
     sp.appendChild(el("h3", null, "サバイバー BAN / PICK"));
-    var sbn = smalls(slots(lv.survivor_bans)); sbn.className += " bans";            // サバイバーのBANは、サバイバーのPICKの上に
+    var sbn = smalls(slots(lv.survivor_bans, k), k); sbn.className += " bans";            // サバイバーのBANは、サバイバーのPICKの上に
     sp.appendChild(sbn);
     var g = el("div", "grid");
     var spn = lv.survivor_players === undefined ? null : arr(lv.survivor_players);
-    slots(lv.survivor_picks).forEach(function (it, i) { g.appendChild(card(it, spn ? (spn[i] || "") : undefined)); });
+    slots(lv.survivor_picks, k).forEach(function (it, i) { g.appendChild(card(it, spn ? (spn[i] || "") : undefined, k)); });
     sp.appendChild(g);
     wrap.appendChild(sp);
     var hp = el("div", "box");
     hp.appendChild(el("h3", null, "ハンター BAN / PICK"));
-    var hbn = smalls(slots(lv.hunter_bans)); hbn.className += " bans";              // ハンターのBANは、ハンターのPICKの上に
+    var hbn = smalls(slots(lv.hunter_bans, k), k); hbn.className += " bans";              // ハンターのBANは、ハンターのPICKの上に
     hp.appendChild(hbn);
     var h1 = el("div", "hunt1");
-    var hs = slots(lv.hunter_pick);
-    (hs.length ? hs : [null]).forEach(function (it) { h1.appendChild(card(it, lv.hunter_player === undefined ? undefined : (lv.hunter_player || ""))); });
+    var hs = slots(lv.hunter_pick, k);
+    (hs.length ? hs : [null]).forEach(function (it) { h1.appendChild(card(it, lv.hunter_player === undefined ? undefined : (lv.hunter_player || ""), k)); });
     hp.appendChild(h1);
     wrap.appendChild(hp);
     var gb = lv.global_ban || {}, gs = gb.survivor || {}, gh = gb.hunter || {};
@@ -523,10 +581,7 @@
       if (r.next) vs.appendChild(el("small", null, "次に行う枠：" + r.next));
       box.appendChild(vs);
     }
-    var note = focus ? r.note : (entry.mode === "sequential"
-      ? "このラウンドは1試合ずつ順番に行います。各試合のBAN/PICKは、試合準備が始まったらここに表示します。"
-      : "このラウンドは同時進行です。すべての試合が同じ時刻に始まります。");
-    if (note) box.appendChild(el("div", "note", note));
+    if (focus && r.note) box.appendChild(el("div", "note", r.note));
     function section(cls, title, body) {
       var s = el("div", "sec " + cls);
       s.appendChild(el("h2", null, title));
@@ -563,6 +618,96 @@
     screenEl.replaceChildren(el("div", "idle", data.title || ""));
   }
 
+  // ═══ 成績の画面（TODAY'S RESULT）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
+  function logoBox(t) {
+    var b = el("div", "logo");
+    if (t && t.logo) { var im = new Image(); im.src = t.logo; im.alt = ""; b.appendChild(im); }     // チームのロゴ（いずれ実装。あれば表示する）
+    else b.textContent = (t && (t.abbr || t.name) || "").slice(0, 4);
+    return b;
+  }
+  function teamPanel(t, cls) {
+    var p = el("div", "rs-team " + cls);
+    p.appendChild(logoBox(t));
+    p.appendChild(el("div", "tn", (t && t.name) || ""));
+    var wl = el("div", "wl " + (t && t.result ? t.result : ""), t && t.result === "win" ? "WIN" : t && t.result === "lose" ? "LOSE" : "");   // 勝敗が決まる前は、空欄
+    p.appendChild(wl);
+    p.appendChild(el("div", "pt", String((t && t.points) || 0)));
+    return p;
+  }
+  function renderResult(res) {
+    var wrap = el("div", "rs enter");
+    wrap.appendChild(el("div", "rs-title", "TODAY'S RESULT"));
+    var board = el("div", "rs-board");
+    board.appendChild(teamPanel(res.a, "a"));
+    var rows = el("div", "rs-rows");
+    arr(res.rows).forEach(function (r, i) {
+      var row = el("div", "rs-row");
+      row.style.animationDelay = (0.25 + i * 0.12) + "s";
+      row.appendChild(el("div", "lb", r.label));
+      row.appendChild(el("div", "sc", (r.a || 0) + " - " + (r.b || 0)));
+      rows.appendChild(row);
+    });
+    board.appendChild(rows);
+    board.appendChild(teamPanel(res.b, "b"));
+    wrap.appendChild(board);
+    if (res.next) wrap.appendChild(el("div", "rs-next", res.next));                 // 右下：▶NEXT　第1セット後半戦　20:00
+    screenEl.replaceChildren(wrap);
+  }
+
+  // ═══ 「試合開始」が押されたあと：BAN/PICKを5秒ごとに1手順ずつ出して（最後の手順は10秒）、アニメーションで透明にする ═══
+  // 時間は、「試合開始」の時刻（play_started_at）から、このブラウザの時計で数える（BOTの操作に合わせてリアルタイムには出ない）。
+  var STEP_MS = 5000, LAST_MS = 10000, EXIT_MS = 1200;
+  var replay = null;
+  function replayTotal(n) { return STEP_MS * Math.max(0, n - 1) + LAST_MS; }
+  function mediaForStep(lv, k) {
+    var best = -1, out = [];
+    arr((lv.survivor_picks || {}).items).concat(arr((lv.hunter_pick || {}).items)).forEach(function (it) {
+      if (it && it.media && it.s <= k) {
+        if (it.s > best) { best = it.s; out = [it.media]; } else if (it.s === best) out.push(it.media);   // いま出た手順の演出（無ければ、前の演出のまま）
+      }
+    });
+    return out;
+  }
+  function renderPlayStep(lv, k) {
+    if (kind === "stage") renderBpStage(lv, k); else renderBpFlow(lv, k);
+    setMedia(mediaForStep(lv, k));
+    fit();
+  }
+  function setPhase(cls) {
+    root.classList.remove("leaving", "clear");
+    if (cls) root.classList.add(cls);
+  }
+  function tickReplay() {
+    var r = replay;
+    if (!r) return;
+    var n = r.lv.n_steps || 1, total = replayTotal(n);
+    var elapsed = Math.max(0, Date.now() - r.start);
+    if (elapsed >= total + EXIT_MS) {                          // 終わった：画面を透明にする（OBSなら、後ろのゲーム画面が見える）
+      if (r.phase !== "clear") { r.phase = "clear"; setPhase("clear"); setMedia([]); screenEl.replaceChildren(); }
+      return;
+    }
+    if (elapsed >= total) {                                    // 終わりのアニメーション（最後の手順の画面が、流れて消える）
+      if (r.phase !== "exit") {
+        if (r.phase !== "show" || r.step !== n - 1) renderPlayStep(r.lv, n - 1);
+        r.phase = "exit"; setPhase("leaving");
+      }
+      return;
+    }
+    var k = Math.min(n - 1, Math.floor(elapsed / STEP_MS));
+    if (k !== r.step || r.phase !== "show") { r.step = k; r.phase = "show"; setPhase(null); renderPlayStep(r.lv, k); }
+  }
+  function startReplay(lv) {
+    var start = Date.parse(lv.play_started_at);
+    replay = { key: lv.key, start: isNaN(start) ? Date.now() : start, lv: lv, step: -2, phase: "" };
+    if (!replay.timer) replay.timer = setInterval(tickReplay, 250);
+    tickReplay();
+  }
+  function stopReplay() {
+    if (replay && replay.timer) clearInterval(replay.timer);
+    replay = null;
+    setPhase(null);
+  }
+
   var lastSig = null;
   function render(data, force) {
     if (!data) data = { state: "idle" };
@@ -575,21 +720,31 @@
     setBackground(data.bg);
     kind = wantKind(data);
     root.className = kind;
-    var media = [];
-    if (data.state === "bp") {
-      if (kind === "stage") renderBpStage(data.live || {}); else renderBpFlow(data.live || {});
-      media = arr((data.live || {}).media);
-    } else {
-      if (data.state === "rules") renderRules(data.rules || {});
-      else if (data.state === "play") screenEl.replaceChildren();          // 試合が始まったら、BAN/PICKの表示は消える
-      else renderIdle(data);
-      stageEl.appendChild(mediaBox);
+    document.getElementById("msg").textContent = "";
+    if (data.state === "play" && data.live) {
+      if (replay && replay.key === data.live.key) {            // 同じ試合開始：時間は、そのまま数え続ける（画面の形が変わったときなどは、描き直す）
+        replay.lv = data.live;
+        replay.step = -2; replay.phase = replay.phase === "clear" || replay.phase === "exit" ? replay.phase : "";
+        if (replay.phase === "exit") { renderPlayStep(replay.lv, (replay.lv.n_steps || 1) - 1); setPhase("leaving"); }
+        if (replay.phase === "clear") setPhase("clear");
+        tickReplay();
+      } else {
+        stopReplay();
+        root.className = kind;
+        startReplay(data.live);
+      }
+      return;
     }
+    stopReplay();
+    root.className = kind;
+    var media = [];
+    if (data.state === "result") renderResult(data.result || {});
+    else if (data.state === "rules") renderRules(data.rules || {});
+    else renderIdle(data);
+    stageEl.appendChild(mediaBox);
     setMedia(media);
     fit();
-    document.getElementById("msg").textContent = "";
   }
-
   // ── データの読み込み：URLの ?t=（大会ごとの12文字）の大会だけ、数秒おきに読み直す ──
   function load() {
     var base = window.TOURNAMENT_DATA_BASE;
