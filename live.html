@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- 筆のようなフォント（Permanent Marker／Yuji Boku）と、細長い太字（Barlow Condensed）。専用のフォントを用意したら、--disp / --cond を差し替える -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,600;1,800&family=Noto+Sans+JP:wght@500;800;900&family=Permanent+Marker&family=Yuji+Boku&family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;700&family=Shippori+Mincho:wght@500;700&display=swap">
+<!-- パンク／ロックなフォント（Rubik Distressed）・縦に長い太字（Anton）・筆のような漢字（Yuji Boku）。専用のフォントを用意したら、--disp / --cond を差し替える -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;800;900&family=Rubik+Distressed&family=Yuji+Boku&family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:wght@500;700&family=Shippori+Mincho:wght@500;700&display=swap">
 <style>
   :root {
     --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
@@ -17,8 +17,8 @@
     --ta: #6aa84f; --tb: #8a63b5;                                   /* チームの色（いまは緑と紫。のちに、チーム自身が登録する） */
     --glass: linear-gradient(180deg, color-mix(in srgb, var(--panel2) 94%, transparent), color-mix(in srgb, var(--panel) 96%, transparent));
     --edge: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 10px 30px rgba(0,0,0,.45);
-    --disp: "Permanent Marker", "Yuji Boku", "Potta One", "Yu Gothic UI", cursive;       /* 筆のような見出し用 */
-    --cond: "Barlow Condensed", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;   /* 数字・ラベル用 */
+    --disp: "Rubik Distressed", "Yuji Boku", "Potta One", "Yu Gothic UI", sans-serif;       /* 大きい文字：英数字は、パンク／ロックなかすれた文字。漢字は筆のような文字（Yuji Boku）を太くして使う */
+    --cond: "Anton", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;   /* 数字・ラベル用（縦に長い、ポスターのような太字） */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text);
@@ -374,8 +374,8 @@
   html[data-design="rock"].stage .rs-team.b .cap b { position: absolute; left: 331px; top: 319px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.968, -0.250, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 40; --fit-min: 12; --fit-max: 34; display: block; font-weight: 800; letter-spacing: .06em; }
   html[data-design="rock"].stage .rs-team.b .cap span { position: absolute; left: 349px; top: 354px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.968, -0.250, -0.100, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 79; --fit-min: 9; --fit-max: 24; display: block; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   html[data-design="rock"].stage .rs-team .cap::after { content: none; }
-  html[data-design="rock"].stage .rs-team.a .ptbox::after { content: ""; position: absolute; left: 23px; top: 352px; width: 100px; height: 29px; transform: skewX(-18deg); background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 8px); opacity: .5; }
-  html[data-design="rock"].stage .rs-team.b .ptbox::after { content: ""; position: absolute; left: 306px; top: 375px; width: 95px; height: 27px; transform: skewX(-18deg); background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 8px); opacity: .5; }
+  html[data-design="rock"].stage .rs-team.a .ptbox::after { content: ""; position: absolute; left: 26px; top: 337px; width: 100px; height: 51px; background: var(--text); opacity: .6; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88.16 44.73' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M9.16 23.00L3.00 41.73'/><path d='M25.16 19.00L19.00 37.73'/><path d='M17.16 22.00L11.00 40.73'/><path d='M33.16 18.00L27.00 36.73'/><path d='M43.16 15.00L37.00 33.73'/><path d='M51.16 13.00L45.00 31.73'/><path d='M57.16 11.00L52.54 26.65'/><path d='M85.16 3.00L83.57 8.29'/><path d='M71.16 7.00L67.82 15.92'/><path d='M79.16 4.00L76.82 11.54'/><path d='M64.16 9.00L60.57 20.54'/></g></svg>") center / 100% 100% no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88.16 44.73' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M9.16 23.00L3.00 41.73'/><path d='M25.16 19.00L19.00 37.73'/><path d='M17.16 22.00L11.00 40.73'/><path d='M33.16 18.00L27.00 36.73'/><path d='M43.16 15.00L37.00 33.73'/><path d='M51.16 13.00L45.00 31.73'/><path d='M57.16 11.00L52.54 26.65'/><path d='M85.16 3.00L83.57 8.29'/><path d='M71.16 7.00L67.82 15.92'/><path d='M79.16 4.00L76.82 11.54'/><path d='M64.16 9.00L60.57 20.54'/></g></svg>") center / 100% 100% no-repeat; }
+  html[data-design="rock"].stage .rs-team.b .ptbox::after { content: ""; position: absolute; left: 308px; top: 353px; width: 100px; height: 51px; background: var(--text); opacity: .6; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88.16 44.73' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M9.16 23.00L3.00 41.73'/><path d='M25.16 19.00L19.00 37.73'/><path d='M17.16 22.00L11.00 40.73'/><path d='M33.16 18.00L27.00 36.73'/><path d='M43.16 15.00L37.00 33.73'/><path d='M51.16 13.00L45.00 31.73'/><path d='M57.16 11.00L52.54 26.65'/><path d='M85.16 3.00L83.57 8.29'/><path d='M71.16 7.00L67.82 15.92'/><path d='M79.16 4.00L76.82 11.54'/><path d='M64.16 9.00L60.57 20.54'/></g></svg>") center / 100% 100% no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88.16 44.73' preserveAspectRatio='none'><g fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round'><path d='M9.16 23.00L3.00 41.73'/><path d='M25.16 19.00L19.00 37.73'/><path d='M17.16 22.00L11.00 40.73'/><path d='M33.16 18.00L27.00 36.73'/><path d='M43.16 15.00L37.00 33.73'/><path d='M51.16 13.00L45.00 31.73'/><path d='M57.16 11.00L52.54 26.65'/><path d='M85.16 3.00L83.57 8.29'/><path d='M71.16 7.00L67.82 15.92'/><path d='M79.16 4.00L76.82 11.54'/><path d='M64.16 9.00L60.57 20.54'/></g></svg>") center / 100% 100% no-repeat; }
   html[data-design="rock"].stage .rs-next { left: 1237px; top: 865px; width: 644px; height: 174px; right: auto; bottom: auto; padding: 0; display: block; transform: none; border: 0; box-shadow: none; clip-path: polygon(88px 75px, 0px 174px, 582px 102px, 644px 0px);
         background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 96%, transparent), color-mix(in srgb, var(--accent) 24%, var(--ink))); }
   html[data-design="rock"].stage .rs-next::before { content: "▶"; position: absolute; left: 88px; top: 79px; font-size: 40px; line-height: 1; color: var(--accent); transform: matrix(0.990, -0.139, -0.200, 1, 0, 0); }
@@ -383,6 +383,8 @@
   html[data-design="rock"].stage .rs-next .nx { position: absolute; left: 201px; top: 101px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.990, -0.144, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 134; --fit-min: 16; --fit-max: 48; font-weight: 800; letter-spacing: .12em; }
   html[data-design="rock"].stage .rs-next .nt { position: absolute; left: 455px; top: 76px; right: auto; bottom: auto; width: auto; margin: 0; white-space: nowrap; transform: translate(-50%, -50%) matrix(0.993, -0.117, -0.200, 1, 0, 0); transform-origin: 50% 50%; font-style: normal; --fit: 254; --fit-min: 14; --fit-max: 44; font-weight: 800; letter-spacing: .03em; }
   html[data-design="rock"].stage .rs-next .sl { position: absolute; left: 281px; top: 61px; width: 3px; height: 73px; transform: skewX(24deg); display: block; }
+  html[data-design="rock"].stage .rs { font-synthesis: none; }
+  html[data-design="rock"].stage .cjk { font-weight: 900; font-synthesis: weight; -webkit-text-stroke: .05em currentColor; paint-order: stroke fill; }
   @keyframes rowInR { from { transform: translateX(80px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes fadeUpR { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
   html[data-design="rock"].stage .rs.enter .rs-row { animation: rowInR .55s ease-out both; }
@@ -948,6 +950,17 @@
   }
 
   // ═══ 成績の画面（ROUND 1 RESULT など）：その半戦の結果が入力されたあと、次の「試合開始」まで ═══
+  // 漢字・かなの部分を <span class="cjk"> で囲む（ロックのデザインで、太くする）
+  function cjkWrap(node) {
+    var text = node.textContent;
+    if (!/[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(text)) return;
+    node.textContent = "";
+    text.split(/([\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+)/).forEach(function (part) {
+      if (!part) return;
+      if (/^[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+$/.test(part)) node.appendChild(el("span", "cjk", part));
+      else node.appendChild(document.createTextNode(part));
+    });
+  }
   function logoBox(t) {
     var b = el("div", "logo");
     if (t && t.logo) { var im = new Image(); im.src = t.logo; im.alt = ""; b.appendChild(im); }     // チームのロゴ（いずれ実装。あれば表示する）
@@ -958,7 +971,8 @@
     var p = el("div", "rs-team " + cls);
     var art_ = el("div", "art");
     var name = (t && t.name) || "";
-    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name.length > 8 ? name.replace(" ", "\n") : name));    // 長い名前は、小さくして収める
+    art_.appendChild(el("div", "tn" + (name.length > 14 ? " s" : name.length > 8 ? " m" : ""), name.length > 8 ? name.replace(" ", "\n") : name));
+    cjkWrap(art_.lastChild);    // 長い名前は、小さくして収める
     art_.appendChild(logoBox(t));
     p.appendChild(art_);
     p.appendChild(el("div", "wl " + (t && t.result ? t.result : ""), t && t.result === "win" ? "WIN" : t && t.result === "lose" ? "LOSE" : ""));   // 勝敗が決まる前は、空欄
