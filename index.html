@@ -236,9 +236,10 @@
   @font-face { font-family: "GName"; src: url("Gothic/font_1_kokumr_1.00_rls.ttf") format("truetype"); font-display: swap; }
   @font-face { font-family: "GName"; src: url("Gothic/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype");
                unicode-range: U+3005-3006, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF; font-display: swap; }
+  @font-face { font-family: "GNum"; src: url("Gothic/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype"); font-display: swap; }
   @font-face { font-family: "Hangyaku"; src: url("Gothic/hangyaku-font/Hangyaku-0vRGR.ttf") format("truetype"); font-display: swap; }
   html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --ink: color-mix(in srgb, var(--bg) 62%, black);
-    --fa: "Hangyaku", "GName", "Yu Mincho", serif; --fb: "GName", "Yu Mincho", serif;
+    --fa: "Hangyaku", "GName", "Yu Mincho", serif; --fn: "GNum", "GName", serif; --fb: "GName", "Yu Mincho", serif;
     --lace-t: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
     --lace-b: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
   html[data-design="gothic"] #stage::before { content: ""; position: absolute; inset: 0; background: var(--accent); opacity: .13; pointer-events: none;
@@ -253,7 +254,7 @@
   html[data-design="gothic"] .st-in_progress { border-color: var(--hot); }
   html[data-design="gothic"] .st-extension { border-color: var(--ext); }
   html[data-design="gothic"] .mhead { background: color-mix(in srgb, var(--accent) 16%, var(--ink)); font-family: var(--fb); }
-  html[data-design="gothic"] .team .score, html[data-design="gothic"] .regboard .count b { font-family: var(--fa); font-weight: 400; }
+  html[data-design="gothic"] .team .score, html[data-design="gothic"] .regboard .count b { font-family: var(--fn); font-weight: 400; }
   html[data-design="gothic"] .champ .box .cname { font-family: var(--fb); font-weight: 400; }
 </style>
 </head>
