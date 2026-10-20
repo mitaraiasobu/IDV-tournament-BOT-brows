@@ -944,7 +944,7 @@
   html[data-design="gothic"].stage .card .cap { position: absolute; left: calc(224px * var(--s)); top: calc(1580px * var(--s)); width: calc(179px * var(--s)); z-index: 5; height: auto; padding: 3px 4px 4px; font-size: calc(19px * var(--s)); line-height: 1.2; text-align: center; justify-content: center;
         background: color-mix(in srgb, var(--ink) 88%, transparent); border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); }
   /* 下の四角：現在の点数 */
-  html[data-design="gothic"].stage .center { position: absolute; left: 651px; top: 888px; right: auto; bottom: auto; width: 624px; height: 280px; flex: none; align-self: auto; justify-content: flex-start; padding: 14px 24px; box-sizing: border-box;
+  html[data-design="gothic"].stage .center { position: absolute; left: 790px; top: 888px; right: auto; bottom: auto; width: 340px; height: 280px; flex: none; align-self: auto; justify-content: flex-start; padding: 14px 24px; box-sizing: border-box;
         border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: linear-gradient(180deg, #151521, #0a0a12); box-shadow: 0 10px 28px rgba(0,0,0,.6); }
   html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .st, html[data-design="gothic"].stage .center .role, html[data-design="gothic"].stage .center .map { display: none; }
   html[data-design="gothic"].stage .center .vs { font-size: 34px; margin-bottom: 4px; }
@@ -954,24 +954,17 @@
   html[data-design="gothic"].stage .center .vs, html[data-design="gothic"].stage .center .sc { display: grid; grid-template-columns: 1fr 1fr; position: relative; text-align: center; }
   html[data-design="gothic"].stage .center .vs .tm, html[data-design="gothic"].stage .center .sc div { min-width: 0; text-align: center; }
   html[data-design="gothic"].stage .center .vs .mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 0; }
-  /* BANのマス（左右の丸の場所。2×2。形は四角のまま） */
-  html[data-design="gothic"].stage .sq.bs.i0 { left: 414px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.i1 { left: 504px !important; top: 898px !important; }
-  html[data-design="gothic"].stage .sq.bs.i2 { left: 414px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.bs.i3 { left: 504px !important; top: 988px !important; }
-  html[data-design="gothic"].stage .sq.bh.i0 { left: 1336px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i1 { left: 1426px !important; top: 896px !important; }
-  html[data-design="gothic"].stage .sq.bh.i2 { left: 1336px !important; top: 986px !important; } html[data-design="gothic"].stage .sq.bh.i3 { left: 1426px !important; top: 986px !important; }
+  /* BANのマス：サバイバーのBANは点数の枠の左、ハンターのBANは点数の枠の右に、どちらも横4マス×縦3マス（最大12人）。マスは64px。右は、ハンターのランタン（下の飾りが低く垂れる）に重ならない幅 */
+  html[data-design="gothic"].stage .sq.bs, html[data-design="gothic"].stage .sq.bh { width: 64px; height: 64px; }
+  html[data-design="gothic"].stage .sq.bs.i0 { left: 510px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bs.i1 { left: 580px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bs.i2 { left: 650px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bs.i3 { left: 720px !important; top: 826px !important; }
+  html[data-design="gothic"].stage .sq.bs.i4 { left: 510px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bs.i5 { left: 580px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bs.i6 { left: 650px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bs.i7 { left: 720px !important; top: 896px !important; }
+  html[data-design="gothic"].stage .sq.bs.i8 { left: 510px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.i9 { left: 580px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.i10 { left: 650px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.i11 { left: 720px !important; top: 966px !important; }
+  html[data-design="gothic"].stage .sq.bh.i0 { left: 1140px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bh.i1 { left: 1210px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bh.i2 { left: 1280px !important; top: 826px !important; } html[data-design="gothic"].stage .sq.bh.i3 { left: 1350px !important; top: 826px !important; }
+  html[data-design="gothic"].stage .sq.bh.i4 { left: 1140px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i5 { left: 1210px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i6 { left: 1280px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i7 { left: 1350px !important; top: 896px !important; }
+  html[data-design="gothic"].stage .sq.bh.i8 { left: 1140px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bh.i9 { left: 1210px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bh.i10 { left: 1280px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bh.i11 { left: 1350px !important; top: 966px !important; }
   /* 全体BAN：下の左右の隅 */
   html[data-design="gothic"].stage .hdr.gs { left: 40px !important; top: 758px !important; width: 304px !important; height: 48px; font-size: 22px; }
   html[data-design="gothic"].stage .hdr.gh { left: 1640px !important; top: 836px !important; width: 240px !important; height: 48px; font-size: 22px; }
-  /* BANが5人以上（滅多にない）：マスを小さく（62px）して並べる。サバイバーのBANは、左の全体BANと点数の枠の間に横4マス×2行／ハンターのBANは、点数の枠とハンターのランタン（下の飾りが低く垂れる）の間に、横2マス×4行。8人まで */
-  html[data-design="gothic"].stage .sq.bs.c5, html[data-design="gothic"].stage .sq.bs.c6, html[data-design="gothic"].stage .sq.bs.c7, html[data-design="gothic"].stage .sq.bs.c8, html[data-design="gothic"].stage .sq.bh.c5, html[data-design="gothic"].stage .sq.bh.c6, html[data-design="gothic"].stage .sq.bh.c7, html[data-design="gothic"].stage .sq.bh.c8 { width: 62px; height: 62px; }
-  html[data-design="gothic"].stage .sq.bs.c5.i0 { left: 380px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c5.i1 { left: 448px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c5.i2 { left: 516px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c5.i3 { left: 584px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c5.i4 { left: 380px !important; top: 966px !important; }
-  html[data-design="gothic"].stage .sq.bs.c6.i0 { left: 380px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c6.i1 { left: 448px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c6.i2 { left: 516px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c6.i3 { left: 584px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c6.i4 { left: 380px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c6.i5 { left: 448px !important; top: 966px !important; }
-  html[data-design="gothic"].stage .sq.bs.c7.i0 { left: 380px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c7.i1 { left: 448px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c7.i2 { left: 516px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c7.i3 { left: 584px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c7.i4 { left: 380px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c7.i5 { left: 448px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c7.i6 { left: 516px !important; top: 966px !important; }
-  html[data-design="gothic"].stage .sq.bs.c8.i0 { left: 380px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c8.i1 { left: 448px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c8.i2 { left: 516px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c8.i3 { left: 584px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.c8.i4 { left: 380px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c8.i5 { left: 448px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c8.i6 { left: 516px !important; top: 966px !important; } html[data-design="gothic"].stage .sq.bs.c8.i7 { left: 584px !important; top: 966px !important; }
-  html[data-design="gothic"].stage .sq.bh.c5.i0 { left: 1292px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c5.i1 { left: 1360px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c5.i2 { left: 1292px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c5.i3 { left: 1360px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c5.i4 { left: 1292px !important; top: 906px !important; }
-  html[data-design="gothic"].stage .sq.bh.c6.i0 { left: 1292px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c6.i1 { left: 1360px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c6.i2 { left: 1292px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c6.i3 { left: 1360px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c6.i4 { left: 1292px !important; top: 906px !important; } html[data-design="gothic"].stage .sq.bh.c6.i5 { left: 1360px !important; top: 906px !important; }
-  html[data-design="gothic"].stage .sq.bh.c7.i0 { left: 1292px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c7.i1 { left: 1360px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c7.i2 { left: 1292px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c7.i3 { left: 1360px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c7.i4 { left: 1292px !important; top: 906px !important; } html[data-design="gothic"].stage .sq.bh.c7.i5 { left: 1360px !important; top: 906px !important; } html[data-design="gothic"].stage .sq.bh.c7.i6 { left: 1292px !important; top: 974px !important; }
-  html[data-design="gothic"].stage .sq.bh.c8.i0 { left: 1292px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c8.i1 { left: 1360px !important; top: 770px !important; } html[data-design="gothic"].stage .sq.bh.c8.i2 { left: 1292px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c8.i3 { left: 1360px !important; top: 838px !important; } html[data-design="gothic"].stage .sq.bh.c8.i4 { left: 1292px !important; top: 906px !important; } html[data-design="gothic"].stage .sq.bh.c8.i5 { left: 1360px !important; top: 906px !important; } html[data-design="gothic"].stage .sq.bh.c8.i6 { left: 1292px !important; top: 974px !important; } html[data-design="gothic"].stage .sq.bh.c8.i7 { left: 1360px !important; top: 974px !important; }
   /* サバイバーの全体BAN：左下にまとめる（横4マス×3行＝12枠まで。マスは70pxで、ランタンにも、真ん中の点数・BANのマスにも重ならない） */
   html[data-design="gothic"].stage .sq.gs { width: 70px; height: 70px; }
   html[data-design="gothic"].stage .sq.gs.i0 { left: 40px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i1 { left: 118px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i2 { left: 196px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i3 { left: 274px !important; top: 818px !important; }
@@ -1121,13 +1114,13 @@
     box.appendChild(host); wrap.appendChild(box);
     loadYT().then(function () {
       var timer = null;
-      function show() { clearTimeout(timer); timer = setTimeout(function () { box.classList.add("on"); }, 1200); }   // 再生が始まって、少したってから見せる
+      function show() { clearTimeout(timer); timer = setTimeout(function () { box.classList.add("on"); }, 2500); }   // 再生が始まって、少したってから見せる
       function hide() { clearTimeout(timer); box.classList.remove("on"); }                                        // 読み込み・一時停止・終了：YouTubeの画面は、すぐに全部見えなくする
       /* eslint-disable-next-line no-new */
       new YT.Player(host, {
         videoId: id, width: "100%", height: "100%",
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0, playsinline: 1,
-                      mute: 1, loop: 1, playlist: id, cc_load_policy: 0, origin: location.origin },
+                      mute: 1, cc_load_policy: 0, origin: location.origin },
         events: {
           onReady: function (e) { e.target.mute(); e.target.playVideo(); },
           onStateChange: function (e) {
@@ -1248,10 +1241,9 @@
       slots(gh).forEach(function (it, i) { wrap.appendChild(sq(1820, 120 + i * 92, it, k, "gh i" + i)); });
     }
     // BANされたキャラ：サバイバーのBANは、サバイバーのPICKの上（左）に。ハンターのBANは、ハンターのPICKの上（右）に
-    var sb = slots(lv.survivor_bans, k);                                                                                // c＝BANの人数（デザインが、人数が多いときに並べ方を変えるための目印）
-    sb.forEach(function (it, i) { wrap.appendChild(sq(22 + i * 92, 680, it, k, "bs c" + sb.length + " i" + i)); });
+    slots(lv.survivor_bans, k).forEach(function (it, i) { wrap.appendChild(sq(22 + i * 92, 680, it, k, "bs i" + i)); });
     var hb = slots(lv.hunter_bans, k);
-    hb.forEach(function (it, i) { wrap.appendChild(sq(1900 - 78 - (hb.length - 1 - i) * 92, 680, it, k, "bh c" + hb.length + " i" + i)); });
+    hb.forEach(function (it, i) { wrap.appendChild(sq(1900 - 78 - (hb.length - 1 - i) * 92, 680, it, k, "bh i" + i)); });
 
     var bar = el("div", "bar");
     var surv = el("div", "surv");
