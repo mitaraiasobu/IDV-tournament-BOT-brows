@@ -115,8 +115,8 @@
      （長いほうの辺に合わせて拡大。はみ出した分は切る）。カードなどの表示は、この上に重なる */
   #media { position: absolute; inset: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;
            transition: opacity .5s; opacity: 0; pointer-events: none; z-index: 1; }
-  #media.on { opacity: 1; }
-  #media > * { width: 100%; height: 100%; object-fit: cover; border: 0; }
+  #media.on { opacity: 1; transition: opacity .12s; }                             /* 見せるときは、ほぼ一瞬で（再生の最初の瞬間から見せる）。消すときだけ、ゆっくり */
+  #media > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }       /* 重ねて置く：先に読み込んでおく動画（見えない）が、見えている動画の幅を縮めないように */
   html.flow #media { position: fixed; inset: 0; }
   html.flow #media:not(.on) { display: none; }
   /* YouTube：独自のプレーヤー枠（YouTubeの再生画面は、そのまま出さない）。16:9のまま画面に収まる最大の大きさにして、枠より外は切る。
@@ -1269,7 +1269,7 @@
     if (m.kind === "video") {
       var v = takePreYT(m) || videoElement(m);                             // 準備済みなら、それを使う（読み込み済みなので、途切れない）
       v.autoplay = true;
-      try { v.currentTime = parseInt(m.start, 10) || 0; } catch (e) { /* 無視 */ }
+      try { var S0 = parseInt(m.start, 10) || 0; if (Math.abs(v.currentTime - S0) > 0.3) v.currentTime = S0; } catch (e) { /* 無視 */ }      // 指定の位置に合わせる（準備済みで、もう合っていれば、動かさない）
       v.play && v.play().catch(function () {});
       return v;
     }
