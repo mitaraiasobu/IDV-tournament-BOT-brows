@@ -644,7 +644,8 @@
         clip-path: none; box-shadow: none; background: none; }
   html[data-design="fantasy"].stage .rs-team .art::before, html[data-design="fantasy"].stage .rs-team .art::after { display: none; }
   /* キャラは、楕円の中に、全身を影のように（文字・ロゴ・点数の位置は、キャラの画像に合わせて変えない） */
-  html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; --ct-h: 590px; --ct-cx: 167px; --ct-bottom: 590px; --ct-hmax: 575px; --ct-hd: 96px; }
+  html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; --ct-h: 590px; --ct-cx: 167px; --ct-bottom: 590px; --ct-hmax: 575px; --ct-hd: 96px;
+        -webkit-mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; }  /* 色の部分（teamframe_color）の形からは、はみ出さない */
   html[data-design="fantasy"].stage .rs-team .cimg.hunt { --ct-hd: 108px; }
   html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 14%; top: auto; bottom: 4%; width: 72%; height: 74%; max-width: none; object-fit: contain; object-position: 50% 100%;
         filter: brightness(0); opacity: .42; transform: none; }
@@ -693,7 +694,8 @@
   html[data-design="fantasy"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat;
         background: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7); }
   html[data-design="fantasy"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none; background: url("Gothic/teamframe.png") 0 0 / 100% 100% no-repeat; }
-  html[data-design="fantasy"].stage .card .art { position: absolute; left: 47px; top: 31px; width: 143px; height: 261px; flex: none; border-radius: 50%; overflow: hidden; background: none; }
+  html[data-design="fantasy"].stage .card .art { position: absolute; left: 47px; top: 31px; width: 143px; height: 261px; flex: none; border-radius: 50%; overflow: hidden; background: none;
+        -webkit-mask: url("Gothic/teamframe_color.png") -47px -31px / 227px 340px no-repeat; mask: url("Gothic/teamframe_color.png") -47px -31px / 227px 340px no-repeat; }
   html[data-design="fantasy"].stage .card .art::after { display: none; }
   html[data-design="fantasy"].stage .hunt .card .art img { object-fit: cover; object-position: 50% 0; transform: none; }
   html[data-design="fantasy"].stage .card .cap { position: absolute; left: 50%; top: 276px; transform: translateX(-50%); z-index: 5; height: auto; max-width: 300px; padding: 4px 22px 6px; font-size: 24px; line-height: 1.2;
