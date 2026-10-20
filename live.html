@@ -124,12 +124,11 @@
      再生中以外（読み込み・一時停止・終了）は、黒い幕で全部隠す。クリックも受け付けない */
   .ytwrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: transparent; pointer-events: none; }
   .ytbox { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; aspect-ratio: 16 / 9;
-           overflow: hidden; background: #000; }
+           overflow: hidden; background: transparent; }
   html.flow .ytbox { width: max(100vw, calc(100vh * 16 / 9)); }               /* 画面を埋めるまで拡大（長辺に合わせる）。はみ出しは切る */
   .ytbox iframe, .ytbox .ythost { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; pointer-events: none;
-                                   transform: scale(var(--ytzoom, 1.2)); transform-origin: 50% 50%; }
-  .ytcover { position: absolute; inset: 0; background: #000; opacity: 1; transition: none; pointer-events: none; z-index: 2; }       /* 幕を下ろすのは一瞬（再生ボタンなどが、少しでも見えないように） */
-  .ytcover.off { opacity: 0; transition: opacity .7s; }                                                                          /* 幕を上げるときだけ、ゆっくり */
+                                   transform: scale(var(--ytzoom, 1.2)); transform-origin: 50% 50%; opacity: 0; transition: none; }
+  .ytbox.on iframe, .ytbox.on .ythost { opacity: 1; transition: opacity .7s; }       /* 再生が始まって少したってから、はじめてYouTubeの画面そのものを見せる（それまでは、再生ボタンなども含めて、まったく見えない） */
   /* ═══ flow：スマホなど狭い画面のBAN/PICKの画面（幅に合わせて並べる） ═══ */
   .cp { max-width: 70em; margin: 0 auto; padding: .8em; display: flex; flex-direction: column; gap: .8em; }
   .cp .box { background: var(--panel); border: 2px double var(--accent); padding: .7em .9em; }
@@ -906,6 +905,7 @@
   html[data-design="gothic"].stage .rs-title::after { content: ""; display: block; position: absolute; left: 50%; right: auto; margin-left: -250px; top: 84px; bottom: auto; width: 500px; height: 60px; background: url("Gothic/line.png") center / 100% 100% no-repeat; }
   html[data-design="gothic"].stage .rs-title .big, html[data-design="gothic"].stage .rs-title .small { font-size: 62px; letter-spacing: .08em; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
   html[data-design="gothic"].stage .rs-title .small { margin-left: .35em; }
+  html[data-design="gothic"].stage .rs-title.final .big, html[data-design="gothic"].stage .rs-title.final .small { position: relative; top: 14px; }       /* FINAL RESULT の文字だけ、少し下へ（下の線の位置は、そのまま） */
   html[data-design="gothic"].stage .rs-row { flex: 1; min-height: 0; position: relative; border-bottom: 0; padding: 4px 0 30px; justify-content: center; background: none; }
   html[data-design="gothic"].stage .rs-row::after { content: ""; position: absolute; left: 12%; right: 12%; bottom: 0; height: 26px; pointer-events: none; background: url("Gothic/line.png") center / 100% 100% no-repeat; }
   html[data-design="gothic"].stage .rs-row:last-child::after { display: none; }
@@ -1015,7 +1015,7 @@
   // ── 表示の種類：BAN/PICKの画面で、横長なら stage（1920x1080を拡縮）／ルール表示・縦長・狭い画面は flow ──
   var lastData = null, kind = "flow";
   function wantKind(data) {
-    var big = data && (data.state === "play" || data.state === "result");                  // BAN/PICKの画面・成績の画面
+    var big = data && (data.state === "play" || data.state === "result" || data.state === "hold");                  // BAN/PICKの画面・成績の画面
     if (params.get("layout") === "stage" && big) return "stage";      // 確認用：URLに &layout=stage を付けると、画面の形に関係なく1920x1080の表示にする
     if (big && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
     return "flow";
@@ -1101,12 +1101,11 @@
     var wrap = el("div", "ytwrap");
     var box = el("div", "ytbox");
     var host = el("div", "ythost");
-    var cover = el("div", "ytcover");
-    box.appendChild(host); box.appendChild(cover); wrap.appendChild(box);
+    box.appendChild(host); wrap.appendChild(box);
     loadYT().then(function () {
       var timer = null;
-      function show() { clearTimeout(timer); timer = setTimeout(function () { cover.classList.add("off"); }, 1200); }   // 再生が始まって、少したってから幕を上げる
-      function hide() { clearTimeout(timer); cover.classList.remove("off"); }
+      function show() { clearTimeout(timer); timer = setTimeout(function () { box.classList.add("on"); }, 1200); }   // 再生が始まって、少したってから見せる
+      function hide() { clearTimeout(timer); box.classList.remove("on"); }                                        // 読み込み・一時停止・終了：YouTubeの画面は、すぐに全部見えなくする
       /* eslint-disable-next-line no-new */
       new YT.Player(host, {
         videoId: id, width: "100%", height: "100%",
@@ -1117,7 +1116,7 @@
           onStateChange: function (e) {
             if (e.data === 1) show();                                   // 再生中
             else if (e.data === 0) { hide(); e.target.seekTo(0); e.target.playVideo(); }   // 終わったら、おすすめ画面を出さずに、最初から
-            else {                                                      // 読み込み・一時停止など：全部隠して、すぐ再生しなおす（再生ボタンが出たままにならないように）
+            else {                                                      // 読み込み・一時停止など：見えなくして、すぐ再生しなおす
               hide();
               if (e.data === 2 || e.data === 5 || e.data === -1) e.target.playVideo();
             }
@@ -1586,7 +1585,7 @@
     var wrap = el("div", "rs" + (again ? "" : " enter"));                              // もう成績の画面が出ているときは、入場のアニメーションをやり直さない（データの更新で2回動いてしまうため）
     var full = res.title || ((res.round || "") + " RESULT");
     var cut = full.lastIndexOf(" ");
-    var title = el("div", "rs-title");
+    var title = el("div", "rs-title" + (/^FINAL\b/.test(full) ? " final" : ""));          // 決勝のタイトル（FINAL RESULT）だけ、デザインが位置を変えられるように目印を付ける
     title.appendChild(el("span", "big", cut > 0 ? full.slice(0, cut) : full));
     if (cut > 0) title.appendChild(el("span", "small", full.slice(cut + 1)));
     wrap.appendChild(title);
@@ -1719,6 +1718,12 @@
         root.className = kind;
         startReplay(data.live);
       }
+      return;
+    }
+    if (data.state === "hold") {                               // 結果は入力されたが、相手チームの確認待ち：確認されるまで、画面は透明のまま（戦績の画面は出さない）
+      stopReplay();
+      root.className = kind + " clear";
+      setMedia([]); screenEl.replaceChildren();
       return;
     }
     stopReplay();
