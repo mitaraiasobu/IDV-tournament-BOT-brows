@@ -954,10 +954,19 @@
   html[data-design="gothic"].stage .sq.gs.i2 { left: 40px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i3 { left: 130px !important; top: 988px !important; }
   html[data-design="gothic"].stage .sq.gh.i0 { left: 1640px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gh.i1 { left: 1730px !important; top: 898px !important; }
   html[data-design="gothic"].stage .sq.gh.i2 { left: 1640px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gh.i3 { left: 1730px !important; top: 988px !important; }
-  @keyframes pickFlip { from { transform: perspective(1100px) rotateY(0deg); } to { transform: perspective(1100px) rotateY(360deg); } }
-  @keyframes pickShow { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
-  html[data-design="gothic"].stage .card.pop { animation: pickFlip 1.1s ease-in-out both; transform-origin: calc(312px * var(--s)) calc(1430px * var(--s)); }
-  html[data-design="gothic"].stage .card.pop .art img, html[data-design="gothic"].stage .card.pop .art .emo { animation: pickShow 1.1s steps(1, end) both; }
+  /* PICK：ランタンが、上から下に降りてきて、振り子のように左右に揺れる（降りた瞬間は強め、そのあとはゆっくり小さく、いつもゆらゆら）。BAN/PICKが終わると、上に引き戻される。
+     まだPICKされていない枠は、出さない。揺れの中心は、鎖のいちばん上（画面の外） */
+  @keyframes lanternDrop { from { transform: translateY(-1300px); } to { transform: translateY(0); } }
+  @keyframes lanternSwing { 0% { transform: rotate(0deg); } 9% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * 3.4deg)); } 28% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * -2.6deg)); }
+        46% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * 1.8deg)); } 63% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * -1.1deg)); } 79% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * .6deg)); } 100% { transform: rotate(0deg); } }
+  @keyframes lanternIdle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * .35deg)); } 75% { transform: rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * -.35deg)); } }
+  @keyframes lanternUp { 0% { transform: translateY(0) rotate(0deg); } 16% { transform: translateY(46px) rotate(calc(var(--dir, 1) * var(--amp, 1) * var(--ar, 1) * .9deg)); } 100% { transform: translateY(-1300px) rotate(0deg); } }
+  html[data-design="gothic"].stage .surv .card { --amp: 1; } html[data-design="gothic"].stage .hunt .card { --amp: .7; }
+  html[data-design="gothic"].stage .card { transform-origin: calc(312px * var(--s)) 0; animation: lanternIdle var(--per, 6.5s) var(--sway-delay, 0s) ease-in-out infinite; }
+  html[data-design="gothic"].stage .card.empty { display: none; }
+  html[data-design="gothic"].stage .card.pop { animation: lanternDrop .75s cubic-bezier(.45, 0, .9, .6), lanternSwing 3.4s .75s ease-out, lanternIdle var(--per, 6.5s) 4.15s ease-in-out infinite; }
+  html[data-design="gothic"].leaving .card { animation: lanternUp 1.1s ease-in both; }
+  html[data-design="gothic"].leaving #screen { animation: none; }
   .idle { padding: 30vh 1em 0; text-align: center; font-size: 1.8em; font-weight: 800; letter-spacing: .08em; color: var(--sub); }
 </style>
 </head>
@@ -1163,8 +1172,20 @@
     return out;
   }
   function teamName(t) { return (t && (t.abbr || t.name)) || "?"; }
+  function rand01(seed, n) { var x = Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453; return x - Math.floor(x); }      // 同じ入力なら同じ値（0以上1未満）
+  function seedOf(item) {                                                                                       // ランタンごとの乱数のもと：キャラ名（なければ手順の番号）
+    var s = String((item && (item.name || item.id)) || ""), h = (item && item.s !== undefined ? item.s : 0) + 1;
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100003;
+    return h;
+  }
   function card(item, cap, k) {
-    var c = el("div", "card" + (item && k !== undefined && item.s === k ? " pop" : ""));
+    var c = el("div", "card" + (item ? "" : " empty") + (item && k !== undefined && item.s === k ? " pop" : ""));       // empty＝まだPICKされていない枠。ゴシックでは、PICKされるまで出さない（PICKされたらランタンが降りてくる）
+    // ランタンの揺れ：向き・大きさ・周期は、ランタンごとにばらばら（PICKの手順の番号から決めるので、画面を描き直しても変わらない）。ゆらゆらの位相は、画面の描き直し（5秒ごとの手順の切り替え）をまたいで、そろえる
+    var sd = seedOf(item), per = 5.6 + rand01(sd, 3) * 2.4;
+    c.style.setProperty("--dir", rand01(sd, 1) < 0.5 ? "-1" : "1");
+    c.style.setProperty("--ar", (0.75 + rand01(sd, 2) * 0.5).toFixed(2));
+    c.style.setProperty("--per", per.toFixed(1) + "s");
+    c.style.setProperty("--sway-delay", "-" + (((Date.now() / 1000) + rand01(sd, 4) * 10) % per).toFixed(2) + "s");
     var a = el("div", "art");
     if (item) art(item, a); else a.appendChild(el("div", "q", "？"));
     c.appendChild(a);
