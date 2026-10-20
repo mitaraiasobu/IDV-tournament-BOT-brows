@@ -1117,6 +1117,7 @@
     var wrap = el("div", "ytwrap"), box = el("div", "ytbox"), host = el("div", "ythost");
     box.appendChild(host); wrap.appendChild(box);
     var player = null, ready = false, begun = false, wantReveal = false, playingAt = 0, timer = null, watch = null, dead = false;
+    var warming = false, warmTimer = null;                                    // warming＝見えないまま、先に少し再生して、映像を読み込んでおいている最中
     function hide() { clearTimeout(timer); timer = null; playingAt = 0; box.classList.remove("on"); }
     function doReveal() {                                                     // 見せはじめる：動画が指定の開始位置からずれていたら、合わせてから
       timer = null;
@@ -1153,8 +1154,14 @@
                       mute: 1, cc_load_policy: 0, origin: location.origin,
                       start: Math.max(0, S - REVEAL_MS / 1000) },          // 見えはじめるまでの約4秒も、再生は進む。その分だけ手前から始めて、見えはじめたときに、ちょうど指定の位置にする
         events: {
-          onReady: function (e) { ready = true; e.target.mute(); if (begun) e.target.playVideo(); },
+          onReady: function (e) { ready = true; e.target.mute(); if (begun) e.target.playVideo(); else if (warming) startWarm(); },
           onStateChange: function (e) {
+            if (!begun) {                                                      // まだ見せる準備の前：読み込みのために少し再生して、止める（通信が弱くても、途切れないように、映像を先に読み込んでおく）
+              if (e.data === 1 && warming && !warmTimer) {
+                warmTimer = setTimeout(function () { warmTimer = null; if (!begun && warming) { warming = false; try { player.pauseVideo(); } catch (x) { /* 無視 */ } } }, 3000);
+              }
+              return;
+            }
             if (e.data === 1) { if (!playingAt) playingAt = Date.now(); loopWatch(); schedule(); }     // 再生中
             else if (e.data === 3) { /* 読み込み中：見せているときは、そのまま。まだなら、隠したまま */ }
             else if (begun) {                                                  // 止まった・終わった・まだ始まっていない：見えなくして、すぐ再生しなおす
@@ -1167,38 +1174,77 @@
         }
       });
     });
+    function startPos() { return Math.max(0, S - REVEAL_MS / 1000); }
+    function startWarm() { try { player.seekTo(startPos(), true); player.playVideo(); } catch (e) { /* 無視 */ } }
     return {
       wrap: wrap,
-      begin: function () { if (begun) return; begun = true; if (ready) player.playVideo(); },       // 見えないまま、再生を始める
+      warm: function () { if (begun || warming) return; warming = true; if (ready) startWarm(); },   // 見えないまま、先に映像を読み込んでおく（少し再生して、止める）
+      begin: function () {                                                                           // 見えないまま、再生を始める（読み込み済みなら、すぐ始まる）
+        if (begun) return;
+        begun = true; warming = false; clearTimeout(warmTimer); warmTimer = null;
+        if (ready) {
+          try { player.seekTo(startPos(), true); player.playVideo(); } catch (e) { /* 無視 */ }
+          setTimeout(function () {                                                                   // すでに再生中で、状態の変化が来なかったときの保険
+            try { if (!dead && !playingAt && player.getPlayerState() === 1) { playingAt = Date.now(); schedule(); } } catch (e) { /* 無視 */ }
+          }, 1000);
+        }
+      },
       reveal: function () { wantReveal = true; this.begin(); schedule(); },                          // 見せる（再生が始まって約4秒たっていれば、すぐ）
       destroy: function () { dead = true; clearTimeout(timer); clearInterval(watch); try { player.destroy(); } catch (e) { /* 無視 */ } wrap.remove(); }
     };
   }
   function youtubePlayer(id, start) { var c = ytController(id, start); c.reveal(); return c.wrap; }
 
-  // 先に準備しておく YouTube（BAN/PICKの再生中、PICKの演出が出る約4.5秒前に、見えないまま再生を始める。そうすると、手順が出た瞬間から、演出をまるごと見せられる）
+  // 先に読み込んでおく動画（YouTube・動画ファイル）：BAN/PICKの表示が始まったときに、演出に使う動画を全部、見えないまま読み込む（通信が弱くても、再生が途切れないように）。
+  // YouTube は、演出が出る約4.5秒前になったら、見えないまま再生を始める。そうすると、手順が出た瞬間から、演出をまるごと見せられる。
   var preYT = [];
   var PRE_LEAD_MS = REVEAL_MS + 500;
+  function videoElement(m) {                                                  // 動画ファイル：読み込みだけ先に行う（再生は、見せるときに）
+    var v = document.createElement("video");
+    v.src = m.url; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
+    v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+    var S = parseInt(m.start, 10) || 0;                                       // 再生開始位置（秒）。繰り返すときも、ここへ戻る
+    if (S) {
+      v.loop = false;
+      v.addEventListener("loadedmetadata", function () { try { v.currentTime = S; } catch (e) { /* 無視 */ } });
+      v.addEventListener("ended", function () { v.currentTime = S; v.play().catch(function () {}); });
+    }
+    return v;
+  }
   function preloadYT(lv) {
     clearPreYT();
     var now = replay ? stepAt(lv, Math.max(0, Date.now() - replay.start)) : 0;                          // いま何手順目か（途中から開いたとき、もう過ぎた手順の演出は準備しない）
     [].concat(arr((lv.survivor_picks || {}).items), arr((lv.hunter_pick || {}).items)).forEach(function (it) {
       var m = it && it.media;
-      if (!m || m.kind !== "youtube" || !/^[A-Za-z0-9_-]{11}$/.test(m.id || "") || !(it.s >= 1) || it.s <= now) return;      // 最初の手順（s=0）と、いま出ている手順は、先に準備できない
-      var ctl = ytController(m.id, m.start);
-      ctl.wrap.setAttribute("data-pre", "1");
-      mediaBox.appendChild(ctl.wrap);
-      preYT.push({ id: m.id, start: parseInt(m.start, 10) || 0, s: it.s, ctl: ctl, begun: false });
+      if (!m || !(it.s >= now)) return;
+      if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) {
+        var ctl = ytController(m.id, m.start);
+        ctl.wrap.setAttribute("data-pre", "1");
+        mediaBox.appendChild(ctl.wrap);
+        ctl.warm();                                                           // 見えないまま、映像を読み込んでおく
+        preYT.push({ kind: "youtube", id: m.id, start: parseInt(m.start, 10) || 0, s: it.s, ctl: ctl, begun: false });
+      } else if (m.kind === "video" && m.url) {
+        var v = videoElement(m);
+        v.setAttribute("data-pre", "1");
+        v.style.opacity = "0";
+        mediaBox.appendChild(v);
+        preYT.push({ kind: "video", url: m.url, start: parseInt(m.start, 10) || 0, s: it.s, el: v, begun: true });
+      }
     });
   }
-  function clearPreYT() { preYT.forEach(function (p) { p.ctl.destroy(); }); preYT = []; }
-  function tickPreYT(lv, elapsed) {                                           // 演出が出る約4.5秒前になったら、見えないまま再生を始める
+  function clearPreYT() { preYT.forEach(function (p) { if (p.ctl) p.ctl.destroy(); else p.el.remove(); }); preYT = []; }
+  function tickPreYT(lv, elapsed) {                                           // 演出が出る約4.5秒前になったら、YouTubeは、見えないまま再生を始める
     preYT.forEach(function (p) { if (!p.begun && elapsed >= stepStart(lv, p.s) - PRE_LEAD_MS) { p.begun = true; p.ctl.begin(); } });
   }
-  function takePreYT(m) {                                                      // この演出の、準備済みのプレーヤー（なければ null）
+  function takePreYT(m) {                                                      // この演出の、準備済みの動画（なければ null）
     for (var i = 0; i < preYT.length; i++) {
       var p = preYT[i];
-      if (p.id === m.id && p.start === (parseInt(m.start, 10) || 0)) { preYT.splice(i, 1); p.ctl.wrap.removeAttribute("data-pre"); return p.ctl; }
+      if (m.kind === "youtube" && p.kind === "youtube" && p.id === m.id && p.start === (parseInt(m.start, 10) || 0)) {
+        preYT.splice(i, 1); p.ctl.wrap.removeAttribute("data-pre"); return p.ctl;
+      }
+      if (m.kind === "video" && p.kind === "video" && p.url === m.url && p.start === (parseInt(m.start, 10) || 0)) {
+        preYT.splice(i, 1); p.el.removeAttribute("data-pre"); p.el.style.opacity = ""; return p.el;
+      }
     }
     return null;
   }
@@ -1209,21 +1255,15 @@
       var im = new Image(); im.src = m.url; im.alt = ""; im.draggable = false; return im;
     }
     if (m.kind === "video") {
-      var v = document.createElement("video");
-      v.src = m.url; v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
-      v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
-      var S = parseInt(m.start, 10) || 0;                                  // 再生開始位置（秒）。繰り返すときも、ここへ戻る
-      if (S) {
-        v.loop = false;
-        v.addEventListener("loadedmetadata", function () { try { v.currentTime = S; } catch (e) { /* 無視 */ } });
-        v.addEventListener("ended", function () { v.currentTime = S; v.play().catch(function () {}); });
-      }
+      var v = takePreYT(m) || videoElement(m);                             // 準備済みなら、それを使う（読み込み済みなので、途切れない）
+      v.autoplay = true;
+      try { v.currentTime = parseInt(m.start, 10) || 0; } catch (e) { /* 無視 */ }
       v.play && v.play().catch(function () {});
       return v;
     }
     if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) {
       var pre = takePreYT(m);
-      if (pre) { pre.reveal(); return pre.wrap; }                                // 準備済み：すぐ見せられる
+      if (pre) { pre.reveal(); return pre.wrap; }                                // 準備済み：読み込み済みなので、すぐ見せられる
       return youtubePlayer(m.id, m.start);
     }
     return null;
