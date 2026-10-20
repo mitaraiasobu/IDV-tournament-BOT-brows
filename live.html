@@ -14,11 +14,11 @@
   @font-face { font-family: "Edo SZ"; src: url("assets/rock/edosz.ttf") format("truetype"); font-display: swap; }
   @font-face { font-family: "851Kana"; src: url("assets/rock/851chikara-dzuyoku-kanaA.ttf") format("truetype");
                unicode-range: U+3040-309F, U+30A0-30FF, U+31F0-31FF, U+FF66-FF9F; font-display: swap; }
-  /* ゴシック（ゴスロリ）のフォント：公開サイトの Gothic フォルダ。チーム名など＝漢字は黒薔薇ゴシック・それ以外（かな・英数字）は刻明朝／タイトル・見出し・数字＝反逆 */
-  @font-face { font-family: "GName"; src: url("Gothic/font_1_kokumr_1.00_rls.ttf") format("truetype"); font-display: swap; }
-  @font-face { font-family: "GName"; src: url("Gothic/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype");
+  /* ゴシック（ゴスロリ）のフォント：公開サイトの Fantasy フォルダ。チーム名など＝漢字は黒薔薇ゴシック・それ以外（かな・英数字）は刻明朝／タイトル・見出し・数字＝反逆 */
+  @font-face { font-family: "GName"; src: url("Fantasy/ki_kokumin/font_1_kokumr_1.00_rls.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "GName"; src: url("Fantasy/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype");
                unicode-range: U+3005-3006, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF; font-display: swap; }
-  @font-face { font-family: "Hangyaku"; src: url("Gothic/hangyaku-font/Hangyaku-0vRGR.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "Hangyaku"; src: url("Fantasy/hangyaku-font/Hangyaku-0vRGR.ttf") format("truetype"); font-display: swap; }
   :root {
     --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
     --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
@@ -499,7 +499,7 @@
   html[data-design="simple"].stage .rs.enter::before { animation: fadeUpS .8s ease-out both; }
   html[data-design="simple"].flow .rs-title .big, html[data-design="simple"].flow .rs-title .small, html[data-design="simple"].flow .rs-row .lb, html[data-design="simple"].flow .rs-row .sc,
   html[data-design="simple"].flow .rs-team .pt, html[data-design="simple"].flow .rs-next .nx, html[data-design="simple"].flow .rs { font-family: inherit; font-style: normal; text-shadow: none; }
-  /* ═══════════════ デザイン：ファンタジー（画像）。公開サイトの Gothic フォルダの画像（背景・背景の枠・チームの楕円・中央のバナー・NEXTの枠）を使う。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  /* ═══════════════ デザイン：ファンタジー（画像）。公開サイトの Fantasy フォルダの画像（背景・背景の枠・チームの楕円・中央のバナー・NEXTの枠・線）を使う。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
   html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
         --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
         --fn: "GNum", "GName", serif;                           /* ポイントなどの数字：黒薔薇ゴシック */
@@ -626,26 +626,26 @@
   html[data-design="fantasy"] .rv .box::after, html[data-design="fantasy"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
         -webkit-mask: var(--star-mask); mask: var(--star-mask); }
   /* ── 画像（公開サイトの Gothic フォルダ）：背景・背景の枠・チームの枠（楕円）・ポイントのバナー・NEXTの枠 ── */
-  html[data-design="fantasy"] #bg { background: url("Gothic/background.png") center / cover no-repeat, var(--bg); }
+  html[data-design="fantasy"] #bg { background: url("Fantasy/background.png") center / cover no-repeat, var(--bg); }
   html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .4; mix-blend-mode: soft-light;
         background: radial-gradient(ellipse at 50% 40%, var(--accent), color-mix(in srgb, var(--accent) 35%, transparent)); }
   html[data-design="fantasy"] #bg::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 1; mix-blend-mode: normal;
-        background: url("Gothic/backgroundframe.png") center / 100% 100% no-repeat; }
+        background: url("Fantasy/backgroundframe.png") center / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs::before, html[data-design="fantasy"].stage .rs::after { display: none; }
   /* チーム：楕円の枠（大きく）。色のついた部分（ガラスやリボン）は、チームの色で塗る（明暗は画像のまま）。キャラの画像は、楕円の中に、そのまま（暗くしたりしない） */
   html[data-design="fantasy"].stage .rs-team { top: 143px; width: 537px; height: 804px; isolation: isolate; }
   html[data-design="fantasy"].stage .rs-team.a { left: 117px; } html[data-design="fantasy"].stage .rs-team.b { right: 117px; left: auto; }
   html[data-design="fantasy"].stage .rs-team::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; transform: none; clip-path: none; border: 0; opacity: 1;
-        background: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7);
-        -webkit-mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; }
+        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7);
+        -webkit-mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs-team::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none;
-        background: url("Gothic/teamframe.png") 0 0 / 100% 100% no-repeat; }
+        background: url("Fantasy/teamframe.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs-team .art, html[data-design="fantasy"].stage .rs-team.b .art { left: 111px; top: 73px; width: 335px; height: 615px; right: auto; bottom: auto; overflow: visible; border: 0; border-radius: 50%;
         clip-path: none; box-shadow: none; background: none; }
   html[data-design="fantasy"].stage .rs-team .art::before, html[data-design="fantasy"].stage .rs-team .art::after { display: none; }
   /* キャラは、楕円の中に、全身を影のように（文字・ロゴ・点数の位置は、キャラの画像に合わせて変えない） */
   html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; --ct-h: 590px; --ct-cx: 167px; --ct-bottom: 590px; --ct-hmax: 575px; --ct-hd: 96px;
-        -webkit-mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; }  /* 色の部分（teamframe_color）の形からは、はみ出さない */
+        -webkit-mask: url("Fantasy/teamframe_color.png") -111px -73px / 537px 804px no-repeat; mask: url("Fantasy/teamframe_color.png") -111px -73px / 537px 804px no-repeat; }  /* 色の部分（teamframe_color）の形からは、はみ出さない */
   html[data-design="fantasy"].stage .rs-team .cimg.hunt { --ct-hd: 0px; --ct-fhgt: 615px; }  /* ハンター：画像の高さ＝楕円の高さ。顔（頭の円の中心）の横が、楕円の中心 */
   html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 14%; top: auto; bottom: 4%; width: 72%; height: 74%; max-width: none; object-fit: contain; object-position: 50% 100%;
         filter: brightness(0); opacity: .42; transform: none; }
@@ -657,7 +657,7 @@
   html[data-design="fantasy"].stage .rs-team .tn, html[data-design="fantasy"].stage .rs-team.b .tn { position: absolute; left: 50%; right: auto; top: 270px; bottom: auto; width: auto; transform: translateX(-50%); z-index: 5;
         white-space: nowrap; text-align: center; padding: 0; font-family: var(--fb); font-weight: 400; font-size: 46px; line-height: 1.2; letter-spacing: .02em; color: var(--cream);
         background: none; border: 0; box-shadow: none; text-shadow: 0 2px 10px rgba(0,0,0,.6); --fit: 270; --fit-min: 22; --fit-max: 52; }
-  html[data-design="fantasy"].stage .rs-team .tn::after { content: ""; display: block; width: 230px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  html[data-design="fantasy"].stage .rs-team .tn::after { content: ""; display: block; width: 270px; height: 24px; margin: 6px auto 0; background: url("Fantasy/line.png") center / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs-team .wl, html[data-design="fantasy"].stage .rs-team.b .wl { left: 0; right: 0; top: 652px; z-index: 5; font-size: 30px; letter-spacing: .4em; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
   html[data-design="fantasy"].stage .rs-team .ptbox, html[data-design="fantasy"].stage .rs-team.a .ptbox, html[data-design="fantasy"].stage .rs-team.b .ptbox { left: 111px; right: auto; width: 335px; top: 456px; bottom: auto; height: 190px; z-index: 3; }
   html[data-design="fantasy"].stage .rs-team .pt { position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 1; font-size: 170px; -webkit-text-stroke: 3px currentColor; text-shadow: 0 4px 14px rgba(0,0,0,.6); }
@@ -665,21 +665,21 @@
   html[data-design="fantasy"].stage .rs-team .cap { display: none; }
   /* 中央：バナー（上のリボンに ROUND 1 RESULT、下の板にセットごとの点） */
   html[data-design="fantasy"].stage .rs-rows { left: 535px; top: 22px; width: 850px; height: 848px; display: flex; flex-direction: column; gap: 0; border: 0; border-radius: 0; box-shadow: none; box-sizing: border-box;
-        padding: 244px 150px 62px; background: url("Gothic/point_banner.png") 0 0 / 100% 100% no-repeat; }
+        padding: 244px 150px 62px; background: url("Fantasy/point_banner.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs-rows::before, html[data-design="fantasy"].stage .rs-rows::after { display: none; }
   html[data-design="fantasy"].stage .rs-title { left: 535px; right: auto; width: 850px; top: 96px; height: 90px; line-height: 90px; text-align: center; transform: none; white-space: nowrap; z-index: 2; }
   html[data-design="fantasy"].stage .rs-title::before, html[data-design="fantasy"].stage .rs-title::after { display: none; }
   html[data-design="fantasy"].stage .rs-title .big, html[data-design="fantasy"].stage .rs-title .small { font-size: 58px; letter-spacing: .08em; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
   html[data-design="fantasy"].stage .rs-title .small { margin-left: .35em; }
-  html[data-design="fantasy"].stage .rs-row { flex: 1; min-height: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
-  html[data-design="fantasy"].stage .rs-row:last-child { border-bottom: 0; }
-  html[data-design="fantasy"].stage .rs-row .lb { font-size: 24px; margin-top: 0; letter-spacing: .24em; }
-  html[data-design="fantasy"].stage .rs-row .lb::before, html[data-design="fantasy"].stage .rs-row .lb::after { content: ""; display: inline-block; width: 90px; height: 1px; vertical-align: middle; margin: 0 16px; background: color-mix(in srgb, var(--gold) 75%, transparent); font-size: 1em; }
+  html[data-design="fantasy"].stage .rs-row { flex: 1; min-height: 0; border-bottom: 0; background: url("Fantasy/line.png") center bottom / 84% 16px no-repeat; }
+  html[data-design="fantasy"].stage .rs-row:last-child { background: none; }
+  html[data-design="fantasy"].stage .rs-row .lb { width: 560px; height: 46px; line-height: 46px; text-align: center; margin: 0 auto; font-size: 24px; letter-spacing: .24em; background: url("Fantasy/set_line.png") center / 560px auto no-repeat; }
+  html[data-design="fantasy"].stage .rs-row .lb::before, html[data-design="fantasy"].stage .rs-row .lb::after { content: none; }
   html[data-design="fantasy"].stage .rs-row .sc { font-size: 84px; -webkit-text-stroke: 2px currentColor; gap: 34px; }
   html[data-design="fantasy"].stage .rs-row .sc i { width: 26px; height: 4px; }
   /* NEXT：左右の飾りは伸ばさず、まん中だけ伸ばす */
   html[data-design="fantasy"].stage .rs-next { right: 40px; bottom: 48px; height: 88px; padding: 0; border-style: solid; border-color: transparent; border-width: 0 118px; box-shadow: none; background: none;
-        border-image: url("Gothic/next_frame.png") 0 120 fill / 0 118px / 0 stretch; display: flex; align-items: center; gap: 18px; }
+        border-image: url("Fantasy/next_frame.png") 0 120 fill / 0 118px / 0 stretch; display: flex; align-items: center; gap: 18px; }
   html[data-design="fantasy"].stage .rs-next::after { display: none; }
   html[data-design="fantasy"].stage .rs-next .nx { font-size: 30px; }
   html[data-design="fantasy"].stage .rs-next .nt { font-size: 34px; }
@@ -691,11 +691,11 @@
   html[data-design="fantasy"].stage .center { flex: 0 0 560px; }
   html[data-design="fantasy"].stage .surv .card { --tc: var(--ta); } html[data-design="fantasy"].stage .hunt .card { --tc: var(--tb); }
   html[data-design="fantasy"].stage .card { flex: none; width: 227px; height: 340px; display: block; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; isolation: isolate; }
-  html[data-design="fantasy"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat;
-        background: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7); }
-  html[data-design="fantasy"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none; background: url("Gothic/teamframe.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat;
+        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7); }
+  html[data-design="fantasy"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none; background: url("Fantasy/teamframe.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .card .art { position: absolute; left: 47px; top: 31px; width: 143px; height: 261px; flex: none; border-radius: 50%; overflow: hidden; background: none;
-        -webkit-mask: url("Gothic/teamframe_color.png") -47px -31px / 227px 340px no-repeat; mask: url("Gothic/teamframe_color.png") -47px -31px / 227px 340px no-repeat; }
+        -webkit-mask: url("Fantasy/teamframe_color.png") -47px -31px / 227px 340px no-repeat; mask: url("Fantasy/teamframe_color.png") -47px -31px / 227px 340px no-repeat; }
   html[data-design="fantasy"].stage .card .art::after { display: none; }
   html[data-design="fantasy"].stage .hunt .card .art img { object-fit: cover; object-position: 50% 0; transform: none; }
   html[data-design="fantasy"].stage .card .cap { position: absolute; left: 50%; top: 276px; transform: translateX(-50%); z-index: 5; height: auto; max-width: 300px; padding: 4px 22px 6px; font-size: 24px; line-height: 1.2;
@@ -704,7 +704,7 @@
   @keyframes pickShow { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
   html[data-design="fantasy"].stage .card.pop { animation: pickFlip 1.1s ease-in-out both; }
   html[data-design="fantasy"].stage .card.pop .art img, html[data-design="fantasy"].stage .card.pop .art .emo { animation: pickShow 1.1s steps(1, end) both; }
-  /* ═══════════════ デザイン：ゴシック（ゴスロリ）。黒と薔薇色・レースの縁・ダマスク柄。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  /* ═══════════════ デザイン：ゴシック（ゴスロリ）。公開サイトの Gothic フォルダの画像（コウモリ・月・ランタンの枠）を使う。フォントはファンタジーと同じ。色は、テーマカラーから作る ═══════════════ */
   html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
         --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
         --fn: "GNum", "GName", serif;                           /* ポイントなどの数字：黒薔薇ゴシック */
@@ -830,6 +830,99 @@
   html[data-design="gothic"] .rv h2 { border-bottom: 1px solid var(--gold); }
   html[data-design="gothic"] .rv .box::after, html[data-design="gothic"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
         -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  /* ── ゴシック（画像：公開サイトの Gothic フォルダ。コウモリ・月・ランタンの枠）。teambanner_add / teambanner_color_add（鎌の柄と鎖）は、戦績の画面だけ。PICKの画面では使わない ── */
+  html[data-design="gothic"] #bg { background: url("Gothic/background.png") center / cover no-repeat, radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent) 16%, #10101c), #06060c 78%); }
+  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .55; mix-blend-mode: soft-light;
+        background: radial-gradient(circle at 80% 16%, var(--accent), transparent 30%); }
+  html[data-design="gothic"] #bg::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(0,0,0,.55) 100%); mix-blend-mode: normal; opacity: 1; }
+  html[data-design="gothic"].stage .rs::before, html[data-design="gothic"].stage .rs::after { display: none; }
+  /* チーム：ランタンの枠（上＝暗い板、色の部分＝チームの色で塗る）。右のチームは、左右を反転。窓の中に、ロゴ・チーム名・点数。キャラは全身を影のように（位置は、キャラの画像に合わせて変えない） */
+  html[data-design="gothic"].stage .rs-team { top: 40px; width: 483px; height: 873px; isolation: isolate; }
+  html[data-design="gothic"].stage .rs-team.a { left: 40px; } html[data-design="gothic"].stage .rs-team.b { right: 40px; left: auto; }
+  html[data-design="gothic"].stage .rs-team::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; transform: none; clip-path: none; border: 0; opacity: 1; -webkit-mask: none; mask: none;
+        background: url("Gothic/teambanner.png") 0 0 / 100% 100% no-repeat; filter: drop-shadow(0 14px 22px rgba(0,0,0,.6)); }
+  html[data-design="gothic"].stage .rs-team.b::before { transform: scaleX(-1); }
+  html[data-design="gothic"].stage .rs-team::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+        background: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        -webkit-mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .rs-team.b::after { transform: scaleX(-1); }
+  html[data-design="gothic"].stage .rs-team .art, html[data-design="gothic"].stage .rs-team.b .art { left: 235px; top: 235px; width: 188px; height: 430px; right: auto; bottom: auto; overflow: visible; border: 0; clip-path: none; box-shadow: none; background: none;
+        border-radius: 70px 70px 18px 18px; }
+  html[data-design="gothic"].stage .rs-team.b .art { left: 61px; }
+  /* 鎌の柄と鎖（add）：戦績の画面だけ */
+  html[data-design="gothic"].stage .rs-team .art::before { content: ""; display: block; position: absolute; left: -235px; top: -235px; right: auto; bottom: auto; width: 483px; height: 873px; z-index: 5; pointer-events: none; transform: none;
+        background: url("Gothic/teambanner_add.png") 0 0 / 100% 100% no-repeat; -webkit-mask: none; mask: none; filter: none; opacity: 1; }
+  html[data-design="gothic"].stage .rs-team.b .art::before { left: -61px; transform: scaleX(-1); }
+  html[data-design="gothic"].stage .rs-team .art::after { content: ""; display: block; position: absolute; left: -235px; top: -235px; right: auto; bottom: auto; width: 483px; height: 873px; z-index: 5; pointer-events: none; transform: none; opacity: 1; mix-blend-mode: normal;
+        background: url("Gothic/teambanner_color_add.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        -webkit-mask: url("Gothic/teambanner_color_add.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teambanner_color_add.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .rs-team.b .art::after { left: -61px; transform: scaleX(-1); }
+  /* キャラの影（窓の中。頭の円の大きさをそろえ、足元を下辺に。ハンターは、画像の高さ＝窓の高さ、顔の横が窓の中心） */
+  html[data-design="gothic"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; z-index: 1;
+        --ct-h: 430px; --ct-cx: 94px; --ct-bottom: 418px; --ct-hmax: 400px; --ct-hd: 52px; }
+  html[data-design="gothic"].stage .rs-team .cimg.hunt { --ct-hd: 0px; --ct-fhgt: 430px; }
+  html[data-design="gothic"].stage .rs-team .cimg img { position: absolute; left: 14%; top: auto; bottom: 3%; width: 72%; height: 74%; max-width: none; object-fit: contain; object-position: 50% 100%;
+        filter: brightness(0) invert(1); opacity: .22; transform: none; }
+  html[data-design="gothic"].stage .rs-team .cimg.hunt img { left: 50%; top: 0; bottom: auto; width: auto; height: 100%; transform: translateX(-50%); }
+  html[data-design="gothic"].stage .rs-team .cimg .emo { position: absolute; left: 0; right: 0; bottom: 3%; top: auto; display: block; text-align: center; font-size: 130px; line-height: 1; filter: brightness(0) invert(1); opacity: .2; }
+  html[data-design="gothic"].stage .rs-team .logo, html[data-design="gothic"].stage .rs-team.b .logo { left: 50%; right: auto; top: 30px; bottom: auto; width: 112px; height: 112px; margin: 0 0 0 -56px; z-index: 6; border: 2px solid color-mix(in srgb, var(--gold) 80%, transparent);
+        box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 26%, transparent); background: color-mix(in srgb, var(--ink) 40%, transparent); font-size: 40px; color: var(--cream); }
+  html[data-design="gothic"].stage .rs-team .tn, html[data-design="gothic"].stage .rs-team.b .tn { position: absolute; left: 0; right: auto; top: 156px; bottom: auto; width: 188px; transform: none; z-index: 5; white-space: normal; overflow-wrap: anywhere; text-align: center; padding: 0 6px;
+        font-family: var(--fb); font-weight: 400; font-size: 32px; line-height: 1.15; letter-spacing: .01em; color: var(--cream); background: none; border: 0; box-shadow: none; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+  html[data-design="gothic"].stage .rs-team .tn.m { font-size: 28px; } html[data-design="gothic"].stage .rs-team .tn.s { font-size: 24px; }
+  html[data-design="gothic"].stage .rs-team .tn::after { content: ""; display: block; width: 168px; height: 20px; margin: 4px auto 0; background: url("Gothic/line.png") center / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .rs-team .wl, html[data-design="gothic"].stage .rs-team.b .wl { left: 235px; right: auto; width: 188px; top: 636px; z-index: 5; font-size: 24px; letter-spacing: .3em; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+  html[data-design="gothic"].stage .rs-team.b .wl { left: 61px; }
+  html[data-design="gothic"].stage .rs-team .ptbox, html[data-design="gothic"].stage .rs-team.a .ptbox, html[data-design="gothic"].stage .rs-team.b .ptbox { left: 235px; right: auto; width: 188px; top: 495px; bottom: auto; height: 150px; z-index: 3; }
+  html[data-design="gothic"].stage .rs-team.b .ptbox { left: 61px; }
+  html[data-design="gothic"].stage .rs-team .pt { position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 1; font-size: 124px; -webkit-text-stroke: 2px currentColor; text-shadow: 0 4px 14px rgba(0,0,0,.6); }
+  html[data-design="gothic"].stage .rs-team .pt.d3 { font-size: 88px; }
+  html[data-design="gothic"].stage .rs-team .cap { display: none; }
+  /* 中央：バナー（暗い板＋月の色の枠）。タイトルは板の上、セットごとの点は線で区切って並べる */
+  html[data-design="gothic"].stage .rs-rows { left: 520px; top: 60px; width: 881px; height: 899px; display: flex; flex-direction: column; gap: 0; border: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; isolation: isolate;
+        padding: 284px 150px 178px; background: none; }
+  html[data-design="gothic"].stage .rs-rows::before { content: ""; display: block; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: url("Gothic/banner.png") 0 0 / 100% 100% no-repeat; filter: drop-shadow(0 14px 22px rgba(0,0,0,.6)); }
+  html[data-design="gothic"].stage .rs-rows::after { content: ""; display: block; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+        background: url("Gothic/banner_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--accent) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        -webkit-mask: url("Gothic/banner_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/banner_color.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .rs-rows > * { position: relative; z-index: 2; }
+  html[data-design="gothic"].stage .rs-title { left: 520px; right: auto; width: 881px; top: 156px; height: 90px; line-height: 90px; text-align: center; transform: none; white-space: nowrap; z-index: 2; }
+  html[data-design="gothic"].stage .rs-title::before { display: none; }
+  html[data-design="gothic"].stage .rs-title::after { content: ""; display: block; position: absolute; left: 50%; right: auto; margin-left: -250px; top: 84px; bottom: auto; width: 500px; height: 60px; background: url("Gothic/line.png") center / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .rs-title .big, html[data-design="gothic"].stage .rs-title .small { font-size: 62px; letter-spacing: .08em; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  html[data-design="gothic"].stage .rs-title .small { margin-left: .35em; }
+  html[data-design="gothic"].stage .rs-row { flex: 1; min-height: 0; border-bottom: 0; background: url("Gothic/line.png") center bottom / 80% 40px no-repeat; }
+  html[data-design="gothic"].stage .rs-row:last-child { background: none; }
+  html[data-design="gothic"].stage .rs-row .lb { font-size: 22px; margin-top: 0; letter-spacing: .24em; }
+  html[data-design="gothic"].stage .rs-row .lb::before, html[data-design="gothic"].stage .rs-row .lb::after { content: none; }
+  html[data-design="gothic"].stage .rs-row .sc { font-size: 70px; -webkit-text-stroke: 2px currentColor; gap: 30px; }
+  html[data-design="gothic"].stage .rs-row .sc i { width: 24px; height: 4px; }
+  /* NEXT */
+  html[data-design="gothic"].stage .rs-next { right: 36px; bottom: 26px; width: 620px; height: 120px; padding: 0 84px 4px; border: 0; box-shadow: none; box-sizing: border-box; background: url("Gothic/next_banner.png") 0 0 / 100% 100% no-repeat;
+        display: flex; align-items: center; justify-content: center; gap: 18px; }
+  html[data-design="gothic"].stage .rs-next::after { display: none; }
+  html[data-design="gothic"].stage .rs-next .nx { font-size: 28px; }
+  html[data-design="gothic"].stage .rs-next .nt { font-size: 32px; }
+  /* BAN/PICK：PICKのカードも、ランタンの枠（サバイバー＝緑、ハンター＝紫）。選ばれたら、Y軸にくるりと回って、キャラが出る。add（鎌の柄・鎖）は使わない */
+  html[data-design="gothic"].stage .bar { height: 400px; }
+  html[data-design="gothic"].stage .sq[style*="top: 680px"] { margin-top: -110px; }
+  html[data-design="gothic"].stage .surv { flex: 0 0 auto; gap: 0; align-items: flex-start; }
+  html[data-design="gothic"].stage .hunt { justify-content: center; align-items: flex-start; }
+  html[data-design="gothic"].stage .center { flex: 0 0 540px; align-self: center; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: linear-gradient(180deg, #151521, #0a0a12); box-shadow: 0 10px 28px rgba(0,0,0,.6); }
+  html[data-design="gothic"].stage .surv .card { --tc: var(--ta); } html[data-design="gothic"].stage .hunt .card { --tc: var(--tb); }
+  html[data-design="gothic"].stage .card { flex: none; width: 253px; height: 457px; margin-top: -57px; display: block; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; isolation: isolate; }
+  html[data-design="gothic"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: none; mask: none; background: url("Gothic/teambanner.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        -webkit-mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="gothic"].stage .card .art { position: absolute; left: 123px; top: 123px; width: 98px; height: 225px; flex: none; border-radius: 37px 37px 10px 10px; overflow: hidden; background: none; }
+  html[data-design="gothic"].stage .card .art::after { display: none; }
+  html[data-design="gothic"].stage .hunt .card .art img { object-fit: cover; object-position: 50% 0; transform: none; }
+  html[data-design="gothic"].stage .card .cap { position: absolute; left: 110px; top: 322px; width: 124px; z-index: 5; height: auto; padding: 3px 4px 4px; font-size: 16px; line-height: 1.2; text-align: center; justify-content: center;
+        background: color-mix(in srgb, var(--ink) 90%, transparent); border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); }
+  @keyframes pickFlip { from { transform: perspective(1100px) rotateY(0deg); } to { transform: perspective(1100px) rotateY(360deg); } }
+  @keyframes pickShow { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+  html[data-design="gothic"].stage .card.pop { animation: pickFlip 1.1s ease-in-out both; }
+  html[data-design="gothic"].stage .card.pop .art img, html[data-design="gothic"].stage .card.pop .art .emo { animation: pickShow 1.1s steps(1, end) both; }
   .idle { padding: 30vh 1em 0; text-align: center; font-size: 1.8em; font-weight: 800; letter-spacing: .08em; color: var(--sub); }
 </style>
 </head>
