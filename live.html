@@ -128,8 +128,8 @@
   html.flow .ytbox { width: max(100vw, calc(100vh * 16 / 9)); }               /* 画面を埋めるまで拡大（長辺に合わせる）。はみ出しは切る */
   .ytbox iframe, .ytbox .ythost { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; pointer-events: none;
                                    transform: scale(var(--ytzoom, 1.2)); transform-origin: 50% 50%; }
-  .ytcover { position: absolute; inset: 0; background: #000; opacity: 1; transition: opacity .7s; pointer-events: none; z-index: 2; }
-  .ytcover.off { opacity: 0; }
+  .ytcover { position: absolute; inset: 0; background: #000; opacity: 1; transition: none; pointer-events: none; z-index: 2; }       /* 幕を下ろすのは一瞬（再生ボタンなどが、少しでも見えないように） */
+  .ytcover.off { opacity: 0; transition: opacity .7s; }                                                                          /* 幕を上げるときだけ、ゆっくり */
   /* ═══ flow：スマホなど狭い画面のBAN/PICKの画面（幅に合わせて並べる） ═══ */
   .cp { max-width: 70em; margin: 0 auto; padding: .8em; display: flex; flex-direction: column; gap: .8em; }
   .cp .box { background: var(--panel); border: 2px double var(--accent); padding: .7em .9em; }
@@ -1117,7 +1117,10 @@
           onStateChange: function (e) {
             if (e.data === 1) show();                                   // 再生中
             else if (e.data === 0) { hide(); e.target.seekTo(0); e.target.playVideo(); }   // 終わったら、おすすめ画面を出さずに、最初から
-            else hide();                                                // 読み込み・一時停止など：全部隠す
+            else {                                                      // 読み込み・一時停止など：全部隠して、すぐ再生しなおす（再生ボタンが出たままにならないように）
+              hide();
+              if (e.data === 2 || e.data === 5 || e.data === -1) e.target.playVideo();
+            }
           },
           onError: function () { hide(); }
         }
