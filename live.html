@@ -1113,22 +1113,35 @@
     var host = el("div", "ythost");
     box.appendChild(host); wrap.appendChild(box);
     loadYT().then(function () {
-      var timer = null;
-      function show() { clearTimeout(timer); timer = setTimeout(function () { box.classList.add("on"); }, 2500); }   // 再生が始まって、少したってから見せる
-      function hide() { clearTimeout(timer); box.classList.remove("on"); }                                        // 読み込み・一時停止・終了：YouTubeの画面は、すぐに全部見えなくする
+      var timer = null, watch = null, player = null;
+      // YouTubeの画面（再生ボタンなど、YouTube自身の操作ボタン）は、こちらからは消せない。そこで、YouTube自身がボタンを自動で引っ込める時間（約3秒）が
+      // すぎてから、はじめて見せる。止まったり、読み込み直したりしたら、すぐ見えなくする。繰り返しは、「終わり」の少し手前で最初に戻して行う（終わりの画面を出さない）。
+      function show() { if (timer || box.classList.contains("on")) return; timer = setTimeout(function () { timer = null; box.classList.add("on"); }, 4000); }
+      function hide() { clearTimeout(timer); timer = null; box.classList.remove("on"); }
+      function loopWatch() {
+        if (watch) return;
+        watch = setInterval(function () {
+          if (!document.body.contains(box)) { clearInterval(watch); try { player.destroy(); } catch (e) { /* 無視 */ } return; }       // 画面から外れたら、後片付け
+          try {
+            var d = player.getDuration(), c = player.getCurrentTime();
+            if (d > 1 && d - c < 0.8 && player.getPlayerState() === 1) player.seekTo(0, true);
+          } catch (e) { /* 無視 */ }
+        }, 250);
+      }
       /* eslint-disable-next-line no-new */
-      new YT.Player(host, {
+      player = new YT.Player(host, {
         videoId: id, width: "100%", height: "100%",
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0, playsinline: 1,
                       mute: 1, cc_load_policy: 0, origin: location.origin },
         events: {
           onReady: function (e) { e.target.mute(); e.target.playVideo(); },
           onStateChange: function (e) {
-            if (e.data === 1) show();                                   // 再生中
-            else if (e.data === 0) { hide(); e.target.seekTo(0); e.target.playVideo(); }   // 終わったら、おすすめ画面を出さずに、最初から
-            else {                                                      // 読み込み・一時停止など：見えなくして、すぐ再生しなおす
+            if (e.data === 1) { show(); loopWatch(); }                  // 再生中
+            else if (e.data === 3) { /* 読み込み中：見せているときは、そのまま。まだなら、隠したまま */ }
+            else {                                                      // 止まった・終わった・まだ始まっていない：見えなくして、すぐ再生しなおす
               hide();
-              if (e.data === 2 || e.data === 5 || e.data === -1) e.target.playVideo();
+              if (e.data === 0) e.target.seekTo(0, true);
+              e.target.playVideo();
             }
           },
           onError: function () { hide(); }
