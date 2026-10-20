@@ -950,19 +950,23 @@
   html[data-design="gothic"].stage .center .vs { font-size: 34px; margin-bottom: 4px; }
   html[data-design="gothic"].stage .center .vs .mid { font-size: 28px; }
   html[data-design="gothic"].stage .center .sc div { font-size: 96px; }
+  /* チーム名・点数・W/D：左右とも、同じ幅の2列に入れて、真ん中（X）をそろえる。VS は、2列の真ん中に重ねる */
+  html[data-design="gothic"].stage .center .vs, html[data-design="gothic"].stage .center .sc { display: grid; grid-template-columns: 1fr 1fr; position: relative; text-align: center; }
+  html[data-design="gothic"].stage .center .vs .tm, html[data-design="gothic"].stage .center .sc div { min-width: 0; text-align: center; }
+  html[data-design="gothic"].stage .center .vs .mid { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 0; }
   /* BANのマス（左右の丸の場所。2×2。形は四角のまま） */
   html[data-design="gothic"].stage .sq.bs.i0 { left: 414px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.bs.i1 { left: 504px !important; top: 898px !important; }
   html[data-design="gothic"].stage .sq.bs.i2 { left: 414px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.bs.i3 { left: 504px !important; top: 988px !important; }
   html[data-design="gothic"].stage .sq.bh.i0 { left: 1336px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i1 { left: 1426px !important; top: 896px !important; }
   html[data-design="gothic"].stage .sq.bh.i2 { left: 1336px !important; top: 986px !important; } html[data-design="gothic"].stage .sq.bh.i3 { left: 1426px !important; top: 986px !important; }
   /* 全体BAN：下の左右の隅 */
-  html[data-design="gothic"].stage .hdr.gs { left: 40px !important; top: 658px !important; width: 258px !important; height: 48px; font-size: 22px; }
+  html[data-design="gothic"].stage .hdr.gs { left: 40px !important; top: 758px !important; width: 304px !important; height: 48px; font-size: 22px; }
   html[data-design="gothic"].stage .hdr.gh { left: 1640px !important; top: 836px !important; width: 240px !important; height: 48px; font-size: 22px; }
-  /* サバイバーの全体BAN：左下にまとめる（3列×4行＝12枠まで。ランタンにも、真ん中の点数・BANのマスにも重ならない） */
-  html[data-design="gothic"].stage .sq.gs.i0 { left: 40px !important; top: 718px !important; } html[data-design="gothic"].stage .sq.gs.i1 { left: 130px !important; top: 718px !important; } html[data-design="gothic"].stage .sq.gs.i2 { left: 220px !important; top: 718px !important; }
-  html[data-design="gothic"].stage .sq.gs.i3 { left: 40px !important; top: 808px !important; } html[data-design="gothic"].stage .sq.gs.i4 { left: 130px !important; top: 808px !important; } html[data-design="gothic"].stage .sq.gs.i5 { left: 220px !important; top: 808px !important; }
-  html[data-design="gothic"].stage .sq.gs.i6 { left: 40px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gs.i7 { left: 130px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gs.i8 { left: 220px !important; top: 898px !important; }
-  html[data-design="gothic"].stage .sq.gs.i9 { left: 40px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i10 { left: 130px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i11 { left: 220px !important; top: 988px !important; }
+  /* サバイバーの全体BAN：左下にまとめる（横4マス×3行＝12枠まで。マスは70pxで、ランタンにも、真ん中の点数・BANのマスにも重ならない） */
+  html[data-design="gothic"].stage .sq.gs { width: 70px; height: 70px; }
+  html[data-design="gothic"].stage .sq.gs.i0 { left: 40px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i1 { left: 118px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i2 { left: 196px !important; top: 818px !important; } html[data-design="gothic"].stage .sq.gs.i3 { left: 274px !important; top: 818px !important; }
+  html[data-design="gothic"].stage .sq.gs.i4 { left: 40px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.gs.i5 { left: 118px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.gs.i6 { left: 196px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.gs.i7 { left: 274px !important; top: 896px !important; }
+  html[data-design="gothic"].stage .sq.gs.i8 { left: 40px !important; top: 974px !important; } html[data-design="gothic"].stage .sq.gs.i9 { left: 118px !important; top: 974px !important; } html[data-design="gothic"].stage .sq.gs.i10 { left: 196px !important; top: 974px !important; } html[data-design="gothic"].stage .sq.gs.i11 { left: 274px !important; top: 974px !important; }
   html[data-design="gothic"].stage .sq.gh.i0 { left: 1640px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gh.i1 { left: 1730px !important; top: 898px !important; }
   html[data-design="gothic"].stage .sq.gh.i2 { left: 1640px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gh.i3 { left: 1730px !important; top: 988px !important; }
   /* PICK：ランタンが、上から下に降りてきて、振り子のように左右に揺れる（降りた瞬間は大きく、ゆっくり。だんだん小さくなって、そのまま、いつものゆらゆらにつながる）。
