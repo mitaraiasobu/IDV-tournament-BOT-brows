@@ -645,9 +645,9 @@
   html[data-design="fantasy"].stage .rs-team .art::before, html[data-design="fantasy"].stage .rs-team .art::after { display: none; }
   /* キャラは、楕円の中に、全身を影のように（文字・ロゴ・点数の位置は、キャラの画像に合わせて変えない） */
   html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; }
-  html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 6%; top: 3%; width: 88%; height: 94%; max-width: none; object-fit: contain; object-position: 50% 50%;
+  html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 14%; top: auto; bottom: 4%; width: 72%; height: 74%; max-width: none; object-fit: contain; object-position: 50% 100%;
         filter: brightness(0); opacity: .42; transform: none; }
-  html[data-design="fantasy"].stage .rs-team .cimg .emo { position: absolute; left: 0; right: 0; top: 18%; display: block; text-align: center; font-size: 280px; line-height: 1; filter: brightness(0); opacity: .3; }
+  html[data-design="fantasy"].stage .rs-team .cimg .emo { position: absolute; left: 0; right: 0; bottom: 4%; top: auto; display: block; text-align: center; font-size: 200px; line-height: 1; filter: brightness(0); opacity: .3; }
   /* ロゴ・チーム名・点数：楕円の中（参考画像のとおり。上から ロゴ → チーム名 → 区切り線 → 点数） */
   html[data-design="fantasy"].stage .rs-team .logo, html[data-design="fantasy"].stage .rs-team.b .logo { left: 50%; right: auto; top: 58px; bottom: auto; width: 150px; height: 150px; margin: 0 0 0 -75px; z-index: 6; border: 2px solid color-mix(in srgb, var(--gold) 80%, transparent);
         box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 28%, transparent); background: color-mix(in srgb, var(--ink) 28%, transparent); font-size: 54px; color: var(--cream); }
