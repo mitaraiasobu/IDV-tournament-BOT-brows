@@ -1107,7 +1107,8 @@
     });
     return ytLoading;
   }
-  function youtubePlayer(id) {
+  function youtubePlayer(id, start) {
+    var S = Math.max(0, parseInt(start, 10) || 0), REVEAL_MS = 4000;                 // S＝再生開始位置（秒）
     var wrap = el("div", "ytwrap");
     var box = el("div", "ytbox");
     var host = el("div", "ythost");
@@ -1116,7 +1117,18 @@
       var timer = null, watch = null, player = null;
       // YouTubeの画面（再生ボタンなど、YouTube自身の操作ボタン）は、こちらからは消せない。そこで、YouTube自身がボタンを自動で引っ込める時間（約3秒）が
       // すぎてから、はじめて見せる。止まったり、読み込み直したりしたら、すぐ見えなくする。繰り返しは、「終わり」の少し手前で最初に戻して行う（終わりの画面を出さない）。
-      function show() { if (timer || box.classList.contains("on")) return; timer = setTimeout(function () { timer = null; box.classList.add("on"); }, 4000); }
+      function reveal() {                                            // 見せはじめる：このとき、動画が指定の開始位置になっているようにする（ずれていたら、その位置に合わせてから）
+        timer = null;
+        try {
+          if (Math.abs(player.getCurrentTime() - S) > 0.7) {
+            player.seekTo(S, true);
+            timer = setTimeout(function () { timer = null; box.classList.add("on"); }, 800);
+            return;
+          }
+        } catch (e) { /* 無視 */ }
+        box.classList.add("on");
+      }
+      function show() { if (timer || box.classList.contains("on")) return; timer = setTimeout(reveal, REVEAL_MS); }
       function hide() { clearTimeout(timer); timer = null; box.classList.remove("on"); }
       function loopWatch() {
         if (watch) return;
@@ -1124,7 +1136,7 @@
           if (!document.body.contains(box)) { clearInterval(watch); try { player.destroy(); } catch (e) { /* 無視 */ } return; }       // 画面から外れたら、後片付け
           try {
             var d = player.getDuration(), c = player.getCurrentTime();
-            if (d > 1 && d - c < 0.8 && player.getPlayerState() === 1) player.seekTo(0, true);
+            if (d > 1 && d - c < 0.8 && player.getPlayerState() === 1) player.seekTo(S, true);
           } catch (e) { /* 無視 */ }
         }, 250);
       }
@@ -1132,7 +1144,8 @@
       player = new YT.Player(host, {
         videoId: id, width: "100%", height: "100%",
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, rel: 0, playsinline: 1,
-                      mute: 1, cc_load_policy: 0, origin: location.origin },
+                      mute: 1, cc_load_policy: 0, origin: location.origin,
+                      start: Math.max(0, S - REVEAL_MS / 1000) },          // 見えはじめるまでの間（約4秒）も、再生は進む。その分だけ手前から始めて、見えはじめたときに、ちょうど指定の位置にする
         events: {
           onReady: function (e) { e.target.mute(); e.target.playVideo(); },
           onStateChange: function (e) {
@@ -1140,7 +1153,7 @@
             else if (e.data === 3) { /* 読み込み中：見せているときは、そのまま。まだなら、隠したまま */ }
             else {                                                      // 止まった・終わった・まだ始まっていない：見えなくして、すぐ再生しなおす
               hide();
-              if (e.data === 0) e.target.seekTo(0, true);
+              if (e.data === 0) e.target.seekTo(S, true);
               e.target.playVideo();
             }
           },
@@ -1160,10 +1173,16 @@
       var v = document.createElement("video");
       v.src = m.url; v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
       v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+      var S = parseInt(m.start, 10) || 0;                                  // 再生開始位置（秒）。繰り返すときも、ここへ戻る
+      if (S) {
+        v.loop = false;
+        v.addEventListener("loadedmetadata", function () { try { v.currentTime = S; } catch (e) { /* 無視 */ } });
+        v.addEventListener("ended", function () { v.currentTime = S; v.play().catch(function () {}); });
+      }
       v.play && v.play().catch(function () {});
       return v;
     }
-    if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) return youtubePlayer(m.id);    return null;
+    if (m.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(m.id || "")) return youtubePlayer(m.id, m.start);    return null;
   }
 
   // ── 背景の画像・動画（設定されていれば。内容が変わったときだけ入れ替える） ──
