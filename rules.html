@@ -646,7 +646,7 @@
   /* キャラは、楕円の中に、全身を影のように（文字・ロゴ・点数の位置は、キャラの画像に合わせて変えない） */
   html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; --ct-h: 590px; --ct-cx: 167px; --ct-bottom: 590px; --ct-hmax: 575px; --ct-hd: 96px;
         -webkit-mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; mask: url("Gothic/teamframe_color.png") -111px -73px / 537px 804px no-repeat; }  /* 色の部分（teamframe_color）の形からは、はみ出さない */
-  html[data-design="fantasy"].stage .rs-team .cimg.hunt { --ct-hd: 0px; }  /* ハンターは、頭の円を使わない：画像の高さを楕円の高さに合わせる */
+  html[data-design="fantasy"].stage .rs-team .cimg.hunt { --ct-hd: 0px; --ct-fymid: 307px; --ct-fhgt: 615px; }  /* ハンター：画像の高さ＝楕円の高さ。顔（頭の円の中心）が楕円の中心 */
   html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 14%; top: auto; bottom: 4%; width: 72%; height: 74%; max-width: none; object-fit: contain; object-position: 50% 100%;
         filter: brightness(0); opacity: .42; transform: none; }
   html[data-design="fantasy"].stage .rs-team .cimg.hunt img { left: 50%; top: 0; bottom: auto; width: auto; height: 100%; transform: translateX(-50%); }
@@ -1284,6 +1284,13 @@
       var baseH = parseFloat(cs.getPropertyValue("--ct-h"));
       if (!baseH || !im.naturalHeight) return;                                   // ロック以外のデザイン
       var fd = FACES[im.getAttribute("data-img") || ""], hd = parseFloat(cs.getPropertyValue("--ct-hd"));
+      var fmid = parseFloat(cs.getPropertyValue("--ct-fymid")), fhgt = parseFloat(cs.getPropertyValue("--ct-fhgt"));
+      if (fd && fmid && fhgt) {                                                  // 画像の高さを枠の高さに合わせ、顔（頭の円の中心）を枠の中心に（ファンタジーのハンターの影）
+        var fw = fhgt * im.naturalWidth / im.naturalHeight, fcx = parseFloat(cs.getPropertyValue("--ct-cx")) || 0;
+        im.style.height = fhgt + "px"; im.style.width = fw + "px"; im.style.transform = "none";
+        im.style.left = (fcx - fd.cx * fw) + "px"; im.style.top = (fmid - fd.cy * fhgt) + "px";
+        return;
+      }
       if (fd && hd && fd.r > 0) {                                                // 頭の円が登録されているキャラ：円の大きさをそろえ、頭のてっぺん（円の上）を図形の上辺に、円の中心を中央に
         var hh = hd / (2 * fd.r), ww = hh * im.naturalWidth / im.naturalHeight, cx0 = parseFloat(cs.getPropertyValue("--ct-cx")) || 0, ed0 = parseFloat(cs.getPropertyValue("--ct-edge")) || 0;
         var bot = parseFloat(cs.getPropertyValue("--ct-bottom")), hmax = parseFloat(cs.getPropertyValue("--ct-hmax"));
@@ -1301,7 +1308,7 @@
         im.style.left = (cx0 - fd.cx * ww) + "px"; im.style.top = (ed0 - (fd.cy - fd.r) * hh) + "px";
         return;
       }
-      if (parseFloat(cs.getPropertyValue("--ct-bottom")) || parseFloat(cs.getPropertyValue("--ct-ymid"))) return;                 // 頭の円が無いキャラは、CSSの置き方（枠に収まる大きさ）のまま
+      if (parseFloat(cs.getPropertyValue("--ct-bottom")) || parseFloat(cs.getPropertyValue("--ct-ymid")) || fmid) return;                 // 頭の円が無いキャラは、CSSの置き方（枠に収まる大きさ）のまま
       var refM = parseFloat(cs.getPropertyValue("--ct-m")) || 0.2, fmin = parseFloat(cs.getPropertyValue("--ct-min")) || 1, fmax = parseFloat(cs.getPropertyValue("--ct-max")) || 1;
       var pw = parseFloat(cs.getPropertyValue("--ct-p")) || 1, cxp = parseFloat(cs.getPropertyValue("--ct-cx")) || 0, edge = parseFloat(cs.getPropertyValue("--ct-edge")) || 0;
       var mt = charMetrics(im), f = 1, tp = 0, cxr = 0.5;
