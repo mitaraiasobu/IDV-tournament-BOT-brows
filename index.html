@@ -462,6 +462,27 @@
   html[data-design="fantasy"] .mhead { background: color-mix(in srgb, var(--accent) 16%, var(--ink)); font-family: var(--fb); }
   html[data-design="fantasy"] .team .score, html[data-design="fantasy"] .regboard .count b { font-family: var(--fn); font-weight: 400; }
   html[data-design="fantasy"] .champ .box .cname { font-family: var(--fb); font-weight: 400; }
+  /* ═══════════════ ファンタジー：トーナメント表（画像の背景・背景の枠。見出し・数字＝反逆、名前の表示＝黒薔薇ゴシック＋刻明朝。選手・チーム名は読みやすいまま） ═══════════════ */
+
+  html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --ink: color-mix(in srgb, var(--bg) 62%, black);
+    --fa: "Hangyaku", "GName", "Yu Mincho", serif; --fn: "GNum", "GName", serif; --fb: "GName", "Yu Mincho", serif;
+    --lace-t: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
+    --lace-b: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
+  html[data-design="fantasy"] #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url("Gothic/background.png") center / cover no-repeat; }
+  html[data-design="fantasy"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: url("Gothic/backgroundframe.png") center / 100% 100% no-repeat; }
+  html[data-bg="transparent"] #stage::before, html[data-bg="transparent"] #stage::after { display: none; }
+  html[data-design="fantasy"] #stage > * { position: relative; z-index: 1; }
+  html[data-design="fantasy"] .top h1 { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; border-left-color: var(--gold); text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  html[data-design="fantasy"] .top .sub, html[data-design="fantasy"] .round h2, html[data-design="fantasy"] .nowbar .lbl, html[data-design="fantasy"] .champ .box .label { font-family: var(--fb); font-weight: 400; }
+  html[data-design="fantasy"] .match, html[data-design="fantasy"] .teamcell, html[data-design="fantasy"] .nowbar, html[data-design="fantasy"] .champ .box { background: color-mix(in srgb, var(--ink) 92%, transparent); border: 2px solid var(--gold); border-radius: 0;
+    background-image: var(--lace-t), var(--lace-b); background-blend-mode: normal; }
+  html[data-design="fantasy"] .champ .box.empty { border-color: var(--line); }
+  html[data-design="fantasy"] .st-in_progress { border-color: var(--hot); }
+  html[data-design="fantasy"] .st-extension { border-color: var(--ext); }
+  html[data-design="fantasy"] .mhead { background: color-mix(in srgb, var(--accent) 16%, var(--ink)); font-family: var(--fb); }
+  html[data-design="fantasy"] .team .score, html[data-design="fantasy"] .regboard .count b { font-family: var(--fn); font-weight: 400; }
+  html[data-design="fantasy"] .champ .box .cname { font-family: var(--fb); font-weight: 400; }
   /* ═══════════════ ゴシック：トーナメント表（ゴスロリ。見出し・数字＝反逆、名前の表示＝黒薔薇ゴシック＋刻明朝。選手・チーム名は読みやすいまま） ═══════════════ */
 
   @font-face { font-family: "GName"; src: url("Gothic/font_1_kokumr_1.00_rls.ttf") format("truetype"); font-display: swap; }
