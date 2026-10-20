@@ -70,6 +70,10 @@
   .round.xxdense .slot { padding: 1px 0; }
   .round.xxdense .team { padding: 0 6px; font-size: 10px; line-height: 1.1; gap: 4px; }
   .round.xxdense .team .score { font-size: 11px; min-width: 12px; }
+  .mcast { padding: 4px 16px 7px; font-size: 15px; color: var(--sub); border-top: 1px solid var(--line); letter-spacing: .03em; }
+  .mcast b { color: var(--text); font-weight: 600; }
+  .round.dense .mcast { padding: 1px 12px 3px; font-size: 12px; }
+  .round.xdense .mcast, .round.xxdense .mcast { display: none; }
   .mhead { display: flex; justify-content: space-between; align-items: center; padding: 6px 16px;
            font-size: 16px; color: var(--sub); background: var(--panel2); letter-spacing: .05em; }
   .badge { padding: 2px 12px; border-radius: 999px; font-size: 15px; font-weight: 700; white-space: nowrap;
@@ -237,8 +241,8 @@
     --fa: "Hangyaku", "GName", "Yu Mincho", serif; --fn: "GNum", "GName", serif; --fb: "GName", "Yu Mincho", serif;
     --lace-t: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
     --lace-b: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
-  html[data-design="fantasy"] #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url("Fantasy/background.png") center / cover no-repeat; }
+  html[data-design="fantasy"]:not([data-bg="transparent"]) body { background: #06060c url("Fantasy/background.png") center / cover no-repeat fixed; }
+  html[data-design="fantasy"] #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: rgba(0,0,0,.4); }
   html[data-design="fantasy"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: url("Fantasy/backgroundframe.png") center / 100% 100% no-repeat; }
   html[data-bg="transparent"] #stage::before, html[data-bg="transparent"] #stage::after { display: none; }
   html[data-design="fantasy"] #stage > * { position: relative; z-index: 1; }
@@ -263,8 +267,9 @@
     --fa: "Hangyaku", "GName", "Yu Mincho", serif; --fn: "GNum", "GName", serif; --fb: "GName", "Yu Mincho", serif;
     --lace-t: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
     --lace-b: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
-  html[data-design="gothic"] #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.4)), url("Gothic/background.png") center / cover no-repeat; }
+  html[data-design="gothic"]:not([data-bg="transparent"]) body { background: #06060c url("Gothic/background.png") center / cover no-repeat fixed; }
+  html[data-design="gothic"]:not([data-bg="transparent"]) body { background: #06060c url("Gothic/background.png") center / cover no-repeat fixed; }
+  html[data-design="gothic"] #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: rgba(0,0,0,.4); }
   html[data-bg="transparent"] #stage::before { display: none; }
   html[data-design="gothic"] #stage > * { position: relative; z-index: 1; }
   html[data-design="gothic"] .top h1 { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; border-left-color: var(--gold); text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
@@ -391,6 +396,21 @@
     return c;
   }
 
+  // 割り当てられたキャスター：2人なら「🎙 実況 A／解説 B」、1人なら「🎙 担当 A」。割り当てが無ければ、何も出さない
+  function casterLine(m) {
+    var c = m.casters;
+    if (!c || m.bye) return null;
+    var f = document.createDocumentFragment();
+    f.appendChild(document.createTextNode("🎙 "));
+    if (c.live && c.commentary) {
+      f.appendChild(document.createTextNode("実況 ")); f.appendChild(el("b", null, c.live));
+      f.appendChild(document.createTextNode("／解説 ")); f.appendChild(el("b", null, c.commentary));
+    } else {
+      f.appendChild(document.createTextNode("担当 ")); f.appendChild(el("b", null, c.live || c.commentary));
+    }
+    return f;
+  }
+
   function matchCard(m) {
     var card = el("div", "match st-" + m.status + (m.by_dq ? " by-dq" : "") + (m.bye ? " is-bye" : ""));
     var head = el("div", "mhead");
@@ -401,6 +421,8 @@
     card.appendChild(head);
     card.appendChild(teamRow(m, "a"));
     card.appendChild(teamRow(m, "b"));
+    var cast = casterLine(m);
+    if (cast) { var cl = el("div", "mcast"); cl.appendChild(cast); card.appendChild(cl); }
     if (m.team_a && m.team_b && !m.bye && (m.sets.length || m.extension_needed || m.status === "undecided")) {
       var f = el("div", "mfoot");
       m.sets.forEach(function (s) {
@@ -489,6 +511,8 @@
     head.appendChild(el("span", "dtitle", m.round_name + "　" + sideName(m, "a") + " vs " + sideName(m, "b")));
     head.appendChild(el("span", "dsub", m.format + " · " + m.status_label));
     if (m.winner) head.appendChild(el("span", "dsub", "勝者：" + sideName(m, m.winner) + "（" + m.reason + "）"));
+    var cast = casterLine(m);
+    if (cast) { var cs = el("span", "dsub"); cs.appendChild(cast); head.appendChild(cs); }
     c.appendChild(head);
     var body = el("div", "dbody");
     m.sets.forEach(function (s) {
@@ -631,7 +655,7 @@
       ["hunter", "survivor", "hunter_side", "time_sec", "time"].forEach(function (k) { if (h[k] === undefined) h[k] = null; });
     }
     d.matches.forEach(function (m) {
-      ["team_a", "team_b", "winner", "winner_id", "extension", "next"].forEach(function (k) { if (m[k] === undefined) m[k] = null; });
+      ["team_a", "team_b", "winner", "winner_id", "extension", "next", "casters"].forEach(function (k) { if (m[k] === undefined) m[k] = null; });
       ["by_dq", "bye", "decided_by_admin", "extension_needed"].forEach(function (k) { if (m[k] === undefined) m[k] = false; });
       m.sets = m.sets || [];
       m.set_wins = m.set_wins || { a: 0, b: 0 };
