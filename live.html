@@ -626,8 +626,10 @@
   html[data-design="fantasy"] .rv .box::after, html[data-design="fantasy"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
         -webkit-mask: var(--star-mask); mask: var(--star-mask); }
   /* ── 画像（公開サイトの Gothic フォルダ）：背景・背景の枠・チームの枠（楕円）・ポイントのバナー・NEXTの枠 ── */
-  html[data-design="fantasy"] #bg { background: url("Fantasy/background.png") center / cover no-repeat, var(--bg); }
-  html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .4; mix-blend-mode: soft-light;
+  /* 背景の画像は、ブラウザの画面全体に、比率を変えずに、長いほうの辺に合わせて拡大して敷く（ステージ（16:9）の外の余白にも出る）。背景を透明にするOBS用（bg=transparent）では、敷かない */
+  html[data-design="fantasy"]:not([data-bg="transparent"]) body { background: var(--bg) url("Fantasy/background.png") center / cover no-repeat fixed; }
+  html[data-design="fantasy"] #bg { background: none; }
+  html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .14; mix-blend-mode: normal;
         background: radial-gradient(ellipse at 50% 40%, var(--accent), color-mix(in srgb, var(--accent) 35%, transparent)); }
   html[data-design="fantasy"] #bg::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 1; mix-blend-mode: normal;
         background: url("Fantasy/backgroundframe.png") center / 100% 100% no-repeat; }
@@ -831,8 +833,10 @@
   html[data-design="gothic"] .rv .box::after, html[data-design="gothic"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
         -webkit-mask: var(--star-mask); mask: var(--star-mask); }
   /* ── ゴシック（画像：公開サイトの Gothic フォルダ。コウモリ・月・ランタンの枠）。teambanner_add / teambanner_color_add（鎌の柄と鎖）は、戦績の画面だけ。PICKの画面では使わない ── */
-  html[data-design="gothic"] #bg { background: url("Gothic/background.png") center / cover no-repeat, radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent) 16%, #10101c), #06060c 78%); }
-  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .55; mix-blend-mode: soft-light;
+  /* 背景の画像は、ブラウザの画面全体に、比率を変えずに、長いほうの辺に合わせて拡大して敷く（ステージ（16:9）の外の余白にも出る）。背景を透明にするOBS用（bg=transparent）では、敷かない */
+  html[data-design="gothic"]:not([data-bg="transparent"]) body { background: #06060c url("Gothic/background.png") center / cover no-repeat fixed; }
+  html[data-design="gothic"] #bg { background: none; }
+  html[data-design="gothic"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .22; mix-blend-mode: normal;
         background: radial-gradient(circle at 80% 16%, var(--accent), transparent 30%); }
   html[data-design="gothic"] #bg::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(0,0,0,.55) 100%); mix-blend-mode: normal; opacity: 1; }
   html[data-design="gothic"].stage .rs::before, html[data-design="gothic"].stage .rs::after { display: none; }
