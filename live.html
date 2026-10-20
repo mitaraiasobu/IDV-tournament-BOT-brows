@@ -1117,7 +1117,7 @@
     var wrap = el("div", "ytwrap"), box = el("div", "ytbox"), host = el("div", "ythost");
     box.appendChild(host); wrap.appendChild(box);
     var player = null, ready = false, begun = false, wantReveal = false, playingAt = 0, timer = null, watch = null, dead = false;
-    var warming = false, warmed = false, warmTimer = null;                    // warming＝見えないまま、先に少し再生して、映像を読み込んでおいている最中／warmed＝読み込み済みで、指定の位置で止めてある（見せるときに、そこから再生するだけ）
+    var warming = false, warmed = false, warmTimer = null, warmWatch = null;   // warming＝見えないまま、指定の位置のあたりを再生し続けて、映像を読み込んでおいている最中／warmed＝その状態で、YouTube自身の再生ボタンが引っ込む時間（約3.5秒）がすぎた
     var revealAfter = REVEAL_MS;                                              // 再生が始まってから、見せるまでの時間（止めてあったものを再開するときは、短い）
     function hide() { clearTimeout(timer); timer = null; playingAt = 0; box.classList.remove("on"); }
     function doReveal() {                                                     // 見せはじめる：動画が指定の開始位置からずれていたら、合わせてから
@@ -1159,10 +1159,10 @@
           onStateChange: function (e) {
             if (!begun) {                                                      // まだ見せる準備の前：読み込みのために少し再生して、止める（通信が弱くても、途切れないように、映像を先に読み込んでおく）
               if (e.data === 1 && warming && !warmTimer) {
-                warmTimer = setTimeout(function () {                           // 3.5秒（YouTube自身のボタンが引っ込む時間）たったら、指定の位置に戻して、止めておく
-                  warmTimer = null;
-                  if (!begun && warming) { warming = false; warmed = true; try { player.seekTo(S, true); player.pauseVideo(); } catch (x) { /* 無視 */ } }
-                }, 3500);
+                warmTimer = setTimeout(function () { warmTimer = null; if (!begun && warming) warmed = true; }, 3500);     // 3.5秒（YouTube自身のボタンが引っ込む時間）たったら、準備完了
+                warmWatch = setInterval(function () {                          // 止めずに（止めると、YouTube自身の一時停止のボタンが出てしまう）、指定の位置のあたりを再生し続ける
+                  try { if (!dead && !begun && player.getPlayerState() === 1 && player.getCurrentTime() > S + 1.2) player.seekTo(S, true); } catch (x) { /* 無視 */ }
+                }, 250);
               }
               return;
             }
@@ -1186,24 +1186,27 @@
       isWarmed: function () { return warmed; },
       begin: function () {                                                                           // 見えないまま、再生を始める
         if (begun) return;
-        begun = true; warming = false; clearTimeout(warmTimer); warmTimer = null;
+        var wasWarmed = warmed;
+        begun = true; warming = false; clearTimeout(warmTimer); warmTimer = null; clearInterval(warmWatch);
         if (ready) {
-          // 準備が済んでいる（指定の位置で止めてある）なら、そこから再生を再開して、すぐ見せられる。済んでいないときだけ、見えるまでの約4秒ぶん手前から再生する
-          if (warmed) revealAfter = 300;
-          try { if (!warmed) player.seekTo(startPos(), true); player.playVideo(); } catch (e) { /* 無視 */ }
+          // 準備が済んでいる（指定の位置のあたりを再生し続けていて、YouTube自身のボタンはもう引っ込んでいる）なら、指定の位置に合わせて、すぐ見せられる。
+          // 済んでいないときだけ、見えるまでの約4秒ぶん手前から再生する
+          if (wasWarmed) { revealAfter = 300; playingAt = Date.now(); }
+          try { player.seekTo(wasWarmed ? S : startPos(), true); player.playVideo(); } catch (e) { /* 無視 */ }
+          if (wasWarmed) schedule();
           setTimeout(function () {                                                                   // すでに再生中で、状態の変化が来なかったときの保険
             try { if (!dead && !playingAt && player.getPlayerState() === 1) { playingAt = Date.now(); schedule(); } } catch (e) { /* 無視 */ }
           }, 1000);
         }
       },
       reveal: function () { wantReveal = true; this.begin(); schedule(); },                          // 見せる（再生が始まって約4秒たっていれば、すぐ）
-      destroy: function () { dead = true; clearTimeout(timer); clearInterval(watch); try { player.destroy(); } catch (e) { /* 無視 */ } wrap.remove(); }
+      destroy: function () { dead = true; clearTimeout(timer); clearInterval(watch); clearInterval(warmWatch); try { player.destroy(); } catch (e) { /* 無視 */ } wrap.remove(); }
     };
   }
   function youtubePlayer(id, start) { var c = ytController(id, start); c.reveal(); return c.wrap; }
 
   // 先に読み込んでおく動画（YouTube・動画ファイル）：BAN/PICKの表示が始まったときに、演出に使う動画を全部、見えないまま読み込む（通信が弱くても、再生が途切れないように）。
-  // YouTube は、見えないまま、指定の位置から3.5秒ほど再生して（YouTube自身の再生ボタンが引っ込む時間）、指定の位置に戻して止めておく。手順が出た瞬間に、そこから再生するので、指定の位置（00:00:00でも）から、演出をまるごと見せられる。
+  // YouTube は、見えないまま、指定の位置のあたりを再生し続けておく（止めない：止めると、YouTube自身の一時停止のボタンが出てしまう）。手順が出た瞬間に、指定の位置に合わせて見せるので、指定の位置（00:00:00でも）から、演出をまるごと見せられる。
   var preYT = [];
   var PRE_LEAD_MS = REVEAL_MS + 500;
   function videoElement(m) {                                                  // 動画ファイル：読み込みだけ先に行う（再生は、見せるときに）
