@@ -499,51 +499,61 @@
   html[data-design="simple"].stage .rs.enter::before { animation: fadeUpS .8s ease-out both; }
   html[data-design="simple"].flow .rs-title .big, html[data-design="simple"].flow .rs-title .small, html[data-design="simple"].flow .rs-row .lb, html[data-design="simple"].flow .rs-row .sc,
   html[data-design="simple"].flow .rs-team .pt, html[data-design="simple"].flow .rs-next .nx, html[data-design="simple"].flow .rs { font-family: inherit; font-style: normal; text-shadow: none; }
-  /* ═══════════════ デザイン：ファンタジー（深い緑と金の縁取り・飾り罫・明朝のような文字）。金色は、テーマのアクセント色から作る ═══════════════ */
-  html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 72%, #d8c48a); --cream: color-mix(in srgb, var(--text) 88%, #f3e7c6);
-        --fa: "Cinzel", "Shippori Mincho", "Noto Serif JP", "Yu Mincho", serif; --fb: "Cormorant Garamond", "Shippori Mincho", "Noto Serif JP", "Yu Mincho", serif;
-        --ink: color-mix(in srgb, var(--bg) 70%, black); }
-  html[data-design="fantasy"] #bg { background: radial-gradient(ellipse at 50% 38%, color-mix(in srgb, var(--bg) 82%, white), var(--bg) 70%); }
+  /* ═══════════════ デザイン：ファンタジー（画像）。公開サイトの Gothic フォルダの画像（背景・背景の枠・チームの楕円・中央のバナー・NEXTの枠）を使う。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
+  html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
+        --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
+        --fn: "GNum", "GName", serif;                           /* ポイントなどの数字：黒薔薇ゴシック */
+        --fb: "GName", "Yu Mincho", serif;                      /* チーム名など：漢字＝黒薔薇ゴシック、かな・英数字＝刻明朝 */
+        --ink: color-mix(in srgb, var(--bg) 62%, black);
+        --star-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 38px 38px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 38px 38px no-repeat; --star-mask-s: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right top / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") left bottom / 22px 22px no-repeat, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M11 1.2C11.7 7 15 10.3 20.8 11C15 11.7 11.7 15 11 20.8C10.3 15 7 11.7 1.2 11C7 10.3 10.3 7 11 1.2Z' fill='white' stroke='white' stroke-width='1.5' stroke-linejoin='round'/></svg>") right bottom / 22px 22px no-repeat;
+        --lace-t: radial-gradient(circle at 50% 100%, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) top left / 18px 9px repeat-x;
+        --lace-b: radial-gradient(circle at 50% 0, transparent 6.2px, var(--gold) 6.6px 8px, transparent 8.4px) bottom left / 18px 9px repeat-x;
+        --lace-ts: radial-gradient(circle at 50% 100%, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) top left / 12px 6px repeat-x;
+        --lace-bs: radial-gradient(circle at 50% 0, transparent 4px, var(--gold) 4.3px 5.4px, transparent 5.7px) bottom left / 12px 6px repeat-x; }
+  html[data-design="fantasy"] #bg { background: radial-gradient(ellipse at 50% 36%, color-mix(in srgb, var(--bg) 78%, var(--accent)), var(--bg) 72%); }
+  html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; background: var(--accent); opacity: .15; pointer-events: none;
+        -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='white'><path d='M36 6c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z'/><path d='M36 34c3 9 8 14 18 16-10 2-15 7-18 16-3-9-8-14-18-16 10-2 15-7 18-16z' opacity='.55'/><circle cx='0' cy='36' r='3.2'/><circle cx='72' cy='36' r='3.2'/><circle cx='36' cy='0' r='3.2'/><circle cx='36' cy='72' r='3.2'/><path d='M0 0l5 5-5 5-5-5zM72 0l5 5-5 5-5-5zM0 72l5 5-5 5-5-5zM72 72l5 5-5 5-5-5z' opacity='.7'/></g></svg>") 0 0 / 72px 72px repeat; }
   html[data-design="fantasy"] #bg::after { background-image: var(--noise-f); mix-blend-mode: overlay; opacity: .45; }
   html[data-design="fantasy"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-  /* 四隅の飾り（金色）：mask で金色の背景を、飾りの形に切り抜く */
-  html[data-design="fantasy"].stage .orn::after, html[data-design="fantasy"].stage .rs::after, html[data-design="fantasy"].stage .rs-team::before,
-  html[data-design="fantasy"].stage .rs-rows::before, html[data-design="fantasy"].stage .card::after, html[data-design="fantasy"].stage .center::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--gold); mask-size: 64px 64px; -webkit-mask-size: 64px 64px;
-    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(1 1) translate(0 0)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(-1 1) translate(-64 0)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(1 -1) translate(0 -64)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(-1 -1) translate(-64 -64)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"); -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(1 1) translate(0 0)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(-1 1) translate(-64 0)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(1 -1) translate(0 -64)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g transform='scale(-1 -1) translate(-64 -64)'><g fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'><path d='M5 59V24C5 13 13 5 24 5H59'/><path d='M13 59V31c0-10 7-18 18-18h28' stroke-width='1.3'/><path d='M22 24c1-9 11-10 12-3s-8 8-9 2' stroke-width='1.6'/><path d='M24 40c-6 1-8 6-5 9M40 24c1-6 6-8 9-5' stroke-width='1.4'/></g><path d='M5 5l6 6-6 6-6-6z' transform='translate(9 9)' fill='white' stroke='none'/></g></svg>"); mask-position: left top, right top, left bottom, right bottom; -webkit-mask-position: left top, right top, left bottom, right bottom; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mix-blend-mode: normal; opacity: 1; }
-  html[data-design="fantasy"].stage .rs::after { inset: 8px; mask-size: 84px 84px; -webkit-mask-size: 84px 84px; }
-  html[data-design="fantasy"].stage .card::after, html[data-design="fantasy"].stage .center::after { mask-size: 38px 38px; -webkit-mask-size: 38px 38px; inset: 2px; }
+  /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
+  html[data-design="fantasy"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
+  html[data-design="fantasy"].stage .card::after, html[data-design="fantasy"].stage .center::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-ts), var(--lace-bs); }
+  html[data-design="fantasy"].stage .rs::after, html[data-design="fantasy"].stage .rs-team::after, html[data-design="fantasy"].stage .rs-rows::after, html[data-design="fantasy"].stage .rs-next::after { content: ""; position: absolute; pointer-events: none; z-index: 5;
+        background: var(--gold); -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  html[data-design="fantasy"].stage .rs::after { inset: 1px; }
+  html[data-design="fantasy"].stage .rs-team::after, html[data-design="fantasy"].stage .rs-rows::after, html[data-design="fantasy"].stage .rs-next::after { inset: -19px; }
+  html[data-design="fantasy"].stage .card::before, html[data-design="fantasy"].stage .center::before { content: ""; display: block; position: absolute; inset: 3px; height: auto; pointer-events: none; z-index: 3;
+        background: var(--gold); -webkit-mask: var(--star-mask-s); mask: var(--star-mask-s); }
 
   /* ── 成績の画面 ── */
   html[data-design="fantasy"].stage .rs { font-family: var(--fb); }
-  html[data-design="fantasy"].stage .rs::before { inset: 20px; background: none; border: 3px double var(--gold); border-radius: 6px; opacity: 1; }
+  html[data-design="fantasy"].stage .rs::before { inset: 20px; background: none; border: 3px double var(--gold); border-radius: 0; opacity: 1; }
   html[data-design="fantasy"].stage .rs-tag { display: none; }
   html[data-design="fantasy"].stage .rs-title { left: 0; right: 0; top: 78px; text-align: center; transform: none; }
   html[data-design="fantasy"].stage .rs-title .big, html[data-design="fantasy"].stage .rs-title .small {
-        position: static; display: inline; transform: none; font-family: var(--fa); font-style: normal; font-weight: 700; font-size: 112px; letter-spacing: .03em;
-        text-transform: lowercase; color: var(--gold); text-shadow: 0 4px 18px rgba(0,0,0,.55);
+        position: static; display: inline; transform: none; font-family: var(--fa); font-style: normal; font-weight: 400; font-size: 120px; letter-spacing: .06em;
+        text-transform: none; color: var(--gold); text-shadow: 0 4px 18px rgba(0,0,0,.55);
         background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 55%, white), var(--gold) 55%, color-mix(in srgb, var(--gold) 70%, black));
         -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
   html[data-design="fantasy"].stage .rs-title .small { margin-left: .3em; }
-  html[data-design="fantasy"].stage .rs-title .big::first-letter, html[data-design="fantasy"].stage .rs-title .small::first-letter { text-transform: uppercase; font-size: 1.28em; }
-  html[data-design="fantasy"].stage .rs-title::before { content: "✦ ❖ ✦"; position: absolute; left: 0; right: 0; top: -52px; text-align: center; font-size: 34px;
+  html[data-design="fantasy"].stage .rs-title::before { content: "✠ ❦ ✠"; position: absolute; left: 0; right: 0; top: -52px; text-align: center; font-size: 34px;
         letter-spacing: .5em; color: var(--gold); transform: none; }
   html[data-design="fantasy"].stage .rs-title::after { left: 50%; right: auto; width: 920px; margin-left: -460px; bottom: -34px; height: 2px; transform: none;
         background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent); }
   html[data-design="fantasy"].stage .rs-team { top: 270px; width: 452px; height: 640px; }
   html[data-design="fantasy"].stage .rs-team.a { left: 198px; } html[data-design="fantasy"].stage .rs-team.b { right: 198px; left: auto; }
   html[data-design="fantasy"].stage .rs-team .art, html[data-design="fantasy"].stage .rs-team.b .art {
-        left: 0; top: 0; width: 100%; height: 100%; clip-path: none; border: 3px double var(--gold); border-radius: 4px;
-        background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 62%, black), color-mix(in srgb, var(--tc) 38%, black) 85%);
+        left: 0; top: 0; width: 100%; height: 100%; clip-path: none; border: 3px double var(--gold); border-radius: 0;
+        background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 46%, black), color-mix(in srgb, var(--tc) 20%, black) 85%);
         box-shadow: 0 18px 40px rgba(0,0,0,.55); }
-  html[data-design="fantasy"].stage .rs-team .art::before { background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.45)); }
+  html[data-design="fantasy"].stage .rs-team .art::before { background: var(--lace-t), var(--lace-b), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.5)); }
   html[data-design="fantasy"].stage .rs-team .art::after { opacity: .5; mix-blend-mode: overlay; }
   html[data-design="fantasy"].stage .rs-team .logo, html[data-design="fantasy"].stage .rs-team.b .logo {
         left: 50%; right: auto; top: 46px; bottom: auto; width: 168px; height: 168px; margin-left: -84px; border: 3px double var(--gold);
         box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 45%, transparent); background: color-mix(in srgb, var(--ink) 45%, transparent);
         font-family: var(--fa); font-size: 64px; font-weight: 600; color: var(--cream); }
   html[data-design="fantasy"].stage .rs-team .tn, html[data-design="fantasy"].stage .rs-team.b .tn {
-        left: 18px; right: 18px; top: 268px; bottom: auto; transform: none; text-align: center; font-family: var(--fb); font-weight: 700; font-size: 60px;
+        left: 18px; right: 18px; top: 268px; bottom: auto; transform: none; text-align: center; font-family: var(--fb); font-weight: 400; font-size: 60px;
         line-height: 1.08; color: var(--cream); text-shadow: 0 3px 10px rgba(0,0,0,.5); letter-spacing: .01em; }
   html[data-design="fantasy"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="fantasy"].stage .rs-team .tn.s { font-size: 42px; }
   html[data-design="fantasy"].stage .rs-team .tn::after { content: ""; display: block; margin: 20px auto 0; width: 300px; height: 2px;
@@ -554,20 +564,20 @@
   html[data-design="fantasy"].stage .rs-team .wl.lose { background: none; color: color-mix(in srgb, var(--cream) 60%, transparent); }
   html[data-design="fantasy"].stage .rs-team .ptbox, html[data-design="fantasy"].stage .rs-team.a .ptbox, html[data-design="fantasy"].stage .rs-team.b .ptbox {
         left: 0; right: 0; top: auto; bottom: 28px; width: auto; height: 220px; transform: none; background: none; border: 0; box-shadow: none; }
-  html[data-design="fantasy"].stage .rs-team .pt { top: 0; font-family: var(--fa); font-style: normal; font-weight: 600; font-size: 200px; color: var(--cream);
+  html[data-design="fantasy"].stage .rs-team .pt { top: 0; font-family: var(--fn); font-style: normal; font-weight: 400; font-size: 190px; -webkit-text-stroke: 4px currentColor; color: var(--cream);
         text-shadow: 0 6px 20px rgba(0,0,0,.5); }
   html[data-design="fantasy"].stage .rs-team .cap { display: none; }
-  html[data-design="fantasy"].stage .rs-rows { left: 658px; top: 280px; width: 604px; height: 620px; gap: 0; border: 3px double var(--gold); border-radius: 4px;
+  html[data-design="fantasy"].stage .rs-rows { left: 658px; top: 280px; width: 604px; height: 620px; gap: 0; border: 3px double var(--gold); border-radius: 0;
         background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 18px 40px rgba(0,0,0,.55); }
   html[data-design="fantasy"].stage .rs-row { transform: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 65%, transparent); background: none; box-shadow: none;
         flex-direction: column; justify-content: center; gap: 0; }
   html[data-design="fantasy"].stage .rs-row:last-child { border-bottom: 0; }
   html[data-design="fantasy"].stage .rs-row .lb { position: static; font-family: var(--fa); font-style: normal; font-weight: 500; font-size: 28px; letter-spacing: .22em; color: var(--cream); margin-top: 6px; }
-  html[data-design="fantasy"].stage .rs-row .lb::before { content: "✦"; margin-right: 14px; color: var(--gold); font-size: .7em; }
-  html[data-design="fantasy"].stage .rs-row .lb::after { content: "✦"; margin-left: 14px; color: var(--gold); font-size: .7em; }
-  html[data-design="fantasy"].stage .rs-row .sc { font-family: var(--fa); font-style: normal; font-weight: 600; font-size: 86px; padding: 0; gap: 30px; color: var(--cream); line-height: 1.05; }
+  html[data-design="fantasy"].stage .rs-row .lb::before { content: "✠"; margin-right: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="fantasy"].stage .rs-row .lb::after { content: "✠"; margin-left: 14px; color: var(--gold); font-size: .7em; }
+  html[data-design="fantasy"].stage .rs-row .sc { font-family: var(--fn); font-style: normal; font-weight: 400; font-size: 82px; -webkit-text-stroke: 2px currentColor; padding: 0; gap: 30px; color: var(--cream); line-height: 1.05; }
   html[data-design="fantasy"].stage .rs-row .sc i { width: 26px; height: 4px; transform: none; background: var(--cream); opacity: .85; }
-  html[data-design="fantasy"].stage .rs-next { right: 96px; bottom: 62px; height: 84px; padding: 0 50px 0 40px; transform: none; border: 3px double var(--gold); border-radius: 44px;
+  html[data-design="fantasy"].stage .rs-next { right: 96px; bottom: 62px; height: 84px; padding: 0 50px 0 40px; transform: none; border: 3px double var(--gold); border-radius: 0;
         background: color-mix(in srgb, var(--ink) 94%, transparent); box-shadow: 0 10px 24px rgba(0,0,0,.5); }
   html[data-design="fantasy"].stage .rs-next .nx { font-family: var(--fa); font-weight: 600; font-size: 34px; letter-spacing: .14em; color: var(--cream); }
   html[data-design="fantasy"].stage .rs-next .nx::before { color: var(--gold); }
@@ -585,13 +595,13 @@
   html[data-design="fantasy"].flow .rs-title .big, html[data-design="fantasy"].flow .rs-title .small, html[data-design="fantasy"].flow .rs-row .lb, html[data-design="fantasy"].flow .rs-row .sc,
   html[data-design="fantasy"].flow .rs-team .pt, html[data-design="fantasy"].flow .rs-next .nx { font-family: var(--fa); font-style: normal; text-shadow: none; }
   html[data-design="fantasy"].flow .rs-team, html[data-design="fantasy"].flow .rs-rows { border: 2px solid var(--gold); }
-  html[data-design="fantasy"].flow .rs-row .lb::before, html[data-design="fantasy"].flow .rs-row .lb::after { content: "✦"; color: var(--gold); margin: 0 .4em; }
+  html[data-design="fantasy"].flow .rs-row .lb::before, html[data-design="fantasy"].flow .rs-row .lb::after { content: "✠"; color: var(--gold); margin: 0 .4em; }
 
   /* ── BAN/PICKの画面 ── */
   html[data-design="fantasy"].stage .hdr { font-family: var(--fa); font-style: normal; font-weight: 600; border-bottom: 3px double var(--gold); color: var(--gold); letter-spacing: .2em; }
-  html[data-design="fantasy"].stage .sq { border: 2px solid var(--gold); border-radius: 3px; background: color-mix(in srgb, var(--ink) 90%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
+  html[data-design="fantasy"].stage .sq { border: 2px solid var(--gold); border-radius: 0; background: color-mix(in srgb, var(--ink) 90%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
   html[data-design="fantasy"].stage .sq.used { border-color: var(--gold); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
-  html[data-design="fantasy"].stage .card, html[data-design="fantasy"].stage .center { border: 3px double var(--gold); border-radius: 4px; overflow: hidden;
+  html[data-design="fantasy"].stage .card, html[data-design="fantasy"].stage .center { border: 3px double var(--gold); border-radius: 0; overflow: hidden;
         background: radial-gradient(ellipse at 50% 20%, color-mix(in srgb, var(--panel2) 90%, transparent), color-mix(in srgb, var(--ink) 96%, transparent));
         box-shadow: 0 14px 34px rgba(0,0,0,.55); }
   html[data-design="fantasy"].stage .card::before { background: none; }
@@ -605,7 +615,91 @@
   html[data-design="fantasy"].stage .center .vs .mid { font-style: normal; color: var(--gold); text-shadow: none; }
   html[data-design="fantasy"].stage .center .sc div { font-size: 72px; }
   html[data-design="fantasy"] .rv .box, html[data-design="fantasy"] .cp .box { border: 3px double var(--gold); background: color-mix(in srgb, var(--ink) 90%, transparent); }
-  html[data-design="fantasy"] .rv h1, html[data-design="fantasy"] .rv h2, html[data-design="fantasy"] .cp .head .ttl { font-family: var(--fa); font-weight: 600; letter-spacing: .06em; }
+  html[data-design="fantasy"] .rv h1, html[data-design="fantasy"] .cp .head .ttl { font-family: var(--fa); font-weight: 400; letter-spacing: .06em; }
+  html[data-design="fantasy"] .rv h2, html[data-design="fantasy"] .cp h3 { font-family: var(--fb); font-weight: 400; letter-spacing: .08em; }
+  /* ゴシック固有：ロゴの縁・勝敗・ルール画面の飾り */
+  html[data-design="fantasy"].stage .rs-team .wl { font-family: var(--fa); font-weight: 400; }
+  html[data-design="fantasy"] .rv .box, html[data-design="fantasy"] .cp .box { border: 2px solid var(--gold); border-radius: 6px; background: color-mix(in srgb, var(--ink) 92%, transparent); position: relative; }
+  html[data-design="fantasy"] .rv .head h1 { text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  html[data-design="fantasy"] .rv .pill { border-radius: 999px; border-color: var(--gold); color: var(--gold); font-family: var(--fb); }
+  html[data-design="fantasy"] .rv h2 { border-bottom: 1px solid var(--gold); }
+  html[data-design="fantasy"] .rv .box::after, html[data-design="fantasy"] .cp .box::after { content: ""; position: absolute; inset: -14px; pointer-events: none; background: var(--gold);
+        -webkit-mask: var(--star-mask); mask: var(--star-mask); }
+  /* ── 画像（公開サイトの Gothic フォルダ）：背景・背景の枠・チームの枠（楕円）・ポイントのバナー・NEXTの枠 ── */
+  html[data-design="fantasy"] #bg { background: url("Gothic/background.png") center / cover no-repeat, var(--bg); }
+  html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; -webkit-mask: none; mask: none; opacity: .4; mix-blend-mode: soft-light;
+        background: radial-gradient(ellipse at 50% 40%, var(--accent), color-mix(in srgb, var(--accent) 35%, transparent)); }
+  html[data-design="fantasy"] #bg::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 1; mix-blend-mode: normal;
+        background: url("Gothic/backgroundframe.png") center / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .rs::before, html[data-design="fantasy"].stage .rs::after { display: none; }
+  /* チーム：楕円の枠（大きく）。色のついた部分（ガラスやリボン）は、チームの色で塗る（明暗は画像のまま）。キャラの画像は、楕円の中に、そのまま（暗くしたりしない） */
+  html[data-design="fantasy"].stage .rs-team { top: 143px; width: 537px; height: 804px; isolation: isolate; }
+  html[data-design="fantasy"].stage .rs-team.a { left: 117px; } html[data-design="fantasy"].stage .rs-team.b { right: 117px; left: auto; }
+  html[data-design="fantasy"].stage .rs-team::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; transform: none; clip-path: none; border: 0; opacity: 1;
+        background: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7);
+        -webkit-mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .rs-team::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none;
+        background: url("Gothic/teamframe.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .rs-team .art, html[data-design="fantasy"].stage .rs-team.b .art { left: 111px; top: 73px; width: 335px; height: 615px; right: auto; bottom: auto; overflow: visible; border: 0; border-radius: 50%;
+        clip-path: none; box-shadow: none; background: none; }
+  html[data-design="fantasy"].stage .rs-team .art::before, html[data-design="fantasy"].stage .rs-team .art::after { display: none; }
+  /* キャラは、楕円の中に、全身を影のように（文字・ロゴ・点数の位置は、キャラの画像に合わせて変えない） */
+  html[data-design="fantasy"].stage .rs-team .cimg { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 50%; z-index: 1; }
+  html[data-design="fantasy"].stage .rs-team .cimg img { position: absolute; left: 6%; top: 3%; width: 88%; height: 94%; max-width: none; object-fit: contain; object-position: 50% 50%;
+        filter: brightness(0); opacity: .42; transform: none; }
+  html[data-design="fantasy"].stage .rs-team .cimg .emo { position: absolute; left: 0; right: 0; top: 18%; display: block; text-align: center; font-size: 280px; line-height: 1; filter: brightness(0); opacity: .3; }
+  /* ロゴ・チーム名・点数：楕円の中（参考画像のとおり。上から ロゴ → チーム名 → 区切り線 → 点数） */
+  html[data-design="fantasy"].stage .rs-team .logo, html[data-design="fantasy"].stage .rs-team.b .logo { left: 50%; right: auto; top: 58px; bottom: auto; width: 150px; height: 150px; margin: 0 0 0 -75px; z-index: 6; border: 2px solid color-mix(in srgb, var(--gold) 80%, transparent);
+        box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 28%, transparent); background: color-mix(in srgb, var(--ink) 28%, transparent); font-size: 54px; color: var(--cream); }
+  html[data-design="fantasy"].stage .rs-team .tn, html[data-design="fantasy"].stage .rs-team.b .tn { position: absolute; left: 50%; right: auto; top: 270px; bottom: auto; width: auto; transform: translateX(-50%); z-index: 5;
+        white-space: nowrap; text-align: center; padding: 0; font-family: var(--fb); font-weight: 400; font-size: 46px; line-height: 1.2; letter-spacing: .02em; color: var(--cream);
+        background: none; border: 0; box-shadow: none; text-shadow: 0 2px 10px rgba(0,0,0,.6); --fit: 270; --fit-min: 22; --fit-max: 52; }
+  html[data-design="fantasy"].stage .rs-team .tn::after { content: ""; display: block; width: 230px; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  html[data-design="fantasy"].stage .rs-team .wl, html[data-design="fantasy"].stage .rs-team.b .wl { left: 0; right: 0; top: 652px; z-index: 5; font-size: 30px; letter-spacing: .4em; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+  html[data-design="fantasy"].stage .rs-team .ptbox, html[data-design="fantasy"].stage .rs-team.a .ptbox, html[data-design="fantasy"].stage .rs-team.b .ptbox { left: 111px; right: auto; width: 335px; top: 456px; bottom: auto; height: 190px; z-index: 3; }
+  html[data-design="fantasy"].stage .rs-team .pt { position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 1; font-size: 170px; -webkit-text-stroke: 3px currentColor; text-shadow: 0 4px 14px rgba(0,0,0,.6); }
+  html[data-design="fantasy"].stage .rs-team .pt.d3 { font-size: 120px; }
+  html[data-design="fantasy"].stage .rs-team .cap { display: none; }
+  /* 中央：バナー（上のリボンに ROUND 1 RESULT、下の板にセットごとの点） */
+  html[data-design="fantasy"].stage .rs-rows { left: 535px; top: 22px; width: 850px; height: 848px; display: flex; flex-direction: column; gap: 0; border: 0; border-radius: 0; box-shadow: none; box-sizing: border-box;
+        padding: 244px 150px 62px; background: url("Gothic/point_banner.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .rs-rows::before, html[data-design="fantasy"].stage .rs-rows::after { display: none; }
+  html[data-design="fantasy"].stage .rs-title { left: 535px; right: auto; width: 850px; top: 96px; height: 90px; line-height: 90px; text-align: center; transform: none; white-space: nowrap; z-index: 2; }
+  html[data-design="fantasy"].stage .rs-title::before, html[data-design="fantasy"].stage .rs-title::after { display: none; }
+  html[data-design="fantasy"].stage .rs-title .big, html[data-design="fantasy"].stage .rs-title .small { font-size: 58px; letter-spacing: .08em; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  html[data-design="fantasy"].stage .rs-title .small { margin-left: .35em; }
+  html[data-design="fantasy"].stage .rs-row { flex: 1; min-height: 0; border-bottom: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
+  html[data-design="fantasy"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="fantasy"].stage .rs-row .lb { font-size: 24px; margin-top: 0; letter-spacing: .24em; }
+  html[data-design="fantasy"].stage .rs-row .lb::before, html[data-design="fantasy"].stage .rs-row .lb::after { content: ""; display: inline-block; width: 90px; height: 1px; vertical-align: middle; margin: 0 16px; background: color-mix(in srgb, var(--gold) 75%, transparent); font-size: 1em; }
+  html[data-design="fantasy"].stage .rs-row .sc { font-size: 84px; -webkit-text-stroke: 2px currentColor; gap: 34px; }
+  html[data-design="fantasy"].stage .rs-row .sc i { width: 26px; height: 4px; }
+  /* NEXT：左右の飾りは伸ばさず、まん中だけ伸ばす */
+  html[data-design="fantasy"].stage .rs-next { right: 40px; bottom: 48px; height: 88px; padding: 0; border-style: solid; border-color: transparent; border-width: 0 118px; box-shadow: none; background: none;
+        border-image: url("Gothic/next_frame.png") 0 120 fill / 0 118px / 0 stretch; display: flex; align-items: center; gap: 18px; }
+  html[data-design="fantasy"].stage .rs-next::after { display: none; }
+  html[data-design="fantasy"].stage .rs-next .nx { font-size: 30px; }
+  html[data-design="fantasy"].stage .rs-next .nt { font-size: 34px; }
+  /* BAN/PICK：PICKのカードも、楕円の枠（サバイバー＝緑、ハンター＝紫）。BANのマスは、少し上に */
+  html[data-design="fantasy"].stage .bar { height: 340px; }
+  html[data-design="fantasy"].stage .sq[style*="top: 680px"] { margin-top: -48px; }
+  html[data-design="fantasy"].stage .surv { flex: 0 0 auto; gap: 0; }
+  html[data-design="fantasy"].stage .hunt { justify-content: center; }
+  html[data-design="fantasy"].stage .center { flex: 0 0 560px; }
+  html[data-design="fantasy"].stage .surv .card { --tc: var(--ta); } html[data-design="fantasy"].stage .hunt .card { --tc: var(--tb); }
+  html[data-design="fantasy"].stage .card { flex: none; width: 227px; height: 340px; display: block; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; isolation: isolate; }
+  html[data-design="fantasy"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat;
+        background: url("Gothic/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7); }
+  html[data-design="fantasy"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none; background: url("Gothic/teamframe.png") 0 0 / 100% 100% no-repeat; }
+  html[data-design="fantasy"].stage .card .art { position: absolute; left: 47px; top: 31px; width: 143px; height: 261px; flex: none; border-radius: 50%; overflow: hidden; background: none; }
+  html[data-design="fantasy"].stage .card .art::after { display: none; }
+  html[data-design="fantasy"].stage .hunt .card .art img { object-fit: cover; object-position: 50% 0; transform: none; }
+  html[data-design="fantasy"].stage .card .cap { position: absolute; left: 50%; top: 276px; transform: translateX(-50%); z-index: 5; height: auto; max-width: 300px; padding: 4px 22px 6px; font-size: 24px; line-height: 1.2;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 94%, transparent), color-mix(in srgb, var(--tc) 30%, var(--ink))); border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); box-shadow: 0 5px 12px rgba(0,0,0,.55); }
+  @keyframes pickFlip { from { transform: perspective(1100px) rotateY(0deg); } to { transform: perspective(1100px) rotateY(360deg); } }
+  @keyframes pickShow { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+  html[data-design="fantasy"].stage .card.pop { animation: pickFlip 1.1s ease-in-out both; }
+  html[data-design="fantasy"].stage .card.pop .art img, html[data-design="fantasy"].stage .card.pop .art .emo { animation: pickShow 1.1s steps(1, end) both; }
   /* ═══════════════ デザイン：ゴシック（ゴスロリ）。黒と薔薇色・レースの縁・ダマスク柄。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
   html[data-design="gothic"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
         --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
