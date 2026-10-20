@@ -396,17 +396,17 @@
     return c;
   }
 
-  // 割り当てられたキャスター：2人なら「🎙 実況 A／解説 B」、1人なら「🎙 担当 A」。割り当てが無ければ、何も出さない
+  // 割り当てられたキャスター：「🎙 キャスター 名前」（2人は「名前・名前」）。実況・解説の区別は書かない。割り当てが無ければ、何も出さない
   function casterLine(m) {
     var c = m.casters;
     if (!c || m.bye) return null;
     var f = document.createDocumentFragment();
     f.appendChild(document.createTextNode("🎙 "));
+    f.appendChild(document.createTextNode("キャスター "));                      // 実況・解説の区別は書かない。名前だけ（2人は「・」でつなぐ）
     if (c.live && c.commentary) {
-      f.appendChild(document.createTextNode("実況 ")); f.appendChild(el("b", null, c.live));
-      f.appendChild(document.createTextNode("／解説 ")); f.appendChild(el("b", null, c.commentary));
+      f.appendChild(el("b", null, c.live)); f.appendChild(document.createTextNode("・")); f.appendChild(el("b", null, c.commentary));
     } else {
-      f.appendChild(document.createTextNode("キャスター ")); f.appendChild(el("b", null, c.live || c.commentary));
+      f.appendChild(el("b", null, c.live || c.commentary));
     }
     return f;
   }
