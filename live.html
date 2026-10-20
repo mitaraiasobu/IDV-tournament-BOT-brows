@@ -956,10 +956,13 @@
   html[data-design="gothic"].stage .sq.bh.i0 { left: 1336px !important; top: 896px !important; } html[data-design="gothic"].stage .sq.bh.i1 { left: 1426px !important; top: 896px !important; }
   html[data-design="gothic"].stage .sq.bh.i2 { left: 1336px !important; top: 986px !important; } html[data-design="gothic"].stage .sq.bh.i3 { left: 1426px !important; top: 986px !important; }
   /* 全体BAN：下の左右の隅 */
-  html[data-design="gothic"].stage .hdr.gs { left: 40px !important; top: 836px !important; width: 260px !important; height: 48px; font-size: 22px; }
+  html[data-design="gothic"].stage .hdr.gs { left: 40px !important; top: 658px !important; width: 258px !important; height: 48px; font-size: 22px; }
   html[data-design="gothic"].stage .hdr.gh { left: 1640px !important; top: 836px !important; width: 240px !important; height: 48px; font-size: 22px; }
-  html[data-design="gothic"].stage .sq.gs.i0 { left: 40px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gs.i1 { left: 130px !important; top: 898px !important; }
-  html[data-design="gothic"].stage .sq.gs.i2 { left: 40px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i3 { left: 130px !important; top: 988px !important; }
+  /* サバイバーの全体BAN：左下にまとめる（3列×4行＝12枠まで。ランタンにも、真ん中の点数・BANのマスにも重ならない） */
+  html[data-design="gothic"].stage .sq.gs.i0 { left: 40px !important; top: 718px !important; } html[data-design="gothic"].stage .sq.gs.i1 { left: 130px !important; top: 718px !important; } html[data-design="gothic"].stage .sq.gs.i2 { left: 220px !important; top: 718px !important; }
+  html[data-design="gothic"].stage .sq.gs.i3 { left: 40px !important; top: 808px !important; } html[data-design="gothic"].stage .sq.gs.i4 { left: 130px !important; top: 808px !important; } html[data-design="gothic"].stage .sq.gs.i5 { left: 220px !important; top: 808px !important; }
+  html[data-design="gothic"].stage .sq.gs.i6 { left: 40px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gs.i7 { left: 130px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gs.i8 { left: 220px !important; top: 898px !important; }
+  html[data-design="gothic"].stage .sq.gs.i9 { left: 40px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i10 { left: 130px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gs.i11 { left: 220px !important; top: 988px !important; }
   html[data-design="gothic"].stage .sq.gh.i0 { left: 1640px !important; top: 898px !important; } html[data-design="gothic"].stage .sq.gh.i1 { left: 1730px !important; top: 898px !important; }
   html[data-design="gothic"].stage .sq.gh.i2 { left: 1640px !important; top: 988px !important; } html[data-design="gothic"].stage .sq.gh.i3 { left: 1730px !important; top: 988px !important; }
   /* PICK：ランタンが、上から下に降りてきて、振り子のように左右に揺れる（降りた瞬間は大きく、ゆっくり。だんだん小さくなって、そのまま、いつものゆらゆらにつながる）。
@@ -1202,7 +1205,7 @@
     c.style.setProperty("--ar", (0.75 + rand01(sd, 2) * 0.5).toFixed(2));
     c.style.setProperty("--per", per.toFixed(1) + "s");
     var el0 = 0;                                                                                                      // このPICKが出てからの経過（秒）：画面を描き直しても、降りる→揺れる→ゆらゆら が途切れずにつながる
-    if (item && item.s !== undefined && replay) el0 = Math.max(0, (Date.now() - replay.start - item.s * STEP_MS) / 1000);
+    if (item && item.s !== undefined && replay) el0 = Math.max(0, (Date.now() - replay.start - stepStart(replay.lv, item.s)) / 1000);
     c.style.setProperty("--el", el0.toFixed(2) + "s");
     var a = el("div", "art");
     if (item) art(item, a); else a.appendChild(el("div", "q", "？"));
@@ -1635,11 +1638,25 @@
     }
   }
 
-  // ═══ 「試合開始」が押されたあと：BAN/PICKを5秒ごとに1手順ずつ出して（最後の手順は10秒）、アニメーションで透明にする ═══
+  // ═══ 「試合開始」が押されたあと：BAN/PICKを1手順ずつ出して（BANは5秒・PICKは10秒。最後の手順は、BANでも10秒）、アニメーションで透明にする ═══
   // 時間は、「試合開始」の時刻（play_started_at）から、このブラウザの時計で数える（BOTの操作に合わせてリアルタイムには出ない）。
-  var STEP_MS = 5000, LAST_MS = 10000, EXIT_MS = 1200;
+  var BAN_MS = 5000, PICK_MS = 10000, LAST_MS = 10000, EXIT_MS = 1200;
   var replay = null;
-  function replayTotal(n) { return STEP_MS * Math.max(0, n - 1) + LAST_MS; }
+  function stepMs(lv, k) {                                          // k手順目を出している時間（BANは5秒・PICKは10秒。最後の手順は、少なくとも10秒）
+    var d = arr(lv.step_kinds)[k] === "pick" ? PICK_MS : BAN_MS;
+    return k >= (lv.n_steps || 1) - 1 ? Math.max(d, LAST_MS) : d;
+  }
+  function stepStart(lv, k) {                                        // k手順目が出はじめる、「試合開始」からの時間（ミリ秒）
+    var t = 0;
+    for (var i = 0; i < k; i++) t += stepMs(lv, i);
+    return t;
+  }
+  function replayTotal(lv) { var n = lv.n_steps || 1; return stepStart(lv, n - 1) + stepMs(lv, n - 1); }
+  function stepAt(lv, elapsed) {                                     // 「試合開始」から elapsed ミリ秒たったとき、何手順目を出しているか
+    var n = lv.n_steps || 1, t = 0;
+    for (var i = 0; i < n - 1; i++) { t += stepMs(lv, i); if (elapsed < t) return i; }
+    return n - 1;
+  }
   function mediaForStep(lv, k) {
     var best = -1, out = [];
     arr((lv.survivor_picks || {}).items).concat(arr((lv.hunter_pick || {}).items)).forEach(function (it) {
@@ -1664,7 +1681,7 @@
   function tickReplay() {
     var r = replay;
     if (!r) return;
-    var n = r.lv.n_steps || 1, total = replayTotal(n);
+    var n = r.lv.n_steps || 1, total = replayTotal(r.lv);
     var elapsed = Math.max(0, Date.now() - r.start);
     if (elapsed >= total + EXIT_MS) {                          // 終わった：画面を透明にする（OBSなら、後ろのゲーム画面が見える）
       if (r.phase !== "clear") { r.phase = "clear"; setPhase("clear"); setMedia([]); screenEl.replaceChildren(); }
@@ -1677,7 +1694,7 @@
       }
       return;
     }
-    var k = Math.min(n - 1, Math.floor(elapsed / STEP_MS));
+    var k = stepAt(r.lv, elapsed);
     if (k !== r.step || r.phase !== "show") { r.step = k; r.phase = "show"; setPhase(null); renderPlayStep(r.lv, k); }
   }
   function startReplay(lv) {
