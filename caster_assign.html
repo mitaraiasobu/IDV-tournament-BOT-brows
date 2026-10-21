@@ -36,11 +36,11 @@
   #pool { position: sticky; top: 64px; width: 250px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: calc(100vh - 80px); overflow: auto; }
   #pool h2, .round h2 { margin: 0 0 8px; font-size: 14px; }
   #pool .hint { color: var(--sub); font-size: 12px; line-height: 1.6; margin-bottom: 10px; }
-  .tag { display: inline-flex; align-items: center; gap: 6px; background: #31407a; border: 1px solid #4a63c8; border-radius: 999px; padding: 5px 12px; margin: 3px 4px 3px 0; cursor: grab; user-select: none; font-weight: 700; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; background: #31407a; border: 1px solid #4a63c8; border-radius: 999px; padding: 7px 16px; margin: 4px 5px 4px 0; cursor: grab; user-select: none; font-weight: 800; font-size: 17px; }
   .tag.female { background: #b8457f; border-color: #ff8fc2; }                 /* 女性のキャスターの名札は、ピンク色 */
   .tag.female small, .tag.female .x { color: #ffe3f0; }
   .tag.picked { outline: 3px solid var(--warn); }
-  .tag small { font-weight: 400; color: #cdd6ff; }
+  .tag small { font-weight: 400; color: #cdd6ff; font-size: 12px; }
   .tag .x { cursor: pointer; padding: 0 2px; color: #cdd6ff; }
   .tag .x:hover { color: var(--bad); }
   #pool .tag { display: flex; justify-content: space-between; margin: 6px 0; border-radius: 10px; }
@@ -55,6 +55,7 @@
   .setrow { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 4px; }
   .setrow .setname { flex: none; width: 56px; font-size: 12px; color: var(--sub); padding-top: 8px; }
   .setrow .drop { flex: 1; }
+  label.solo { font-size: 12px; color: var(--sub); cursor: pointer; }
   .match.over { border-color: var(--accent); background: #2a3556; }
   .match.warn { border-color: var(--warn); }
   .match .head { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
@@ -73,6 +74,8 @@
   <h1>🎙 キャスター割り当て<span id="tname" class="meta"></span></h1>
   <span id="status">読み込み中…</span>
   <span class="sp"></span>
+  <label class="solo" title="チェックすると、1試合に1人ずつ（実況・解説をおひとりで）の案にします"><input type="checkbox" id="solo"> 1試合に1人</label>
+  <button id="auto" class="primary">🤖 自動で割り当てる</button>
   <button id="reload">🔄 読み込み直す</button>
   <button id="undo" disabled>↩ 変更を取り消す</button>
   <button id="save" class="save" disabled>💾 確定（保存）</button>
@@ -280,18 +283,42 @@
       return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return waitResult(nonce, tries - 1); });
     });
   }
-  $("save").addEventListener("click", function () {
-    var btn = $("save"); btn.disabled = true; $("status").textContent = "保存しています…";
+  // BOTへ依頼を送って、結果（result）が書き戻されるまで待つ。assignments の中に入れるのは、Firebaseのルールが、nonce と assignments だけを受け付けるため
+  function sendRequest(asg) {
     var nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    var p = plain();
-    var asg = JSON.parse(JSON.stringify(p.assignments));
-    if (Object.keys(p.sets).length) asg._sets = p.sets;                      // セットごとの担当は、assignments の中の _sets に入れる（Firebaseのルールは、nonce と assignments だけを受け付けるため）
-    var body = { nonce: nonce, assignments: asg };
-    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, assignments: asg }) })
       .then(function (r) {
         if (!r.ok) return r.text().then(function (txt) { var e = new Error("write"); e.status = r.status; e.detail = txt; throw e; });
-        return waitResult(nonce, 25);                                        // BOTが依頼を見つけて、保存して、結果を書き戻すまで待つ（最大40秒ほど）
-      }).then(function (d) {
+        return waitResult(nonce, 25);                                        // BOTが依頼を見つけて、処理して、結果を書き戻すまで待つ（最大40秒ほど）
+      });
+  }
+  function sendError(e) {
+    var why = e && e.status ? "（エラー " + e.status + "：" + String(e.detail || "").slice(0, 80) + "）" : "（通信できませんでした）";
+    say("依頼を送れませんでした" + why + "。Firebaseの「ルール」（受け箱への書き込み）がまだ、または、説明書のものと違う可能性があります。説明書の「Firebaseの準備」を見てください。", "bad"); status();
+  }
+  $("auto").addEventListener("click", function () {      // 「自動で割り当てる」：BOTが、案を作って返す（保存はしない。見て直してから、「確定」）
+    if (!data) return;
+    if (snapshot() !== JSON.stringify({ assignments: {}, sets: {} }) && !confirm("いまの割り当てを、自動の案で置き換えます（「確定」を押すまで、保存はされません）。よろしいですか？")) return;
+    var b = $("auto"); b.disabled = true; $("status").textContent = "自動の案を作っています…";
+    sendRequest({ _auto: { solo: $("solo").checked } }).then(function (d) {
+      b.disabled = false;
+      if (!d) { say("BOTからの返事がありません。BOTが動いているか確認して、少し待ってからやり直してください。", "warn"); status(); return; }
+      var res = d.result;
+      if (!res.ok) { say(res.error || "自動の案を作れませんでした。", "bad"); status(); return; }
+      state = {}; sstate = {};
+      Object.keys(res.auto.assignments || {}).forEach(function (k) { state[k] = res.auto.assignments[k].slice(); });
+      var n = Object.keys(state).length;
+      say("🤖 自動の案を入れました（" + n + "試合）。まだ保存されていません。見て、直してから、「確定」を押してください。" + ((res.auto.notes || []).length ? "\n\n⚠ " + res.auto.notes.join("\n⚠ ") : ""), res.auto.notes && res.auto.notes.length ? "warn" : "ok");
+      render();
+    }).catch(function (e) { b.disabled = false; sendError(e); });
+  });
+  $("save").addEventListener("click", function () {
+    var btn = $("save"); btn.disabled = true; $("status").textContent = "保存しています…";
+    var p = plain();
+    var asg = JSON.parse(JSON.stringify(p.assignments));
+    if (Object.keys(p.sets).length) asg._sets = p.sets;                      // セットごとの担当は、assignments の中の _sets に入れる
+    sendRequest(asg)
+      .then(function (d) {
         if (!d) { say("確定の依頼は送りましたが、BOTからの返事がありません。BOTが動いているか確認して、少し待ってから「読み込み直す」で確かめてください。", "warn"); status(); return; }
         var res = d.result;
         if (!res.ok) { say(res.error || "保存できませんでした。", "bad"); status(); return; }
@@ -299,10 +326,7 @@
         var txt = "✅ 確定しました（" + res.saved + "試合に割り当て。変更した試合：" + res.changed + "）。BOTに保存されました。";
         if (res.warnings && res.warnings.length) txt += "\n\n⚠ 推奨（" + data.recommended + "人）とちがう所があります（そのまま保存しています）：\n・" + res.warnings.join("\n・");
         say(txt, res.warnings && res.warnings.length ? "warn" : "ok"); status();
-      }).catch(function (e) {
-        var why = e && e.status ? "（エラー " + e.status + "：" + String(e.detail || "").slice(0, 80) + "）" : "（通信できませんでした）";
-        say("確定の依頼を送れませんでした" + why + "。Firebaseの「ルール」（受け箱への書き込み）がまだ、または、説明書のものと違う可能性があります。説明書の「Firebaseの準備」を見てください。", "bad"); status();
-      });
+      }).catch(sendError);
   });
   window.addEventListener("beforeunload", function (ev) { if (data && dirty()) { ev.preventDefault(); ev.returnValue = ""; } });
   document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { picked = null; if (data) renderPool(); } });
