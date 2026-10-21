@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キャスター割り当て</title>
+<meta name="robots" content="noindex,nofollow">
+<!--
+  キャスター割り当て用ページ（管理者用）。公開サイトの他のページと同じ仕組み：URLの ?t=（割り当て用の12文字。管理者にだけ伝える）で、
+  window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いたデータ）を読む。
+  - 左の「キャスターの名札」を、トーナメント表の試合にドラッグ＆ドロップすると、その試合の担当に加わる（同じ人を、何回でもドロップできる）。
+    ドロップのかわりに、名札をクリックして「持ち上げて」から、試合をクリックしても入る（スマホ・タブレット向け）。
+  - 1試合の人数に制限は無い。推奨（2人）とちがうときは、警告を出すだけ。
+  - 「確定」を押すと、確定の依頼を Firebase の受け箱（…_inbox/＜12文字＞）に書く。BOTが数秒以内に見つけて、検査して、保存し、
+    結果を、読み込むデータの result に書き戻す（このページが、それを見て画面に出す）。押すまでは、保存されない。
+-->
+<style>
+  :root { --bg: #14171f; --panel: #1d222d; --panel2: #262c3a; --line: #38405a; --text: #eef1f8; --sub: #9aa3bd;
+          --accent: #5b8cff; --ok: #3fbf7f; --warn: #ffb54a; --bad: #ff6b6b; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; font-size: 14px; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  header h1 { margin: 0; font-size: 17px; }
+  header .sp { flex: 1; }
+  button { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  button.save { background: var(--ok); border-color: var(--ok); color: #04210f; font-weight: 800; }
+  #status { font-size: 13px; color: var(--sub); }
+  #status.dirty { color: var(--warn); font-weight: 700; }
+  #status.err { color: var(--bad); font-weight: 700; }
+  #msg { margin: 10px 16px 0; padding: 10px 14px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); display: none; white-space: pre-wrap; line-height: 1.6; }
+  #msg.ok { border-color: var(--ok); } #msg.warn { border-color: var(--warn); } #msg.bad { border-color: var(--bad); }
+  main { display: flex; gap: 14px; padding: 14px 16px 40px; align-items: flex-start; }
+  #pool { position: sticky; top: 64px; width: 250px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: calc(100vh - 80px); overflow: auto; }
+  #pool h2, .round h2 { margin: 0 0 8px; font-size: 14px; }
+  #pool .hint { color: var(--sub); font-size: 12px; line-height: 1.6; margin-bottom: 10px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; background: #31407a; border: 1px solid #4a63c8; border-radius: 999px; padding: 5px 12px; margin: 3px 4px 3px 0; cursor: grab; user-select: none; font-weight: 700; }
+  .tag.picked { outline: 3px solid var(--warn); }
+  .tag small { font-weight: 400; color: #cdd6ff; }
+  .tag .x { cursor: pointer; padding: 0 2px; color: #cdd6ff; }
+  .tag .x:hover { color: var(--bad); }
+  #pool .tag { display: flex; justify-content: space-between; margin: 6px 0; border-radius: 10px; }
+  .meta { font-size: 11px; color: var(--sub); font-weight: 400; }
+  #rounds { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; flex: 1; align-items: flex-start; }
+  .round { flex: none; width: 280px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .round .time { color: var(--sub); font-size: 12px; margin: -4px 0 8px; }
+  .match { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px; margin-bottom: 8px; transition: border-color .1s, background .1s; }
+  .match.over { border-color: var(--accent); background: #2a3556; }
+  .match.warn { border-color: var(--warn); }
+  .match .head { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+  .match .teams { font-weight: 700; margin: 3px 0 6px; }
+  .match .teams.none { color: var(--sub); font-weight: 400; }
+  .drop { min-height: 40px; border: 1px dashed var(--line); border-radius: 8px; padding: 4px; }
+  .drop.empty::before { content: "ここにキャスターをドロップ"; color: var(--sub); font-size: 12px; padding: 6px; display: block; }
+  .note { font-size: 11.5px; margin-top: 4px; line-height: 1.5; }
+  .note.warn { color: var(--warn); }
+  @media (max-width: 760px) { main { flex-direction: column; } #pool { position: static; width: 100%; max-height: none; } }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "assign";</script>
+<header>
+  <h1>🎙 キャスター割り当て<span id="tname" class="meta"></span></h1>
+  <span id="status">読み込み中…</span>
+  <span class="sp"></span>
+  <button id="reload">🔄 読み込み直す</button>
+  <button id="undo" disabled>↩ 変更を取り消す</button>
+  <button id="save" class="save" disabled>💾 確定（保存）</button>
+</header>
+<div id="msg"></div>
+<main>
+  <aside id="pool"><h2>キャスターの名札</h2><div class="hint">名札を、右の試合にドラッグ＆ドロップ。同じ人を何回でも使えます。<br>（ドラッグのかわりに、名札をクリックして持ち上げてから、試合をクリックしても入ります）</div><div id="tags"></div></aside>
+  <section id="rounds"></section>
+</main>
+<script>
+(function () {
+  var key = new URLSearchParams(location.search).get("t") || "";
+  var BASE = window.TOURNAMENT_DATA_BASE || "";
+  var DATA_URL = BASE + key + ".json";                                      // BOTが書いた、割り当て用のデータ
+  var INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";       // 「確定」の依頼を書く受け箱
+  var data = null;                 // サーバーから読んだ内容
+  var state = {};                  // 作業中の割り当て：{試合ID: [キャスターID…]}
+  var saved = "{}";                // 最後に保存・読み込みした内容（変更の有無の判定用）
+  var picked = null;               // クリックで持ち上げている名札
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function norm(s) { var o = {}; Object.keys(s).sort().forEach(function (k) { if (s[k].length) o[k] = s[k].slice(); }); return JSON.stringify(o); }
+  function dirty() { return norm(state) !== saved; }
+  function casterOf(id) { return (data.casters || []).filter(function (c) { return c.id === id; })[0]; }
+  function fmtTime(iso) { if (!iso) return ""; var d = iso.replace("T", " "); return d.slice(5, 16).replace("-", "/"); }
+
+  function say(text, kind) { var m = $("msg"); if (!text) { m.style.display = "none"; return; } m.className = kind || ""; m.textContent = text; m.style.display = "block"; }
+  function status() {
+    var s = $("status"), d = dirty();
+    s.className = d ? "dirty" : "";
+    s.textContent = d ? "● 変更があります（「確定」を押すまで保存されません）" : "保存済み";
+    $("save").disabled = !d || !!(data && data.tournament.locked); $("undo").disabled = !d;
+  }
+
+  function countOf(id) { var n = 0; Object.keys(state).forEach(function (m) { n += state[m].filter(function (x) { return x === id; }).length; }); return n; }
+
+  function tagEl(c, inMatch, matchId, round) {
+    var t = el("span", "tag"); t.draggable = !inMatch; t.dataset.id = c.id;
+    t.appendChild(el("span", null, c.name));
+    if (!inMatch) {
+      var n = countOf(c.id);
+      t.appendChild(el("small", null, (c.wish ? c.wish : "") + (n ? "　担当" + n + "試合" : "")));
+    } else {
+      var x = el("span", "x", "✕"); x.title = "この試合から外す";
+      x.addEventListener("click", function (ev) { ev.stopPropagation(); remove(matchId, c.id); });
+      t.appendChild(x);
+      if (c.rounds && c.rounds.length && c.rounds.indexOf(round) < 0) t.title = "このラウンドは、参加できないと答えています";
+    }
+    t.addEventListener("dragstart", function (ev) { ev.dataTransfer.setData("text/plain", c.id); ev.dataTransfer.effectAllowed = "copy"; });
+    if (!inMatch) t.addEventListener("click", function () { picked = picked === c.id ? null : c.id; renderPool(); });
+    if (!inMatch && picked === c.id) t.classList.add("picked");
+    return t;
+  }
+
+  function renderPool() {
+    var box = $("tags"); box.innerHTML = "";
+    var cs = data.casters || [];
+    if (!cs.length) { box.appendChild(el("div", "meta", "採用されたキャスターがいません。")); return; }
+    cs.forEach(function (c) {
+      var t = tagEl(c, false);
+      var rs = c.rounds && c.rounds.length ? "参加できるラウンド：" + c.rounds.join("・") : "ラウンドの希望：未回答（どれでも可）";
+      var wrap = el("div"); wrap.appendChild(t); wrap.appendChild(el("div", "meta", rs));
+      box.appendChild(wrap);
+    });
+  }
+
+  function add(matchId, id) {
+    var cur = state[matchId] || (state[matchId] = []);
+    if (cur.indexOf(id) >= 0) { say("その試合には、もう入っています。", "warn"); return; }   // 同じ試合に同じ人は、2回入れない
+    cur.push(id); say(""); render();
+  }
+  function remove(matchId, id) { state[matchId] = (state[matchId] || []).filter(function (x) { return x !== id; }); render(); }
+
+  function matchEl(m) {
+    var box = el("div", "match");
+    var head = el("div", "head"); head.appendChild(el("span", null, m.id)); head.appendChild(el("span", null, fmtTime(m.time))); box.appendChild(head);
+    var tm = el("div", "teams" + (m.teams ? "" : " none"), m.teams ? m.teams[0] + " vs " + m.teams[1] : "（対戦カード未定）"); box.appendChild(tm);
+    var drop = el("div", "drop"); var who = state[m.id] || [];
+    if (!who.length) drop.classList.add("empty");
+    who.forEach(function (id) { var c = casterOf(id); if (c) drop.appendChild(tagEl(c, true, m.id, m.round)); });
+    box.appendChild(drop);
+    var notes = [];
+    if (who.length && who.length !== data.recommended) notes.push("⚠ " + who.length + "人です（推奨は" + data.recommended + "人）");
+    who.forEach(function (id) { var c = casterOf(id); if (c && c.rounds && c.rounds.length && c.rounds.indexOf(m.round) < 0) notes.push("⚠ " + c.name + "さんは、このラウンドは参加できないと答えています"); });
+    if (notes.length) { box.classList.add("warn"); notes.forEach(function (n) { box.appendChild(el("div", "note warn", n)); }); }
+    function over(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = "copy"; box.classList.add("over"); }
+    box.addEventListener("dragover", over); box.addEventListener("dragenter", over);
+    box.addEventListener("dragleave", function () { box.classList.remove("over"); });
+    box.addEventListener("drop", function (ev) { ev.preventDefault(); box.classList.remove("over"); var id = ev.dataTransfer.getData("text/plain"); if (casterOf(id)) add(m.id, id); });
+    box.addEventListener("click", function (ev) { if (picked && !(ev.target.closest && ev.target.closest(".x"))) { add(m.id, picked); } });
+    return box;
+  }
+
+  function render() {
+    renderPool();
+    var root = $("rounds"); root.innerHTML = "";
+    data.rounds.forEach(function (r) {
+      var col = el("div", "round"); col.appendChild(el("h2", null, r.name));
+      col.appendChild(el("div", "time", r.start ? "予定：" + fmtTime(r.start) + " ごろ〜" + (r.end ? fmtTime(r.end).slice(-5) + " ごろ" : "") : "予定：日時が未定"));
+      data.matches.filter(function (m) { return m.round === r.round; }).forEach(function (m) { col.appendChild(matchEl(m)); });
+      root.appendChild(col);
+    });
+    status();
+  }
+
+  function adopt(d) {
+    data = d; state = {}; Object.keys(d.assignments || {}).forEach(function (k) { state[k] = d.assignments[k].slice(); });
+    saved = norm(state); picked = null; $("tname").textContent = "｜" + d.tournament.name;
+  }
+  function fetchData() {
+    return fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); });
+  }
+  function load() {
+    if (!BASE || !/^[A-Za-z0-9]{12}$/.test(key)) { $("status").className = "err"; $("status").textContent = "URLが正しくありません"; say("管理者メニューに出るURLから開いてください。", "bad"); return Promise.resolve(); }
+    $("status").textContent = "読み込み中…";
+    return fetchData().then(function (d) {
+      if (!d || !d.matches) { $("status").className = "err"; $("status").textContent = "データがありません"; say("データがまだありません。BOTがデータを書くまで、少し待ってから、読み込み直してください。", "bad"); return; }
+      adopt(d);
+      say(d.tournament.locked ? "この大会は優勝が決まって終了しているので、割り当てを変更できません。" : "", "warn");
+      render();
+    }).catch(function () { $("status").className = "err"; $("status").textContent = "読み込めませんでした"; say("データを読み込めませんでした。しばらくしてから、読み込み直してください。", "bad"); });
+  }
+
+  $("reload").addEventListener("click", function () { if (!dirty() || confirm("保存していない変更は消えます。読み込み直しますか？")) load(); });
+  $("undo").addEventListener("click", function () { state = {}; var o = JSON.parse(saved); Object.keys(o).forEach(function (k) { state[k] = o[k].slice(); }); say(""); render(); });
+  function waitResult(nonce, tries) {
+    return fetchData().then(function (d) {
+      if (d && d.result && d.result.nonce === nonce) return d;
+      if (tries <= 0) return null;
+      return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return waitResult(nonce, tries - 1); });
+    });
+  }
+  $("save").addEventListener("click", function () {
+    var btn = $("save"); btn.disabled = true; $("status").textContent = "保存しています…";
+    var nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    var body = { nonce: nonce, assignments: JSON.parse(norm(state)) };
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) {
+        if (!r.ok) throw new Error("write");
+        return waitResult(nonce, 25);                                        // BOTが依頼を見つけて、保存して、結果を書き戻すまで待つ（最大40秒ほど）
+      }).then(function (d) {
+        if (!d) { say("確定の依頼は送りましたが、BOTからの返事がありません。BOTが動いているか確認して、少し待ってから「読み込み直す」で確かめてください。", "warn"); status(); return; }
+        var res = d.result;
+        if (!res.ok) { say(res.error || "保存できませんでした。", "bad"); status(); return; }
+        data = d; saved = norm(state);
+        var txt = "✅ 確定しました（" + res.saved + "試合に割り当て。変更した試合：" + res.changed + "）。BOTに保存されました。";
+        if (res.warnings && res.warnings.length) txt += "\n\n⚠ 推奨（" + data.recommended + "人）とちがう試合があります（そのまま保存しています）：\n・" + res.warnings.join("\n・");
+        say(txt, res.warnings && res.warnings.length ? "warn" : "ok"); status();
+      }).catch(function () { say("確定の依頼を送れませんでした。Firebaseの「書き込み設定」（受け箱）がまだの可能性があります。説明書の「キャスター割り当て用ページ」を見てください。", "bad"); status(); });
+  });
+  window.addEventListener("beforeunload", function (ev) { if (data && dirty()) { ev.preventDefault(); ev.returnValue = ""; } });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { picked = null; if (data) renderPool(); } });
+  load();
+})();
+</script>
+</body>
+</html>
