@@ -167,6 +167,7 @@
     data.rounds.forEach(function (r) {
       var col = el("div", "round"); col.appendChild(el("h2", null, r.name));
       col.appendChild(el("div", "time", r.start ? "予定：" + fmtTime(r.start) + " ごろ〜" + (r.end ? fmtTime(r.end).slice(-5) + " ごろ" : "") : "予定：日時が未定"));
+      if (r.casted === false) { col.appendChild(el("div", "note", "同時進行のラウンドです（実況・解説はつきません）。")); col.style.opacity = ".55"; }
       data.matches.filter(function (m) { return m.round === r.round; }).forEach(function (m) { col.appendChild(matchEl(m)); });
       root.appendChild(col);
     });
