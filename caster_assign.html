@@ -284,10 +284,12 @@
     var btn = $("save"); btn.disabled = true; $("status").textContent = "保存しています…";
     var nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
     var p = plain();
-    var body = { nonce: nonce, assignments: p.assignments, sets: p.sets };
+    var asg = JSON.parse(JSON.stringify(p.assignments));
+    if (Object.keys(p.sets).length) asg._sets = p.sets;                      // セットごとの担当は、assignments の中の _sets に入れる（Firebaseのルールは、nonce と assignments だけを受け付けるため）
+    var body = { nonce: nonce, assignments: asg };
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(function (r) {
-        if (!r.ok) throw new Error("write");
+        if (!r.ok) return r.text().then(function (txt) { var e = new Error("write"); e.status = r.status; e.detail = txt; throw e; });
         return waitResult(nonce, 25);                                        // BOTが依頼を見つけて、保存して、結果を書き戻すまで待つ（最大40秒ほど）
       }).then(function (d) {
         if (!d) { say("確定の依頼は送りましたが、BOTからの返事がありません。BOTが動いているか確認して、少し待ってから「読み込み直す」で確かめてください。", "warn"); status(); return; }
@@ -297,7 +299,10 @@
         var txt = "✅ 確定しました（" + res.saved + "試合に割り当て。変更した試合：" + res.changed + "）。BOTに保存されました。";
         if (res.warnings && res.warnings.length) txt += "\n\n⚠ 推奨（" + data.recommended + "人）とちがう所があります（そのまま保存しています）：\n・" + res.warnings.join("\n・");
         say(txt, res.warnings && res.warnings.length ? "warn" : "ok"); status();
-      }).catch(function () { say("確定の依頼を送れませんでした。Firebaseの「書き込み設定」（受け箱）がまだの可能性があります。説明書の「キャスター割り当て用ページ」を見てください。", "bad"); status(); });
+      }).catch(function (e) {
+        var why = e && e.status ? "（エラー " + e.status + "：" + String(e.detail || "").slice(0, 80) + "）" : "（通信できませんでした）";
+        say("確定の依頼を送れませんでした" + why + "。Firebaseの「ルール」（受け箱への書き込み）がまだ、または、説明書のものと違う可能性があります。説明書の「Firebaseの準備」を見てください。", "bad"); status();
+      });
   });
   window.addEventListener("beforeunload", function (ev) { if (data && dirty()) { ev.preventDefault(); ev.returnValue = ""; } });
   document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") { picked = null; if (data) renderPool(); } });
