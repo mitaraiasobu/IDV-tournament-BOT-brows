@@ -37,6 +37,8 @@
   #pool h2, .round h2 { margin: 0 0 8px; font-size: 14px; }
   #pool .hint { color: var(--sub); font-size: 12px; line-height: 1.6; margin-bottom: 10px; }
   .tag { display: inline-flex; align-items: center; gap: 6px; background: #31407a; border: 1px solid #4a63c8; border-radius: 999px; padding: 5px 12px; margin: 3px 4px 3px 0; cursor: grab; user-select: none; font-weight: 700; }
+  .tag.female { background: #b8457f; border-color: #ff8fc2; }                 /* 女性のキャスターの名札は、ピンク色 */
+  .tag.female small, .tag.female .x { color: #ffe3f0; }
   .tag.picked { outline: 3px solid var(--warn); }
   .tag small { font-weight: 400; color: #cdd6ff; }
   .tag .x { cursor: pointer; padding: 0 2px; color: #cdd6ff; }
@@ -103,7 +105,7 @@
   function countOf(id) { var n = 0; Object.keys(state).forEach(function (m) { n += state[m].filter(function (x) { return x === id; }).length; }); return n; }
 
   function tagEl(c, inMatch, matchId, round) {
-    var t = el("span", "tag"); t.draggable = !inMatch; t.dataset.id = c.id;
+    var t = el("span", "tag" + (c.sex === "女性" ? " female" : "")); t.draggable = !inMatch; t.dataset.id = c.id;
     t.appendChild(el("span", null, c.name));
     if (!inMatch) {
       var n = countOf(c.id);
