@@ -37,8 +37,10 @@
                  background: transparent; color: var(--sub); cursor: pointer; }
   .tabs button.on { color: var(--text); border-color: var(--accent); background: var(--panel); }
   .round .rnote { font-size: 15px; color: var(--sub); margin: -2px 0 6px; line-height: 1.35; min-height: 20px; }
-  .mtime { font-size: 14px; color: var(--sub); padding: 0 14px 6px; }
-  .round.dense .mtime, .round.xdense .mtime { display: none; }
+  /* 試合カードの上の段：開始予定の時間を、大きく書く（ラウンド名・試合形式は、列の見出しにあるので、カードごとには書かない） */
+  .mtimebig { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: .04em; line-height: 1.2; }
+  .round.dense .mtimebig { font-size: 17px; }
+  html.flow .mtimebig { font-size: 1.3em; }
   .bracket { --rw: 460px; flex: 1; min-height: 0; display: flex; gap: 40px; }
   .round { display: flex; flex-direction: column; width: var(--rw); flex: none; }
   .round.champ { width: 300px; }
@@ -429,13 +431,13 @@
     var card = el("div", "match st-" + m.status + (m.by_dq ? " by-dq" : "") + (m.bye ? " is-bye" : ""));
     var head = el("div", "mhead");
     var label = m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1);
-    head.appendChild(el("span", null, m.bye ? label : label + " · " + m.format));
+    if (m.time && !m.bye) head.appendChild(el("span", "mtimebig", fmtDT(m.time)));                // 開始予定の時間（大きく）
+    else head.appendChild(el("span", null, m.bye ? label : label + " · " + m.format));            // 時間が決まっていない試合だけ、ラウンド名・試合形式を書く
     head.appendChild(el("span", "badge", m.bye && m.status === "finished" ? "不戦勝" :
                                          m.by_dq && m.status === "finished" ? "失格勝ち" : BADGE[m.status]));
     card.appendChild(head);
     card.appendChild(teamRow(m, "a"));
     card.appendChild(teamRow(m, "b"));
-    if (m.time && !m.bye && m.status !== "finished") card.appendChild(el("div", "mtime", "⏰ " + fmtDT(m.time) + " ごろ"));
     var cast = casterLine(m);
     if (cast) { var cl = el("div", "mcast"); cl.appendChild(cast); card.appendChild(cl); }
     if (m.team_a && m.team_b && !m.bye && (m.sets.length || m.extension_needed || m.status === "undecided")) {
