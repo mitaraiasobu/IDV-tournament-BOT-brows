@@ -11,10 +11,14 @@
 <!--
   キャスターの表示（OBSのブラウザソースに入れる、背景が透明のページ）。BAN/PICKの配信用の画面（live.html）とは別のページ。
   - キャスターのDiscordのアイコンとニックネーム、アイコンにつける装飾（任意）を映す。
+  - 装飾は、**画像**（透明なPNG。正方形がおすすめ：1024×1024px）。アイコンを入れる**透明な丸い穴**を作っておく。
+    穴の位置と大きさは、ページが画像から**自動で見つけて**、アイコンを、その丸に、ぴったり収める。
+    装飾の画像は、アイコンより**上の層**に重ねる（アイコンの、はみ出した分は、装飾の下に隠れる）。
   - 発言しているときは、アイコンが通常の明るさで、ゆっくり、ぴょこぴょこ動く。発言していないときは、暗くなって、動かない。
   - BAN/PICKの表示中とゲームプレイ中は、画面の左下に小さく。それ以外のときは、下の中央に大きめに。
   - データは、BOTが、配信用の画面と同じ場所（配信専用の12文字）に書く。公開サイトでは、URLの ?t=（配信専用の12文字）で読む。
-    確認用：?demo=1（BOTなしで、見本を表示。&scene=small／large で、置き場所を固定。付けないと、10秒ごとに切り替わる）
+    確認用：?demo=1（BOTなしで、見本を表示。&scene=small／large で、置き場所を固定。付けないと、10秒ごとに切り替わる。
+    &deco=装飾の画像のURL で、別の装飾を試せる。&nodeco=1 で、2人目の装飾なし。&one=1 で、1人だけ）
 -->
 <style>
   :root { --uw: 380px; }
@@ -27,9 +31,8 @@
   #casters.small { --uw: 150px; left: 24px; transform: translateX(0); gap: 14px; bottom: 16px; }
   .cast { width: var(--uw); transition: width .7s cubic-bezier(.3, .7, .2, 1), opacity .5s; opacity: 0; animation: castIn .6s ease-out forwards; }
   @keyframes castIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-  .cast .body { position: relative; width: 100%; aspect-ratio: 1143 / 892; transform-origin: 50% 100%;
+  .cast .body { position: relative; width: 100%; aspect-ratio: 1 / 1; transform-origin: 50% 100%;
                 filter: brightness(.38) saturate(.6); transition: filter .35s ease; }
-  .cast.plain .body { aspect-ratio: 1 / 1; }
   .cast.speaking .body { filter: none; animation: hop 1.7s ease-in-out infinite; }              /* 発言中：ゆっくり、ぴょこぴょこ */
   @keyframes hop {
     0%, 100% { transform: translateY(0) scale(1, 1); }
@@ -39,11 +42,12 @@
     66% { transform: translateY(0) scale(1, 1); }
   }
   .cast .av { position: absolute; border-radius: 50%; object-fit: cover; background: #222; display: block; }
-  /* 装飾つき（かぼちゃ）：装飾の画像は1920×1080で、顔を入れる穴は、(953,678) を中心にした、横531×縦496ほどの楕円。
-     アイコンは、その穴より少し大きい円（直径548）を、穴の中心に置いて、装飾を上に重ねる（余った分は、装飾の下に隠れる）。 */
-  .cast.deco .av { left: 26.0%; top: 37.9%; width: 47.9%; aspect-ratio: 1 / 1; }
-  .cast.deco .dc { position: absolute; width: 167.98%; left: -33.42%; top: -7.4%; max-width: none; pointer-events: none; }
   .cast.plain .av { left: 6%; top: 6%; width: 88%; height: 88%; box-shadow: 0 0 0 4px rgba(255, 255, 255, .85), 0 6px 18px rgba(0, 0, 0, .55); }
+  /* 装飾つき：アイコン（.av）の位置と大きさ・装飾（.dc）の大きさと位置は、装飾の画像から、下のスクリプトが計算して、書き込む。
+     装飾は、アイコンより上の層。計算が終わるまで、アイコンは隠しておく。 */
+  .cast.deco .av { z-index: 1; aspect-ratio: 1 / 1; visibility: hidden; }
+  .cast.deco.ready .av { visibility: visible; }
+  .cast.deco .dc { position: absolute; z-index: 2; max-width: none; pointer-events: none; }
   .cast .nm { margin-top: calc(var(--uw) * .02); text-align: center; color: #fff; font-weight: 900; letter-spacing: .04em;
               font-size: calc(var(--uw) * .105); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               text-shadow: 0 2px 0 rgba(0, 0, 0, .7), 0 0 12px rgba(0, 0, 0, .8); transition: opacity .35s, font-size .7s; opacity: .55; }
@@ -59,10 +63,18 @@
   var stage = document.getElementById("stage"), box = document.getElementById("casters");
   var POLL_MS = 1500;
 
-  // 装飾（アイコンにつける飾り）の置き場：画像（1920×1080）と、その中の、使う範囲・顔の穴の位置は、上のCSSに合わせてある
+  // 装飾（アイコンにつける飾り）：名前 → 画像のURL（と、画像の中で使う範囲 crop。省略すると、画像ぜんぶ）。
+  // データの deco は、ここの名前でも、画像のURL（https:// か data:image/）でも、よい。
   var DECOS = {
-    pumpkin: "https://raw.githubusercontent.com/mitaraiasobu/IDV-tournament-BOT-brows/main/halloween/pumpkin.png"
+    pumpkin: { url: "https://raw.githubusercontent.com/mitaraiasobu/IDV-tournament-BOT-brows/main/halloween/pumpkin.png",
+               crop: { x: 382, y: 66, w: 1143, h: 892 } }              // かぼちゃの画像は、まわりが広く透明なので、かぼちゃのまわりだけを使う
   };
+  function decoOf(v) {
+    if (!v) return null;
+    if (DECOS[v]) return DECOS[v];
+    if (/^(https:\/\/|data:image\/)/.test(v)) return { url: v, crop: null };
+    return null;
+  }
 
   function fit() {
     var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
@@ -70,6 +82,69 @@
   }
   window.addEventListener("resize", fit);
   fit();
+
+  // ── 装飾の画像から、アイコンを入れる「透明な丸い穴」を、自動で見つける ──
+  // 画像のふちにつながっていない、透明な部分のうち、いちばん大きいものを、穴とする。その外接する四角の中心と、大きいほうの辺（直径）を返す。
+  // 穴が見つからなければ、画像の中央に、画像の短い辺の半分の丸があるものとする。座標は、画像そのもの（ピクセル）で返す。
+  function findHole(img) {
+    var W = img.naturalWidth, H = img.naturalHeight, s = Math.min(1, 360 / Math.max(W, H));
+    var w = Math.max(1, Math.round(W * s)), h = Math.max(1, Math.round(H * s));
+    var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    var cx = cv.getContext("2d", { willReadFrequently: true });
+    cx.drawImage(img, 0, 0, w, h);
+    var data;
+    try { data = cx.getImageData(0, 0, w, h).data; } catch (e) { data = null; }        // 別の場所の画像で、読み取りが許されないとき
+    var fallback = { cx: W / 2, cy: H / 2, d: Math.min(W, H) / 2 };
+    if (!data) return fallback;
+    var seen = new Uint8Array(w * h), stack = new Int32Array(w * h), best = null;
+    function empty(i) { return data[i * 4 + 3] < 24; }
+    for (var start = 0; start < w * h; start++) {
+      if (seen[start] || !empty(start)) continue;
+      var sp = 0, minx = w, miny = h, maxx = -1, maxy = -1, size = 0, border = false;
+      stack[sp++] = start; seen[start] = 1;
+      while (sp) {
+        var i = stack[--sp], x = i % w, y = (i - x) / w;
+        size++;
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+        if (x === 0 || y === 0 || x === w - 1 || y === h - 1) border = true;
+        if (x > 0 && !seen[i - 1] && empty(i - 1)) { seen[i - 1] = 1; stack[sp++] = i - 1; }
+        if (x < w - 1 && !seen[i + 1] && empty(i + 1)) { seen[i + 1] = 1; stack[sp++] = i + 1; }
+        if (y > 0 && !seen[i - w] && empty(i - w)) { seen[i - w] = 1; stack[sp++] = i - w; }
+        if (y < h - 1 && !seen[i + w] && empty(i + w)) { seen[i + w] = 1; stack[sp++] = i + w; }
+      }
+      if (!border && size > 20 && (!best || size > best.size)) best = { size: size, minx: minx, miny: miny, maxx: maxx, maxy: maxy };
+    }
+    if (!best) return fallback;
+    return { cx: (best.minx + best.maxx + 1) / 2 / s, cy: (best.miny + best.maxy + 1) / 2 / s,
+             d: Math.max(best.maxx - best.minx + 1, best.maxy - best.miny + 1) / s };
+  }
+  var decoCache = {};                                              // 画像のURL → {W, H, hole}（同じ装飾は、1回だけ調べる）
+  function decoInfo(url) {
+    if (!decoCache[url]) {
+      decoCache[url] = new Promise(function (resolve) {
+        var img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = function () { resolve({ W: img.naturalWidth, H: img.naturalHeight, hole: findHole(img) }); };
+        img.onerror = function () { resolve(null); };
+        img.src = url;
+      });
+    }
+    return decoCache[url];
+  }
+  // 装飾の画像と、その穴の位置から、このキャスターの、各部分の大きさと位置を決める（すべて、枠に対する割合）
+  function layoutDeco(el, deco, info) {
+    var c = deco.crop || { x: 0, y: 0, w: info.W, h: info.H };
+    var D = info.hole.d * 1.02;                                    // アイコンは、穴より、ほんの少しだけ大きく（装飾の下に隠れて、すき間ができない）
+    var body = el.querySelector(".body"), av = el.querySelector(".av"), dc = el.querySelector(".dc");
+    body.style.aspectRatio = c.w + " / " + c.h;
+    dc.style.width = (info.W / c.w * 100) + "%";
+    dc.style.left = (-c.x / c.w * 100) + "%";
+    dc.style.top = (-c.y / c.h * 100) + "%";
+    av.style.width = (D / c.w * 100) + "%";
+    av.style.left = ((info.hole.cx - D / 2 - c.x) / c.w * 100) + "%";
+    av.style.top = ((info.hole.cy - D / 2 - c.y) / c.h * 100) + "%";
+    el.classList.add("ready");
+  }
 
   var shown = {};                      // 名前の順番（行）ごとに、作った要素を覚えておく（毎回作り直すと、動きが途切れるので）
   function render(data) {
@@ -84,12 +159,15 @@
       var el = shown[key];
       if (!el) {
         el = document.createElement("div");
-        var deco = DECOS[it.deco];
+        var deco = decoOf(it.deco);
         el.className = "cast " + (deco ? "deco" : "plain");
         var body = document.createElement("div"); body.className = "body";
         var av = document.createElement("img"); av.className = "av"; av.alt = "";
         body.appendChild(av);
-        if (deco) { var dc = document.createElement("img"); dc.className = "dc"; dc.alt = ""; dc.src = deco; body.appendChild(dc); }
+        if (deco) {
+          var dc = document.createElement("img"); dc.className = "dc"; dc.alt = ""; dc.src = deco.url; body.appendChild(dc);
+          decoInfo(deco.url).then(function (info) { if (info) layoutDeco(el, deco, info); else el.classList.add("ready"); });
+        }
         var nm = document.createElement("div"); nm.className = "nm";
         el.appendChild(body); el.appendChild(nm);
         shown[key] = el;
@@ -111,13 +189,13 @@
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
   if (q.get("demo")) {
-    var t0 = Date.now(), fixed = q.get("scene");
+    var t0 = Date.now(), fixed = q.get("scene"), deco = q.get("deco") || "pumpkin";
     var A = demoAvatar("A", "#5b6cff", "#9b5bff"), B = demoAvatar("B", "#ff7a5b", "#ffb35b");
     function demo() {
       var sec = (Date.now() - t0) / 1000;
       var data = { casters: { scene: fixed || (Math.floor(sec / 10) % 2 === 0 ? "large" : "small"), items: [
-        { name: "夜の番人BOT", avatar: A, speaking: Math.floor(sec / 5) % 2 === 0, deco: "pumpkin" },
-        { name: "ゲスト", avatar: B, speaking: Math.floor(sec / 3) % 2 === 1, deco: q.get("nodeco") ? null : "pumpkin" }] } };
+        { name: "夜の番人BOT", avatar: A, speaking: Math.floor(sec / 5) % 2 === 0, deco: deco },
+        { name: "ゲスト", avatar: B, speaking: Math.floor(sec / 3) % 2 === 1, deco: q.get("nodeco") ? null : deco }] } };
       if (q.get("one")) data.casters.items.length = 1;
       render(data);
     }
