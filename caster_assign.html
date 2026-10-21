@@ -49,6 +49,12 @@
   .round { flex: none; width: 280px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
   .round .time { color: var(--sub); font-size: 12px; margin: -4px 0 8px; }
   .match { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px; margin-bottom: 8px; transition: border-color .1s, background .1s; }
+  .match .head { flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+  .match .head .setbtn { margin-left: auto; }
+  .setbtn { font-size: 11px; padding: 2px 8px; border-radius: 6px; margin-left: 6px; }
+  .setrow { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 4px; }
+  .setrow .setname { flex: none; width: 56px; font-size: 12px; color: var(--sub); padding-top: 8px; }
+  .setrow .drop { flex: 1; }
   .match.over { border-color: var(--accent); background: #2a3556; }
   .match.warn { border-color: var(--warn); }
   .match .head { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
@@ -82,16 +88,29 @@
   var BASE = window.TOURNAMENT_DATA_BASE || "";
   var DATA_URL = BASE + key + ".json";                                      // BOTが書いた、割り当て用のデータ
   var INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";       // 「確定」の依頼を書く受け箱
+  var SET_LABEL = { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" };
   var data = null;                 // サーバーから読んだ内容
-  var state = {};                  // 作業中の割り当て：{試合ID: [キャスターID…]}
-  var saved = "{}";                // 最後に保存・読み込みした内容（変更の有無の判定用）
+  var state = {};                  // 作業中の割り当て（全セット共通の試合）：{試合ID: [キャスターID…]}
+  var sstate = {};                 // 作業中の割り当て（セットごとに決めた試合）：{試合ID: {セットのキー: [キャスターID…]}}
+  var saved = "";                  // 最後に保存・読み込みした内容（変更の有無の判定用）
   var picked = null;               // クリックで持ち上げている名札
   var $ = function (id) { return document.getElementById(id); };
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function norm(s) { var o = {}; Object.keys(s).sort().forEach(function (k) { if (s[k].length) o[k] = s[k].slice(); }); return JSON.stringify(o); }
-  function dirty() { return norm(state) !== saved; }
+  function plain() {               // 保存・比較用の形（空の入れ物は除く）
+    var a = {}, s = {};
+    Object.keys(state).sort().forEach(function (k) { if (state[k].length) a[k] = state[k].slice(); });
+    Object.keys(sstate).sort().forEach(function (m) {
+      var per = {};
+      Object.keys(sstate[m]).sort().forEach(function (k) { if (sstate[m][k].length) per[k] = sstate[m][k].slice(); });
+      if (Object.keys(per).length) s[m] = per;
+    });
+    return { assignments: a, sets: s };
+  }
+  function snapshot() { return JSON.stringify(plain()); }
+  function dirty() { return snapshot() !== saved; }
   function casterOf(id) { return (data.casters || []).filter(function (c) { return c.id === id; })[0]; }
+  function fmtLabel(f) { return f === "BO3" ? "BO3（最大3セット）" : f === "BO1" ? "BO1（1セット）" : (f || ""); }     // 試合形式（実際の試合数が分かるように）
   function fmtTime(iso) { if (!iso) return ""; var d = iso.replace("T", " "); return d.slice(5, 16).replace("-", "/"); }
 
   function say(text, kind) { var m = $("msg"); if (!text) { m.style.display = "none"; return; } m.className = kind || ""; m.textContent = text; m.style.display = "block"; }
@@ -102,17 +121,23 @@
     $("save").disabled = !d || !!(data && data.tournament.locked); $("undo").disabled = !d;
   }
 
-  function countOf(id) { var n = 0; Object.keys(state).forEach(function (m) { n += state[m].filter(function (x) { return x === id; }).length; }); return n; }
+  function countOf(id) {
+    var n = 0;
+    Object.keys(state).forEach(function (m) { n += state[m].filter(function (x) { return x === id; }).length; });
+    Object.keys(sstate).forEach(function (m) { Object.keys(sstate[m]).forEach(function (k) { n += sstate[m][k].filter(function (x) { return x === id; }).length; }); });
+    return n;
+  }
 
-  function tagEl(c, inMatch, matchId, round) {
+  // 名札。inMatch のとき：matchId（と、セットごとの欄ならそのキー setKey）から外せる
+  function tagEl(c, inMatch, matchId, round, setKey) {
     var t = el("span", "tag" + (c.sex === "女性" ? " female" : "")); t.draggable = !inMatch; t.dataset.id = c.id;
     t.appendChild(el("span", null, c.name));
     if (!inMatch) {
       var n = countOf(c.id);
-      t.appendChild(el("small", null, (c.wish ? c.wish : "") + (n ? "　担当" + n + "試合" : "")));
+      t.appendChild(el("small", null, (c.wish ? c.wish : "") + (n ? "　担当" + n + "枠" : "")));
     } else {
-      var x = el("span", "x", "✕"); x.title = "この試合から外す";
-      x.addEventListener("click", function (ev) { ev.stopPropagation(); remove(matchId, c.id); });
+      var x = el("span", "x", "✕"); x.title = "ここから外す";
+      x.addEventListener("click", function (ev) { ev.stopPropagation(); remove(matchId, c.id, setKey); });
       t.appendChild(x);
       if (c.rounds && c.rounds.length && c.rounds.indexOf(round) < 0) t.title = "このラウンドは、参加できないと答えています";
     }
@@ -134,30 +159,75 @@
     });
   }
 
-  function add(matchId, id) {
-    var cur = state[matchId] || (state[matchId] = []);
-    if (cur.indexOf(id) >= 0) { say("その試合には、もう入っています。", "warn"); return; }   // 同じ試合に同じ人は、2回入れない
+  function listOf(matchId, setKey) { return setKey ? ((sstate[matchId] || {})[setKey] || []) : (state[matchId] || []); }
+  function add(matchId, id, setKey) {
+    var cur;
+    if (setKey) { var per = sstate[matchId] || (sstate[matchId] = {}); cur = per[setKey] || (per[setKey] = []); }
+    else if (sstate[matchId]) { say("この試合は、セットごとに決めています。担当を入れたいセットの欄に、ドロップしてください。", "warn"); return; }
+    else cur = state[matchId] || (state[matchId] = []);
+    if (cur.indexOf(id) >= 0) { say("そこには、もう入っています。", "warn"); return; }       // 同じ欄に同じ人は、2回入れない
     cur.push(id); say(""); render();
   }
-  function remove(matchId, id) { state[matchId] = (state[matchId] || []).filter(function (x) { return x !== id; }); render(); }
+  function remove(matchId, id, setKey) {
+    if (setKey) sstate[matchId][setKey] = sstate[matchId][setKey].filter(function (x) { return x !== id; });
+    else state[matchId] = (state[matchId] || []).filter(function (x) { return x !== id; });
+    render();
+  }
+  function toggleSets(m) {          // 「セットごと」：全セット共通 ⇄ セットごと
+    if (sstate[m.id]) {             // 全セット共通に戻す：どこかのセットに入っている人を、全セットの担当にする
+      var all = [];
+      m.sets.forEach(function (k) { (sstate[m.id][k] || []).forEach(function (id) { if (all.indexOf(id) < 0) all.push(id); }); });
+      delete sstate[m.id]; if (all.length) state[m.id] = all;
+    } else {                        // セットごとにする：いまの担当を、すべてのセットに入れた状態から始める（外したいセットから、外す）
+      var cur = state[m.id] || []; sstate[m.id] = {};
+      m.sets.forEach(function (k) { sstate[m.id][k] = cur.slice(); });
+      delete state[m.id];
+    }
+    say(""); render();
+  }
+
+  // ドロップできる欄（全セット共通の欄、または、セットごとの欄）
+  function dropZone(m, setKey) {
+    var drop = el("div", "drop"); var who = listOf(m.id, setKey);
+    if (!who.length) drop.classList.add("empty");
+    who.forEach(function (id) { var c = casterOf(id); if (c) drop.appendChild(tagEl(c, true, m.id, m.round, setKey)); });
+    function over(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = "copy"; drop.classList.add("over"); }
+    drop.addEventListener("dragover", over); drop.addEventListener("dragenter", over);
+    drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+    drop.addEventListener("drop", function (ev) { ev.preventDefault(); ev.stopPropagation(); drop.classList.remove("over"); var id = ev.dataTransfer.getData("text/plain"); if (casterOf(id)) add(m.id, id, setKey); });
+    drop.addEventListener("click", function (ev) { ev.stopPropagation(); if (picked && !(ev.target.closest && ev.target.closest(".x"))) add(m.id, picked, setKey); });
+    return drop;
+  }
 
   function matchEl(m) {
     var box = el("div", "match");
-    var head = el("div", "head"); head.appendChild(el("span", null, m.id)); head.appendChild(el("span", null, fmtTime(m.time))); box.appendChild(head);
-    var tm = el("div", "teams" + (m.teams ? "" : " none"), m.teams ? m.teams[0] + " vs " + m.teams[1] : "（対戦カード未定）"); box.appendChild(tm);
-    var drop = el("div", "drop"); var who = state[m.id] || [];
-    if (!who.length) drop.classList.add("empty");
-    who.forEach(function (id) { var c = casterOf(id); if (c) drop.appendChild(tagEl(c, true, m.id, m.round)); });
-    box.appendChild(drop);
+    var head = el("div", "head"); head.appendChild(el("span", null, m.id + "｜" + fmtLabel(m.fmt))); head.appendChild(el("span", null, fmtTime(m.time))); box.appendChild(head);
+    box.appendChild(el("div", "teams" + (m.teams ? "" : " none"), m.teams ? m.teams[0] + " vs " + m.teams[1] : "（対戦カード未定）"));
+    var perSet = !!sstate[m.id];
+    var sb = el("button", "setbtn", perSet ? "↩ 全セット共通に戻す" : "🔀 セットごと");
+    sb.title = perSet ? "セットごとの担当を、やめて、全セット共通にします" : "どのセットを、だれが担当するかを、セットごとに決めます";
+    sb.addEventListener("click", function (ev) { ev.stopPropagation(); toggleSets(m); });
+    head.appendChild(sb);
+    var who = [];                                                // この試合に出る人（セットごとなら、全セットの合計）
     var notes = [];
-    if (who.length && who.length !== data.recommended) notes.push("⚠ " + who.length + "人です（推奨は" + data.recommended + "人）");
+    if (perSet) {
+      m.sets.forEach(function (k) {
+        var row = el("div", "setrow"); row.appendChild(el("div", "setname", SET_LABEL[k] || k)); row.appendChild(dropZone(m, k)); box.appendChild(row);
+        var l = listOf(m.id, k);
+        l.forEach(function (id) { if (who.indexOf(id) < 0) who.push(id); });
+        if (l.length && l.length !== data.recommended) notes.push("⚠ " + (SET_LABEL[k] || k) + "：" + l.length + "人です（推奨は" + data.recommended + "人）");
+      });
+    } else {
+      box.appendChild(dropZone(m, null)); who = state[m.id] || [];
+      if (who.length && who.length !== data.recommended) notes.push("⚠ " + who.length + "人です（推奨は" + data.recommended + "人）");
+    }
     who.forEach(function (id) { var c = casterOf(id); if (c && c.rounds && c.rounds.length && c.rounds.indexOf(m.round) < 0) notes.push("⚠ " + c.name + "さんは、このラウンドは参加できないと答えています"); });
     if (notes.length) { box.classList.add("warn"); notes.forEach(function (n) { box.appendChild(el("div", "note warn", n)); }); }
     function over(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = "copy"; box.classList.add("over"); }
     box.addEventListener("dragover", over); box.addEventListener("dragenter", over);
     box.addEventListener("dragleave", function () { box.classList.remove("over"); });
-    box.addEventListener("drop", function (ev) { ev.preventDefault(); box.classList.remove("over"); var id = ev.dataTransfer.getData("text/plain"); if (casterOf(id)) add(m.id, id); });
-    box.addEventListener("click", function (ev) { if (picked && !(ev.target.closest && ev.target.closest(".x"))) { add(m.id, picked); } });
+    box.addEventListener("drop", function (ev) { ev.preventDefault(); box.classList.remove("over"); var id = ev.dataTransfer.getData("text/plain"); if (casterOf(id)) add(m.id, id, null); });
+    box.addEventListener("click", function (ev) { if (picked && !(ev.target.closest && ev.target.closest(".x"))) add(m.id, picked, null); });
     return box;
   }
 
@@ -165,7 +235,7 @@
     renderPool();
     var root = $("rounds"); root.innerHTML = "";
     data.rounds.forEach(function (r) {
-      var col = el("div", "round"); col.appendChild(el("h2", null, r.name));
+      var col = el("div", "round"); col.appendChild(el("h2", null, r.name + "｜" + (r.fmt || "")));
       col.appendChild(el("div", "time", r.start ? "予定：" + fmtTime(r.start) + " ごろ〜" + (r.end ? fmtTime(r.end).slice(-5) + " ごろ" : "") : "予定：日時が未定"));
       if (r.casted === false) { col.appendChild(el("div", "note", "同時進行のラウンドです（実況・解説はつきません）。")); col.style.opacity = ".55"; }
       data.matches.filter(function (m) { return m.round === r.round; }).forEach(function (m) { col.appendChild(matchEl(m)); });
@@ -175,8 +245,17 @@
   }
 
   function adopt(d) {
-    data = d; state = {}; Object.keys(d.assignments || {}).forEach(function (k) { state[k] = d.assignments[k].slice(); });
-    saved = norm(state); picked = null; $("tname").textContent = "｜" + d.tournament.name;
+    data = d; state = {}; sstate = {};
+    Object.keys(d.assignments || {}).forEach(function (k) { state[k] = d.assignments[k].slice(); });
+    Object.keys(d.set_assignments || {}).forEach(function (m) {
+      sstate[m] = {}; Object.keys(d.set_assignments[m]).forEach(function (k) { sstate[m][k] = d.set_assignments[m][k].slice(); });
+    });
+    saved = snapshot(); picked = null; $("tname").textContent = "｜" + d.tournament.name;
+  }
+  function restore(snap) {
+    var o = JSON.parse(snap); state = {}; sstate = {};
+    Object.keys(o.assignments).forEach(function (k) { state[k] = o.assignments[k].slice(); });
+    Object.keys(o.sets).forEach(function (m) { sstate[m] = {}; Object.keys(o.sets[m]).forEach(function (k) { sstate[m][k] = o.sets[m][k].slice(); }); });
   }
   function fetchData() {
     return fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); });
@@ -193,7 +272,7 @@
   }
 
   $("reload").addEventListener("click", function () { if (!dirty() || confirm("保存していない変更は消えます。読み込み直しますか？")) load(); });
-  $("undo").addEventListener("click", function () { state = {}; var o = JSON.parse(saved); Object.keys(o).forEach(function (k) { state[k] = o[k].slice(); }); say(""); render(); });
+  $("undo").addEventListener("click", function () { restore(saved); say(""); render(); });
   function waitResult(nonce, tries) {
     return fetchData().then(function (d) {
       if (d && d.result && d.result.nonce === nonce) return d;
@@ -204,7 +283,8 @@
   $("save").addEventListener("click", function () {
     var btn = $("save"); btn.disabled = true; $("status").textContent = "保存しています…";
     var nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    var body = { nonce: nonce, assignments: JSON.parse(norm(state)) };
+    var p = plain();
+    var body = { nonce: nonce, assignments: p.assignments, sets: p.sets };
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(function (r) {
         if (!r.ok) throw new Error("write");
@@ -213,9 +293,9 @@
         if (!d) { say("確定の依頼は送りましたが、BOTからの返事がありません。BOTが動いているか確認して、少し待ってから「読み込み直す」で確かめてください。", "warn"); status(); return; }
         var res = d.result;
         if (!res.ok) { say(res.error || "保存できませんでした。", "bad"); status(); return; }
-        data = d; saved = norm(state);
+        data = d; saved = snapshot();
         var txt = "✅ 確定しました（" + res.saved + "試合に割り当て。変更した試合：" + res.changed + "）。BOTに保存されました。";
-        if (res.warnings && res.warnings.length) txt += "\n\n⚠ 推奨（" + data.recommended + "人）とちがう試合があります（そのまま保存しています）：\n・" + res.warnings.join("\n・");
+        if (res.warnings && res.warnings.length) txt += "\n\n⚠ 推奨（" + data.recommended + "人）とちがう所があります（そのまま保存しています）：\n・" + res.warnings.join("\n・");
         say(txt, res.warnings && res.warnings.length ? "warn" : "ok"); status();
       }).catch(function () { say("確定の依頼を送れませんでした。Firebaseの「書き込み設定」（受け箱）がまだの可能性があります。説明書の「キャスター割り当て用ページ」を見てください。", "bad"); status(); });
   });
