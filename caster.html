@@ -11,7 +11,8 @@
 <!--
   キャスターの表示（OBSのブラウザソースに入れる、背景が透明のページ）。BAN/PICKの配信用の画面（live.html）とは別のページ。
   - キャスターのDiscordのアイコンとニックネーム、アイコンにつける装飾（任意）を映す。
-  - 装飾は、**画像**（透明なPNG。正方形がおすすめ：1024×1024px）。アイコンを入れる**透明な丸い穴**を作っておく。
+  - 装飾は、**画像**（透明なPNG。正方形：1024×1024px）。アイコンを入れる**透明な丸い穴**を作っておく
+    （基準画像：GitHubの icon/icon_deco_standard.png。穴の直径は382px。アイコンは小さめ・装飾は大きめに飾れる）。
     穴の位置と大きさは、ページが画像から**自動で見つけて**、アイコンを、その丸に、ぴったり収める。
     装飾の画像は、アイコンより**上の層**に重ねる（アイコンの、はみ出した分は、装飾の下に隠れる）。
   - 発言しているときは、アイコンが通常の明るさで、ゆっくり、ぴょこぴょこ動く。発言していないときは、暗くなって、動かない。
@@ -21,7 +22,7 @@
     &deco=装飾の画像のURL で、別の装飾を試せる。&nodeco=1 で、2人目の装飾なし。&one=1 で、1人だけ）
 -->
 <style>
-  :root { --uw: 380px; }
+  :root { --uw: 380px; --ds: 1.2; }                  /* --ds：装飾の画像（正方形ぜんぶ）を、キャスター1人ぶんの幅より、どれだけ大きく映すか（中央をそろえて、はみ出す。となりと少し重なってもよい） */
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; }
   #stage { position: fixed; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; pointer-events: none; }
   /* 置き場所：large＝下の中央に大きめ／small＝左下に小さく（画面の端。ゲームの邪魔にならないように） */
@@ -48,6 +49,8 @@
   .cast.deco .av { z-index: 1; aspect-ratio: 1 / 1; visibility: hidden; }
   .cast.deco.ready .av { visibility: visible; }
   .cast.deco .dc { position: absolute; z-index: 2; max-width: none; pointer-events: none; }
+  .cast.deco.full .body { width: calc(100% * var(--ds)); margin-left: calc((1 - var(--ds)) / 2 * 100%); }
+  .cast.deco.full .nm { position: relative; z-index: 3; }
   .cast .nm { margin-top: calc(var(--uw) * .02); text-align: center; color: #fff; font-weight: 900; letter-spacing: .04em;
               font-size: calc(var(--uw) * .105); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               text-shadow: 0 2px 0 rgba(0, 0, 0, .7), 0 0 12px rgba(0, 0, 0, .8); transition: opacity .35s, font-size .7s; opacity: .55; }
@@ -65,9 +68,9 @@
 
   // 装飾（アイコンにつける飾り）：名前 → 画像のURL（と、画像の中で使う範囲 crop。省略すると、画像ぜんぶ）。
   // データの deco は、ここの名前でも、画像のURL（https:// か data:image/）でも、よい。
+  var STANDARD = "https://raw.githubusercontent.com/mitaraiasobu/IDV-tournament-BOT-brows/main/icon/icon_deco_standard.png";   // 基準画像（確認用）
   var DECOS = {
-    pumpkin: { url: "https://raw.githubusercontent.com/mitaraiasobu/IDV-tournament-BOT-brows/main/halloween/pumpkin.png",
-               crop: { x: 382, y: 66, w: 1143, h: 892 } }              // かぼちゃの画像は、まわりが広く透明なので、かぼちゃのまわりだけを使う
+    standard: { url: STANDARD, crop: null }
   };
   function decoOf(v) {
     if (!v) return null;
@@ -160,7 +163,7 @@
       if (!el) {
         el = document.createElement("div");
         var deco = decoOf(it.deco);
-        el.className = "cast " + (deco ? "deco" : "plain");
+        el.className = "cast " + (deco ? "deco" + (deco.crop ? "" : " full") : "plain");     // full＝画像ぜんぶを使う装飾（基準画像の形）
         var body = document.createElement("div"); body.className = "body";
         var av = document.createElement("img"); av.className = "av"; av.alt = "";
         body.appendChild(av);
@@ -189,7 +192,7 @@
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
   if (q.get("demo")) {
-    var t0 = Date.now(), fixed = q.get("scene"), deco = q.get("deco") || "pumpkin";
+    var t0 = Date.now(), fixed = q.get("scene"), deco = q.get("deco") || "standard";
     var A = demoAvatar("A", "#5b6cff", "#9b5bff"), B = demoAvatar("B", "#ff7a5b", "#ffb35b");
     function demo() {
       var sec = (Date.now() - t0) / 1000;
