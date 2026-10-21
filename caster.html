@@ -13,7 +13,8 @@
   - キャスターのDiscordのアイコンとニックネーム、アイコンにつける装飾（任意）を映す。
   - 装飾は、**画像**（透明なPNG。正方形：1024×1024px）。アイコンを入れる**透明な丸い穴**を作っておく
     （基準画像：GitHubの icon/icon_deco_standard.png。穴の直径は382px。アイコンは小さめ・装飾は大きめに飾れる）。
-    穴の位置と大きさは、ページが画像から**自動で見つけて**、アイコンを、その丸に、ぴったり収める。
+    穴の位置と大きさは、ページが画像から**自動で見つけて**、**穴の大きさが、装飾なしのときのアイコンの大きさと同じ**になるように、装飾の画像を拡大して重ねる
+    （アイコンの位置・大きさは、装飾の有無で変えない。装飾の画像が、アイコンのまわりに、はみ出して広がる）。
     装飾の画像は、アイコンより**上の層**に重ねる（アイコンの、はみ出した分は、装飾の下に隠れる）。
   - 発言しているときは、アイコンが通常の明るさで、ゆっくり、ぴょこぴょこ動く。発言していないときは、暗くなって、動かない。
   - BAN/PICKの表示中とゲームプレイ中は、画面の左下に小さく。それ以外のときは、下の中央に大きめに。
@@ -22,7 +23,7 @@
     &deco=装飾の画像のURL で、別の装飾を試せる。&nodeco=1 で、2人目の装飾なし。&one=1 で、1人だけ）
 -->
 <style>
-  :root { --uw: 380px; --ds: 1.2; }                  /* --ds：装飾の画像（正方形ぜんぶ）を、キャスター1人ぶんの幅より、どれだけ大きく映すか（中央をそろえて、はみ出す。となりと少し重なってもよい） */
+  :root { --uw: 380px; --av: .88; }                  /* --av：アイコンの大きさ（枠の幅に対する割合）。装飾の有無で変えない。装飾は、穴がこの大きさになるように拡大する */
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; }
   #stage { position: fixed; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; pointer-events: none; }
   /* 置き場所：large＝下の中央に大きめ／small＝左下に小さく（画面の端。ゲームの邪魔にならないように） */
@@ -44,13 +45,13 @@
   }
   .cast .av { position: absolute; border-radius: 50%; object-fit: cover; background: #222; display: block; }
   .cast.plain .av { left: 6%; top: 6%; width: 88%; height: 88%; box-shadow: 0 0 0 4px rgba(255, 255, 255, .85), 0 6px 18px rgba(0, 0, 0, .55); }
-  /* 装飾つき：アイコン（.av）の位置と大きさ・装飾（.dc）の大きさと位置は、装飾の画像から、下のスクリプトが計算して、書き込む。
+  /* 装飾つき：アイコン（.av）は、装飾なしと同じ位置・同じ大きさ（穴より、ほんの少しだけ大きく、装飾の下に隠す）。
+     装飾（.dc）の大きさと位置だけを、装飾の画像から、下のスクリプトが計算して、書き込む（穴の中心を、アイコンの中心に、穴の大きさを、アイコンの大きさに合わせる）。
      装飾は、アイコンより上の層。計算が終わるまで、アイコンは隠しておく。 */
-  .cast.deco .av { z-index: 1; aspect-ratio: 1 / 1; visibility: hidden; }
+  .cast.deco .av { z-index: 1; left: 5.1%; top: 5.1%; width: 89.8%; height: 89.8%; visibility: hidden; }
   .cast.deco.ready .av { visibility: visible; }
   .cast.deco .dc { position: absolute; z-index: 2; max-width: none; pointer-events: none; }
-  .cast.deco.full .body { width: calc(100% * var(--ds)); margin-left: calc((1 - var(--ds)) / 2 * 100%); }
-  .cast.deco.full .nm { position: relative; z-index: 3; }
+  .cast.deco .nm { position: relative; z-index: 3; }
   .cast .nm { margin-top: calc(var(--uw) * .02); text-align: center; color: #fff; font-weight: 900; letter-spacing: .04em;
               font-size: calc(var(--uw) * .105); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               text-shadow: 0 2px 0 rgba(0, 0, 0, .7), 0 0 12px rgba(0, 0, 0, .8); transition: opacity .35s, font-size .7s; opacity: .55; }
@@ -64,7 +65,7 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var stage = document.getElementById("stage"), box = document.getElementById("casters");
-  var POLL_MS = 1500;
+  var POLL_MS = 1000;
 
   // 装飾（アイコンにつける飾り）：名前 → 画像のURL（と、画像の中で使う範囲 crop。省略すると、画像ぜんぶ）。
   // データの deco は、ここの名前でも、画像のURL（https:// か data:image/）でも、よい。
@@ -90,7 +91,7 @@
   // 画像のふちにつながっていない、透明な部分のうち、いちばん大きいものを、穴とする。その外接する四角の中心と、大きいほうの辺（直径）を返す。
   // 穴が見つからなければ、画像の中央に、画像の短い辺の半分の丸があるものとする。座標は、画像そのもの（ピクセル）で返す。
   function findHole(img) {
-    var W = img.naturalWidth, H = img.naturalHeight, s = Math.min(1, 360 / Math.max(W, H));
+    var W = img.naturalWidth, H = img.naturalHeight, s = Math.min(1, 512 / Math.max(W, H));
     var w = Math.max(1, Math.round(W * s)), h = Math.max(1, Math.round(H * s));
     var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
     var cx = cv.getContext("2d", { willReadFrequently: true });
@@ -134,18 +135,15 @@
     }
     return decoCache[url];
   }
-  // 装飾の画像と、その穴の位置から、このキャスターの、各部分の大きさと位置を決める（すべて、枠に対する割合）
+  // 装飾の画像と、その穴の位置から、装飾の大きさと位置を決める（枠＝正方形に対する割合）。
+  // 穴の大きさ＝装飾なしのときのアイコンの大きさ（AV）、穴の中心＝アイコンの中心（枠の中央）になるように、画像を拡大して、ずらす。
+  var AV = 0.88;
   function layoutDeco(el, deco, info) {
-    var c = deco.crop || { x: 0, y: 0, w: info.W, h: info.H };
-    var D = info.hole.d * 1.02;                                    // アイコンは、穴より、ほんの少しだけ大きく（装飾の下に隠れて、すき間ができない）
-    var body = el.querySelector(".body"), av = el.querySelector(".av"), dc = el.querySelector(".dc");
-    body.style.aspectRatio = c.w + " / " + c.h;
-    dc.style.width = (info.W / c.w * 100) + "%";
-    dc.style.left = (-c.x / c.w * 100) + "%";
-    dc.style.top = (-c.y / c.h * 100) + "%";
-    av.style.width = (D / c.w * 100) + "%";
-    av.style.left = ((info.hole.cx - D / 2 - c.x) / c.w * 100) + "%";
-    av.style.top = ((info.hole.cy - D / 2 - c.y) / c.h * 100) + "%";
+    var dc = el.querySelector(".dc");
+    var k = AV / info.hole.d;                                      // 画像の1ピクセルが、枠の幅の何割にあたるか
+    dc.style.width = (info.W * k * 100) + "%";
+    dc.style.left = ((0.5 - info.hole.cx * k) * 100) + "%";
+    dc.style.top = ((0.5 - info.hole.cy * k) * 100) + "%";
     el.classList.add("ready");
   }
 
@@ -163,7 +161,7 @@
       if (!el) {
         el = document.createElement("div");
         var deco = decoOf(it.deco);
-        el.className = "cast " + (deco ? "deco" + (deco.crop ? "" : " full") : "plain");     // full＝画像ぜんぶを使う装飾（基準画像の形）
+        el.className = "cast " + (deco ? "deco" : "plain");
         var body = document.createElement("div"); body.className = "body";
         var av = document.createElement("img"); av.className = "av"; av.alt = "";
         body.appendChild(av);
