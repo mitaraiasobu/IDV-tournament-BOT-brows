@@ -403,11 +403,11 @@
     var f = document.createDocumentFragment();
     f.appendChild(document.createTextNode("🎙 "));
     f.appendChild(document.createTextNode("キャスター "));                      // 実況・解説の区別は書かない。名前だけ（2人は「・」でつなぐ）
-    if (c.live && c.commentary) {
-      f.appendChild(el("b", null, c.live)); f.appendChild(document.createTextNode("・")); f.appendChild(el("b", null, c.commentary));
-    } else {
-      f.appendChild(el("b", null, c.live || c.commentary));
-    }
+    var names = [c.live, c.commentary].filter(function (x) { return x; }).concat(c.more || []);        // 2人（3人以上のときは、全員）を「・」でつなぐ
+    names.forEach(function (n, i) {
+      if (i) f.appendChild(document.createTextNode("・"));
+      f.appendChild(el("b", null, n));
+    });
     return f;
   }
 
