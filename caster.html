@@ -45,10 +45,10 @@
   }
   .cast .av { position: absolute; border-radius: 50%; object-fit: cover; background: #222; display: block; }
   .cast.plain .av { left: 6%; top: 6%; width: 88%; height: 88%; box-shadow: 0 0 0 4px rgba(255, 255, 255, .85), 0 6px 18px rgba(0, 0, 0, .55); }
-  /* 装飾つき：アイコン（.av）は、装飾なしと同じ位置・同じ大きさ（穴より、ほんの少しだけ大きく、装飾の下に隠す）。
+  /* 装飾つき：アイコン（.av）は、装飾なしと同じ中心（枠の中央）で、大きさだけ0.8倍（88% × 0.8 ＝ 70.4%）。穴の大きさ（下のAV）は、そのまま。
      装飾（.dc）の大きさと位置だけを、装飾の画像から、下のスクリプトが計算して、書き込む（穴の中心を、アイコンの中心に、穴の大きさを、アイコンの大きさに合わせる）。
      装飾は、アイコンより上の層。計算が終わるまで、アイコンは隠しておく。 */
-  .cast.deco .av { z-index: 1; left: 5.1%; top: 5.1%; width: 89.8%; height: 89.8%; visibility: hidden; }
+  .cast.deco .av { z-index: 1; left: 14.8%; top: 14.8%; width: 70.4%; height: 70.4%; visibility: hidden; }
   .cast.deco.ready .av { visibility: visible; }
   .cast.deco .dc { position: absolute; z-index: 2; max-width: none; pointer-events: none; }
   .cast.deco .nm { position: relative; z-index: 3; }
