@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キャスター表示</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;800;900&display=swap">
+<!--
+  キャスターの表示（OBSのブラウザソースに入れる、背景が透明のページ）。BAN/PICKの配信用の画面（live.html）とは別のページ。
+  - キャスターのDiscordのアイコンとニックネーム、アイコンにつける装飾（任意）を映す。
+  - 発言しているときは、アイコンが通常の明るさで、ゆっくり、ぴょこぴょこ動く。発言していないときは、暗くなって、動かない。
+  - BAN/PICKの表示中とゲームプレイ中は、画面の左下に小さく。それ以外のときは、下の中央に大きめに。
+  - データは、BOTが、配信用の画面と同じ場所（配信専用の12文字）に書く。公開サイトでは、URLの ?t=（配信専用の12文字）で読む。
+    確認用：?demo=1（BOTなしで、見本を表示。&scene=small／large で、置き場所を固定。付けないと、10秒ごとに切り替わる）
+-->
+<style>
+  :root { --uw: 380px; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; }
+  #stage { position: fixed; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; pointer-events: none; }
+  /* 置き場所：large＝下の中央に大きめ／small＝左下に小さく（画面の端。ゲームの邪魔にならないように） */
+  #casters { position: absolute; bottom: 20px; display: flex; align-items: flex-end; justify-content: center;
+             transition: left .7s cubic-bezier(.3, .7, .2, 1), transform .7s cubic-bezier(.3, .7, .2, 1), gap .7s, bottom .7s; }
+  #casters.large { --uw: 380px; left: 50%; transform: translateX(-50%); gap: 70px; }
+  #casters.small { --uw: 150px; left: 24px; transform: translateX(0); gap: 14px; bottom: 16px; }
+  .cast { width: var(--uw); transition: width .7s cubic-bezier(.3, .7, .2, 1), opacity .5s; opacity: 0; animation: castIn .6s ease-out forwards; }
+  @keyframes castIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .cast .body { position: relative; width: 100%; aspect-ratio: 1143 / 892; transform-origin: 50% 100%;
+                filter: brightness(.38) saturate(.6); transition: filter .35s ease; }
+  .cast.plain .body { aspect-ratio: 1 / 1; }
+  .cast.speaking .body { filter: none; animation: hop 1.7s ease-in-out infinite; }              /* 発言中：ゆっくり、ぴょこぴょこ */
+  @keyframes hop {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    20% { transform: translateY(-5%) scale(.98, 1.03); }
+    38% { transform: translateY(0) scale(1.03, .97); }
+    52% { transform: translateY(-2%) scale(.99, 1.01); }
+    66% { transform: translateY(0) scale(1, 1); }
+  }
+  .cast .av { position: absolute; border-radius: 50%; object-fit: cover; background: #222; display: block; }
+  /* 装飾つき（かぼちゃ）：装飾の画像は1920×1080で、顔を入れる穴は、(953,678) を中心にした、横531×縦496ほどの楕円。
+     アイコンは、その穴より少し大きい円（直径548）を、穴の中心に置いて、装飾を上に重ねる（余った分は、装飾の下に隠れる）。 */
+  .cast.deco .av { left: 26.0%; top: 37.9%; width: 47.9%; aspect-ratio: 1 / 1; }
+  .cast.deco .dc { position: absolute; width: 167.98%; left: -33.42%; top: -7.4%; max-width: none; pointer-events: none; }
+  .cast.plain .av { left: 6%; top: 6%; width: 88%; height: 88%; box-shadow: 0 0 0 4px rgba(255, 255, 255, .85), 0 6px 18px rgba(0, 0, 0, .55); }
+  .cast .nm { margin-top: calc(var(--uw) * .02); text-align: center; color: #fff; font-weight: 900; letter-spacing: .04em;
+              font-size: calc(var(--uw) * .105); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              text-shadow: 0 2px 0 rgba(0, 0, 0, .7), 0 0 12px rgba(0, 0, 0, .8); transition: opacity .35s, font-size .7s; opacity: .55; }
+  .cast.speaking .nm { opacity: 1; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "caster";</script>
+<div id="stage"><div id="casters" class="large"></div></div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var stage = document.getElementById("stage"), box = document.getElementById("casters");
+  var POLL_MS = 1500;
+
+  // 装飾（アイコンにつける飾り）の置き場：画像（1920×1080）と、その中の、使う範囲・顔の穴の位置は、上のCSSに合わせてある
+  var DECOS = {
+    pumpkin: "https://raw.githubusercontent.com/mitaraiasobu/IDV-tournament-BOT-brows/main/halloween/pumpkin.png"
+  };
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.transform = "scale(" + s + ")";
+  }
+  window.addEventListener("resize", fit);
+  fit();
+
+  var shown = {};                      // 名前の順番（行）ごとに、作った要素を覚えておく（毎回作り直すと、動きが途切れるので）
+  function render(data) {
+    var c = (data && data.casters) || null;
+    var items = (c && c.items) || [];
+    var scene = (c && c.scene) === "small" ? "small" : "large";
+    box.className = scene;
+    var keep = {};
+    items.forEach(function (it, i) {
+      var key = i + ":" + (it.name || "") + ":" + (it.deco || "");
+      keep[key] = true;
+      var el = shown[key];
+      if (!el) {
+        el = document.createElement("div");
+        var deco = DECOS[it.deco];
+        el.className = "cast " + (deco ? "deco" : "plain");
+        var body = document.createElement("div"); body.className = "body";
+        var av = document.createElement("img"); av.className = "av"; av.alt = "";
+        body.appendChild(av);
+        if (deco) { var dc = document.createElement("img"); dc.className = "dc"; dc.alt = ""; dc.src = deco; body.appendChild(dc); }
+        var nm = document.createElement("div"); nm.className = "nm";
+        el.appendChild(body); el.appendChild(nm);
+        shown[key] = el;
+      }
+      var av2 = el.querySelector(".av");
+      if (it.avatar && av2.getAttribute("data-src") !== it.avatar) { av2.setAttribute("data-src", it.avatar); av2.src = it.avatar; }
+      el.querySelector(".nm").textContent = it.name || "";
+      el.classList.toggle("speaking", !!it.speaking);                    // 発言中：明るく・動く／発言していない：暗く・動かない
+      if (box.children[i] !== el) box.insertBefore(el, box.children[i] || null);       // 並び順をそろえる（すでに合っているものは、動かさない：動かすと、アニメーションがやり直しになる）
+    });
+    Object.keys(shown).forEach(function (k) { if (!keep[k]) { shown[k].remove(); delete shown[k]; } });
+  }
+
+  // ── 見本（BOTなしで、見た目の確認用）：?demo=1 ──
+  function demoAvatar(label, c1, c2) {
+    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='" + c1 +
+              "'/><stop offset='1' stop-color='" + c2 + "'/></linearGradient></defs><rect width='256' height='256' fill='url(#g)'/><text x='128' y='160' font-size='110' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>" +
+              label + "</text></svg>";
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+  if (q.get("demo")) {
+    var t0 = Date.now(), fixed = q.get("scene");
+    var A = demoAvatar("A", "#5b6cff", "#9b5bff"), B = demoAvatar("B", "#ff7a5b", "#ffb35b");
+    function demo() {
+      var sec = (Date.now() - t0) / 1000;
+      var data = { casters: { scene: fixed || (Math.floor(sec / 10) % 2 === 0 ? "large" : "small"), items: [
+        { name: "夜の番人BOT", avatar: A, speaking: Math.floor(sec / 5) % 2 === 0, deco: "pumpkin" },
+        { name: "ゲスト", avatar: B, speaking: Math.floor(sec / 3) % 2 === 1, deco: q.get("nodeco") ? null : "pumpkin" }] } };
+      if (q.get("one")) data.casters.items.length = 1;
+      render(data);
+    }
+    demo();
+    setInterval(demo, 500);
+    return;
+  }
+
+  // ── データの読み込み ──
+  // 公開サイト：URLの ?t=（配信専用の12文字）を見て、window.TOURNAMENT_DATA_BASE の下の＜12文字＞.json を読む（BAN/PICKの配信用の画面と同じ場所）。
+  // ?data=URL：そのURLのJSONを読む。どちらでもなければ、同じ場所の caster.json（Botを動かしているPCから見るとき）。
+  function load() {
+    var url = q.get("data");
+    if (!url && window.TOURNAMENT_DATA_BASE) {
+      var key = q.get("t") || "";
+      if (!/^[A-Za-z0-9]{12}$/.test(key)) return;
+      url = window.TOURNAMENT_DATA_BASE + key + ".json";
+    }
+    if (!url) url = "caster.json";
+    fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d) render(d); })
+      .catch(function () { /* 読めなくても、いまの表示を、そのまま */ });
+  }
+  load();
+  setInterval(load, POLL_MS);
+})();
+</script>
+</body>
+</html>
