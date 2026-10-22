@@ -24,11 +24,11 @@
   ul.voice_states { list-style: none; margin: 0; padding: 0; }
   /* 位置調整ページ */
   body.edit { background: #14171f; color: #eef1f8; font: 14px/1.6 "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; overflow: auto; }
-  body.edit #wrap { display: flex; min-height: 100vh; }
+  body.edit #wrap { display: flex; height: 100vh; }
   body.edit #panel { display: block; }
-  #panel { display: none; width: 300px; flex: none; padding: 14px; background: #1d222d; border-right: 1px solid #38405a; box-sizing: border-box; }
+  #panel { display: none; width: 280px; flex: none; padding: 10px 12px; background: #1d222d; border-right: 1px solid #38405a; box-sizing: border-box; overflow-y: auto; }
   #panel h1 { font-size: 16px; margin: 0 0 10px; }
-  #panel .sec { margin: 12px 0; }
+  #panel .sec { margin: 9px 0; }
   #panel .sec > label.t { display: block; color: #9aa3bd; font-size: 12px; margin-bottom: 3px; }
   #panel .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
   #panel button { font: inherit; color: #eef1f8; background: #262c3a; border: 1px solid #38405a; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
@@ -39,7 +39,7 @@
   #panel .row input[type=number] { width: 70px; background: #14171f; color: #eef1f8; border: 1px solid #38405a; border-radius: 6px; padding: 3px 6px; }
   #panel .opt { display: flex; gap: 12px; }
   #panel .small { color: #9aa3bd; font-size: 12px; line-height: 1.5; }
-  #msg { margin-top: 8px; min-height: 2.6em; font-size: 13px; }
+  #msg { margin-top: 6px; min-height: 1.4em; font-size: 13px; }
   #msg.ok { color: #3fbf7f; } #msg.bad { color: #ff6b6b; }
   #area { display: contents; }
   body.edit #area { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
@@ -56,24 +56,22 @@
 <div id="status"></div>
 <div id="wrap">
   <div id="panel">
-    <h1>📐 位置調整</h1>
-    <div class="sec"><label class="t">場面</label><div class="tabs" id="tabs"></div></div>
-    <div class="sec"><label class="t">ほかの場面と、全く同じにする（位置・大きさ・並べ方・名前の位置を、コピー）</label><div class="tabs" id="copy"></div></div>
-    <div class="sec"><label class="t">アイコンの大きさ（px。1920×1080の画面での大きさ）</label>
+    <div class="tabs" id="tabs"></div>
+    <div class="sec"><label class="t">ほかの場面と同じにする</label><div class="tabs" id="copy"></div></div>
+    <div class="sec"><label class="t">アイコンの大きさ</label>
       <div class="row"><input type="range" id="d" min="30" max="400" step="1"><input type="number" id="dn" min="30" max="400"></div></div>
-    <div class="sec"><label class="t">複数人の並べ方</label><div class="opt" id="orient"></div></div>
+    <div class="sec"><label class="t">並べ方</label><div class="opt" id="orient"></div></div>
     <div class="sec"><label class="t">名前の位置</label><div class="opt" id="name"></div></div>
-    <div class="sec"><label class="t">装飾つきのアイコンの大きさ（穴に対する割合。全場面）</label>
+    <div class="sec"><label class="t">装飾つきアイコンの大きさ</label>
       <div class="row"><input type="range" id="k" min="0.5" max="1.2" step="0.01"><input type="number" id="kn" min="0.5" max="1.2" step="0.01"></div></div>
-    <div class="sec"><label class="t">装飾つきの名前を、装飾に近づける（アイコンの大きさに対する割合。マイナスで近づく。全場面）</label>
+    <div class="sec"><label class="t">装飾つきの名前を近づける</label>
       <div class="row"><input type="range" id="ng" min="-1.5" max="0.5" step="0.01"><input type="number" id="ngn" min="-1.5" max="0.5" step="0.01"></div></div>
-    <div class="sec"><label class="t">見本の人数（確認用。3人以上は、2人ぶんの枠に収まるよう小さくなります）</label>
+    <div class="sec"><label class="t">見本の人数</label>
       <div class="opt" id="count"></div>
-      <label class="small"><input type="checkbox" id="speak"> 1人目が話している見た目</label></div>
-    <button class="save" id="save">💾 保存（OBSの表示に反映）</button>
-    <button id="reset" style="margin-top:6px;width:100%">↩ 保存したものに戻す</button>
+      <label class="small"><input type="checkbox" id="speak"> 1人目が話している</label></div>
+    <button class="save" id="save">💾 保存</button>
+    <button id="reset" style="margin-top:6px;width:100%">↩ 元に戻す</button>
     <div id="msg"></div>
-    <div class="small">点線の枠（2人ぶんの枠）を、ドラッグして動かします。中央の線の近くでは、中央にそろいます。保存すると、数秒で、OBSの表示に反映されます。</div>
   </div>
   <div id="area"><div id="stage"><div id="guide"></div><ul class="voice_states o-row n-bottom" id="list"></ul></div></div>
 </div>
@@ -216,8 +214,8 @@
     var cp = $("copy"); cp.textContent = "";
     SCENES.forEach(function (s) {
       if (s === editScene) return;
-      var b = document.createElement("button"); b.textContent = "「" + LABELS[s] + "」と同じにする";
-      b.onclick = function () { work[editScene] = JSON.parse(JSON.stringify(work[s])); buildPanel(); applyLayout(); msg("「" + LABELS[editScene] + "」を、「" + LABELS[s] + "」と同じにしました（保存すると、反映されます）。"); };
+      var b = document.createElement("button"); b.textContent = LABELS[s] + "と同じ";
+      b.onclick = function () { work[editScene] = JSON.parse(JSON.stringify(work[s])); buildPanel(); applyLayout(); msg("「" + LABELS[editScene] + "」を、「" + LABELS[s] + "」と同じにしました。"); };
       cp.appendChild(b);
     });
     var l = work[editScene];
@@ -249,7 +247,7 @@
       body: JSON.stringify({ nonce: nonce, assignments: { _layout: { scenes: work, deco_scale: workK, name_gap: workNG } } }) })
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
       .then(function (res) {
-        if (res && res.ok) { msg("✅ 保存しました。数秒で、OBSの表示に反映されます。", "ok"); load(false); }
+        if (res && res.ok) { msg("✅ 保存しました。", "ok"); load(false); }
         else msg("保存できませんでした：" + ((res && res.error) || "BOTから返事がありません（しばらくしてからもう一度）"), "bad");
       })
       .catch(function (e) { msg("保存できませんでした：" + (e && e.message || e), "bad"); })
@@ -270,7 +268,7 @@
     $("ng").oninput = function () { setNG(this.value); }; $("ngn").onchange = function () { setNG(this.value); };
     $("speak").onchange = function () { sample(); };
     $("save").onclick = save;
-    $("reset").onclick = function () { work = null; load(true); msg("保存したものに戻しました。"); };
+    $("reset").onclick = function () { work = null; load(true); msg("元に戻しました。"); };
     // 2人ぶんの枠のドラッグ（画面の中心の近くでは、中央にそろえる）
     var drag = null;
     ul.addEventListener("pointerdown", function (e) {
