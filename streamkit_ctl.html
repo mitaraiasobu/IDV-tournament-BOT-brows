@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>進行状況コントローラ</title>
+<meta name="robots" content="noindex,nofollow">
+<!--
+  進行状況コントローラ（配信者用）。OBSの「ドック」→「カスタムブラウザドック」に、このページのURLを入れて使う（OBSを開くたびに、自動で開く）。
+  大会の進行状況（待機／BAN/PICK・試合／戦績画面）が変わると、OBSの中のDiscord StreamKitのブラウザソースの「カスタムCSS」を、その場面用のCSSに
+  自動で書き換える（OBS WebSocket。OBS 28以降は標準）。StreamKit自体は、何も変えない。BOTは、ボイスチャンネルに接続しない。
+  - データ：URLの ?t=（コントローラ用の12文字）の場所（window.TOURNAMENT_DATA_BASE ＋ 12文字 .json）。場面と、場面ごとのCSSが入っている。
+  - 対象のブラウザソース：URLが streamkit.discord.com/overlay のブラウザソースを、自動で見つける（名前の設定は要らない）。
+  - 装飾の画像：StreamKitのページが読み込めない場所（GitHubなど）の画像は、このページが取ってきて、CSSに埋め込み直す。
+  - OBSのパスワードは、このドックの中（localStorage）にだけ保存する。BOT・公開サイトには、送らない。
+-->
+<style>
+  :root { --bg: #14171f; --panel: #1d222d; --line: #38405a; --text: #eef1f8; --sub: #9aa3bd; --accent: #5b8cff; --ok: #3fbf7f; --warn: #ffb54a; --bad: #ff6b6b; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; font-size: 13px; }
+  main { padding: 10px 12px; }
+  h1 { margin: 0 0 8px; font-size: 15px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .row .k { width: 92px; color: var(--sub); flex: none; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sub); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
+  .scene { font-size: 18px; font-weight: 800; }
+  input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; min-width: 0; flex: 1; }
+  button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  #setup { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  #log { margin-top: 8px; color: var(--sub); font-size: 12px; line-height: 1.5; min-height: 2.4em; }
+  .msg { color: var(--warn); }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "streamkit";</script>
+<main>
+  <h1>🎬 進行状況コントローラ</h1>
+  <div class="row"><span class="k">大会の場面</span><span class="scene" id="scene">—</span></div>
+  <div class="row"><span class="k">データ</span><span class="dot" id="dData"></span><span id="tData">読み込み中…</span></div>
+  <div class="row"><span class="k">OBS</span><span class="dot" id="dObs"></span><span id="tObs">未接続</span></div>
+  <div class="row"><span class="k">StreamKit</span><span class="dot" id="dSrc"></span><span id="tSrc">—</span></div>
+  <div id="setup">
+    <div class="row"><span class="k">OBSのアドレス</span><input id="addr" spellcheck="false" placeholder="ws://127.0.0.1:4455"></div>
+    <div class="row"><span class="k">パスワード</span><input id="pw" type="password" autocomplete="off" placeholder="OBSのWebSocketサーバーのパスワード"><button id="save">接続</button></div>
+  </div>
+  <div id="log"></div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var LABELS = { wait: "待機", play: "BAN/PICK・試合", result: "戦績画面" };
+  var POLL_MS = 3000, RECHECK_MS = 30000;
+  var params = new URLSearchParams(location.search);
+  var $ = function (id) { return document.getElementById(id); };
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem("sk_" + k) || ""; localStorage.setItem("sk_" + k, v); } catch (e) { return ""; } return ""; }
+  function setDot(id, cls, text, tid) { $(id).className = "dot " + cls; $(tid).textContent = text; }
+  function log(s, warn) { var d = $("log"); d.className = warn ? "msg" : ""; d.textContent = s || ""; }
+
+  var data = null, lastSig = "", ws = null, obsReady = false, reqSeq = 0, pending = {}, lastApplied = 0, applying = false;
+  var inlineCache = {};
+
+  // ── OBS WebSocket（v5）──
+  function b64(buf) { var s = ""; new Uint8Array(buf).forEach(function (c) { s += String.fromCharCode(c); }); return btoa(s); }
+  function sha256b64(text) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(b64); }
+  function request(type, rdata) {
+    return new Promise(function (resolve, reject) {
+      if (!ws || ws.readyState !== 1 || !obsReady) { reject(new Error("OBSにつながっていません")); return; }
+      var id = "r" + (++reqSeq);
+      pending[id] = { resolve: resolve, reject: reject };
+      ws.send(JSON.stringify({ op: 6, d: { requestType: type, requestId: id, requestData: rdata || {} } }));
+      setTimeout(function () { if (pending[id]) { delete pending[id]; reject(new Error("OBSから返事がありません")); } }, 20000);
+    });
+  }
+  var retryTimer = null;
+  function connect() {
+    clearTimeout(retryTimer);
+    if (ws) { try { ws.onclose = null; ws.close(); } catch (e) {} }
+    obsReady = false;
+    var addr = store("addr") || "ws://127.0.0.1:4455";
+    setDot("dObs", "warn", "接続中…（" + addr + "）", "tObs");
+    try { ws = new WebSocket(addr); } catch (e) { setDot("dObs", "bad", "アドレスが正しくありません", "tObs"); return; }
+    var mine = ws;
+    ws.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.op === 0) {                                                      // Hello
+        var auth = m.d.authentication, ident = { rpcVersion: 1, eventSubscriptions: 0 };
+        if (!auth) { mine.send(JSON.stringify({ op: 1, d: ident })); return; }
+        var pw = store("pw");
+        if (!pw) { setDot("dObs", "bad", "パスワードが必要です（下の欄に入れて「接続」）", "tObs"); return; }
+        sha256b64(pw + auth.salt).then(function (secret) { return sha256b64(secret + auth.challenge); })
+          .then(function (a) { ident.authentication = a; mine.send(JSON.stringify({ op: 1, d: ident })); });
+      } else if (m.op === 2) {                                              // Identified
+        obsReady = true; lastApplied = 0;
+        setDot("dObs", "ok", "接続しました", "tObs");
+        apply(true);
+      } else if (m.op === 7) {                                              // RequestResponse
+        var p = pending[m.d.requestId]; if (!p) return; delete pending[m.d.requestId];
+        if (m.d.requestStatus && m.d.requestStatus.result) p.resolve(m.d.responseData || {});
+        else p.reject(new Error((m.d.requestStatus && m.d.requestStatus.comment) || "OBSがエラーを返しました"));
+      }
+    };
+    ws.onclose = function (ev) {
+      if (mine !== ws) return;
+      obsReady = false;
+      setDot("dObs", "bad", ev.code === 4009 ? "パスワードが違います" : "つながりません（OBSを起動し、WebSocketサーバーを有効にしてください）", "tObs");
+      retryTimer = setTimeout(connect, 5000);
+    };
+    ws.onerror = function () {};
+  }
+
+  // ── 画像：StreamKitのページが読み込めない場所（GitHubなど）の画像は、CSSに埋め込む ──
+  function hostAllowed(url, allowed) {
+    var u; try { u = new URL(url); } catch (e) { return false; }
+    return u.protocol === "https:" && allowed.some(function (h) { return u.hostname === h || u.hostname.endsWith("." + h); });
+  }
+  function toDataUri(url) {
+    if (inlineCache[url]) return inlineCache[url];
+    inlineCache[url] = fetch(url, { mode: "cors", cache: "force-cache" }).then(function (r) {
+      if (!r.ok) throw new Error(String(r.status));
+      return r.blob();
+    }).then(function (b) {
+      if (b.size > 2000000) throw new Error("大きすぎます");
+      return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b); });
+    });
+    inlineCache[url].catch(function () { delete inlineCache[url]; });
+    return inlineCache[url];
+  }
+  function finalCss(css, allowed) {
+    var urls = [], seen = {};
+    css.replace(/url\("(https:\/\/[^"]+)"\)/g, function (_, u) { if (!seen[u] && !hostAllowed(u, allowed)) { seen[u] = 1; urls.push(u); } return _; });
+    var failed = [];
+    return Promise.all(urls.map(function (u) {
+      return toDataUri(u).then(function (d) { return [u, d]; }, function () { failed.push(u); return [u, null]; });
+    })).then(function (pairs) {
+      var map = {}; pairs.forEach(function (p) { map[p[0]] = p[1]; });
+      var out = css.replace(/url\("(https:\/\/[^"]+)"\)/g, function (all, u) {
+        if (!map.hasOwnProperty(u)) return all;                              // StreamKitが、そのまま読み込める場所の画像
+        return map[u] ? 'url("' + map[u] + '")' : 'none';                    // 埋め込めた：埋め込む／取れなかった：画像なし
+      });
+      return { css: out, failed: failed };
+    });
+  }
+
+  // ── 場面に合わせて、StreamKitのブラウザソースのカスタムCSSを書き換える ──
+  function apply(force) {
+    if (!obsReady || !data || applying) return Promise.resolve();
+    applying = true;
+    var scene = data.scene in LABELS ? data.scene : "wait";
+    var base = data.css && data.css[scene];
+    if (!base) { applying = false; return Promise.resolve(); }
+    return finalCss(base, data.allowed || []).then(function (res) {
+      return request("GetInputList", { inputKind: "browser_source" }).then(function (l) {
+        return Promise.all((l.inputs || []).map(function (inp) {
+          return request("GetInputSettings", { inputName: inp.inputName }).then(function (s) {
+            var st = s.inputSettings || {};
+            if (!/streamkit\.discord\.com\/overlay/.test(st.url || "")) return null;
+            if (st.css === res.css) return { name: inp.inputName, changed: false };
+            return request("SetInputSettings", { inputName: inp.inputName, inputSettings: { css: res.css }, overlay: true })
+              .then(function () { return { name: inp.inputName, changed: true }; });
+          });
+        }));
+      }).then(function (rs) {
+        rs = rs.filter(Boolean);
+        lastApplied = Date.now();
+        if (!rs.length) { setDot("dSrc", "bad", "StreamKitのブラウザソースが見つかりません（URLが streamkit.discord.com/overlay のもの）", "tSrc"); }
+        else setDot("dSrc", "ok", rs.map(function (r) { return "「" + r.name + "」"; }).join("") + "：" + LABELS[scene] + "用のCSS" + (rs.some(function (r) { return r.changed; }) ? "に切り替えました" : "です"), "tSrc");
+        log(res.failed.length ? "取り込めなかった装飾の画像が" + res.failed.length + "個あります（GitHubなどのURLは、画像を直接開けるURLにしてください）。" : "", res.failed.length > 0);
+      });
+    }).catch(function (e) {
+      setDot("dSrc", "bad", "書き換えられませんでした：" + (e && e.message || e), "tSrc");
+    }).then(function () { applying = false; });
+  }
+
+  // ── 大会のデータ（場面と、場面ごとのCSS）──
+  function tick() {
+    var key = params.get("t") || "";
+    if (!/^[A-Za-z0-9]{12}$/.test(key)) { setDot("dData", "bad", "大会のURLから開いてください（?t=…）", "tData"); return; }
+    fetch(window.TOURNAMENT_DATA_BASE + key + ".json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        if (!d || !d.css) throw new Error("データがありません");
+        data = d;
+        $("scene").textContent = LABELS[d.scene] || "待機";
+        setDot("dData", "ok", "最新です", "tData");
+        var sig = d.scene + "|" + JSON.stringify(d.css).length + "|" + (d.css[d.scene] || "").slice(-200);
+        if (sig !== lastSig || Date.now() - lastApplied > RECHECK_MS) { lastSig = sig; apply(); }
+      })
+      .catch(function () { setDot("dData", "bad", "読み込めません（BOTが公開しているか確認してください）", "tData"); });
+  }
+
+  $("addr").value = store("addr") || "ws://127.0.0.1:4455";
+  $("pw").value = store("pw");
+  $("save").onclick = function () { store("addr", $("addr").value.trim() || "ws://127.0.0.1:4455"); store("pw", $("pw").value); connect(); };
+  if (!window.TOURNAMENT_DATA_BASE) { setDot("dData", "bad", "データの場所が設定されていません", "tData"); }
+  else { tick(); setInterval(tick, POLL_MS); }
+  connect();
+})();
+</script>
+</body>
+</html>
