@@ -107,7 +107,9 @@
   function applyLayout() {
     var l = curLayout();
     var u = stage.clientWidth / 1920;
-    ul.className = "voice_states o-" + l.orient + " n-" + l.name;
+    var dset = (data && data.deco_ids) || [];
+    var hasDeco = members.some(function (m) { return dset.indexOf(m.id) >= 0; });             // 装飾のある人が1人でもいれば、全員の枠を装飾の大きさにそろえる（名前の座標がずれない）
+    ul.className = "voice_states o-" + l.orient + " n-" + l.name + (hasDeco ? " x-deco" : "");
     ul.style.setProperty("--x", l.x); ul.style.setProperty("--y", l.y); ul.style.setProperty("--d", l.d);
     ul.style.setProperty("--u", u + "px");
     ul.style.setProperty("--k", EDIT ? workK : (data && data.deco_scale) || 1.02);
@@ -152,7 +154,7 @@
     });
     Object.keys(items).forEach(function (id) { if (!seen[id]) { items[id].remove(); delete items[id]; } });
     st.members = members.length; status();
-    fit();
+    applyLayout();
   }
 
   // ── BOTのデータ（場面・配置・装飾）──
