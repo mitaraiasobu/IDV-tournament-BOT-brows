@@ -6,92 +6,289 @@
 <title>キャスター表示</title>
 <meta name="robots" content="noindex,nofollow">
 <!--
-  キャスター表示（OBSのブラウザソース用。背景は透明）。幅1920・高さ1080が目安。
+  キャスター表示（OBSのブラウザソース用。背景は透明）。幅1920・高さ1080が目安だが、ブラウザの幅に合わせて、比例して大きさが変わる。
   - だれがボイスチャンネルにいて、だれが話しているか：配信PCで動かす中継プログラム（tools/caster_relay.py）から、WebSocket（既定 ws://127.0.0.1:8778）で受け取る。
     中継プログラムは、DiscordアプリのIPCから受け取る。BOTは、ボイスチャンネルに接続しない。
-  - 場面（待機／BAN/PICK・試合／戦績画面）と、場面ごとのCSS：BOTが公開データ（URLの ?t=（12文字）の場所）に出している。3秒おきに読み、場面が変わったら、即座に切り替える。
-  - 画面の作りは、Discord StreamKit の画面と同じ作りにしてある（ul.voice_states > li.voice_state[data-userid] > img.voice_avatar ＋ .voice_username）ので、
-    BOTが作る場面ごとのCSS（配置・装飾・追加のCSS）が、そのまま使える。画像の読み込み場所の制限（StreamKitのCSP）は、ここには無い。
+  - 場面（待機／BAN/PICK・試合／戦績画面）・場面ごとの配置・装飾・追加のCSS：BOTが公開データ（URLの ?t=（12文字）の場所）に出している。3秒おきに読み、
+    場面が変わったら、再読み込みなしで、すぐに切り替える。
+  - 複数人の並べ方：横並び（名前は、上か下）／縦並び（名前は、右か左）。基本は2人ぶんの枠の大きさで、3人以上になったら、その枠からはみ出ないよう、アイコンを小さくする。
+  - 位置調整：URLに &edit=（割り当て用の12文字。管理者だけに伝える）を付けて開くと、位置調整のページになる。枠をドラッグして位置を決め、大きさ・並べ方・名前の位置を選んで、
+    「保存」を押すと、BOTに送られる（割り当て用ページと同じ、Firebaseの受け箱 …_inbox/＜12文字＞ に書く。BOTが数秒以内に検査して、保存する）。
   - ?debug=1 を付けると、つながりの状態を左上に出す。?relay=ws://… で、中継プログラムの場所を変えられる。
 -->
 <style>
   html, body { margin: 0; background: transparent; overflow: hidden; }
+  #stage { position: fixed; left: 0; top: 0; right: 0; bottom: 0; }
   #status { position: fixed; left: 8px; top: 8px; font: 13px/1.5 sans-serif; color: #fff; background: rgba(0,0,0,.6); padding: 4px 8px; border-radius: 6px; display: none; z-index: 9; }
   .debug #status { display: block; }
   ul.voice_states { list-style: none; margin: 0; padding: 0; }
+  /* 位置調整ページ */
+  body.edit { background: #14171f; color: #eef1f8; font: 14px/1.6 "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; overflow: auto; }
+  body.edit #wrap { display: flex; min-height: 100vh; }
+  body.edit #panel { display: block; }
+  #panel { display: none; width: 300px; flex: none; padding: 14px; background: #1d222d; border-right: 1px solid #38405a; box-sizing: border-box; }
+  #panel h1 { font-size: 16px; margin: 0 0 10px; }
+  #panel .sec { margin: 12px 0; }
+  #panel .sec > label.t { display: block; color: #9aa3bd; font-size: 12px; margin-bottom: 3px; }
+  #panel .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  #panel button { font: inherit; color: #eef1f8; background: #262c3a; border: 1px solid #38405a; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  #panel button.on { background: #5b8cff; border-color: #5b8cff; font-weight: 700; }
+  #panel button.save { background: #3fbf7f; border-color: #3fbf7f; color: #04210f; font-weight: 800; width: 100%; padding: 10px; margin-top: 6px; }
+  #panel input[type=range] { width: 100%; }
+  #panel .row { display: flex; align-items: center; gap: 8px; }
+  #panel .row input[type=number] { width: 70px; background: #14171f; color: #eef1f8; border: 1px solid #38405a; border-radius: 6px; padding: 3px 6px; }
+  #panel .opt { display: flex; gap: 12px; }
+  #panel .small { color: #9aa3bd; font-size: 12px; line-height: 1.5; }
+  #msg { margin-top: 8px; min-height: 2.6em; font-size: 13px; }
+  #msg.ok { color: #3fbf7f; } #msg.bad { color: #ff6b6b; }
+  #area { display: contents; }
+  body.edit #area { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; }
+  body.edit #stage { position: relative; left: auto; top: auto; right: auto; bottom: auto; overflow: hidden; background-color: #2a2f3a;
+    background-image: linear-gradient(45deg, #333a49 25%, transparent 25%, transparent 75%, #333a49 75%), linear-gradient(45deg, #333a49 25%, transparent 25%, transparent 75%, #333a49 75%);
+    background-size: 40px 40px; background-position: 0 0, 20px 20px; outline: 2px solid #5b8cff; }
+  body.edit ul.voice_states { outline: 2px dashed #ffb54a; outline-offset: 8px; cursor: move; touch-action: none; }
+  body.edit #guide { position: absolute; left: 50%; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(255,255,255,.25); pointer-events: none; }
 </style>
-<style id="scene-css"></style>
+<style id="data-css"></style>
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "overlay";</script>
 <div id="status"></div>
-<div id="root" class="voice_container"><ul class="voice_states" id="list"></ul></div>
+<div id="wrap">
+  <div id="panel">
+    <h1>📐 位置調整</h1>
+    <div class="sec"><label class="t">場面</label><div class="tabs" id="tabs"></div></div>
+    <div class="sec"><label class="t">アイコンの大きさ（px。1920×1080の画面での大きさ）</label>
+      <div class="row"><input type="range" id="d" min="30" max="400" step="1"><input type="number" id="dn" min="30" max="400"></div></div>
+    <div class="sec"><label class="t">複数人の並べ方</label><div class="opt" id="orient"></div></div>
+    <div class="sec"><label class="t">名前の位置</label><div class="opt" id="name"></div></div>
+    <div class="sec"><label class="t">装飾つきのアイコンの大きさ（穴に対する割合。全場面）</label>
+      <div class="row"><input type="range" id="k" min="0.5" max="1.2" step="0.01"><input type="number" id="kn" min="0.5" max="1.2" step="0.01"></div></div>
+    <div class="sec"><label class="t">見本の人数（確認用。3人以上は、2人ぶんの枠に収まるよう小さくなります）</label>
+      <div class="opt" id="count"></div>
+      <label class="small"><input type="checkbox" id="speak"> 1人目が話している見た目</label></div>
+    <button class="save" id="save">💾 保存（OBSの表示に反映）</button>
+    <button id="reset" style="margin-top:6px;width:100%">↩ 保存したものに戻す</button>
+    <div id="msg"></div>
+    <div class="small">点線の枠（2人ぶんの枠）を、ドラッグして動かします。中央の線の近くでは、中央にそろいます。保存すると、数秒で、OBSの表示に反映されます。</div>
+  </div>
+  <div id="area"><div id="stage"><div id="guide"></div><ul class="voice_states o-row n-bottom" id="list"></ul></div></div>
+</div>
 <script>
 (function () {
   "use strict";
   var params = new URLSearchParams(location.search);
+  var KEY = params.get("t") || "";
+  var EDIT_KEY = params.get("edit") || "";
+  var EDIT = /^[A-Za-z0-9]{12}$/.test(EDIT_KEY);
   var RELAY = params.get("relay") || "ws://127.0.0.1:8778";
   var POLL_MS = 3000;
+  var LABELS = { wait: "待機", play: "BAN/PICK・試合", result: "戦績画面" };
+  var SCENES = ["wait", "play", "result"];
+  var NAMES = { row: [["bottom", "下"], ["top", "上"]], column: [["right", "右"], ["left", "左"]] };
   var $ = function (id) { return document.getElementById(id); };
+  var stage = $("stage"), ul = $("list");
   var st = { relay: "未接続", data: "読み込み中", scene: "—", members: 0 };
   if (params.get("debug")) document.documentElement.className = "debug";
+  if (EDIT) document.body.className = "edit";
   function status() { $("status").textContent = "中継：" + st.relay + " ／ データ：" + st.data + " ／ 場面：" + st.scene + " ／ " + st.members + "人"; }
 
-  // ── 場面ごとのCSS（BOTのデータ）──
-  var scene = "", cssText = "";
-  function applyCss(d) {
-    var css = d.css && d.css[d.scene];
-    if (!css) return;
-    if (css !== cssText) { $("scene-css").textContent = css; cssText = css; }
-    if (d.scene !== scene) scene = d.scene;
-    st.scene = ({ wait: "待機", play: "BAN/PICK・試合", result: "戦績画面" })[d.scene] || d.scene;
-    status();
+  var data = null;                 // BOTのデータ（scene, layouts, deco_scale, css, samples）
+  var members = [];                // 表示する人（id, name, avatar, mute, speaking）
+  var work = null, workK = 0.92, editScene = "wait", previewCount = 2;     // 位置調整中の、保存前の値
+
+  // ── 配置の反映 ──
+  function curLayout() {
+    var s = EDIT ? editScene : (data && data.scene) || "wait";
+    var src = EDIT ? work : (data && data.layouts);
+    return (src && src[s]) || { x: 50, y: 70, d: 150, orient: "row", name: "bottom" };
   }
-  function poll() {
-    var key = params.get("t") || "";
-    if (!/^[A-Za-z0-9]{12}$/.test(key) || !window.TOURNAMENT_DATA_BASE) { st.data = "URLが正しくありません"; status(); return; }
-    fetch(window.TOURNAMENT_DATA_BASE + key + ".json?t=" + Date.now(), { cache: "no-store" })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (d) { st.data = "最新"; applyCss(d); status(); })
-      .catch(function () { st.data = "読み込めません"; status(); });
+  function applyLayout() {
+    var l = curLayout();
+    var u = stage.clientWidth / 1920;
+    ul.className = "voice_states o-" + l.orient + " n-" + l.name;
+    ul.style.setProperty("--x", l.x); ul.style.setProperty("--y", l.y); ul.style.setProperty("--d", l.d);
+    ul.style.setProperty("--u", u + "px");
+    ul.style.setProperty("--k", EDIT ? workK : (data && data.deco_scale) || 0.92);
+    fit();
+  }
+  // 3人以上になったら、2人ぶんの枠からはみ出ないよう、アイコンを小さくする（1人目・2人目で作る枠の長さに、全員が収まる倍率）
+  function fit() {
+    ul.style.setProperty("--fit", 1);
+    var lis = ul.children;
+    if (lis.length <= 2) return;
+    var col = ul.classList.contains("o-column");
+    var size = function (el) { return col ? el.offsetHeight : el.offsetWidth; };
+    var gap = parseFloat(getComputedStyle(ul).columnGap) || 0;
+    var two = size(lis[0]) + size(lis[1]) + gap, all = (lis.length - 1) * gap;
+    for (var i = 0; i < lis.length; i++) all += size(lis[i]);
+    ul.style.setProperty("--fit", all > two ? (two / all).toFixed(4) : 1);
   }
 
-  // ── ボイスチャンネルの人（中継プログラムから）──
+  // ── 人の表示 ──
   var items = {};
-  function render(msg) {
-    var list = $("list"), seen = {};
-    msg.members.forEach(function (m) {
+  function render() {
+    var seen = {};
+    members.forEach(function (m) {
       seen[m.id] = true;
       var li = items[m.id];
       if (!li) {
         li = document.createElement("li");
         li.setAttribute("data-userid", m.id);
+        var box = document.createElement("div"); box.className = "voice_box";
         var img = document.createElement("img"); img.className = "voice_avatar"; img.alt = "";
+        box.appendChild(img);
         var nm = document.createElement("div"); nm.className = "voice_username"; nm.appendChild(document.createElement("span"));
-        li.appendChild(img); li.appendChild(nm);
-        list.appendChild(li);
+        li.appendChild(box); li.appendChild(nm);
         items[m.id] = li;
       }
       var cls = "voice_state" + (m.speaking ? " wrapper_speaking" : "") + (m.mute ? " mute self_mute" : "") + (m.deaf ? " deaf self_deaf" : "");
       if (li.className !== cls) li.className = cls;
-      var im = li.firstChild; if (im.getAttribute("src") !== m.avatar) im.setAttribute("src", m.avatar);
+      var im = li.firstChild.firstChild; if (im.getAttribute("src") !== m.avatar) im.setAttribute("src", m.avatar);
       var sp = li.lastChild.firstChild; if (sp.textContent !== m.name) sp.textContent = m.name;
+      ul.appendChild(li);                                                    // 並びを、members の順にそろえる
     });
     Object.keys(items).forEach(function (id) { if (!seen[id]) { items[id].remove(); delete items[id]; } });
-    st.members = msg.members.length; status();
+    st.members = members.length; status();
+    fit();
   }
+
+  // ── BOTのデータ（場面・配置・装飾）──
+  function load(first) {
+    if (!/^[A-Za-z0-9]{12}$/.test(KEY) || !window.TOURNAMENT_DATA_BASE) { st.data = "URLが正しくありません"; status(); return; }
+    fetch(window.TOURNAMENT_DATA_BASE + KEY + ".json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        if (!d || !d.layouts) throw new Error("データがありません");
+        data = d;
+        if (d.css !== $("data-css").textContent) $("data-css").textContent = d.css;
+        st.data = "最新";
+        st.scene = LABELS[d.scene] || d.scene;
+        if (EDIT && (first || !work)) { work = JSON.parse(JSON.stringify(d.layouts)); workK = d.deco_scale; buildPanel(); sample(); }
+        applyLayout(); status();
+      })
+      .catch(function () { st.data = "読み込めません"; status(); });
+  }
+
+  // ── 中継プログラムから（OBSの表示のとき）──
   function connect() {
     var ws;
     try { ws = new WebSocket(RELAY); } catch (e) { st.relay = "アドレスが正しくありません"; status(); return; }
     ws.onopen = function () { st.relay = "接続中"; status(); };
-    ws.onmessage = function (ev) { try { var m = JSON.parse(ev.data); if (m.type === "state") render(m); } catch (e) {} };
-    ws.onclose = function () { st.relay = "つながりません（中継プログラムを起動しているか確認）"; status(); render({ members: [] }); setTimeout(connect, 2000); };
+    ws.onmessage = function (ev) { try { var m = JSON.parse(ev.data); if (m.type === "state") { members = m.members; render(); } } catch (e) {} };
+    ws.onclose = function () { st.relay = "つながりません（中継プログラムを起動しているか確認）"; status(); members = []; render(); setTimeout(connect, 2000); };
     ws.onerror = function () {};
   }
 
+  // ── 位置調整ページ ──
+  var COLORS = ["e66", "36c", "3a6", "c93", "93c"];
+  function sample() {                                                        // 見本の人（装飾のある人のIDを使うと、装飾も見える）
+    var ids = (data && data.samples) || [];
+    members = [];
+    for (var i = 0; i < previewCount; i++) {
+      var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><rect width='256' height='256' fill='#" + COLORS[i % COLORS.length] + "'/></svg>";
+      members.push({ id: ids[i] || ("90000000000000000" + i), name: "キャスター" + String.fromCharCode(65 + i),
+        avatar: "data:image/svg+xml;utf8," + encodeURIComponent(svg), mute: false, deaf: false, speaking: i === 0 && $("speak").checked });
+    }
+    render();
+  }
+  function radios(host, name, opts, cur, onPick) {
+    host.textContent = "";
+    opts.forEach(function (o) {
+      var lab = document.createElement("label");
+      var r = document.createElement("input"); r.type = "radio"; r.name = name; r.value = o[0]; r.checked = o[0] === cur;
+      r.onchange = function () { onPick(o[0]); };
+      lab.appendChild(r); lab.appendChild(document.createTextNode(" " + o[1]));
+      host.appendChild(lab);
+    });
+  }
+  function buildPanel() {
+    var tabs = $("tabs"); tabs.textContent = "";
+    SCENES.forEach(function (s) {
+      var b = document.createElement("button"); b.textContent = LABELS[s]; b.className = s === editScene ? "on" : "";
+      b.onclick = function () { editScene = s; buildPanel(); applyLayout(); };
+      tabs.appendChild(b);
+    });
+    var l = work[editScene];
+    $("d").value = l.d; $("dn").value = l.d; $("k").value = workK; $("kn").value = workK;
+    radios($("orient"), "orient", [["row", "横並び"], ["column", "縦並び"]], l.orient, function (v) {
+      work[editScene].orient = v;
+      if (NAMES[v].map(function (n) { return n[0]; }).indexOf(work[editScene].name) < 0) work[editScene].name = NAMES[v][0][0];
+      buildPanel(); applyLayout();
+    });
+    radios($("name"), "name", NAMES[l.orient], l.name, function (v) { work[editScene].name = v; applyLayout(); });
+    var cnt = $("count"); cnt.textContent = "";
+    [1, 2, 3, 4, 5].forEach(function (n) {
+      var b = document.createElement("button"); b.textContent = n + "人"; b.className = n === previewCount ? "on" : "";
+      b.onclick = function () { previewCount = n; buildPanel(); sample(); applyLayout(); };
+      cnt.appendChild(b);
+    });
+  }
+  function setD(v) { v = Math.max(30, Math.min(400, Math.round(+v) || 150)); work[editScene].d = v; $("d").value = v; $("dn").value = v; applyLayout(); }
+  function setK(v) { v = Math.max(0.5, Math.min(1.2, +v || 0.92)); workK = Math.round(v * 100) / 100; $("k").value = workK; $("kn").value = workK; applyLayout(); }
+  function msg(text, cls) { $("msg").textContent = text; $("msg").className = cls || ""; }
+
+  function save() {
+    var base = String(window.TOURNAMENT_DATA_BASE).replace(/\/?$/, "");
+    var nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    msg("保存しています…");
+    $("save").disabled = true;
+    fetch(base + "_inbox/" + EDIT_KEY + ".json", { method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nonce: nonce, assignments: { _layout: { scenes: work, deco_scale: workK } } }) })
+      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
+      .then(function (res) {
+        if (res && res.ok) { msg("✅ 保存しました。数秒で、OBSの表示に反映されます。", "ok"); load(false); }
+        else msg("保存できませんでした：" + ((res && res.error) || "BOTから返事がありません（しばらくしてからもう一度）"), "bad");
+      })
+      .catch(function (e) { msg("保存できませんでした：" + (e && e.message || e), "bad"); })
+      .then(function () { $("save").disabled = false; });
+  }
+  function waitResult(nonce, tries) {
+    return fetch(window.TOURNAMENT_DATA_BASE + EDIT_KEY + ".json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; })
+      .then(function (d) {
+        if (d && d.result && d.result.nonce === nonce) return d.result;
+        if (tries <= 0) return null;
+        return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return waitResult(nonce, tries - 1); });
+      });
+  }
+
+  function startEdit() {
+    $("d").oninput = function () { setD(this.value); }; $("dn").onchange = function () { setD(this.value); };
+    $("k").oninput = function () { setK(this.value); }; $("kn").onchange = function () { setK(this.value); };
+    $("speak").onchange = function () { sample(); };
+    $("save").onclick = save;
+    $("reset").onclick = function () { work = null; load(true); msg("保存したものに戻しました。"); };
+    // 2人ぶんの枠のドラッグ（画面の中心の近くでは、中央にそろえる）
+    var drag = null;
+    ul.addEventListener("pointerdown", function (e) {
+      var r = stage.getBoundingClientRect(), l = work[editScene];
+      drag = { dx: e.clientX - (r.left + r.width * l.x / 100), dy: e.clientY - (r.top + r.height * l.y / 100) };
+      ul.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    ul.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var r = stage.getBoundingClientRect(), l = work[editScene];
+      var x = (e.clientX - drag.dx - r.left) / r.width * 100, y = (e.clientY - drag.dy - r.top) / r.height * 100;
+      x = Math.max(0, Math.min(100, x)); y = Math.max(0, Math.min(100, y));
+      if (Math.abs(x - 50) < 1.2) x = 50;
+      l.x = Math.round(x * 10) / 10; l.y = Math.round(y * 10) / 10;
+      applyLayout();
+    });
+    var end = function () { drag = null; };
+    ul.addEventListener("pointerup", end); ul.addEventListener("pointercancel", end);
+    function size() {                                                        // 位置調整のステージを、16:9で、空いている場所いっぱいにする
+      var a = $("area"), w = a.clientWidth - 28, h = a.clientHeight - 28;
+      var sw = Math.max(200, Math.min(w, h * 16 / 9));
+      stage.style.width = sw + "px"; stage.style.height = (sw * 9 / 16) + "px";
+      applyLayout();
+    }
+    window.addEventListener("resize", size); size();
+  }
+
+  window.addEventListener("resize", applyLayout);
   status();
-  poll(); setInterval(poll, POLL_MS);
-  connect();
+  if (EDIT) { startEdit(); load(true); }
+  else { load(true); setInterval(function () { load(false); }, POLL_MS); connect(); }
 })();
 </script>
 </body>
