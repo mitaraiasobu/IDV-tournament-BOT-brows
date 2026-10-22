@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キャスター表示</title>
+<meta name="robots" content="noindex,nofollow">
+<!--
+  キャスター表示（OBSのブラウザソース用。背景は透明）。幅1920・高さ1080が目安。
+  - だれがボイスチャンネルにいて、だれが話しているか：配信PCで動かす中継プログラム（tools/caster_relay.py）から、WebSocket（既定 ws://127.0.0.1:8778）で受け取る。
+    中継プログラムは、DiscordアプリのIPCから受け取る。BOTは、ボイスチャンネルに接続しない。
+  - 場面（待機／BAN/PICK・試合／戦績画面）と、場面ごとのCSS：BOTが公開データ（URLの ?t=（12文字）の場所）に出している。3秒おきに読み、場面が変わったら、即座に切り替える。
+  - 画面の作りは、Discord StreamKit の画面と同じ作りにしてある（ul.voice_states > li.voice_state[data-userid] > img.voice_avatar ＋ .voice_username）ので、
+    BOTが作る場面ごとのCSS（配置・装飾・追加のCSS）が、そのまま使える。画像の読み込み場所の制限（StreamKitのCSP）は、ここには無い。
+  - ?debug=1 を付けると、つながりの状態を左上に出す。?relay=ws://… で、中継プログラムの場所を変えられる。
+-->
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  #status { position: fixed; left: 8px; top: 8px; font: 13px/1.5 sans-serif; color: #fff; background: rgba(0,0,0,.6); padding: 4px 8px; border-radius: 6px; display: none; z-index: 9; }
+  .debug #status { display: block; }
+  ul.voice_states { list-style: none; margin: 0; padding: 0; }
+</style>
+<style id="scene-css"></style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "overlay";</script>
+<div id="status"></div>
+<div id="root" class="voice_container"><ul class="voice_states" id="list"></ul></div>
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(location.search);
+  var RELAY = params.get("relay") || "ws://127.0.0.1:8778";
+  var POLL_MS = 3000;
+  var $ = function (id) { return document.getElementById(id); };
+  var st = { relay: "未接続", data: "読み込み中", scene: "—", members: 0 };
+  if (params.get("debug")) document.documentElement.className = "debug";
+  function status() { $("status").textContent = "中継：" + st.relay + " ／ データ：" + st.data + " ／ 場面：" + st.scene + " ／ " + st.members + "人"; }
+
+  // ── 場面ごとのCSS（BOTのデータ）──
+  var scene = "", cssText = "";
+  function applyCss(d) {
+    var css = d.css && d.css[d.scene];
+    if (!css) return;
+    if (css !== cssText) { $("scene-css").textContent = css; cssText = css; }
+    if (d.scene !== scene) scene = d.scene;
+    st.scene = ({ wait: "待機", play: "BAN/PICK・試合", result: "戦績画面" })[d.scene] || d.scene;
+    status();
+  }
+  function poll() {
+    var key = params.get("t") || "";
+    if (!/^[A-Za-z0-9]{12}$/.test(key) || !window.TOURNAMENT_DATA_BASE) { st.data = "URLが正しくありません"; status(); return; }
+    fetch(window.TOURNAMENT_DATA_BASE + key + ".json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { st.data = "最新"; applyCss(d); status(); })
+      .catch(function () { st.data = "読み込めません"; status(); });
+  }
+
+  // ── ボイスチャンネルの人（中継プログラムから）──
+  var items = {};
+  function render(msg) {
+    var list = $("list"), seen = {};
+    msg.members.forEach(function (m) {
+      seen[m.id] = true;
+      var li = items[m.id];
+      if (!li) {
+        li = document.createElement("li");
+        li.setAttribute("data-userid", m.id);
+        var img = document.createElement("img"); img.className = "voice_avatar"; img.alt = "";
+        var nm = document.createElement("div"); nm.className = "voice_username"; nm.appendChild(document.createElement("span"));
+        li.appendChild(img); li.appendChild(nm);
+        list.appendChild(li);
+        items[m.id] = li;
+      }
+      var cls = "voice_state" + (m.speaking ? " wrapper_speaking" : "") + (m.mute ? " mute self_mute" : "") + (m.deaf ? " deaf self_deaf" : "");
+      if (li.className !== cls) li.className = cls;
+      var im = li.firstChild; if (im.getAttribute("src") !== m.avatar) im.setAttribute("src", m.avatar);
+      var sp = li.lastChild.firstChild; if (sp.textContent !== m.name) sp.textContent = m.name;
+    });
+    Object.keys(items).forEach(function (id) { if (!seen[id]) { items[id].remove(); delete items[id]; } });
+    st.members = msg.members.length; status();
+  }
+  function connect() {
+    var ws;
+    try { ws = new WebSocket(RELAY); } catch (e) { st.relay = "アドレスが正しくありません"; status(); return; }
+    ws.onopen = function () { st.relay = "接続中"; status(); };
+    ws.onmessage = function (ev) { try { var m = JSON.parse(ev.data); if (m.type === "state") render(m); } catch (e) {} };
+    ws.onclose = function () { st.relay = "つながりません（中継プログラムを起動しているか確認）"; status(); render({ members: [] }); setTimeout(connect, 2000); };
+    ws.onerror = function () {};
+  }
+
+  status();
+  poll(); setInterval(poll, POLL_MS);
+  connect();
+})();
+</script>
+</body>
+</html>
