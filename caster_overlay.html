@@ -60,6 +60,8 @@
     <div class="sec"><label class="t">ほかの場面と同じにする</label><div class="tabs" id="copy"></div></div>
     <div class="sec"><label class="t">アイコンの大きさ</label>
       <div class="row"><input type="range" id="d" min="30" max="400" step="1"><input type="number" id="dn" min="30" max="400"></div></div>
+    <div class="sec"><label class="t">アイコンの間隔</label>
+      <div class="row"><input type="range" id="g" min="-400" max="400" step="1"><input type="number" id="gn" min="-400" max="400"></div></div>
     <div class="sec"><label class="t">並べ方</label><div class="opt" id="orient"></div></div>
     <div class="sec"><label class="t">名前の位置</label><div class="opt" id="name"></div></div>
     <div class="sec"><label class="t">装飾つきアイコンの大きさ</label>
@@ -102,7 +104,7 @@
   function curLayout() {
     var s = EDIT ? editScene : (data && data.scene) || "wait";
     var src = EDIT ? work : (data && data.layouts);
-    return (src && src[s]) || { x: 50, y: 70, d: 150, orient: "row", name: "bottom" };
+    return (src && src[s]) || { x: 50, y: 70, d: 150, gap: 15, orient: "row", name: "bottom" };
   }
   function applyLayout() {
     var l = curLayout();
@@ -110,7 +112,7 @@
     var dset = (data && data.deco_ids) || [];
     var hasDeco = members.some(function (m) { return dset.indexOf(m.id) >= 0; });             // 装飾のある人が1人でもいれば、全員の枠を装飾の大きさにそろえる（名前の座標がずれない）
     ul.className = "voice_states o-" + l.orient + " n-" + l.name + (hasDeco ? " x-deco" : "");
-    ul.style.setProperty("--x", l.x); ul.style.setProperty("--y", l.y); ul.style.setProperty("--d", l.d);
+    ul.style.setProperty("--x", l.x); ul.style.setProperty("--y", l.y); ul.style.setProperty("--d", l.d); ul.style.setProperty("--gp", l.gap != null ? l.gap : 15);
     ul.style.setProperty("--u", u + "px");
     ul.style.setProperty("--k", EDIT ? workK : (data && data.deco_scale) || 1.02);
     ul.style.setProperty("--ng", EDIT ? workNG : (data && data.name_gap != null ? data.name_gap : -0.5));
@@ -123,7 +125,7 @@
     if (lis.length <= 2) return;
     var col = ul.classList.contains("o-column");
     var size = function (el) { return col ? el.offsetHeight : el.offsetWidth; };
-    var gap = parseFloat(getComputedStyle(ul).columnGap) || 0;
+    var gap = (curLayout().gap || 0) * (stage.clientWidth / 1920);                    // 間隔（マイナスもある）
     var two = size(lis[0]) + size(lis[1]) + gap, all = (lis.length - 1) * gap;
     for (var i = 0; i < lis.length; i++) all += size(lis[i]);
     ul.style.setProperty("--fit", all > two ? (two / all).toFixed(4) : 1);
@@ -221,7 +223,7 @@
       cp.appendChild(b);
     });
     var l = work[editScene];
-    $("d").value = l.d; $("dn").value = l.d; $("k").value = workK; $("kn").value = workK; $("ng").value = workNG; $("ngn").value = workNG;
+    $("d").value = l.d; $("dn").value = l.d; $("g").value = l.gap; $("gn").value = l.gap; $("k").value = workK; $("kn").value = workK; $("ng").value = workNG; $("ngn").value = workNG;
     radios($("orient"), "orient", [["row", "横並び"], ["column", "縦並び"]], l.orient, function (v) {
       work[editScene].orient = v;
       if (NAMES[v].map(function (n) { return n[0]; }).indexOf(work[editScene].name) < 0) work[editScene].name = NAMES[v][0][0];
@@ -237,6 +239,7 @@
   }
   function setD(v) { v = Math.max(30, Math.min(400, Math.round(+v) || 150)); work[editScene].d = v; $("d").value = v; $("dn").value = v; applyLayout(); }
   function setNG(v) { v = Math.max(-1.5, Math.min(0.5, isNaN(+v) ? -0.5 : +v)); workNG = Math.round(v * 100) / 100; $("ng").value = workNG; $("ngn").value = workNG; applyLayout(); }
+  function setG(v) { v = Math.max(-400, Math.min(400, Math.round(+v) || 0)); work[editScene].gap = v; $("g").value = v; $("gn").value = v; applyLayout(); }
   function setK(v) { v = Math.max(0.5, Math.min(1.2, +v || 1.02)); workK = Math.round(v * 100) / 100; $("k").value = workK; $("kn").value = workK; applyLayout(); }
   function msg(text, cls) { $("msg").textContent = text; $("msg").className = cls || ""; }
 
@@ -266,6 +269,7 @@
 
   function startEdit() {
     $("d").oninput = function () { setD(this.value); }; $("dn").onchange = function () { setD(this.value); };
+    $("g").oninput = function () { setG(this.value); }; $("gn").onchange = function () { setG(this.value); };
     $("k").oninput = function () { setK(this.value); }; $("kn").onchange = function () { setK(this.value); };
     $("ng").oninput = function () { setNG(this.value); }; $("ngn").onchange = function () { setNG(this.value); };
     $("speak").onchange = function () { sample(); };
