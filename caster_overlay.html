@@ -58,12 +58,15 @@
   <div id="panel">
     <h1>📐 位置調整</h1>
     <div class="sec"><label class="t">場面</label><div class="tabs" id="tabs"></div></div>
+    <div class="sec"><label class="t">ほかの場面と、全く同じにする（位置・大きさ・並べ方・名前の位置を、コピー）</label><div class="tabs" id="copy"></div></div>
     <div class="sec"><label class="t">アイコンの大きさ（px。1920×1080の画面での大きさ）</label>
       <div class="row"><input type="range" id="d" min="30" max="400" step="1"><input type="number" id="dn" min="30" max="400"></div></div>
     <div class="sec"><label class="t">複数人の並べ方</label><div class="opt" id="orient"></div></div>
     <div class="sec"><label class="t">名前の位置</label><div class="opt" id="name"></div></div>
     <div class="sec"><label class="t">装飾つきのアイコンの大きさ（穴に対する割合。全場面）</label>
       <div class="row"><input type="range" id="k" min="0.5" max="1.2" step="0.01"><input type="number" id="kn" min="0.5" max="1.2" step="0.01"></div></div>
+    <div class="sec"><label class="t">装飾つきの名前を、装飾に近づける（アイコンの大きさに対する割合。マイナスで近づく。全場面）</label>
+      <div class="row"><input type="range" id="ng" min="-1.5" max="0.5" step="0.01"><input type="number" id="ngn" min="-1.5" max="0.5" step="0.01"></div></div>
     <div class="sec"><label class="t">見本の人数（確認用。3人以上は、2人ぶんの枠に収まるよう小さくなります）</label>
       <div class="opt" id="count"></div>
       <label class="small"><input type="checkbox" id="speak"> 1人目が話している見た目</label></div>
@@ -95,7 +98,7 @@
 
   var data = null;                 // BOTのデータ（scene, layouts, deco_scale, css, samples）
   var members = [];                // 表示する人（id, name, avatar, mute, speaking）
-  var work = null, workK = 0.92, editScene = "wait", previewCount = 2;     // 位置調整中の、保存前の値
+  var work = null, workK = 1.02, workNG = -0.5, editScene = "wait", previewCount = 2;     // 位置調整中の、保存前の値
 
   // ── 配置の反映 ──
   function curLayout() {
@@ -109,7 +112,8 @@
     ul.className = "voice_states o-" + l.orient + " n-" + l.name;
     ul.style.setProperty("--x", l.x); ul.style.setProperty("--y", l.y); ul.style.setProperty("--d", l.d);
     ul.style.setProperty("--u", u + "px");
-    ul.style.setProperty("--k", EDIT ? workK : (data && data.deco_scale) || 0.92);
+    ul.style.setProperty("--k", EDIT ? workK : (data && data.deco_scale) || 1.02);
+    ul.style.setProperty("--ng", EDIT ? workNG : (data && data.name_gap != null ? data.name_gap : -0.5));
     fit();
   }
   // 3人以上になったら、2人ぶんの枠からはみ出ないよう、アイコンを小さくする（1人目・2人目で作る枠の長さに、全員が収まる倍率）
@@ -164,7 +168,7 @@
         if (d.css !== $("data-css").textContent) $("data-css").textContent = d.css;
         st.data = "最新";
         st.scene = LABELS[d.scene] || d.scene;
-        if (EDIT && (first || !work)) { work = JSON.parse(JSON.stringify(d.layouts)); workK = d.deco_scale; buildPanel(); sample(); }
+        if (EDIT && (first || !work)) { work = JSON.parse(JSON.stringify(d.layouts)); workK = d.deco_scale; workNG = d.name_gap != null ? d.name_gap : -0.5; buildPanel(); sample(); }
         applyLayout(); status();
       })
       .catch(function () { st.data = "読み込めません"; status(); });
@@ -209,8 +213,15 @@
       b.onclick = function () { editScene = s; buildPanel(); applyLayout(); };
       tabs.appendChild(b);
     });
+    var cp = $("copy"); cp.textContent = "";
+    SCENES.forEach(function (s) {
+      if (s === editScene) return;
+      var b = document.createElement("button"); b.textContent = "「" + LABELS[s] + "」と同じにする";
+      b.onclick = function () { work[editScene] = JSON.parse(JSON.stringify(work[s])); buildPanel(); applyLayout(); msg("「" + LABELS[editScene] + "」を、「" + LABELS[s] + "」と同じにしました（保存すると、反映されます）。"); };
+      cp.appendChild(b);
+    });
     var l = work[editScene];
-    $("d").value = l.d; $("dn").value = l.d; $("k").value = workK; $("kn").value = workK;
+    $("d").value = l.d; $("dn").value = l.d; $("k").value = workK; $("kn").value = workK; $("ng").value = workNG; $("ngn").value = workNG;
     radios($("orient"), "orient", [["row", "横並び"], ["column", "縦並び"]], l.orient, function (v) {
       work[editScene].orient = v;
       if (NAMES[v].map(function (n) { return n[0]; }).indexOf(work[editScene].name) < 0) work[editScene].name = NAMES[v][0][0];
@@ -225,7 +236,8 @@
     });
   }
   function setD(v) { v = Math.max(30, Math.min(400, Math.round(+v) || 150)); work[editScene].d = v; $("d").value = v; $("dn").value = v; applyLayout(); }
-  function setK(v) { v = Math.max(0.5, Math.min(1.2, +v || 0.92)); workK = Math.round(v * 100) / 100; $("k").value = workK; $("kn").value = workK; applyLayout(); }
+  function setNG(v) { v = Math.max(-1.5, Math.min(0.5, isNaN(+v) ? -0.5 : +v)); workNG = Math.round(v * 100) / 100; $("ng").value = workNG; $("ngn").value = workNG; applyLayout(); }
+  function setK(v) { v = Math.max(0.5, Math.min(1.2, +v || 1.02)); workK = Math.round(v * 100) / 100; $("k").value = workK; $("kn").value = workK; applyLayout(); }
   function msg(text, cls) { $("msg").textContent = text; $("msg").className = cls || ""; }
 
   function save() {
@@ -234,7 +246,7 @@
     msg("保存しています…");
     $("save").disabled = true;
     fetch(base + "_inbox/" + EDIT_KEY + ".json", { method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nonce: nonce, assignments: { _layout: { scenes: work, deco_scale: workK } } }) })
+      body: JSON.stringify({ nonce: nonce, assignments: { _layout: { scenes: work, deco_scale: workK, name_gap: workNG } } }) })
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
       .then(function (res) {
         if (res && res.ok) { msg("✅ 保存しました。数秒で、OBSの表示に反映されます。", "ok"); load(false); }
@@ -255,6 +267,7 @@
   function startEdit() {
     $("d").oninput = function () { setD(this.value); }; $("dn").onchange = function () { setD(this.value); };
     $("k").oninput = function () { setK(this.value); }; $("kn").onchange = function () { setK(this.value); };
+    $("ng").oninput = function () { setNG(this.value); }; $("ngn").onchange = function () { setNG(this.value); };
     $("speak").onchange = function () { sample(); };
     $("save").onclick = save;
     $("reset").onclick = function () { work = null; load(true); msg("保存したものに戻しました。"); };
