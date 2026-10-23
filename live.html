@@ -23,7 +23,7 @@
     --bg: #0b1230; --panel: #121a3d; --panel2: #1a2450; --text: #eceff6; --sub: #98a1b5;
     --line: #3a4a86; --accent: #ffb020; --chip: #2c3a70; --glow: #1f2c66;
     --gold2: color-mix(in srgb, var(--accent) 55%, white); --red: #e0485a;
-    --ta: #6aa84f; --tb: #8a63b5; --hue: 40deg;   /* バナー画像の赤を、アクセントカラーの色相に回す角度 */                                   /* チームの色（いまは緑と紫。のちに、チーム自身が登録する） */
+    --ta: #6aa84f; --tb: #8a63b5; --tla: 1; --tlb: 1; --hue: 40deg;   /* バナー画像の赤を、アクセントカラーの色相に回す角度 */                                   /* チームの色（いまは緑と紫。のちに、チーム自身が登録する） */
     --glass: linear-gradient(180deg, color-mix(in srgb, var(--panel2) 94%, transparent), color-mix(in srgb, var(--panel) 96%, transparent));
     --edge: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 10px 30px rgba(0,0,0,.45);
     --disp: "Edo SZ", "851Kana", "Yuji Boku", "Potta One", "Yu Gothic UI", sans-serif;       /* 大きい文字：英字は Edo SZ、かなは チカラヅヨク、漢字は筆のような文字（Yuji Boku）を太くして使う */
@@ -239,7 +239,7 @@
   .rs-team.a { left: 0; } .rs-team.b { right: 0; }
   .rs-team .art { position: absolute; left: 0; top: 0; width: 640px; height: 610px; overflow: hidden; background: var(--tc);
                   clip-path: polygon(0 0, 100% 7%, 90% 100%, 0 92%); }
-  .rs-team.a { --tc: var(--ta); } .rs-team.b { --tc: var(--tb); }
+  .rs-team.a { --tc: var(--ta); --tl: var(--tla); } .rs-team.b { --tc: var(--tb); --tl: var(--tlb); }
   .rs-team.b .art { left: 60px; clip-path: polygon(10% 0, 100% 0, 100% 92%, 0 100%); }
   .rs-team .art::before { content: ""; position: absolute; inset: 0;                                    /* 斜めの縞と、暗い傷 */
     background: linear-gradient(160deg, rgba(255,255,255,.28), transparent 40%, rgba(0,0,0,.5)),
@@ -641,7 +641,7 @@
   html[data-design="fantasy"].stage .rs-team { top: 143px; width: 537px; height: 804px; isolation: isolate; }
   html[data-design="fantasy"].stage .rs-team.a { left: 117px; } html[data-design="fantasy"].stage .rs-team.b { right: 117px; left: auto; }
   html[data-design="fantasy"].stage .rs-team::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; transform: none; clip-path: none; border: 0; opacity: 1;
-        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7);
+        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7) brightness(var(--tl, 1));
         -webkit-mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .rs-team::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none;
         background: url("Fantasy/teamframe.png") 0 0 / 100% 100% no-repeat; }
@@ -694,10 +694,10 @@
   html[data-design="fantasy"].stage .surv { flex: 0 0 auto; gap: 0; }
   html[data-design="fantasy"].stage .hunt { justify-content: center; }
   html[data-design="fantasy"].stage .center { flex: 0 0 560px; }
-  html[data-design="fantasy"].stage .surv .card { --tc: var(--ta); } html[data-design="fantasy"].stage .hunt .card { --tc: var(--tb); }
+  html[data-design="fantasy"].stage .surv .card { --tc: var(--ta); --tl: var(--tla); } html[data-design="fantasy"].stage .hunt .card { --tc: var(--tb); --tl: var(--tlb); }
   html[data-design="fantasy"].stage .card { flex: none; width: 227px; height: 340px; display: block; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; isolation: isolate; }
   html[data-design="fantasy"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat; mask: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat;
-        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7); }
+        background: url("Fantasy/teamframe_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 55%, #4a4a4a); background-blend-mode: luminosity; filter: saturate(.7) brightness(var(--tl, 1)); }
   html[data-design="fantasy"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; -webkit-mask: none; mask: none; background: url("Fantasy/teamframe.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="fantasy"].stage .card .art { position: absolute; left: 47px; top: 31px; width: 143px; height: 261px; flex: none; border-radius: 50%; overflow: hidden; background: none;
         -webkit-mask: url("Fantasy/teamframe_color.png") -47px -31px / 227px 340px no-repeat; mask: url("Fantasy/teamframe_color.png") -47px -31px / 227px 340px no-repeat; }
@@ -857,7 +857,7 @@
         background: url("Gothic/teambanner.png") 0 -1053px / 483px 1926px no-repeat; filter: drop-shadow(0 14px 22px rgba(0,0,0,.6)); }
   html[data-design="gothic"].stage .rs-team.b::before { transform: scaleX(-1); }
   html[data-design="gothic"].stage .rs-team::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
-        background: url("Gothic/teambanner_color.png") 0 -1053px / 483px 1926px no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        background: url("Gothic/teambanner_color.png") 0 -1053px / 483px 1926px no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85) brightness(var(--tl, 1));
         -webkit-mask: url("Gothic/teambanner_color.png") 0 -1053px / 483px 1926px no-repeat; mask: url("Gothic/teambanner_color.png") 0 -1053px / 483px 1926px no-repeat; }
   html[data-design="gothic"].stage .rs-team.b::after { transform: scaleX(-1); }
   html[data-design="gothic"].stage .rs-team .art, html[data-design="gothic"].stage .rs-team.b .art { left: 235px; top: 235px; width: 188px; height: 430px; right: auto; bottom: auto; overflow: visible; border: 0; clip-path: none; box-shadow: none; background: none;
@@ -868,7 +868,7 @@
         background: url("Gothic/teambanner_add.png") 0 -1053px / 483px 1926px no-repeat; -webkit-mask: none; mask: none; filter: none; opacity: 1; }
   html[data-design="gothic"].stage .rs-team.b .art::before { left: -61px; transform: scaleX(-1); }
   html[data-design="gothic"].stage .rs-team .art::after { content: ""; display: block; position: absolute; left: -235px; top: -235px; right: auto; bottom: auto; width: 483px; height: 873px; z-index: 5; pointer-events: none; transform: none; opacity: 1; mix-blend-mode: normal;
-        background: url("Gothic/teambanner_color_add.png") 0 -1053px / 483px 1926px no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+        background: url("Gothic/teambanner_color_add.png") 0 -1053px / 483px 1926px no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85) brightness(var(--tl, 1));
         -webkit-mask: url("Gothic/teambanner_color_add.png") 0 -1053px / 483px 1926px no-repeat; mask: url("Gothic/teambanner_color_add.png") 0 -1053px / 483px 1926px no-repeat; }
   html[data-design="gothic"].stage .rs-team.b .art::after { left: -61px; transform: scaleX(-1); }
   /* キャラの影（窓の中。頭の円の大きさをそろえ、足元を下辺に。ハンターは、画像の高さ＝窓の高さ、顔の横が窓の中心） */
@@ -926,7 +926,7 @@
   html[data-design="gothic"].stage .bar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; height: auto; display: block; padding: 0; }
   html[data-design="gothic"].stage .bar::before { display: none; }
   html[data-design="gothic"].stage .surv, html[data-design="gothic"].stage .hunt { display: block; flex: none; gap: 0; }
-  html[data-design="gothic"].stage .surv .card { --tc: var(--ta); --s: .864; } html[data-design="gothic"].stage .hunt .card { --tc: var(--tb); --s: 1.36; }
+  html[data-design="gothic"].stage .surv .card { --tc: var(--ta); --tl: var(--tla); --s: .864; } html[data-design="gothic"].stage .hunt .card { --tc: var(--tb); --tl: var(--tlb); --s: 1.36; }
   html[data-design="gothic"].stage .card { position: absolute; flex: none; display: block; width: calc(460px * var(--s)); height: calc(1834px * var(--s)); margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; isolation: isolate; }
   html[data-design="gothic"].stage .surv .card:nth-child(1) { left: 13px; top: -912px; }
   html[data-design="gothic"].stage .surv .card:nth-child(2) { left: 202px; top: -628px; }
@@ -935,7 +935,7 @@
   html[data-design="gothic"].stage .hunt .card { left: 1095px; top: -1473px; }
   html[data-design="gothic"].stage .card::before { content: ""; display: block; position: absolute; inset: 0; height: auto; z-index: 0; pointer-events: none; -webkit-mask: none; mask: none;
         background: url("Gothic/teambanner.png") 0 0 / 100% 100% no-repeat, url("Gothic/chain.png") 0 0 / 100% 100% no-repeat; }
-  html[data-design="gothic"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85);
+  html[data-design="gothic"].stage .card::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat, color-mix(in srgb, var(--tc) 62%, #555); background-blend-mode: luminosity; filter: saturate(.85) brightness(var(--tl, 1));
         -webkit-mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; mask: url("Gothic/teambanner_color.png") 0 0 / 100% 100% no-repeat; }
   html[data-design="gothic"].stage .card .art { position: absolute; left: calc(224px * var(--s)); top: calc(1227px * var(--s)); width: calc(179px * var(--s)); height: calc(410px * var(--s)); flex: none; overflow: hidden; background: none;
         border-radius: calc(62px * var(--s)) calc(62px * var(--s)) calc(18px * var(--s)) calc(18px * var(--s)); }
@@ -1710,10 +1710,35 @@
   }
   function logoSrc(t) { return t && t.logo ? (typeof t.logo === "string" ? t.logo : logoMap[String(t.id)]) : null; }
   // ── チームカラー：登録していれば、チームの色（--ta／--tb）に使う。登録していなければ、標準の色
+  // 色相だけでなく**明度**も反映する：#000000 でも真っ黒にはせず、少し暗く黒に近い色（明度 0〜100% を 14〜86% に収める）で出す。
+  // 色の面は、この色をそのまま使う。画像に色をかける面（luminosity）は、画像の明るさが残って明度が効かないので、
+  // 明度に応じた明るさの倍率（--tla／--tlb。暗い色ほど暗く、明るい色ほど明るく）をあとからかける。
+  function teamTone(hex) {
+    var r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn, h = 0, s = 0;
+    if (d > 0) {
+      s = d / (1 - Math.abs(2 * l - 1));
+      h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h = (h * 60 + 360) % 360;
+    }
+    var l2 = 0.14 + 0.72 * l;
+    var c = (1 - Math.abs(2 * l2 - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - c / 2, q;
+    q = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    var to = function (v) { var n = Math.round((v + m) * 255).toString(16); return n.length < 2 ? "0" + n : n; };
+    return { css: "#" + to(q[0]) + to(q[1]) + to(q[2]), bright: 0.35 + 1.3 * l };
+  }
   function setTeamColors(a, b) {
     var ok = function (c) { return typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c); };
-    if (ok(a)) root.style.setProperty("--ta", a); else root.style.removeProperty("--ta");
-    if (ok(b)) root.style.setProperty("--tb", b); else root.style.removeProperty("--tb");
+    [[a, "a"], [b, "b"]].forEach(function (p) {
+      if (ok(p[0])) {
+        var tone = teamTone(p[0]);
+        root.style.setProperty("--t" + p[1], tone.css);
+        root.style.setProperty("--tl" + p[1], tone.bright.toFixed(3));
+      } else {
+        root.style.removeProperty("--t" + p[1]);
+        root.style.removeProperty("--tl" + p[1]);
+      }
+    });
   }
   function logoBox(t) {
     var b = el("div", "logo");
@@ -1940,6 +1965,14 @@
     }
     tick();
     setInterval(tick, POLL_MS);
+    // 変わった瞬間に読み直す：Firebase の変更通知（ストリーム）が届いたら、すぐ読み直す（数秒おきの読み直しは、通知が使えないときの予備）
+    try {
+      var nudgeAt = 0;
+      var nudge = function () { var now = Date.now(); if (now - nudgeAt > 150) { nudgeAt = now; tick(); } };
+      var es = new EventSource(base + path);
+      es.addEventListener("put", nudge);
+      es.addEventListener("patch", nudge);
+    } catch (e) { /* 使えない環境では、数秒おきの読み直しだけ */ }
     return true;
   }
 
