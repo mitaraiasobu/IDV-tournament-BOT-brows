@@ -1691,10 +1691,35 @@
     var lines = splitLines(raw, function (txt) { set(txt); return e.offsetWidth; }, NAME_MAXW);
     set(lines.join("\n"));
   }
+  // ── チームのロゴの画像：ロゴを使う大会は、配信のデータの logos（置き場所の12文字と版）から、画像をまとめて読む（版が変わったときだけ）。
+  //    ロゴを使わない大会・画像を登録していないチームは、略称から作った、自動のロゴ（これまでどおり）。
+  var logoMap = {}, logosVer = null, logosLoading = false;
+  function ensureLogos(lg) {
+    if (!lg || !lg.key || !window.TOURNAMENT_DATA_BASE) { if (logosVer !== null) { logoMap = {}; logosVer = null; } return; }
+    if (lg.ver === logosVer || logosLoading) return;
+    logosLoading = true;
+    fetch(window.TOURNAMENT_DATA_BASE + lg.key + ".json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        logoMap = (d && d.logos) || {};
+        logosVer = lg.ver;
+        logosLoading = false;
+        if (lastData) render(lastData, true);                                     // 画像がそろったので、描き直す
+      })
+      .catch(function () { logosLoading = false; });
+  }
+  function logoSrc(t) { return t && t.logo ? (typeof t.logo === "string" ? t.logo : logoMap[String(t.id)]) : null; }
+  // ── チームカラー：登録していれば、チームの色（--ta／--tb）に使う。登録していなければ、標準の色
+  function setTeamColors(a, b) {
+    var ok = function (c) { return typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c); };
+    if (ok(a)) root.style.setProperty("--ta", a); else root.style.removeProperty("--ta");
+    if (ok(b)) root.style.setProperty("--tb", b); else root.style.removeProperty("--tb");
+  }
   function logoBox(t) {
     var b = el("div", "logo");
-    if (t && t.logo) { var im = new Image(); im.src = t.logo; im.alt = ""; b.appendChild(im); }     // チームのロゴ（いずれ実装。あれば表示する）
-    else b.textContent = (t && (t.abbr || t.name) || "").slice(0, 3);
+    var src = logoSrc(t);
+    if (src) { var im = new Image(); im.src = src; im.alt = ""; b.appendChild(im); }           // 登録したチームのロゴの画像
+    else b.textContent = (t && (t.abbr || t.name) || "").slice(0, 3);                          // 自動のロゴ（略称）
     return b;
   }
   function teamPanel(t, cls) {
@@ -1855,6 +1880,10 @@
     if (sig === lastSig && !force) return;
     lastSig = sig;
     lastData = data;
+    ensureLogos(data.logos);
+    if (data.state === "result" && data.result) setTeamColors((data.result.a || {}).color, (data.result.b || {}).color);
+    else if (data.state === "play" && data.live) setTeamColors((data.live.survivor || {}).color, (data.live.hunter || {}).color);
+    else setTeamColors(null, null);
     applyTheme(data.theme);
     root.setAttribute("data-design", data.design || "rock");
     setBackground(data.bg);
