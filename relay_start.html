@@ -32,19 +32,20 @@
     <button id="go">▶ 起動する</button>
     <p class="sub" id="msg"></p>
   </div>
-  <div class="card sub">
-    <b>起動しないとき（初回だけ）</b>
+  <div class="card" id="help" style="border-color: var(--accent)">
+    <b>押しても起動しないとき</b>（初回だけ必要な準備です）
     <ol>
-      <li><code>tools\start_caster_relay.bat</code> をダブルクリックして、自分のDiscordアプリのIDとシークレットを入れ、Discordで「許可」を押す。</li>
-      <li><code>tools\register_relay_launcher.bat</code> をダブルクリックして、このボタンで起動できるように登録する。</li>
+      <li>Discordアプリを起動しておく。</li>
+      <li>このプログラムのフォルダの <code>tools\register_relay_launcher.bat</code> を、ダブルクリックする。自分のDiscordアプリのIDとシークレットを聞かれるので入れ、Discordで「許可」を押すと、このボタンで起動できるように登録されます（管理者権限は要りません）。</li>
+      <li>このページに戻って、もう一度「▶ 起動する」を押し、ブラウザの「アプリを開きますか？」で<b>開く</b>を押す。</li>
     </ol>
-    起動したら、Discordで、キャスターのボイスチャンネルに入ってください。
+    <span class="sub">起動したら、Discordで、キャスターのボイスチャンネルに入ってください。</span>
   </div>
 </main>
 <script>
 (function () {
   function go() {
-    document.getElementById("msg").textContent = "起動を依頼しました。ブラウザの確認が出たら、許可してください。";
+    document.getElementById("msg").textContent = "起動を依頼しました。ブラウザの確認が出たら、開く、を押してください。何も起きないときは、下の手順で、初回の準備をしてください。";
     location.href = "casterrelay://start";
   }
   document.getElementById("go").onclick = go;
