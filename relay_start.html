@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>中継プログラムを起動</title>
+<meta name="robots" content="noindex,nofollow">
+<!--
+  キャスター表示の中継プログラム（tools/caster_relay.py）を、このページを開いたPCで起動する。
+  PCに登録した起動の仕組み（casterrelay://start。tools/register_relay_launcher.bat で、PCごとに、1回だけ登録する）を、開く。
+  ブラウザが「アプリを開きますか」と聞くので、許可する（「いつも許可」にすると、次から聞かれない）。
+  このページには、大会のデータも、秘密の情報も、入っていない（BOTや公開サイトが、他人のPCで、勝手にプログラムを動かすことはできない。押した人のPCで起動するだけ）。
+-->
+<style>
+  :root { --bg: #14171f; --panel: #1d222d; --line: #38405a; --text: #eef1f8; --sub: #9aa3bd; --accent: #5b8cff; --ok: #3fbf7f; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.7 "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 28px 18px; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 14px 0; }
+  button { font: inherit; color: #fff; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 22px; font-weight: 800; cursor: pointer; }
+  .sub { color: var(--sub); font-size: 13px; }
+  ol { padding-left: 1.3em; margin: 8px 0; }
+  code { background: #0e1118; padding: 1px 6px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "relay";</script>
+<main>
+  <h1>🎬 中継プログラムを起動</h1>
+  <div class="card">
+    <p style="margin-top:0">このPCで、キャスター表示の中継プログラムを起動します。ブラウザに「アプリを開きますか？」と出たら、<b>開く</b>を押してください。</p>
+    <button id="go">▶ 起動する</button>
+    <p class="sub" id="msg"></p>
+  </div>
+  <div class="card sub">
+    <b>起動しないとき（初回だけ）</b>
+    <ol>
+      <li><code>tools\start_caster_relay.bat</code> をダブルクリックして、自分のDiscordアプリのIDとシークレットを入れ、Discordで「許可」を押す。</li>
+      <li><code>tools\register_relay_launcher.bat</code> をダブルクリックして、このボタンで起動できるように登録する。</li>
+    </ol>
+    起動したら、Discordで、キャスターのボイスチャンネルに入ってください。
+  </div>
+</main>
+<script>
+(function () {
+  function go() {
+    document.getElementById("msg").textContent = "起動を依頼しました。ブラウザの確認が出たら、許可してください。";
+    location.href = "casterrelay://start";
+  }
+  document.getElementById("go").onclick = go;
+  setTimeout(go, 400);                                  // ボタンから開いたときは、そのまま起動を依頼する
+})();
+</script>
+</body>
+</html>
