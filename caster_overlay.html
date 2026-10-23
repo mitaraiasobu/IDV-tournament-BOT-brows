@@ -7,8 +7,11 @@
 <meta name="robots" content="noindex,nofollow">
 <!--
   キャスター表示（OBSのブラウザソース用。背景は透明）。幅1920・高さ1080が目安だが、ブラウザの幅に合わせて、比例して大きさが変わる。
-  - だれがボイスチャンネルにいて、だれが話しているか：配信PCで動かす中継プログラム（tools/caster_relay.py）から、WebSocket（既定 ws://127.0.0.1:8778）で受け取る。
-    中継プログラムは、DiscordアプリのIPCから受け取る。BOTは、ボイスチャンネルに接続しない。
+  - だれがボイスチャンネルにいて、だれが話しているか：BOTが、キャスター用のボイスチャンネルに（人がいるときだけ）接続して、Discordから「だれが話しているか」の通知
+    だけを受け取り（音声は聞かない・話さない）、公開データのライブ用の場所（データの中の "live"）に書く。このページは、そこを、ストリーム（EventSource）で、すぐに受け取る
+    （受け取れないときは、1.5秒おきに読み直す）。BOTがつながっていないとき（落ちている・接続に失敗した）も、いる人は映る（発言中の光だけ、出ない）。
+  - 予備：配信PCで動かす中継プログラム（tools/caster_relay.py）が動いていれば、そこから、WebSocket（既定 ws://127.0.0.1:8778）で受け取ることもできる
+    （BOTのライブデータが無い・古いときだけ使う）。
   - 場面（待機／BAN/PICK・試合／戦績画面）・場面ごとの配置・装飾・追加のCSS：BOTが公開データ（URLの ?t=（12文字）の場所）に出している。3秒おきに読み、
     場面が変わったら、再読み込みなしで、すぐに切り替える。
   - 複数人の並べ方：横並び（名前は、上か下）／縦並び（名前は、右か左）。基本は2人ぶんの枠の大きさで、3人以上になったら、その枠からはみ出ないよう、アイコンを小さくする。
@@ -94,10 +97,11 @@
   var st = { relay: "未接続", data: "読み込み中", scene: "—", members: 0 };
   if (params.get("debug")) document.documentElement.className = "debug";
   if (EDIT) document.body.className = "edit";
-  function status() { $("status").textContent = "中継：" + st.relay + " ／ データ：" + st.data + " ／ 場面：" + st.scene + " ／ " + st.members + "人"; }
+  function status() { $("status").textContent = (st.live || "BOT：—") + " ／ 予備の中継：" + st.relay + " ／ データ：" + st.data + " ／ 場面：" + st.scene + " ／ " + st.members + "人"; }
 
-  var data = null;                 // BOTのデータ（scene, layouts, deco_scale, css, samples）
+  var data = null;                 // BOTのデータ（scene, layouts, deco_scale, css, samples, live）
   var members = [];                // 表示する人（id, name, avatar, mute, speaking）
+  var relayMembers = [], liveTree = null, liveKey = "";   // 予備の中継プログラムの人／BOTのライブデータ（Firebaseのストリームで受け取る）／その場所の12文字
   var work = null, workK = 1.02, workNG = -0.5, editScene = "wait", previewCount = 2;     // 位置調整中の、保存前の値
 
   // ── 配置の反映 ──
@@ -172,8 +176,55 @@
         st.scene = LABELS[d.scene] || d.scene;
         if (EDIT && (first || !work)) { work = JSON.parse(JSON.stringify(d.layouts)); workK = d.deco_scale; workNG = d.name_gap != null ? d.name_gap : -0.5; buildPanel(); sample(); }
         applyLayout(); status();
+        if (!EDIT && d.live && d.live !== liveKey) startLive(d.live);
       })
       .catch(function () { st.data = "読み込めません"; status(); });
+  }
+
+  // ── BOTのライブデータ（いる人・発言中。Firebaseのストリームで、変わった瞬間に受け取る）──
+  var lastT = 0, lastLiveAt = 0;
+  function setIn(parts, val) {
+    if (!parts.length) { liveTree = val; return; }
+    if (liveTree === null || typeof liveTree !== "object") liveTree = {};
+    var cur = liveTree;
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (cur[parts[i]] === null || typeof cur[parts[i]] !== "object" || cur[parts[i]] === undefined) cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    if (val === null) delete cur[parts[parts.length - 1]]; else cur[parts[parts.length - 1]] = val;
+  }
+  function applyEvent(type, d) {
+    var parts = String(d.path || "/").split("/").filter(Boolean);
+    if (type === "put") setIn(parts, d.data);
+    else for (var k in (d.data || {})) setIn(parts.concat(k), d.data[k]);
+    useLive();
+  }
+  function toArray(v) { return (Array.isArray(v) ? v : Object.keys(v || {}).map(function (k) { return v[k]; })).filter(Boolean); }
+  function useLive() {
+    if (liveTree && liveTree.t !== lastT) { lastT = liveTree.t; lastLiveAt = Date.now(); }     // 書き込みのたびに t が変わる（BOTが生きていると分かる）
+    recompute();
+  }
+  function liveActive() { return !!(liveTree && liveTree.active && Date.now() - lastLiveAt < 60000); }
+  function recompute() {
+    var src = [];
+    if (liveActive()) { st.live = liveTree.listening ? "BOT：つながっています" : "BOT：接続中（発言の光は、まだ出ません）"; src = toArray(liveTree.members); }
+    else { st.live = liveTree ? "BOT：待機中" : "BOT：未接続"; if (relayMembers.length) src = relayMembers; }
+    members = src; render();
+  }
+  function startLive(key) {
+    liveKey = key; liveTree = null;
+    var url = window.TOURNAMENT_DATA_BASE + key + ".json";
+    function poll() {                                                          // 保険：ストリームが止まっても、古い表示が残らないよう、3秒おきに読み直す（新しい書き込みのときだけ反映）
+      fetch(url + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d && (!liveTree || (d.t || 0) >= (liveTree.t || 0))) { liveTree = d; useLive(); } else if (!d && liveTree) { liveTree = null; useLive(); }
+      }).catch(function () {});
+    }
+    try {
+      var es = new EventSource(url);
+      es.addEventListener("put", function (e) { try { applyEvent("put", JSON.parse(e.data)); } catch (x) {} });
+      es.addEventListener("patch", function (e) { try { applyEvent("patch", JSON.parse(e.data)); } catch (x) {} });
+    } catch (e) {}
+    setInterval(poll, 3000); poll();
   }
 
   // ── 中継プログラムから（OBSの表示のとき）──
@@ -181,8 +232,8 @@
     var ws;
     try { ws = new WebSocket(RELAY); } catch (e) { st.relay = "アドレスが正しくありません"; status(); return; }
     ws.onopen = function () { st.relay = "接続中"; status(); };
-    ws.onmessage = function (ev) { try { var m = JSON.parse(ev.data); if (m.type === "state") { members = m.members; render(); } } catch (e) {} };
-    ws.onclose = function () { st.relay = "つながりません（中継プログラムを起動しているか確認）"; status(); members = []; render(); setTimeout(connect, 2000); };
+    ws.onmessage = function (ev) { try { var m = JSON.parse(ev.data); if (m.type === "state") { relayMembers = m.members; recompute(); } } catch (e) {} };
+    ws.onclose = function () { st.relay = "未使用（予備）"; status(); relayMembers = []; recompute(); setTimeout(connect, 5000); };
     ws.onerror = function () {};
   }
 
