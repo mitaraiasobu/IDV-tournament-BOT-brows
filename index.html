@@ -137,6 +137,12 @@
   .nowbar .item { display: flex; gap: 10px; align-items: baseline; }
   .nowbar .item + .item { padding-left: 20px; border-left: 2px solid var(--line); }
   .nowbar .next { color: var(--sub); font-size: 20px; }
+  .nowbar .delay { margin-left: auto; font-weight: 800; color: var(--hot); white-space: nowrap; }
+  .nowbar.idle .delay { margin-left: 0; }
+  .mtimebig .shifttag { font-size: .55em; font-weight: 700; letter-spacing: 0; margin-left: .5em; white-space: nowrap; }
+  .mtimebig .shifttag.late { color: var(--hot); }
+  .mtimebig .shifttag.early { color: var(--win); }
+  .team .tlogo { flex: none; width: 1.1em; height: 1.1em; object-fit: contain; margin-right: .35em; filter: drop-shadow(0 0 1px rgba(0,0,0,.9)); }
   .nowbar.champion { border-color: var(--accent); color: var(--accent); font-weight: 800; justify-content: center; }
   .nowbar.idle { color: var(--sub); justify-content: center; }
   .nowbar.hidden { display: none; }
@@ -394,6 +400,39 @@
 
   function sideName(m, side) { var t = m["team_" + side]; return t ? t.name : "未定"; }
 
+  // ── チームのロゴの画像：ロゴを使う大会は、データの logos（置き場所の12文字と版）から、画像をまとめて読む（版が変わったときだけ）。
+  //    承認されたロゴのあるチームだけ、チーム名の左に、文字と同じ大きさで出す（無ければ、これまでどおり、何も出さない）。
+  var logoMap = {}, logosVer = null, logosLoading = false, lastRendered = null;
+  function ensureLogos(lg) {
+    if (!lg || !lg.key || !window.TOURNAMENT_DATA_BASE) { if (logosVer !== null) { logoMap = {}; logosVer = null; } return; }
+    if (lg.ver === logosVer || logosLoading) return;
+    logosLoading = true;
+    fetch(window.TOURNAMENT_DATA_BASE + lg.key + ".json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        logoMap = (d && d.logos) || {};
+        logosVer = lg.ver;
+        logosLoading = false;
+        if (lastRendered) render(lastRendered);                          // 画像がそろったので、描き直す
+      })
+      .catch(function () { logosLoading = false; });
+  }
+  function logoSrc(t) { return t && t.logo ? logoMap[String(t.id)] || null : null; }
+
+  // ── 予定の時間と、遅延・繰り上げ ──
+  // もとの予定の時間に、「（20:00に遅延中）」「（19:30に繰り上げ予定）」を足す（ずれた先の時刻。日付が違うときは、日付も）
+  function shiftTag(base, now, shift) {
+    if (!base || !now || !shift) return "";
+    var b = String(base).replace("T", " "), n = String(now).replace("T", " ");
+    var when = b.slice(0, 10) === n.slice(0, 10) ? n.slice(11, 16) : fmtDT(now);
+    return "（" + when + (shift > 0 ? "に遅延中）" : "に繰り上げ予定）");
+  }
+  // 「いま」の表示に書く、いまの遅延・早まり：「⏱ 遅延 15分」「⏱ 15分 早まり」
+  function delayChip(min) {
+    if (!min) return null;
+    return el("span", "delay", min > 0 ? "⏱ 遅延 " + min + "分" : "⏱ " + (-min) + "分 早まり");
+  }
+
   // ── ステージ（配信用） ──
   function teamRow(m, side) {
     var t = m["team_" + side];
@@ -406,6 +445,8 @@
     var row = el("div", cls);
     var nm = el("span", "tname", t ? t.name : "未定");
     if (t && !t.bye && t.abbr) nm.appendChild(el("span", "abbr", t.abbr));
+    var lsrc = t && !t.bye ? logoSrc(t) : null;                       // 承認されたロゴがあれば、チーム名の左に（文字と同じ大きさで）出す
+    if (lsrc) { var li = el("img", "tlogo"); li.src = lsrc; li.alt = ""; row.appendChild(li); }
     row.appendChild(nm);
     if (t && t.dq) row.appendChild(el("span", "dqtag", "失格"));
     var showScore = t && !t.bye && m.team_a && m.team_b && !m.bye;
@@ -441,7 +482,12 @@
     card.appendChild(el("span", "orn", "✧"));                       // ゴシックのデザインのときだけ見える飾り
     var head = el("div", "mhead");
     var label = m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1);
-    if (m.time && !m.bye) head.appendChild(el("span", "mtimebig", fmtDT(m.time)));                // 開始予定の時間（大きく）
+    if (m.time && !m.bye) {                                                                       // 開始予定の時間（大きく）。遅れ・繰り上げのときは、もとの予定の時間に、ずれた先の時刻を足す
+      var tspan = el("span", "mtimebig", fmtDT(m.time_base || m.time));
+      var tag = m.time_base ? shiftTag(m.time_base, m.time, m.shift) : "";
+      if (tag) tspan.appendChild(el("small", "shifttag" + (m.shift > 0 ? " late" : " early"), tag));
+      head.appendChild(tspan);
+    }
     else head.appendChild(el("span", null, m.bye ? label : label + " · " + m.format));            // 時間が決まっていない試合だけ、ラウンド名・試合形式を書く
     head.appendChild(el("span", "badge", m.bye && m.status === "finished" ? "不戦勝" :
                                          m.by_dq && m.status === "finished" ? "失格勝ち" : BADGE[m.status]));
@@ -480,7 +526,7 @@
     var parts = [];
     if (rd.concurrent === true) parts.push("同時進行（実況・解説なし）");
     else if (rd.concurrent === false) parts.push("順番に進行");
-    if (rd.start) parts.push(fmtDT(rd.start) + " 開始予定");
+    if (rd.start) parts.push(fmtDT(rd.start_base || rd.start) + " 開始予定" + (rd.start_base ? shiftTag(rd.start_base, rd.start, rd.shift) : ""));
     return parts.join("・");
   }
   function roundCol(cls, title, fmt, body, note) {
@@ -516,9 +562,13 @@
         if (nx) it.appendChild(el("span", "next", nx));
         bar.appendChild(it);
       });
+      var dc = delayChip(data.delay_min);                              // いま、遅れている（早まっている）ときは、何分かを書く
+      if (dc) bar.appendChild(dc);
     } else {
       bar.className = "nowbar idle";
       bar.textContent = "次の試合をお待ちください";
+      var dc2 = delayChip(data.delay_min);
+      if (dc2) { bar.appendChild(document.createTextNode("　")); bar.appendChild(dc2); }
     }
   }
 
@@ -663,7 +713,9 @@
     if (!data) return;
     document.getElementById("updated").textContent = "更新 " + (data.generated_at || "").replace("T", " ").slice(0, 19);
     curData = data;
-    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, tab]);
+    lastRendered = data;
+    ensureLogos(data.logos);
+    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab]);
     if (sig === last) return;
     last = sig;
     applyTheme(data.theme);
