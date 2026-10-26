@@ -1039,9 +1039,9 @@
       radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%),
       radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.65), transparent 60%),
       linear-gradient(115deg, transparent 0 42%, color-mix(in srgb, var(--accent) 9%, transparent) 42% 43.2%, transparent 43.2% 100%); }
-  .iv-tag { position: absolute; right: 70px; top: 54px; display: flex; align-items: center; gap: 18px; padding: 8px 4px 12px 30px;
+  .iv-tag { position: absolute; left: 70px; top: 54px; display: flex; align-items: center; gap: 18px; padding: 8px 30px 12px 4px;
             border-bottom: 5px solid var(--accent); }
-  .iv-tag .tx { font-family: var(--disp); font-size: 92px; line-height: 1; letter-spacing: .08em; color: var(--text);
+  .iv-tag .tx { font-family: var(--disp); font-size: 80px; line-height: 1; letter-spacing: .08em; color: var(--text);
                 text-shadow: 0 0 26px color-mix(in srgb, var(--accent) 55%, transparent), 4px 4px 0 rgba(0,0,0,.5); }
   .iv-tag .dot { width: 26px; height: 26px; border-radius: 50%; background: #ff3b4e; box-shadow: 0 0 18px #ff3b4e; animation: ivPulse 1.4s ease-in-out infinite; }
   @keyframes ivPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
@@ -1061,17 +1061,18 @@
              border: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); }
   .iv-team .fin-logo { width: 76px; height: 76px; font-size: 30px; border-width: 4px; box-shadow: none; flex: none; }
   .iv-team .tn2 { font-family: var(--cond); font-weight: 700; font-size: 50px; letter-spacing: .06em; }
-  .iv-timer { position: absolute; right: 70px; bottom: 60px; min-width: 520px; padding: 18px 44px 22px 56px; text-align: right;
+  .iv-timer { position: absolute; right: 70px; bottom: 60px; min-width: 420px; padding: 14px 44px 18px 56px; text-align: right;
               background: linear-gradient(90deg, transparent, rgba(0,0,0,.72) 22%); border-right: 10px solid var(--accent); transform: skewX(-8deg); }
   .iv-timer > * { transform: skewX(8deg); }
-  .iv-count { font-family: var(--disp); font-size: 150px; line-height: 1; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--accent);
+  .iv-count { font-family: var(--disp); font-size: 96px; line-height: 1; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--accent);
               text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 55%, transparent), 4px 4px 0 rgba(0,0,0,.5); }
-  .iv-who { font-family: var(--cond); font-weight: 800; font-size: 56px; margin-top: 4px; letter-spacing: .05em; }
+  .iv-who { font-family: var(--cond); font-weight: 800; font-size: 40px; margin-top: 4px; letter-spacing: .05em; }
   .iv-timer.over .iv-count { color: #ff4b5e; animation: ivBlink 1.1s ease-in-out infinite; }
   @keyframes ivBlink { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-  .iv.enter .iv-tag { animation: ivSlideR .8s cubic-bezier(.2,.9,.2,1) both; }
+  .iv.enter .iv-tag { animation: ivSlideL .8s cubic-bezier(.2,.9,.2,1) both; }
   .iv.enter .iv-mid { animation: finIn .9s cubic-bezier(.2,.9,.2,1) .15s both; }
   .iv.enter .iv-timer { animation: ivSlideR .8s cubic-bezier(.2,.9,.2,1) .35s both; }
+  @keyframes ivSlideL { from { opacity: 0; transform: translateX(-120px); } to { opacity: 1; transform: none; } }
   @keyframes ivSlideR { from { opacity: 0; transform: translateX(120px); } to { opacity: 1; transform: none; } }
   html[data-design="fantasy"] .iv-tag .tx, html[data-design="gothic"] .iv-tag .tx, html[data-design="fantasy"] .iv-count, html[data-design="gothic"] .iv-count { font-family: var(--fa); font-weight: 400; color: var(--gold); letter-spacing: .12em; }
   html[data-design="fantasy"] .iv-name, html[data-design="gothic"] .iv-name, html[data-design="fantasy"] .iv-who, html[data-design="gothic"] .iv-who,
@@ -1079,7 +1080,7 @@
   html[data-design="fantasy"] .iv-ring, html[data-design="gothic"] .iv-ring { background: conic-gradient(from 0deg, var(--gold), #fff3c4, var(--gold), color-mix(in srgb, var(--gold) 45%, #000), var(--gold)); }
   html[data-design="fantasy"] .iv-timer, html[data-design="gothic"] .iv-timer { border-right-color: var(--gold); }
   html[data-design="fantasy"] .iv-tag, html[data-design="gothic"] .iv-tag { border-bottom-color: var(--gold); }
-  html.flow .iv-tag { right: 1em; top: .6em; } html.flow .iv-tag .tx { font-size: 1.8em; }
+  html.flow .iv-tag { left: 1em; top: .6em; } html.flow .iv-tag .tx { font-size: 1.8em; }
   html.flow .iv-mid { top: 3.6em; gap: .4em; } html.flow .iv-ring { width: 10em; height: 10em; } html.flow .iv-avatar { font-size: 3em; }
   html.flow .iv-name { font-size: 2em; } html.flow .iv-team .tn2 { font-size: 1.1em; } html.flow .iv-team .fin-logo { width: 2em; height: 2em; font-size: .7em; }
   html.flow .iv-timer { right: 1em; bottom: 1em; min-width: 0; padding: .4em 1em; } html.flow .iv-count { font-size: 2.4em; } html.flow .iv-who { font-size: 1em; }
@@ -2147,7 +2148,7 @@
     var box = el("div", "iv-timer");
     var count = el("div", "iv-count", fmtCount((src.minutes || 3) * 60));
     box.appendChild(count);
-    box.appendChild(el("div", "iv-who", cur.name || ""));
+    box.appendChild(el("div", "iv-who", cur.role || (mode === "mvp_interview" ? "MVP" : "優勝チーム")));
     wrap.appendChild(box);
     screenEl.replaceChildren(wrap);
     var startMs = Date.parse(src.started_at || "");
