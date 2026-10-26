@@ -730,7 +730,7 @@
     box.appendChild(el("span", "orn", "✧"));
     box.appendChild(el("div", "trophy", "🏆"));
     box.appendChild(el("div", "label", "CHAMPION"));
-    var csrc = EMBED && data.champion ? logoSrc(data.champion) : null;
+    var csrc = data.champion ? logoSrc(data.champion) : null;                 // CHAMPIONの文字の下に、優勝チームのロゴ
     if (csrc) { var cl = el("img", "clogo"); cl.src = csrc; cl.alt = ""; box.appendChild(cl); }
     box.appendChild(el("div", "cname", data.champion ? data.champion.name : "未定"));
     if (EMBED && data.champion && champPlayers.length) {
