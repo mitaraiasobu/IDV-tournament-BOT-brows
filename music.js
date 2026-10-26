@@ -107,7 +107,19 @@
     bar.appendChild(btn); bar.appendChild(range); bar.appendChild(hint);
     document.body.appendChild(bar);
   }
-  function apply() { if (cur) cur.ctl.setVolume(master); }
+  function apply() { if (cur) cur.ctl.setVolume(master * cur.gain); }
+  // 音量を、ms ミリ秒かけて from → to に変える（切り替えのフェード用）
+  function ramp(entry, from, to, ms, done) {
+    var t0 = Date.now();
+    (function step() {
+      if (entry.dead) return;
+      var k = Math.min(1, (Date.now() - t0) / ms);
+      entry.gain = from + (to - from) * k;
+      entry.ctl.setVolume(master * entry.gain);
+      if (k < 1) setTimeout(step, 100); else if (done) done();
+    })();
+  }
+  function kill(entry) { entry.dead = true; entry.ctl.destroy(); }
 
   // ── 人の操作を待つ（ブラウザが、操作の前の再生を止めたとき） ──
   function onBlocked(flag) {
@@ -130,19 +142,26 @@
       cfg.volume = opts && typeof opts.volume === "number" ? Math.max(0, Math.min(1, opts.volume)) : 1;
       master = cfg.volume;
     },
-    set: function (src) {
-      var k = key(src);
+    // opts.fade：切り替えるとき、いまの音楽を小さくしながら、新しい音楽を大きくする時間（ミリ秒）
+    set: function (src, opts) {
+      var k = key(src), fade = opts && opts.fade > 0 ? opts.fade : 0;
       if (cur && cur.key === k) return;
-      if (cur) { cur.ctl.destroy(); cur = null; }
+      var old = cur;
+      cur = null;
+      if (old) {
+        if (fade && src) ramp(old, old.gain, 0, fade, function () { kill(old); });
+        else kill(old);
+      }
       if (!src || !k) { if (bar) bar.hidden = true; return; }
       var ok = (src.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(src.id || "")) || (src.kind === "audio" && /^https:\/\//.test(src.url || ""));
       if (!ok) { if (bar) bar.hidden = true; return; }
       buildBar();
       if (bar) bar.hidden = false;
       var ctl = src.kind === "youtube" ? youtubeCtl(src, onBlocked) : audioCtl(src, onBlocked);
-      cur = { key: k, ctl: ctl };
-      ctl.setVolume(master);
+      cur = { key: k, ctl: ctl, gain: old && fade ? 0 : 1, dead: false };
+      ctl.setVolume(master * cur.gain);
       ctl.play();
+      if (old && fade) ramp(cur, 0, 1, fade);
     },
     volume: function () { return master; }
   };
