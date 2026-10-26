@@ -1084,6 +1084,9 @@
   html.flow .iv-name { font-size: 2em; } html.flow .iv-team .tn2 { font-size: 1.1em; } html.flow .iv-team .fin-logo { width: 2em; height: 2em; font-size: .7em; }
   html.flow .iv-timer { right: 1em; bottom: 1em; min-width: 0; padding: .4em 1em; } html.flow .iv-count { font-size: 2.4em; } html.flow .iv-who { font-size: 1em; }
   /* 最後のトーナメント表：負けたチームは暗く／優勝チームの欄に、ロゴ・名前・全員の選手名 */
+  .fbframe { position: absolute; inset: 0; }
+  .fbframe iframe { width: 100%; height: 100%; border: 0; background: transparent; }
+  html.flow .fbframe { position: relative; height: 100vh; }
   .fb { position: absolute; inset: 0; color: var(--text); }
   .fb-title { position: absolute; left: 70px; top: 26px; font-family: var(--disp); font-size: 54px; letter-spacing: .14em; color: var(--accent); text-shadow: 3px 3px 0 rgba(0,0,0,.5); }
   .fb-inner { position: absolute; left: 70px; top: 110px; }
@@ -2160,8 +2163,31 @@
   }
 
   // ── 最後のトーナメント表：負けたチームは、暗くする／優勝チームの欄に、ロゴ・名前・全員の選手名（出場していない選手も） ──
+  // 公開のトーナメント表のページ（index.html）を、そのまま埋め込む。違いは、優勝チームの欄に、ロゴと全選手の名前（出場していない選手も）が載ること。
+  function renderBracketFrame(b) {
+    var cur = screenEl.firstChild;
+    var src = "index.html?t=" + encodeURIComponent(b.public_key) + "&embed=1";
+    var players = arr((b.champion || {}).players);
+    var frame = cur && cur.classList && cur.classList.contains("fbframe") && cur.getAttribute("data-src") === src ? cur.firstChild : null;
+    if (!frame) {
+      var wrap = el("div", "fbframe");
+      wrap.setAttribute("data-src", src);
+      frame = document.createElement("iframe");
+      frame.src = src;
+      frame.setAttribute("title", "トーナメント表");
+      frame.addEventListener("load", function () { frame.setAttribute("data-loaded", "1"); sendPlayers(frame); });
+      wrap.appendChild(frame);
+      screenEl.replaceChildren(wrap);
+    }
+    frame._players = players;
+    sendPlayers(frame);
+  }
+  function sendPlayers(frame) {
+    try { if (frame.contentWindow) frame.contentWindow.postMessage({ type: "champion_players", players: frame._players || [] }, location.origin); } catch (e) { /* 読み込み前は、読み込み後に送る */ }
+  }
   function renderBracket(data) {
     var b = (data.finale || {}).bracket || {};
+    if (/^[A-Za-z0-9]{12}$/.test(b.public_key || "")) { renderBracketFrame(b); return; }
     var wrap = el("div", "fb");
     wrap.appendChild(el("div", "fb-title", "TOURNAMENT"));
     var inner = el("div", "fb-inner");
