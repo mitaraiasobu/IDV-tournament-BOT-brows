@@ -1154,6 +1154,7 @@
   <div id="msg"></div>
 </div>
 
+<script src="music.js"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -2265,9 +2266,40 @@
   }
 
   var lastSig = null;
+  // ── ブラウザ音楽（music.js）：場面ごとの音楽。優勝・インタビューの画面 → BAN/PICK → 大会開始前／試合と試合の間 の順に、場面を決める ──
+  var musicOn = params.get("music") !== "0";                                      // ?music=0 で、音楽を流さない（OBSで流しているときに、ふつうのブラウザでも開いて見るとき）
+  function updateMusic(data, fm) {
+    if (!window.MusicPlayer || !musicOn) return;
+    var m = data.music;
+    if (!m) { MusicPlayer.set(null); return; }
+    var until = m.until ? Date.parse(m.until) : NaN;
+    var pre = m.hint === "pre" && !(until && Date.now() > until);                  // 大会開始前：まだ試合開始が押されておらず、大会日時の前
+    var src;
+    if (window.PAGE_KIND === "rules") src = pre ? (m.scenes || {}).pre : null;      // ルールだけの公開ページは、大会開始前の音楽だけ
+    else {
+      var scene = fm === "interview" || fm === "mvp_interview" ? "interview"
+        : fm ? "champion"
+        : (data.state === "play" || data.state === "hold") ? "banpick"
+        : pre ? "pre" : "wait";
+      src = (m.scenes || {})[scene];
+    }
+    MusicPlayer.set(src || null);
+  }
+  var lastFm = null;
+  setInterval(function () { if (lastData) updateMusic(lastData, lastFm); }, 5000);            // 大会日時を過ぎたら、「大会開始前」の音楽から切り替える
+  var musicInit = false;
+  function initMusic() {
+    if (musicInit || !window.MusicPlayer) return;
+    musicInit = true;
+    var pub = window.PAGE_KIND === "rules";                                         // 公開のルールのページ：小さめの音量から、バーで大きくできる。配信用の画面：音量は、そのまま（OBSで調整）
+    MusicPlayer.init({ ui: pub, volume: pub ? 0.2 : 1 });
+  }
+
   function render(data, force) {
     if (!data) data = { state: "idle" };
-    if (window.PAGE_KIND === "rules" && data.state !== "rules") data = { state: "idle", title: data.title };    // ルールだけのページには、ルール以外は出さない
+    initMusic();
+    var musicData = data.music;
+    if (window.PAGE_KIND === "rules" && data.state !== "rules") data = { state: "idle", title: data.title, music: musicData };    // ルールだけのページには、ルール以外は出さない
     var sig = JSON.stringify(data, function (k, v) { return k === "generated_at" ? undefined : v; });
     if (sig === lastSig && !force) return;
     lastSig = sig;
@@ -2275,6 +2307,8 @@
     ensureLogos(data.logos);
     stopIvTimer();
     var fm = finaleMode(data);                                // 優勝画面・インタビュー画面にするか（成績の画面を先に見せる間は、null）
+    lastFm = fm;
+    updateMusic(data, fm);
     if (fm) setTeamColors(((data.finale || {}).champion || {}).color, ((data.finale || {}).champion || {}).color);
     else if (data.state === "result" && data.result) setTeamColors((data.result.a || {}).color, (data.result.b || {}).color);
     else if (data.state === "play" && data.live) setTeamColors((data.live.survivor || {}).color, (data.live.hunter || {}).color);
