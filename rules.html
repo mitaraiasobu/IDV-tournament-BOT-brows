@@ -1003,6 +1003,14 @@
   .fin.interview .fin-title { font-size: 130px; }
   .fin.interview .fin-logo { width: 170px; height: 170px; font-size: 66px; border-width: 6px; }
   .fin.interview .fin-name { font-size: 62px; color: var(--sub); }
+  .fin-mvps { display: flex; flex-direction: column; gap: 26px; align-items: flex-start; margin-top: 10px; }
+  .fin-mvp { display: flex; align-items: center; gap: 36px; }
+  .fin-mvp .fin-logo { width: 190px; height: 190px; font-size: 76px; border-width: 6px; flex: none; }
+  .fin-mvp .who { text-align: left; }
+  .fin-mvp .nm { font-family: var(--cond); font-weight: 800; font-size: 100px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,.8), 4px 5px 0 rgba(0,0,0,.45); }
+  .fin-mvp .tm { font-family: var(--cond); font-weight: 700; font-size: 46px; color: var(--sub); letter-spacing: .1em; }
+  .fin-mvp .why { font-family: var(--cond); font-size: 36px; color: var(--sub); margin-top: 6px; }
+  html[data-design="fantasy"] .fin-mvp .nm, html[data-design="gothic"] .fin-mvp .nm { font-family: var(--fa); font-weight: 400; color: var(--cream); letter-spacing: .08em; }
   .fin-players { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
   .fin-players .p { font-family: var(--cond); font-weight: 800; font-size: 96px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,.8), 4px 5px 0 rgba(0,0,0,.45); }
   .fin.enter .fin-title { animation: finIn .9s cubic-bezier(.2,.9,.2,1) both; }
@@ -1019,6 +1027,10 @@
   html.flow .fin-logo { width: 7em; height: 7em; font-size: 2.4em; }
   html.flow .fin-name { font-size: 2em; }
   html.flow .fin-players .p { font-size: 1.8em; }
+  html.flow .fin-mvp .fin-logo { width: 4em; height: 4em; font-size: 1.6em; }
+  html.flow .fin-mvp .nm { font-size: 1.7em; }
+  html.flow .fin-mvp .tm { font-size: 1em; }
+  html.flow .fin-mvp .why { font-size: .9em; }
   html.flow .fin-sub { font-size: 1em; }
   /* チームの文字・ロゴの見やすさ（色を塗った面の上）。
      ・文字は、白（黒に近い・ふつうの色）か、黒（白に近い色）に統一し、反対の色の、細いぼかしの縁取りを付ける。
@@ -1956,8 +1968,11 @@
   function finaleMode(data) {
     var f = data && data.finale;
     if (!f || data.state === "play" || data.state === "hold") return null;
-    var iv = f.interview || {};
-    if (iv.enabled && arr(iv.players).length) return "interview";
+    var iv = f.interview || {}, st = f.stage || "", mv = f.mvp || {};
+    var mvAwards = arr(mv.awards), mvPlayers = arr((mv.interview || {}).players);
+    if (st === "mvp_interview" && mvPlayers.length) return "mvp_interview";             // 優勝のあとの段階：MVPインタビュー ← MVP発表 ← 優勝チームのインタビュー ← 優勝画面
+    if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) return "mvp";
+    if (st === "interview" && iv.enabled && arr(iv.players).length) return "interview";
     if (data.state === "result" && data.result && data.result.final) {
       var key = JSON.stringify([(data.result.a || {}).points, (data.result.b || {}).points, (data.result.a || {}).name, (data.result.b || {}).name]);
       if (finalSeen.key !== key) finalSeen = { key: key, at: Date.now() };
@@ -1977,11 +1992,36 @@
     else b.textContent = (c && (c.abbr || c.name) || "").slice(0, 3);
     return b;
   }
+  // MVP発表（MVP）：発表したMVPを、並べて出す（選手は、名前とチーム名・チームのロゴ。チームは、チーム名・ロゴ）。選出の理由があれば、その下に。
+  // MVPインタビュー（MVP INTERVIEW）：選ばれた選手の名前（と、そのチーム）。
+  function renderMvp(data, mode, wrap) {
+    var mv = (data.finale || {}).mvp || {};
+    wrap.appendChild(el("div", "fin-title", mode === "mvp_interview" ? "MVP INTERVIEW" : "MVP"));
+    if (mode === "mvp_interview") {
+      var list = el("div", "fin-players");
+      arr((mv.interview || {}).players).forEach(function (n) { list.appendChild(el("div", "p", n)); });
+      wrap.appendChild(list);
+      return;
+    }
+    var box = el("div", "fin-mvps");
+    arr(mv.awards).forEach(function (a) {
+      var row = el("div", "fin-mvp");
+      row.appendChild(finLogo(a));
+      var txt = el("div", "who");
+      txt.appendChild(el("div", "nm", a.name || ""));
+      if (a.team) txt.appendChild(el("div", "tm", a.team));
+      if (a.reason) txt.appendChild(el("div", "why", a.reason));
+      row.appendChild(txt);
+      box.appendChild(row);
+    });
+    wrap.appendChild(box);
+  }
   function renderFinale(data, mode) {
     var f = data.finale, c = f.champion || {};
     var again = screenEl.firstChild && screenEl.firstChild.classList && screenEl.firstChild.classList.contains("fin") && screenEl.firstChild.getAttribute("data-mode") === mode;
     var wrap = el("div", "fin " + mode + (again ? "" : " enter"));
     wrap.setAttribute("data-mode", mode);
+    if (mode === "mvp" || mode === "mvp_interview") { renderMvp(data, mode, wrap); screenEl.replaceChildren(wrap); return; }
     wrap.appendChild(el("div", "fin-title", mode === "interview" ? "INTERVIEW" : "CHAMPION"));
     wrap.appendChild(finLogo(c));
     wrap.appendChild(el("div", "fin-name", c.name || ""));
