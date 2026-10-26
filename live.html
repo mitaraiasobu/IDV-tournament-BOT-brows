@@ -2018,7 +2018,7 @@
     var elapsed = Math.max(0, Date.now() - r.start);
     tickPreYT(r.lv, elapsed);
     if (elapsed >= total + EXIT_MS) {                          // 終わった：画面を透明にする（OBSなら、後ろのゲーム画面が見える）
-      if (r.phase !== "clear") { r.phase = "clear"; setPhase("clear"); setMedia([]); screenEl.replaceChildren(); clearPreYT(); }
+      if (r.phase !== "clear") { r.phase = "clear"; setPhase("clear"); setMedia([]); screenEl.replaceChildren(); clearPreYT(); if (lastData) updateMusic(lastData, lastFm); }
       return;
     }
     if (elapsed >= total) {                                    // 終わりのアニメーション（最後の手順の画面が、流れて消える）
@@ -2051,7 +2051,7 @@
   // 成績の画面を見せる時間は、このブラウザの時計で数える（ページを開き直すと、もう一度、数える）。
   var FINAL_RESULT_MS = 12000;
   var finalSeen = { key: null, at: 0 }, finalTimer = null;
-  var CHAMPION_MS = 15000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
+  var CHAMPION_MS = 30000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
   var championSeen = { key: null, at: 0 }, championTimer = null;
   function finaleMode(data) {
     var f = data && data.finale;
@@ -2277,15 +2277,30 @@
     var src;
     if (window.PAGE_KIND === "rules") src = pre ? (m.scenes || {}).pre : null;      // ルールだけの公開ページは、大会開始前の音楽だけ
     else {
-      var scene = fm === "interview" || fm === "mvp_interview" ? "interview"
-        : fm ? "champion"
-        : (data.state === "play" || data.state === "hold") ? "banpick"
-        : pre ? "pre" : "wait";
-      src = (m.scenes || {})[scene];
+      var scene;
+      clearTimeout(musicTimer);
+      if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
+      else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
+      else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
+      else if (data.state === "result") {                                           // 試合終了から30秒は、BAN/PICKの音楽のまま → そのあと、試合の間の音楽にフェードで切り替える
+        var ended = m.ended ? Date.parse(m.ended) : NaN;
+        if (isNaN(ended)) { if (resultSeenAt === 0) resultSeenAt = Date.now(); ended = resultSeenAt; }
+        var left = BANPICK_TAIL_MS - (Date.now() - ended);
+        if (left > 0) { scene = "banpick"; musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
+        else scene = "wait";
+      } else scene = pre ? "pre" : "wait";
+      if (data.state !== "result") resultSeenAt = 0;
+      src = scene ? (m.scenes || {})[scene] : null;
+      if (scene === "banpick" && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
+      var fade = lastScene === "banpick" && scene === "wait" && data.state === "result" ? FADE_MS : 0;
+      lastScene = scene;
+      MusicPlayer.set(src || null, { fade: fade });
+      return;
     }
     MusicPlayer.set(src || null);
   }
-  var lastFm = null;
+  var lastFm = null, lastScene = null, musicTimer = null, resultSeenAt = 0;
+  var BANPICK_TAIL_MS = 30000, FADE_MS = 4000;                                      // 試合終了のあと、BAN/PICKの音楽を流し続ける時間／試合の間の音楽へ切り替えるフェードの時間
   setInterval(function () { if (lastData) updateMusic(lastData, lastFm); }, 5000);            // 大会日時を過ぎたら、「大会開始前」の音楽から切り替える
   var musicInit = false;
   function initMusic() {
