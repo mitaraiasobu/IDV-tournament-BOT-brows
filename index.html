@@ -184,6 +184,9 @@
   td.num { font-variant-numeric: tabular-nums; }
   .none { color: var(--sub); font-size: 13px; }
   .reason { color: var(--sub); font-size: 12px; margin-top: 8px; }
+  .layoutbtn { position: fixed; z-index: 50; right: 8px; bottom: 8px; font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px;
+               border: 1px solid var(--line); background: rgba(27,31,41,.85); color: var(--text); }
+  .layoutbtn[hidden] { display: none; }
   /* ════════ flow：縦長・狭い画面（スマホなど）。ラウンドを縦に並べ、幅に合わせて文字を大きくし、スクロールできる ════════ */
   html.flow { font-size: clamp(15px, 1.5vw, 30px); }
   @media (max-width: 900px) { html.flow { font-size: clamp(15px, 4vw, 20px); } }
@@ -353,20 +356,43 @@
   }
 
   // ── 1920x1080 を表示領域いっぱいに拡縮（OBSが1920x1080なら等倍） ──
+  // 縦長・狭い画面（スマホなど）は、横長の表を90°回して画面いっぱいに出す（スマホを横にして見る）。「縦に並べる」で、縦に並べる表示（flow）にもできる
+  var LAYOUT_KEY = "tournament_mobile_layout";
+  function getLayout() { try { return localStorage.getItem(LAYOUT_KEY) === "flow" ? "flow" : "rotate"; } catch (e) { return "rotate"; } }
+  function setLayout(v) { try { localStorage.setItem(LAYOUT_KEY, v); } catch (e) { /* 保存できなくても、このまま表示する */ } }
+  function layoutButton(show, flow) {
+    var b = document.getElementById("layoutBtn");
+    if (!b) {
+      b = el("button", "layoutbtn");
+      b.id = "layoutBtn"; b.type = "button";
+      b.addEventListener("click", function () { setLayout(getLayout() === "flow" ? "rotate" : "flow"); fit(); });
+      document.body.appendChild(b);
+    }
+    b.hidden = !show;
+    b.textContent = flow ? "↻ 横向きの表で見る" : "☰ 縦に並べて見る";
+  }
   function fit() {
     if (DETAILS) return;
     var st = document.getElementById("stage");
-    // 縦長・狭い画面（スマホなど）は、固定サイズに縮めずに、縦に並べる表示（flow）にする
-    var flowNow = window.innerWidth / Math.max(1, window.innerHeight) < 1.25;
+    var W = window.innerWidth, H = window.innerHeight;
+    var portrait = W / Math.max(1, H) < 1.25;
+    var flowNow = portrait && getLayout() === "flow";
     document.documentElement.className = flowNow ? "flow" : "stage";
+    layoutButton(portrait, flowNow);
     if (flowNow) {
       st.style.transform = ""; st.style.left = ""; st.style.top = "";
       return;
     }
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    if (portrait) {                                              // 90°回す：画面の縦（H）が表の横（1920）、画面の横（W）が表の縦（1080）
+      var r = Math.min(H / 1920, W / 1080);
+      st.style.left = "0px"; st.style.top = "0px";
+      st.style.transform = "translate(" + ((W + 1080 * r) / 2) + "px," + ((H - 1920 * r) / 2) + "px) rotate(90deg) scale(" + r + ")";
+      return;
+    }
+    var s = Math.min(W / 1920, H / 1080);
     st.style.transform = "scale(" + s + ")";
-    st.style.left = Math.max(0, (window.innerWidth - 1920 * s) / 2) + "px";
-    st.style.top = Math.max(0, (window.innerHeight - 1080 * s) / 2) + "px";
+    st.style.left = Math.max(0, (W - 1920 * s) / 2) + "px";
+    st.style.top = Math.max(0, (H - 1080 * s) / 2) + "px";
   }
   window.addEventListener("resize", fit);
   fit();
