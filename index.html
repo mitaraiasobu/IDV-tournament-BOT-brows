@@ -127,6 +127,9 @@
   .champ .box .trophy { font-size: 72px; line-height: 1; }
   .champ .box .label { font-size: 16px; color: var(--accent); letter-spacing: .3em; margin: 10px 0; }
   .champ .box .cname { font-size: 34px; font-weight: 800; word-break: break-all; }
+  .champ .box .clogo { display: block; width: 110px; height: 110px; object-fit: contain; margin: 4px auto 6px; filter: drop-shadow(0 0 3px rgba(0,0,0,.8)); }
+  .champ .box .cplayers { margin-top: 16px; font-size: 21px; line-height: 1.5; color: var(--sub); font-weight: 500; }
+  .champ .box .cplayers span { display: block; word-break: break-all; }
   .champ .box.empty { border-color: var(--line); background: var(--panel); color: var(--sub); }
   .champ .box.empty .label { color: var(--sub); }
 
@@ -342,6 +345,16 @@
   if (DETAILS) document.body.classList.add("details");
   if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
   var POLL_MS = 3000, last = null;
+  // 配信画面（live.html）が、最後のトーナメント表として、このページを埋め込むとき（?embed=1）：優勝チームの欄に、ロゴと全選手の名前を足す（選手名は、公開データには無いので、埋め込んだ側から、受け取る）
+  var EMBED = params.get("embed") === "1", champPlayers = [];
+  if (EMBED) {
+    window.addEventListener("message", function (e) {
+      if (e.origin !== location.origin || !e.data || e.data.type !== "champion_players" || !Array.isArray(e.data.players)) return;
+      champPlayers = e.data.players.filter(function (x) { return typeof x === "string"; }).slice(0, 30).map(function (x) { return x.slice(0, 40); });
+      last = null;
+      if (curData) render(curData);
+    });
+  }
   var tab = params.get("tab") === "plan" ? "plan" : "reg";      // チーム登録受付中（抽選前）の表示：reg＝登録状況／plan＝予定のトーナメント表
   var curData = null;
   var BADGE = { pending: "対戦相手待ち", ready: "未試合", in_progress: "試合中", extension: "延長戦",
@@ -717,7 +730,14 @@
     box.appendChild(el("span", "orn", "✧"));
     box.appendChild(el("div", "trophy", "🏆"));
     box.appendChild(el("div", "label", "CHAMPION"));
+    var csrc = EMBED && data.champion ? logoSrc(data.champion) : null;
+    if (csrc) { var cl = el("img", "clogo"); cl.src = csrc; cl.alt = ""; box.appendChild(cl); }
     box.appendChild(el("div", "cname", data.champion ? data.champion.name : "未定"));
+    if (EMBED && data.champion && champPlayers.length) {
+      var cps = el("div", "cplayers");
+      champPlayers.forEach(function (n) { cps.appendChild(el("span", null, n)); });
+      box.appendChild(cps);
+    }
     bracket.appendChild(roundCol("champ", "優勝", "", [slot(box)], ""));
   }
 
@@ -741,7 +761,7 @@
     curData = data;
     lastRendered = data;
     ensureLogos(data.logos);
-    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab]);
+    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
     if (sig === last) return;
     last = sig;
     applyTheme(data.theme);
