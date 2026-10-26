@@ -337,6 +337,7 @@
   <div id="details"></div>
 </div>
 
+<script src="music.js"></script>
 <!-- Botが自動出力する tournament.js（window.TOURNAMENT_DATA）を3秒おきに読み直す -->
 <script>
 (function () {
@@ -755,11 +756,22 @@
     });
   }
 
+  // ── ブラウザ音楽（music.js）：大会開始前の音楽（開くたびに、小さめの音量から始まる。左下のバーで、大きくできる）。大会日時を過ぎたら、止める ──
+  var musicInit = false;
+  function updateMusic(data) {
+    if (!window.MusicPlayer || EMBED || params.get("music") === "0") return;
+    if (!musicInit) { musicInit = true; MusicPlayer.init({ ui: true, volume: 0.2 }); setInterval(function () { if (curData) updateMusic(curData); }, 5000); }
+    var m = data.music, until = m && m.until ? Date.parse(m.until) : NaN;
+    var on = m && m.pre && !(until && Date.now() > until) && !(isNaN(until) && data.phase === "finished");
+    MusicPlayer.set(on ? m.pre : null);
+  }
+
   function render(data) {
     if (!data) return;
     document.getElementById("updated").textContent = "更新 " + (data.generated_at || "").replace("T", " ").slice(0, 19);
     curData = data;
     lastRendered = data;
+    updateMusic(data);
     ensureLogos(data.logos);
     var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
     if (sig === last) return;
