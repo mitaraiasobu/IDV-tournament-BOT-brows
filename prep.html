@@ -42,6 +42,11 @@
   #pal .hint { flex: none; margin: 0; }
   .palbox { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }     /* ハンターの名札置き場と、サバイバーの名札置き場は、別々にスクロール */
   .palbox.h { border-top: 2px solid var(--h); } .palbox.s { border-top: 2px solid var(--s); }
+  .palopt { flex: none; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); margin: 0 2px; cursor: pointer; user-select: none; }
+  #pal .palopt input { width: auto; flex: none; padding: 0; accent-color: var(--s); }
+  .palopt { white-space: nowrap; }
+  .rolehd { margin: 6px 2px 3px; font-size: 12px; font-weight: 700; color: #9cc4ff; border-bottom: 1px solid var(--s2); }
+  .rolehd:first-child { margin-top: 0; }
   #work { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding-bottom: 20px; }
   .grid { display: flex; flex-wrap: wrap; gap: 5px; }
   /* 名札：顔 + 名前 を、枠で囲む。ハンターは赤、サバイバーは青 */
@@ -425,6 +430,8 @@
     fill();
   }
   var palFilter = "";
+  var roleSort = false;
+  try { roleSort = localStorage.getItem("prep_role_sort") === "1"; } catch (e) { /* 無視 */ }
   function buildPalette() {
     var pal = $("pal"); pal.textContent = "";
     var q = el("input"); q.type = "search"; q.placeholder = "キャラを探す"; q.value = palFilter;
@@ -433,8 +440,13 @@
     pal.appendChild(el("div", "hint", "名札を右の枠へドラッグ（スマホは、長押ししてから動かす／タップして選び、置きたい枠をタップ）。外すときは、ここへ戻すか ×。"));
     pal.appendChild(el("h3", "", "ハンター"));
     var bh = el("div", "palbox h"), gh = el("div", "grid"); gh.id = "palH"; bh.appendChild(gh); pal.appendChild(bh);
-    pal.appendChild(el("h3", "", "サバイバー"));
-    var bs = el("div", "palbox s"), gs = el("div", "grid"); gs.id = "palS"; bs.appendChild(gs); pal.appendChild(bs);
+    var hs = el("div"); hs.style.cssText = "display:flex;align-items:center;gap:10px;flex:none";
+    hs.appendChild(el("h3", "", "サバイバー"));
+    var lab = el("label", "palopt"), cb = el("input"); cb.type = "checkbox"; cb.id = "roleSort"; cb.checked = roleSort;
+    cb.addEventListener("change", function () { roleSort = cb.checked; try { localStorage.setItem("prep_role_sort", roleSort ? "1" : "0"); } catch (e) { /* 無視 */ } fillPalette(); });
+    lab.appendChild(cb); lab.appendChild(document.createTextNode("職業ごとの並び替え"));
+    hs.appendChild(lab); pal.appendChild(hs);
+    var bs = el("div", "palbox s"), gs = el("div"); gs.id = "palS"; bs.appendChild(gs); pal.appendChild(bs);
     fillPalette();
   }
   function capOf(s, v, b) { return b === "ban" ? ((s.ban || {})[opp(v)] || 0) : ((s.pick || {})[v] || 0); }   // サバイバー目線のBAN＝ハンターを何キャラBANするか、ハンター目線のBAN＝サバイバーを何キャラBANするか
@@ -455,17 +467,32 @@
   }
   function fillPalette() {
     var q = palFilter.trim().toLowerCase(), req = cur.tab === "fav" ? {} : reqIds();
-    [["palH", "h"], ["palS", "s"]].forEach(function (pair) {
-      var box = $(pair[0]); box.textContent = "";
-      ((META.chars || {})[pair[1]] || []).forEach(function (c) {
-        if (q && (c.n + (c.e || "")).toLowerCase().indexOf(q) < 0) return;
-        var ch = CH[c.id];
-        var t = makeTag(ch, { req: !!req[c.id] });
-        if (sel && sel.id === c.id && sel.from.kind === "pal") t.classList.add("sel");
-        attachTag(t, ch, { kind: "pal" });
-        box.appendChild(t);
+    function addTag(box, c) {
+      var ch = CH[c.id];
+      var t = makeTag(ch, { req: !!req[c.id] });
+      if (sel && sel.id === c.id && sel.from.kind === "pal") t.classList.add("sel");
+      attachTag(t, ch, { kind: "pal" });
+      box.appendChild(t);
+    }
+    function match(c) { return !q || (c.n + (c.e || "")).toLowerCase().indexOf(q) >= 0; }
+    var hb = $("palH"); hb.textContent = ""; hb.className = "grid";
+    ((META.chars || {}).h || []).forEach(function (c) { if (match(c)) addTag(hb, c); });
+    var sb = $("palS"); sb.textContent = "";
+    var all = (META.chars || {}).s || [];
+    if (roleSort && (META.roles || []).length) {                               // 職業ごと：同じキャラが、いくつかの職業に出てもよい（並びは、いつもの並びのまま）
+      sb.className = "";
+      var byId = {}; all.forEach(function (c) { byId[c.id] = c; });
+      (META.roles || []).forEach(function (g) {
+        var list = (g.ids || []).map(function (id) { return byId[id]; }).filter(function (c) { return c && match(c); });
+        if (!list.length) return;
+        sb.appendChild(el("div", "rolehd", g.e + " " + g.n));
+        var grid = el("div", "grid"); sb.appendChild(grid);
+        list.forEach(function (c) { addTag(grid, c); });
       });
-    });
+    } else {
+      sb.className = "grid";
+      all.forEach(function (c) { if (match(c)) addTag(sb, c); });
+    }
   }
   function buildWork() {
     var w = $("work"); w.textContent = "";
