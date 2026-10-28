@@ -343,6 +343,7 @@
 </div>
 
 <script src="music.js"></script>
+<script src="changelog.js"></script>
 <!-- Botが自動出力する tournament.js（window.TOURNAMENT_DATA）を3秒おきに読み直す -->
 <script>
 (function () {
@@ -799,6 +800,7 @@
     curData = data;
     lastRendered = data;
     updateMusic(data);
+    if (window.Changelog && !EMBED) window.Changelog.update(data.changes);                 // ✏ 更新履歴
     ensureLogos(data.logos);
     var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
     if (sig === last) return;
