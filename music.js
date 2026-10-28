@@ -1,7 +1,7 @@
 /* ブラウザ音楽（BGM）：配信用の画面（live.html）・トーナメント表（index.html）・ルールのページで、共通に使う。
    音源は、YouTube（{kind:"youtube", id, start}）か、音声ファイルのURL（{kind:"audio", url, start}）。start は、再生を始める位置（秒）。繰り返すときも、その位置に戻る。
    使い方：MusicPlayer.init({ ui: true|false, volume: 0〜1 }) → MusicPlayer.set(音源 or null)（音源が同じなら、何もしない）。
-   ui:true（公開のページ）…… 左下に、音量のバーを出す。開くたびに、小さめ（volume）から始まる。バーで大きくできる。
+   ui:true（公開のページ）…… 左下に、音量のバーを出す。開くたびに、小さめ（volume）から始まる。バーで大きくできる。🔇にしたら、次回以降も🔇（この端末に覚える）。
    ui:false（OBSの配信用の画面）…… 音量は、そのまま（OBSの側で調整する）。
    ブラウザは、人が何も操作していないページで、音を鳴らすのを止めることがある。そのときは、画面を1回タップ（クリック）すると、鳴りはじめる。 */
 (function () {
@@ -98,15 +98,20 @@
     range.type = "range"; range.min = "0"; range.max = "100"; range.value = String(Math.round(master * 100)); range.setAttribute("aria-label", "音楽の音量");
     hint = document.createElement("span");
     hint.className = "mp-hint"; hint.hidden = true; hint.textContent = "タップして再生";
-    var last = master;
-    range.addEventListener("input", function () { master = range.value / 100; apply(); btn.textContent = master === 0 ? "🔇" : "🔊"; if (master > 0) last = master; });
+    var last = master > 0 ? master : cfg.volume || 0.2;
+    btn.textContent = master === 0 ? "🔇" : "🔊";
+    range.addEventListener("input", function () { master = range.value / 100; apply(); btn.textContent = master === 0 ? "🔇" : "🔊"; if (master > 0) last = master; saveMuted(master === 0); });
     btn.addEventListener("click", function () {
       if (master > 0) { last = master; master = 0; } else { master = last || 0.2; }
-      range.value = String(Math.round(master * 100)); btn.textContent = master === 0 ? "🔇" : "🔊"; apply();
+      range.value = String(Math.round(master * 100)); btn.textContent = master === 0 ? "🔇" : "🔊"; apply(); saveMuted(master === 0);
     });
     bar.appendChild(btn); bar.appendChild(range); bar.appendChild(hint);
     document.body.appendChild(bar);
   }
+  // 🔇にしたら、次回以降も🔇のまま（この端末の、ブラウザに覚える）。🔊に戻したら、また小さめの音量から始まる
+  var MUTE_KEY = "idv_music_muted";
+  function savedMuted() { try { return localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { return false; } }
+  function saveMuted(m) { try { if (m) localStorage.setItem(MUTE_KEY, "1"); else localStorage.removeItem(MUTE_KEY); } catch (e) { /* 覚えられなくても、このまま鳴らす */ } }
   function apply() { if (cur) cur.ctl.setVolume(master * cur.gain); }
   // 音量を、ms ミリ秒かけて from → to に変える（切り替えのフェード用）
   function ramp(entry, from, to, ms, done) {
@@ -140,7 +145,7 @@
     init: function (opts) {
       cfg.ui = !!(opts && opts.ui);
       cfg.volume = opts && typeof opts.volume === "number" ? Math.max(0, Math.min(1, opts.volume)) : 1;
-      master = cfg.volume;
+      master = cfg.ui && savedMuted() ? 0 : cfg.volume;
     },
     // opts.fade：切り替えるとき、いまの音楽を小さくしながら、新しい音楽を大きくする時間（ミリ秒）
     set: function (src, opts) {
