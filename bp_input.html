@@ -507,6 +507,30 @@
   #msg { min-height: 1.4em; font-size: 13.5px; } #msg.ok { color: var(--ok); } #msg.ng { color: #ff9aa6; }
   .stop { margin: 30px auto; max-width: 520px; text-align: center; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
   html.rot .cbar { padding: 4px 12px 6px; } html.rot .cbar .btn { padding: 10px 34px; font-size: 19px; }
+  /* 演出の文字・文字枠の色は、デザインの色（--dz1＝メイン／--dz2＝サブ）を使う */
+  :root { --dz1: #22d3ee; --dz2: #ff4fd8; --dz1-on: #03121a; }
+  html[data-style="cute"] { --dz1: #f55fa8; --dz2: #ff9ac8; --dz1-on: #ffffff; }
+  html[data-style="gothic"] { --dz1: #d6b36a; --dz2: #b01020; --dz1-on: #1a0a06; }
+  html[data-style="rock"] { --dz1: #ffe14a; --dz2: #e8203a; --dz1-on: #111111; }
+  html[data-style="simple"] { --dz1: var(--fg0); --dz2: var(--sub); --dz1-on: var(--bg0); }
+  .ask .card { border-color: var(--dz1); box-shadow: 0 0 40px 4px color-mix(in srgb, var(--dz1) 35%, transparent); }
+  .sp .big, .shutmsg .t1, .cdtime, .cdnum, .gobig { color: var(--dz1); } .cdtxt b { color: var(--dz2); }
+  .sp li::before { background: var(--dz1); color: var(--dz1-on); } .sp li { border-color: color-mix(in srgb, var(--dz1) 45%, var(--line)); }
+  .sp .btn.go, .ask .btn.go { background: var(--dz1); color: var(--dz1-on); border-color: var(--dz1); }
+  html[data-style] .tag .pop { background: var(--dz1); color: var(--dz1-on); border: 1px solid var(--dz2); box-shadow: 0 0 14px color-mix(in srgb, var(--dz1) 70%, transparent); text-shadow: none; }
+  html[data-style] .tag.ban .pop { background: var(--dz2); color: #fff; border-color: var(--dz1); box-shadow: 0 0 14px color-mix(in srgb, var(--dz2) 70%, transparent); }
+  html[data-style="cyber"] .tag .pop { text-shadow: 2px 0 var(--dz2), -2px 0 #0ff; }
+  html[data-style="cute"] .tag .pop { box-shadow: 0 3px 0 color-mix(in srgb, var(--dz1) 60%, #000); border-color: #fff; }
+  html[data-style="gothic"] .tag .pop { background: #2a0a10; color: var(--dz1); border-color: var(--dz1); box-shadow: 0 0 14px var(--dz2); }
+  html[data-style="gothic"] .tag.ban .pop { background: #4a0a14; color: #ffb8b8; border-color: var(--dz2); }
+  html[data-style="rock"] .tag .pop { border: 2px solid #111; box-shadow: 3px 3px 0 #111; }
+  html[data-style="rock"] .tag.ban .pop { border-color: #111; color: #fff; }
+  html[data-style="simple"] .tag .pop { box-shadow: none; }
+  .tag .xcut { background: var(--dz2); box-shadow: 0 0 8px var(--dz2); } html[data-style="rock"] .tag .xcut { background: #fff; box-shadow: 0 0 0 2px #111; }
+  html[data-style="cyber"] .cdnum.fx { text-shadow: 0 0 18px var(--dz1), 3px 0 0 var(--dz2), -3px 0 0 #0ff; }
+  html[data-style="cyber"] .gobig.fx { text-shadow: 0 0 22px var(--dz1), 3px 0 0 var(--dz2), -3px 0 0 #0ff; }
+  html[data-style="gothic"] .cdnum.fx, html[data-style="gothic"] .gobig.fx { text-shadow: 0 0 26px var(--dz2); }
+  html[data-style="rock"] .cdnum.fx, html[data-style="rock"] .gobig.fx { text-shadow: 4px 4px 0 #111; }
 
 </style>
 </head>
@@ -527,6 +551,7 @@
   var frag = (location.hash || "").replace(/^#/, "").split(".");                       // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
   var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag.slice(2).join(".");
   var LETTER = frag[0] || "";
+  var HOST = new URLSearchParams(location.search).get("host") === "1";                    // スクショを送る人（部屋を立てる人）のURL（体験会）。本当に送れるかは、BOTが確かめる
   var VIEW = frag[0] === "w" ? "s" : frag[0] === "x" ? "h" : "";                         // w＝サバイバー側の参加選手／x＝ハンター側のチームメンバー：見るだけ
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var ASSET = "";                                                                      // 顔の画像は、このページと同じ場所（大会の公開サイト）
@@ -717,7 +742,7 @@
   setInterval(function () { tick(); cdTick(); }, 250);
   // BAN/PICKが全部終わったとき：演出と、次にやることの案内（出すのは、1回だけ。閉じたら、出さない）
   var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
-  var SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
+  var GO_AT = 0, SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
   function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
   function sendAct(act, extra) {                                                         // スクショの送信・試合開始：署名つきの依頼を、受け箱へ
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -744,9 +769,21 @@
     rd.readAsDataURL(file);
   }
   function spNote(cls, text) { SP_NOTE = { cls: cls, text: text }; var n = document.getElementById("spnote"); if (n) { n.className = "note " + cls; n.textContent = text; } }
+  var PANEL_READY = false, PANEL_TIMER = 0, WAS_ACTIVE = false;
+  function panelGate() {                                                                  // 最後の名札を選んでから2秒後に、案内の画面を出す（最初から完了していたページは、すぐ）
+    if (PANEL_READY) return true;
+    if (!WAS_ACTIVE) { PANEL_READY = true; return true; }
+    if (!PANEL_TIMER) PANEL_TIMER = setTimeout(function () { PANEL_READY = true; PANEL_TIMER = 0; buildPanel(); }, 2000);
+    return false;
+  }
   function buildPanel() {
     var stg = stageNow();
+    if (stg && !panelGate()) return;
     if (stg === "play" && PLAY_AT) return;                                               // 試合中の案内は、出したままにする
+    if (stg === "play" && GO_AT && Date.now() - GO_AT < 4000) {                          // 「試合開始！」を、4秒は見せてから、次の案内へ
+      setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50);
+      return;
+    }
     var old = $("sp"); if (old) old.remove();
     var old2 = $("spchip"); if (old2) old2.remove();
     if (!stg || SHUT) return;
@@ -763,14 +800,15 @@
     if (stg === "shot") {
       card.appendChild(el("div", "sub2", "次の順に進めてください。"));
       var ol = el("ol");
-      ["選手を呼び、試合モードを設定して、試合が始められる状態にします（試合モードでは、ハンターもサバイバーもBAN数を0にします）。",
-       "対戦画面をスクショします。", "このページで、スクショを選んで「送信する」を押します（Discordのチャンネルに、投稿されます）。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
+      ["選手を呼び、モードを設定し、試合が始められる状態にします。",
+       "対戦画面をスクショします。", "このページで、スクショを選んで「送信する」を押します（DMではなく、Discordのチャンネルに直接、投稿されます）。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
       card.appendChild(ol);
+      if (S.opener) card.appendChild(el("div", "cdtxt", "📸 スクショを送る人：" + S.opener + " さん（部屋を立てた人）"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
-      if (can) {
+      if (can && (!S.opener || HOST)) {
         var inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.style.display = "none"; inp.id = "shotfile";
         var pick = el("button", "btn", SHOT_IMG ? "📷 選び直す" : "📷 スクショを選ぶ"); pick.type = "button";
-        var snd = el("button", "btn go", SHOT_BUSY ? "送信しています…" : "📸 送信する"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
+        var snd = el("button", "btn go", SHOT_BUSY ? "送信しています…" : SHOT_IMG ? "📸 送信する" : "📸 送信する（先に画像を選ぶ）"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
         pick.addEventListener("click", function () { inp.click(); });
         inp.addEventListener("change", function () {
           var f = inp.files && inp.files[0]; if (!f) return;
@@ -788,7 +826,20 @@
           }).catch(function (e) { SHOT_BUSY = false; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
         });
         if (SHOT_IMG) { var im = el("img", "prev"); im.src = SHOT_IMG; card.appendChild(im); }
-        var row = el("div", "row"); row.appendChild(inp); row.appendChild(pick); row.appendChild(snd); card.appendChild(row);
+        var row = el("div", "row"); row.appendChild(inp); row.appendChild(pick); row.appendChild(snd);
+        if (S.expo) {                                                                         // 体験会：送れなくても、進める
+          var sk = el("button", "btn", "送れない（このまま進む）"); sk.type = "button"; sk.disabled = SHOT_BUSY;
+          sk.addEventListener("click", function () {
+            SHOT_BUSY = true; buildPanel(); spNote("", "進めています…");
+            sendAct("shot_skip").then(function (res) { SHOT_BUSY = false; if (!(res && res.ok)) SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; return refresh().then(buildPanel); })
+              .catch(function (e) { SHOT_BUSY = false; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
+          });
+          row.appendChild(sk);
+        }
+        card.appendChild(row);
+        if (!SHOT_IMG && !SP_NOTE.text) card.appendChild(el("div", "note", "先に「📷 スクショを選ぶ」で画像を選ぶと、「送信する」が押せるようになります。"));
+      } else if (can) {
+        card.appendChild(el("div", "warn", "スクショは、" + S.opener + " さんが送ります。しばらくお待ちください。"));
       } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
     } else if (stg === "confirm" && !S.confirmed) {
       card.appendChild(el("div", "sub2", "スクショを送信しました。"));
@@ -796,7 +847,6 @@
       if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
     } else if (stg === "confirm") {
       var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
-      var go = el("div", "row"); go.id = "gorow"; card.appendChild(go);
     }
     var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
     var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
@@ -812,7 +862,7 @@
     if (rem > 0) {
       var mode = rem <= 10 ? "n" + rem : "t";
       if (rem > 10) {
-        var m = Math.floor(rem / 60), s = rem % 60, txt = ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
+        var hh = Math.floor(rem / 3600), m = Math.floor(rem % 3600 / 60), s = rem % 60, txt = (hh ? hh + ":" : "") + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
         if (CD_LAST !== "t" || box.firstChild == null) {
           box.textContent = "";
           box.appendChild(el("div", "cdhead", "試合開始まで")); var tm = el("div", "cdtime", txt); tm.id = "cdtime"; box.appendChild(tm);
@@ -834,18 +884,7 @@
     box.textContent = "";
     box.appendChild(el("div", "gobig" + f, "試合開始！")); box.appendChild(el("div", "gosub", "今すぐチェックボタンを押してください！"));
     burst();
-    var gr = $("gorow");
-    if (gr && (SIDE === "s" || SIDE === "h")) {                                            // ゲームで始めたら、BOTにも記録する（代表者）
-      var b = el("button", "btn go", "🎮 試合開始（BOTに記録）"); b.type = "button";
-      b.addEventListener("click", function () {
-        b.disabled = true; spNote("", "送信しています…");
-        sendAct("start").then(function (res) {
-          if (res && res.ok) { spNote("ok", "✅ 試合開始を記録しました。"); } else { b.disabled = false; spNote("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); }
-          return refresh();
-        }).catch(function (e) { b.disabled = false; spNote("ng", "⚠ " + (e.message || "つながりませんでした。")); });
-      });
-      gr.appendChild(b);
-    }
+    GO_AT = Date.now();                                                                  // 00:00＝試合開始（ボタンは要らない。BOTが、自動で試合開始にする）
   }
   function shake() { var sh = $("shell"); sh.classList.remove("shake"); void sh.offsetWidth; sh.classList.add("shake"); }
   function burst() {                                                                     // 試合開始の瞬間の演出（デザインごと）
@@ -860,21 +899,22 @@
     if (PLAY_AT) return;
     PLAY_AT = Date.now();
     var ov = el("div", "ask sp"), card = el("div", "card"); ov.id = "sp";
-    card.appendChild(el("div", "big", "🏁 試合開始！"));
-    card.appendChild(el("div", "cdtxt", "ゲームを始めてください。試合が終わったら、Discordへ戻って「🏁 試合が終了した」ボタンを押してください（結果の入力は、Discordで行います）。"));
+    card.appendChild(el("div", "big", S.expo ? "🎉 体験おつかれさまでした！" : "🏁 試合開始！"));
+    card.appendChild(el("div", "cdtxt", S.expo ? (S.end_text || "") : "ゲームを始めてください。試合が終わったら、Discordへ戻って「🏁 試合が終了した」ボタンを押してください（結果の入力は、Discordで行います）。"));
     ov.appendChild(card); $("stage").appendChild(ov);
     setTimeout(function () { SHUT = true; var o = $("sp"); if (o) o.remove(); shutdown(); }, 6000);
   }
   function shutdown() {
     if (fx()) $("shell").classList.add("off");
     var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
-    m.appendChild(el("div", "t1", "BANPICK完了"));
-    m.appendChild(el("div", "t2", "Discordへ戻って次のステップへ進んでください"));
+    m.appendChild(el("div", "t1", S && S.expo ? "BANPICK体験会" : "BANPICK完了"));
+    m.appendChild(el("div", "t2", S && S.expo ? (S.end_text || "") : "Discordへ戻って次のステップへ進んでください"));
     $("stage").appendChild(m);
   }
   function render() {
     if (!S) return;
     applyColor(SIDE || VIEW || "s");
+    if (S.status === "active") WAS_ACTIVE = true;
     if (S.style && fx() && !BPX_LOCK) applyStyle(S.style);
     var v = SIDE || VIEW || "s";
     $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
@@ -888,6 +928,7 @@
            : "　このURLは、閲覧だけです（ボードの「🌐 ブラウザで入力する」から、個人用のURLを開いてください）。";
     b1.appendChild(document.createTextNode(me)); nt.appendChild(b1);
     var st = S.status !== "active" ? "✅ BAN/PICKは完了しました。Discordの案内に進んでください。"
+           : S.wait ? "⏳ " + S.wait
            : myTurn() ? "👉 あなたの番です：名札をタップして選び、「確定」を押してください。" : "⏳ " + SIDE_NAME[S.side] + "側の入力を待っています…";
     nt.appendChild(el("div", "bar " + (myTurn() ? "my" : "info"), st));
     if (SIDE) { if (!$("palGrid")) buildPal(); fillPal(); }
