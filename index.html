@@ -772,14 +772,25 @@
     });
   }
 
-  // ── ブラウザ音楽（music.js）：大会開始前の音楽（開くたびに、小さめの音量から始まる。左下のバーで、大きくできる）。大会日時を過ぎたら、止める ──
+  // ── ブラウザ音楽（music.js）：大会開始前の音楽（開くたびに、小さめの音量から始まる。右上「SINGLE ELIMINATION」の下のバーで、大きくできる）。大会日時を過ぎたら、止める ──
   var musicInit = false;
+  function placeMusicBar() {                                                          // 音量バーを、右上の「SINGLE ELIMINATION」の下に置く（表の拡縮・画面の大きさに合わせて、その文字の位置から決める）
+    var b = document.querySelector(".mp-bar"), s = document.getElementById("sub");
+    if (!b || !s || document.documentElement.classList.contains("flow")) return;     // 縦長・狭い画面（flow）は、これまでどおり左下
+    var r = s.getBoundingClientRect();
+    if (!r.width) return;
+    b.style.left = "auto"; b.style.bottom = "auto";
+    b.style.top = Math.max(4, Math.round(r.bottom + 8)) + "px";
+    b.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + "px";
+  }
+  window.addEventListener("resize", placeMusicBar);
   function updateMusic(data) {
     if (!window.MusicPlayer || EMBED || params.get("music") === "0") return;
-    if (!musicInit) { musicInit = true; MusicPlayer.init({ ui: true, volume: 0.2 }); setInterval(function () { if (curData) updateMusic(curData); }, 5000); }
+    if (!musicInit) { musicInit = true; MusicPlayer.init({ ui: true, volume: 0.2 }); setInterval(function () { if (curData) updateMusic(curData); }, 5000); setInterval(placeMusicBar, 1000); }
     var m = data.music, until = m && m.until ? Date.parse(m.until) : NaN;
     var on = m && m.pre && !(until && Date.now() > until) && !(isNaN(until) && data.phase === "finished");
     MusicPlayer.set(on ? m.pre : null);
+    placeMusicBar();
   }
 
   function render(data) {
