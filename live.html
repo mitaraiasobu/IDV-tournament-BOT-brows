@@ -2308,6 +2308,7 @@
     musicInit = true;
     var pub = window.PAGE_KIND === "rules";                                         // 公開のルールのページ：小さめの音量から、バーで大きくできる。配信用の画面：音量は、そのまま（OBSで調整）
     MusicPlayer.init({ ui: pub, volume: pub ? 0.2 : 1 });
+    if (pub) { var mpStyle = document.createElement("style"); mpStyle.textContent = ".mp-bar{left:auto !important;right:12px;top:12px;bottom:auto !important}"; document.head.appendChild(mpStyle); }          // 公開のページ：音量バーは、右上
   }
 
   function render(data, force) {
