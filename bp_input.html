@@ -361,33 +361,40 @@
 
   @media (prefers-reduced-motion: reduce) { #stage::before, #stage::after, header h1, header h1::after, header::after, #gate::before { animation: none !important; } }
 
-  /* ───── BAN/PICKの入力ページ（LABの見た目に、必要なものを足す） ───── */
-  #app { flex: 1; min-height: 0; width: 100%; max-width: 1100px; margin: 0 auto; padding: 10px 14px 20px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: none; scrollbar-width: none; }
-  #app::-webkit-scrollbar { display: none; }
-  html.rot #app { padding: 6px 12px 10px; } html.rot h1 { font-size: 16px; } html.rot .step .frames .tag, html.rot .frame { zoom: 1; }
-  #app header { padding: 6px 0; } #app h1 { font-size: 18px; }
-  .who { margin: 4px 0 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 13.5px; }
-  .who.my { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac); } .who b.s { color: #7db4ff; } .who b.h { color: #ff8a99; }
-  .step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 6px; border-top: 1px solid var(--line); }
-  .step.now { background: color-mix(in srgb, var(--ac) 12%, transparent); border-radius: 8px; }
-  .step .num { font-size: 22px; color: var(--gold); width: 30px; text-align: center; flex: none; }
-  .step .what { font-size: 13px; margin-bottom: 4px; } .step .what.s { color: #9cc4ff; } .step .what.h { color: #ff9fac; }
-  .step .frames { display: flex; flex-wrap: wrap; gap: 6px; }
-  .frame { width: 66px; min-height: 80px; border: 2px dashed var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20px; }
-  .frame.open { border-color: var(--ac); cursor: pointer; } .frame.hid { border-style: solid; opacity: .7; }
-  #pal { flex: none; width: auto; margin-top: 12px; } #pal .grid { padding: 4px 2px; }
-  .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 13px; padding: 2px; }
+  /* ───── BAN/PICKの入力ページ（LABと同じ作り：左＝名札置き場／右＝目線の枠。足りないものだけ、足す） ───── */
+  #notice .bar.info { background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+  #notice .bar.my { background: #4a3d0a; border: 1px solid var(--gold); color: #ffe48a; }
+  #notice .bar b.s { color: #7db4ff; } #notice .bar b.h { color: #ff8a99; }
+  #work { touch-action: none; overscroll-behavior: contain; }
+  main.view #pal { display: none; }
+  #pal .palbox.m { border-top: 2px solid var(--gold); }
+  #pal .palbox.m .tag { width: 66px; } .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 12px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
   .tag.gray { cursor: not-allowed; } .tag.picked { opacity: .35; }
-  .bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: var(--bg); border-top: 1px solid var(--line); z-index: 5; }
-  .bar .btn { padding: 9px 22px; font-size: 15px; } .bar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; }
+  .blk.now { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
+  .blk h4 .cnt.now { color: var(--gold); font-weight: 700; }
+  .frame { display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20px; }
+  .frame.open { border-color: var(--ac); cursor: pointer; color: var(--ac); } .frame.hid { border-style: solid; opacity: .7; }
+  .drop.col0 { min-height: 84px; }
+  .cbar { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px solid var(--line); background: var(--bg); }
+  .cbar .btn { padding: 13px 40px; font-size: 18px; } .cbar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .cbar .btn[disabled] { opacity: .5; }
+  .ask { position: absolute; inset: 0; z-index: 200; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .ask .card { max-width: 520px; background: var(--panel); border: 2px solid var(--ac); border-radius: 12px; padding: 18px 22px; }
+  .ask .q { font-size: 16px; line-height: 1.7; margin-bottom: 16px; } .ask .row { display: flex; gap: 10px; justify-content: flex-end; }
+  .ask .btn { padding: 9px 22px; font-size: 15px; } .ask .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; }
   #msg { min-height: 1.4em; font-size: 13.5px; } #msg.ok { color: var(--ok); } #msg.ng { color: #ff9aa6; }
   .stop { margin: 30px auto; max-width: 520px; text-align: center; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  html.rot .cbar { padding: 4px 12px 6px; } html.rot .cbar .btn { padding: 10px 34px; font-size: 19px; }
 
 </style>
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "bpinput";</script>
-<div id="stage"><div id="app"></div></div>
+<div id="stage">
+<header><h1 id="ttl">BAN/PICK</h1><span class="sub" id="sub"></span></header>
+<div id="notice"></div>
+<main><aside id="pal"></aside><section id="work"></section></main>
+<div class="cbar" id="bar"></div>
+</div>
 <script>
 
 (function () {
@@ -395,6 +402,7 @@
   var key = new URLSearchParams(location.search).get("t") || "";
   var frag = (location.hash || "").replace(/^#/, "").split(".");                       // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
   var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag.slice(2).join(".");
+  var VIEW = frag[0] === "w" ? "s" : frag[0] === "x" ? "h" : "";                         // w＝サバイバー側の参加選手／x＝ハンター側のチームメンバー：見るだけ
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var ASSET = "";                                                                      // 顔の画像は、このページと同じ場所（大会の公開サイト）
   var $ = function (id) { return document.getElementById(id); };
@@ -451,7 +459,7 @@
     ROT = W / Math.max(1, H) < 1.25 && W < 900;
     document.documentElement.classList.toggle("rot", ROT);
     if (ROT) {
-      var LW = 1200, LH = Math.round(LW * W / H);
+      var LW = 900, LH = Math.round(LW * W / H);
       ROT_SCALE = H / LW;
       st.style.width = LW + "px"; st.style.height = LH + "px";
       st.style.transform = "translate(" + W + "px,0) rotate(90deg) scale(" + ROT_SCALE + ")";
@@ -467,8 +475,8 @@
   var PS = null;
   document.addEventListener("pointerdown", function (e) {
     if (e.pointerType !== "touch") return;
-    var box = $("app");
-    PS = box && box.contains(e.target) ? { box: box, x: e.clientX, y: e.clientY, top: box.scrollTop, moved: false, v: 0, t: Date.now(), id: e.pointerId } : null;
+    var box = e.target.closest ? e.target.closest(".palbox, #work") : null;
+    PS = box ? { box: box, x: e.clientX, y: e.clientY, top: box.scrollTop, moved: false, v: 0, t: Date.now(), id: e.pointerId } : null;
   }, true);
   document.addEventListener("pointermove", function (e) {
     if (!PS || e.pointerId !== PS.id) return;
@@ -492,56 +500,96 @@
 
   function cur() { return S && S.cur != null ? S.steps[S.cur] : null; }
   function myTurn() { return !!(S && S.status === "active" && SIDE && S.side === SIDE); }
+  var NEWSTEP = true;
+  function buildPal() {
+    var pal = $("pal"); pal.textContent = "";
+    pal.appendChild(el("h3", "", "")); pal.firstChild.id = "palTitle";
+    pal.appendChild(el("div", "hint", "名札をタップして選び、下の「確定」を押します（もう一度タップすると外れます）。")); pal.lastChild.id = "palHint";
+    var box = el("div", "palbox"), grid = el("div", "grid"); grid.id = "palGrid"; box.id = "palBox"; box.appendChild(grid); pal.appendChild(box);
+  }
+  function fillPal() {                                                                     // 名札は、いまの手順で選ぶものだけ（選べるものだけ）を並べる
+    if (!SIDE) return;
+    var c = cur(), turn = myTurn() && c, grid = $("palGrid"); grid.textContent = "";
+    var box = $("palBox"); box.className = "palbox " + (turn ? c.t : "");
+    $("palTitle").textContent = turn ? TGT[c.t] + "（選べるもの）" : "名札";
+    $("palHint").style.display = turn ? "" : "none";
+    if (!turn) { grid.appendChild(el("div", "hint", S.status === "active" ? "いまは、あなたの番ではありません。相手の入力が終わると、ここに、選べる名札が出ます。" : "BAN/PICKは、完了しました。")); return; }
+    var avail = {}; (S.avail || []).forEach(function (id) { avail[id] = true; });
+    var list = c.t === "h" ? (S.chars.h || []) : c.t === "s" ? (S.chars.s || []) : (S.maps || []);
+    list.forEach(function (x) {
+      var ch = CH[x.id]; if (!ch || !avail[ch.id]) return;
+      var t = makeTag(ch, SEL.indexOf(ch.id) >= 0 ? "picked" : "");
+      t.addEventListener("click", function () { pick(ch.id, true); });
+      grid.appendChild(t);
+    });
+  }
+  // ハンター側の代表が選んだ「ハンターのPICK」は、相手には試合が終わるまで非公開（公開データには入らない）。本人の画面だけは、自分が選んだものを、この端末に覚えておいて、見せる
+  var HKEY = "bp_h_" + key;
+  function mem() { try { return JSON.parse(localStorage.getItem(HKEY) || "{}"); } catch (e) { return {}; } }
+  function remember(i, ids) { try { var m = mem(); m[i] = ids; localStorage.setItem(HKEY, JSON.stringify(m)); } catch (e) { /* 無視 */ } }
+  function stepBlock(s, i) {
+    var mine = i === S.cur && myTurn(), blk = el("div", "blk" + (i === S.cur ? " now" : ""));
+    var h = el("h4", "", CIRC.charAt(i) + " " + TGT[s.t] + "を" + ACT[s.a]);
+    h.appendChild(el("small", "", "×" + s.n));
+    if (i === S.cur && S.status === "active") h.appendChild(el("span", "cnt now", mine ? "← ここを選びます" : "← いま入力中"));
+    blk.appendChild(h);
+    var drop = el("div", "drop");
+    for (var k = 0; k < s.n; k++) {
+      var slot;
+      var rem = s.hidden && s.set && SIDE === s.s ? mem()[i] : null;                          // 自分（ハンター側の代表）が選んだ、非公開のPICK
+      if (mine && SEL[k] != null && CH[SEL[k]]) {
+        slot = makeTag(CH[SEL[k]]); slot.title = "もう一度タップすると、外れます";
+        (function (id) { slot.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]);
+      } else if (s.hidden && !mine) {
+        if (rem && CH[rem[k]]) { slot = makeTag(CH[rem[k]], "locked"); slot.title = "あなたが選んだハンターです（相手には、試合が終わるまで、非公開）"; }
+        else { slot = el("div", "frame hid", "🔒"); slot.title = "ハンターのPICKは、試合が終わるまで、公開されません"; }
+      } else if (s.set && s.ids && CH[s.ids[k]]) { slot = makeTag(CH[s.ids[k]], "locked"); }
+      else { slot = el("div", "frame" + (mine ? " open" : ""), mine ? "＋" : ""); }
+      drop.appendChild(slot);
+    }
+    blk.appendChild(drop);
+    return blk;
+  }
+  function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+  function applyColor(side) {                                                              // 自陣営の色が、サブカラー（サバイバー＝青／ハンター＝赤。LABと同じ色）
+    var hex = getComputedStyle(document.documentElement).getPropertyValue(side === "h" ? "--h" : "--s").trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+    var r = document.documentElement.style; r.setProperty("--ac", hex); r.setProperty("--ac-on", lum(hex) > .5 ? "#05070b" : "#ffffff");
+  }
   function render() {
     if (!S) return;
-    var app = $("app"); app.textContent = "";
-    var head = el("header"); head.appendChild(el("h1", "", "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || ""))); head.appendChild(el("span", "sub", S.title || ""));
-    app.appendChild(head);
-    var who = el("div", "who" + (myTurn() ? " my" : ""));
-    var a = el("div"); a.appendChild(document.createTextNode("🔵 サバイバー：")); a.appendChild(el("b", "s", S.survivor)); a.appendChild(document.createTextNode("　🔴 ハンター：")); a.appendChild(el("b", "h", S.hunter));
-    who.appendChild(a);
-    var me = SIDE ? "あなたは、" + SIDE_NAME[SIDE] + "側の代表です。" : "このURLは、閲覧だけです（ボードの「🌐 ブラウザで入力する」から、個人用のURLを開いてください）。";
+    applyColor(SIDE || VIEW || "s");
+    var v = SIDE || VIEW || "s";
+    $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
+    $("sub").textContent = S.title || "";
+    document.querySelector("main").classList.toggle("view", !SIDE);
+    var nt = $("notice"); nt.textContent = "";
+    var b1 = el("div", "bar info");
+    b1.appendChild(document.createTextNode("🔵 サバイバー：")); b1.appendChild(el("b", "s", S.survivor)); b1.appendChild(document.createTextNode("　🔴 ハンター：")); b1.appendChild(el("b", "h", S.hunter));
+    var me = SIDE ? "　あなたは、" + SIDE_NAME[SIDE] + "側の代表です。"
+           : VIEW ? "　あなたは、" + SIDE_NAME[VIEW] + "側の参加メンバーです。BAN/PICKは代表者が入力します（この画面は、見るだけです）。"
+           : "　このURLは、閲覧だけです（ボードの「🌐 ブラウザで入力する」から、個人用のURLを開いてください）。";
+    b1.appendChild(document.createTextNode(me)); nt.appendChild(b1);
     var st = S.status !== "active" ? "✅ BAN/PICKは完了しました。Discordの案内に進んでください。"
-           : myTurn() ? "👉 **あなたの番です**：名札をタップして選び、「確定」を押してください。" : "⏳ " + SIDE_NAME[({ s: "s", h: "h" })[S.side]] + "側の入力を待っています…";
-    who.appendChild(el("div", "", me)); who.appendChild(el("div", "", st.replace(/\*\*/g, "")));
-    app.appendChild(who);
-    // 手順の一覧：①②…の順に、枠を並べる
-    S.steps.forEach(function (s, i) {
-      var row = el("div", "step" + (i === S.cur ? " now" : ""));
-      row.appendChild(el("div", "num", CIRC.charAt(i)));
-      var box = el("div");
-      box.appendChild(el("div", "what " + s.s, SIDE_NAME[s.s] + "側が " + TGT[s.t] + "を " + ACT[s.a] + " ×" + s.n));
-      var fr = el("div", "frames");
-      for (var k = 0; k < s.n; k++) {
-        var slot;
-        if (s.hidden) { slot = el("div", "frame hid", "🔒"); }
-        else if (s.set && s.ids && CH[s.ids[k]]) { slot = el("div"); slot.appendChild(makeTag(CH[s.ids[k]])); }
-        else if (i === S.cur && myTurn() && SEL[k] != null && CH[SEL[k]]) {
-          slot = el("div"); var tg = makeTag(CH[SEL[k]]); tg.title = "もう一度タップすると、外れます"; (function (id) { tg.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]); slot.appendChild(tg);
-        } else { slot = el("div", "frame" + (i === S.cur && myTurn() ? " open" : ""), i === S.cur && myTurn() ? "＋" : ""); }
-        fr.appendChild(slot);
-      }
-      box.appendChild(fr); row.appendChild(box); app.appendChild(row);
+           : myTurn() ? "👉 あなたの番です：名札をタップして選び、「確定」を押してください。" : "⏳ " + SIDE_NAME[S.side] + "側の入力を待っています…";
+    nt.appendChild(el("div", "bar " + (myTurn() ? "my" : "info"), st));
+    if (SIDE) { if (!$("palGrid")) buildPal(); fillPal(); }
+    var work = $("work"), top = work.scrollTop; work.textContent = "";
+    var corner = el("div", "corner " + v), chd = el("div", "chd");
+    chd.appendChild(el("h3", "", SIDE_NAME[v] + "目線")); corner.appendChild(chd);
+    var pair = el("div", "pair");
+    [["own", "自陣営", v], ["enemy", "敵陣営", v === "s" ? "h" : "s"]].forEach(function (sd) {
+      var side = el("div", "side " + sd[0]); side.appendChild(el("h5", "", sd[1] + "（" + SIDE_NAME[sd[2]] + "）"));
+      var n = 0;
+      S.steps.forEach(function (s, i) { if (s.s === sd[2]) { side.appendChild(stepBlock(s, i)); n++; } });
+      if (!n) side.appendChild(el("div", "hint", "（この側の手順は、ありません）"));
+      pair.appendChild(side);
     });
-    // 名札置き場（自分の番のときだけ）
+    corner.appendChild(pair); work.appendChild(corner);
+    work.scrollTop = top;
+    if (NEWSTEP) { NEWSTEP = false; var nw = work.querySelector(".blk.now"); if (nw) work.scrollTop = Math.max(0, nw.offsetTop - 70); }
+    var bar = $("bar"); bar.textContent = "";
     var c = cur();
-    if (myTurn() && c) {
-      var pal = el("div", "box"); pal.id = "pal";
-      pal.appendChild(el("div", "hint", "選べるキャラ（灰色は、選べません）：" + SIDE_NAME[c.t === "h" ? "h" : "s"].replace(/.*/, TGT[c.t])));
-      var grid = el("div", "grid"), list = c.t === "h" ? (S.chars.h || []) : c.t === "s" ? (S.chars.s || []) : S.maps;
-      var avail = {}; (S.avail || []).forEach(function (id) { avail[id] = true; });
-      list.forEach(function (x) {
-        var ch = CH[x.id]; if (!ch) return;
-        var ok = !!avail[ch.id], picked = SEL.indexOf(ch.id) >= 0;
-        var t = makeTag(ch, (ok ? "" : "gray") + (picked ? " picked" : ""));
-        if (!ok) { t.title = "この手順では、選べません（BAN済み・すでに選ばれた・使用済みなど）"; }
-        t.addEventListener("click", function () { pick(ch.id, ok); });
-        grid.appendChild(t);
-      });
-      pal.appendChild(grid); app.appendChild(pal);
-    }
-    // 確定のバー
-    var bar = el("div", "bar"); app.appendChild(bar);
     if (myTurn() && c) {
       var go = el("button", "btn go", "確定（" + SEL.length + "/" + c.n + "）"); go.type = "button"; go.disabled = BUSY || SEL.length !== c.n;
       go.addEventListener("click", send); bar.appendChild(go);
@@ -560,15 +608,27 @@
   }
   function send() {
     var c = cur(); if (!c || SEL.length !== c.n || BUSY) return;
-    var names = SEL.map(function (id) { return CH[id].n; }).join("、");
-    if (!confirm("「" + names + "」で確定します。確定すると、取り消せません。よろしいですか？")) return;
+    var names = SEL.map(function (id) { return CH[id].n; }).join("、"), stepNo = S.cur, picked = SEL.slice(), wasHidden = !!c.hidden;
+    ask("「" + names + "」で確定します。確定すると、取り消せません。よろしいですか？", function () { sendNow(stepNo, picked, wasHidden); });
+  }
+  function ask(text, ok) {                                                                 // ページの中の確認（標準のダイアログは使わない）
+    var ov = el("div", "ask"), card = el("div", "card"), row = el("div", "row");
+    card.appendChild(el("div", "q", text));
+    var no = el("button", "btn", "やめる"), yes = el("button", "btn go", "確定する"); no.type = "button"; yes.type = "button";
+    no.addEventListener("click", function () { ov.remove(); });
+    yes.addEventListener("click", function () { ov.remove(); ok(); });
+    row.appendChild(no); row.appendChild(yes); card.appendChild(row); ov.appendChild(card); $("stage").appendChild(ov);
+    yes.focus();
+  }
+  function sendNow(stepNo, picked, wasHidden) {
+    if (BUSY) return;
     BUSY = true; render(); msg("", "送信しています…");
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL } } }) })
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
       .then(function (res) {
         BUSY = false;
-        if (res && res.ok) { SEL = []; msg("ok", "✅ 確定しました。Discordのボードにも反映されます。"); }
+        if (res && res.ok) { if (wasHidden) remember(stepNo, picked); SEL = []; msg("ok", "✅ 確定しました。Discordのボードにも反映されます。"); }
         else msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。しばらくして、画面を確かめてください。"));
         return refresh();
       }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); render(); });
@@ -587,17 +647,18 @@
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
       if (!d || d.kind !== "bp") { stopped(); return; }
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status;
-      if (changed) SEL = [];
+      if (changed) { SEL = []; NEWSTEP = true; }
       S = d; buildCH(d);
-      if (changed || !$("app").firstChild) render();
+      if (changed || !$("work").firstChild) render();
     });
   }
   function stopped() {
     clearInterval(timer);
-    var app = $("app"); app.textContent = "";
+    document.querySelector("main").classList.add("view"); $("notice").textContent = ""; $("bar").textContent = "";
+    var w = $("work"); w.textContent = "";
     var b = el("div", "stop"); b.appendChild(el("h2", "", "このBAN/PICKは、ブラウザでは入力できません"));
     b.appendChild(el("div", "", "終わったか、中止されたか、管理者が「Discordのボタンで進める」に切り替えました。Discordのボードの、案内に従ってください。"));
-    app.appendChild(b);
+    w.appendChild(b);
   }
   function start() {
     if (!key || !BASE) { stopped(); return; }
