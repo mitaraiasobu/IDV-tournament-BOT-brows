@@ -49,7 +49,6 @@
   .rounds { width: 100%; border-collapse: collapse; } .rounds td { padding: 6px 8px; border-top: 1px solid var(--line); } .rounds td:first-child { white-space: nowrap; }
   #result { margin: 12px 0; } #result.ok { color: var(--ok); } #result.ng { color: var(--bad); }
   .note { color: var(--sub); font-size: 13px; }
-  .cl-btn { top: auto !important; bottom: 14px; }                       /* ✏ 更新履歴：ヘッダーに重ならないよう、左下に */
 </style>
 </head>
 <body>
@@ -75,7 +74,6 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
   </main>
 </div>
-<script src="changelog.js"></script>
 <script>
 (function () {
   "use strict";
@@ -188,16 +186,20 @@
       if (s.action === "ban" && s.side === s.target) return (i + 1) + "番：自分の側と同じものを、BANすることはできません。";
       if (s.count < 1 || s.count > lim.max_count) return (i + 1) + "番：人数は、1〜" + lim.max_count + "です。";
     }
+    var pk = { survivor: 0, hunter: 0, map: 0 }, hasMap = false;                       // 必ず守るルール（BOTでも、同じ検査をする）
+    steps.forEach(function (s) { if (s.action === "pick") pk[s.target] += s.count; if (s.target === "map") hasMap = true; });
+    var bad = [];
+    if (pk.survivor !== 4) bad.push("サバイバーのPICKは、ちょうど4人にしてください（いま" + pk.survivor + "人）");
+    if (pk.hunter !== 1) bad.push("ハンターのPICKは、ちょうど1人にしてください（いま" + pk.hunter + "人）");
+    if (hasMap && pk.map !== 1) bad.push("マップのPICKは、ちょうど1つにしてください（いま" + pk.map + "つ）");
+    if (bad.length) return "⚠ " + bad.join("／") + "。このままでは保存できません。";
     return "";
   }
   function summary(steps) {
     var t = { pick: { survivor: 0, hunter: 0, map: 0 }, ban: { survivor: 0, hunter: 0, map: 0 } };
     steps.forEach(function (s) { t[s.action][s.target] += s.count; });
     function one(a) { return "サバイバー" + t[a].survivor + "・ハンター" + t[a].hunter + "・マップ" + t[a].map; }
-    var warn = [];
-    if (t.pick.survivor !== 4) warn.push("サバイバーのPICKが合計" + t.pick.survivor + "人です（通常は4人）");
-    if (t.pick.hunter !== 1) warn.push("ハンターのPICKが合計" + t.pick.hunter + "人です（通常は1人）");
-    return "PICK：" + one("pick") + "／BAN：" + one("ban") + (warn.length ? "　⚠ " + warn.join("／") : "");
+    return "✅ PICK：" + one("pick") + "／BAN：" + one("ban");
   }
 
   // ───────── 画面
@@ -297,7 +299,6 @@
     if (SEL == null || SEL >= P.length) SEL = 0;
     BASEJSON = JSON.stringify([P, ROUNDS, DELETED]);
     $("title").textContent = (d.title || "大会") + "の設定";
-    if (window.Changelog) window.Changelog.update(d.changes);
   }
   function init() {
     $("gate").hidden = true; $("app").hidden = false;
