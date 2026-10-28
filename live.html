@@ -1142,6 +1142,7 @@
   html[data-tkb="light"][data-design="simple"] .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  .chg { text-decoration: underline; text-decoration-color: #ff3b3b; text-decoration-thickness: 3px; text-underline-offset: 4px; text-shadow: 0 0 8px rgba(255, 59, 59, .75); }       /* 最近（3日以内）変わったところ：文字の色はそのまま、赤い下線 */
 </style>
 </head>
 <body>
@@ -1660,21 +1661,26 @@
       s.appendChild(body);
       return s;
     }
-    function rows(list, emptyText) {
+    function recentIso(iso) { var t = Date.parse(iso || ""); return !isNaN(t) && Date.now() - t <= 3 * 24 * 60 * 60 * 1000; }
+    var CHG = (lastData && lastData.chg) || {};                                       // 最近（3日以内）変わったルールは、文字の色はそのままで、赤い下線をつける
+    function rows(list, emptyText, changedIso) {
       list = arr(list);
-      var d = el("div");
+      var d = el("div"), hot = recentIso(changedIso);
       if (!list.length) d.appendChild(el("div", "none", emptyText));
       list.forEach(function (x) {
         var row = el("div", "row");
         row.appendChild(el("span", "lb", x.label || ""));
-        row.appendChild(el("span", "tx", x.text || ""));
+        var tx = el("span", "tx" + (hot ? " chg" : ""), x.text || "");
+        if (hot) tx.title = "最近、変更されました";
+        row.appendChild(tx);
         d.appendChild(row);
       });
       return d;
     }
     var cols = el("div", "cols");
-    cols.appendChild(section("c-global", "全試合に共通のルール", rows(r.global_rows, "特別なルールはありません")));
-    cols.appendChild(section("c-round", "このラウンドのルール", rows(entry.round_rows, "特別なルールはありません")));
+    var rn = entry.no || r.round_no;
+    cols.appendChild(section("c-global", "全試合に共通のルール", rows(r.global_rows, "特別なルールはありません", CHG.global)));
+    cols.appendChild(section("c-round", "このラウンドのルール", rows(entry.round_rows, "特別なルールはありません", (CHG.rounds || {})[rn] || CHG.global)));
     var steps = arr(entry.steps);
     if (steps.length) {
       var ol = el("ol");
