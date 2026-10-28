@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="ja" data-style="cyber">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BAN/PICK入力</title>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
+<!--
+  BAN/PICKの入力ページ（代表者だけ。個人用のURLで開く）。IDV TEAM LABと同じ見た目・名札・顔の画像を使う。
+  ・ボードの「🌐 ブラウザで入力する」ボタンを押した本人にだけ出る、個人用のURL（?t=このBAN/PICKの12文字#側.ユーザー.署名）で開く。URLは、人に教えない。
+  ・window.TOURNAMENT_DATA_BASE ＋ 12文字 .json（BOTが書いた、このBAN/PICKの内容）を読む。ハンターのPICKは、試合が終わるまで入らない。
+  ・名札をタップして選び、「確定」を押すと、署名つきの依頼が受け箱に届き、BOTが確かめて、いつもの確定の処理（Discordのボードの更新）を行う。
+  ・管理者が /button で「Discordのボタンで進める」にすると、このページは使えなくなる（データが消える）。
+-->
+<style>
+  :root { --bg0: #05070b; --fg0: #f2f6ff; --ac: #22d3ee; --ac-on: #03121a;                          /* LABごとに変えられる3色：背景・文字・サブカラー */
+          --bg: var(--bg0); --text: var(--fg0);
+          --panel: color-mix(in srgb, var(--bg0) 91%, var(--fg0)); --panel2: color-mix(in srgb, var(--bg0) 83%, var(--fg0));
+          --line: color-mix(in srgb, var(--bg0) 70%, var(--fg0)); --sub: color-mix(in srgb, var(--fg0) 62%, var(--bg0));
+          --h: #d8334a; --h2: #7d1b29; --s: #2f7be0; --s2: #173d73; --gold: #ffd23f; --ok: #3ecf8e; }   /* ハンターの赤・サバイバーの青は、固定 */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif; }
+  #stage { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display: flex; flex-direction: column; transform-origin: 0 0; }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; padding: 10px 16px 6px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header .sub { color: var(--sub); font-size: 13px; }
+  #status { margin-left: auto; font-size: 12px; color: var(--sub); }
+  #status.ok { color: var(--ok); } #status.ng { color: #ff7a85; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 16px; }
+  nav button { appearance: none; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 7px 14px; border-radius: 8px 8px 0 0;
+               font: inherit; font-size: 14px; cursor: pointer; }
+  nav button.on { background: var(--panel2); border-color: #6f84ad; border-bottom-color: var(--panel2); font-weight: 700; }
+  #tabs2 button { font-size: 13px; padding: 5px 12px; }
+  #notice { margin: 4px 16px; font-size: 13px; }
+  #notice .bar { padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; }
+  #notice .bad { background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; animation: blink 1s steps(2, start) infinite; }
+  #notice .req { background: #4a3d0a; border: 1px solid var(--gold); color: #ffe48a; }
+  #notice .err { background: #3a2a10; border: 1px solid #e0a030; color: #ffd28a; }
+  main { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 8px 16px 12px; align-items: stretch; }
+  #pal { flex: 0 0 330px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  #pal.drop-ok { outline: 2px dashed var(--sub); }
+  #pal h3 { margin: 0 2px; font-size: 13px; color: var(--sub); flex: none; }
+  .palhd { appearance: none; flex: none; background: none; border: 0; color: var(--sub); font: inherit; font-size: 13px; font-weight: 700; margin: 0 2px; padding: 2px 4px; cursor: pointer; text-align: left; }
+  .palhd:hover { color: var(--text); } .palbox.collapsed { display: none; }
+  #pal input { width: 100%; flex: none; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; font-size: 13px; }
+  #pal .hint { flex: none; margin: 0; }
+  .palbox { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: none; scrollbar-width: none; }
+  .palbox::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ac) 65%, var(--bg0)) transparent; }                      /* スクロールバーは、デザインの色（サブカラー）に合わせる */
+  *::-webkit-scrollbar { width: 9px; height: 9px; } *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ac) 65%, var(--bg0)); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--ac); background-clip: padding-box; }
+  html[data-style="cyber"] *::-webkit-scrollbar-thumb, html[data-style="rock"] *::-webkit-scrollbar-thumb { border-radius: 0; }                                      /* スクロールバーは見せない（ホイール・指のスクロールは、できる） */     /* ハンターの名札置き場と、サバイバーの名札置き場は、別々にスクロール */
+  .palbox.h { border-top: 2px solid var(--h); } .palbox.s { border-top: 2px solid var(--s); }
+  .palopt { flex: none; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); margin: 0 2px; cursor: pointer; user-select: none; }
+  #pal .palopt input { width: auto; flex: none; padding: 0; accent-color: var(--s); }
+  .palopt { white-space: nowrap; }
+  .rolehd { margin: 6px 2px 3px; font-size: 12px; font-weight: 700; color: #9cc4ff; border-bottom: 1px solid var(--s2); }
+  .rolehd:first-child { margin-top: 0; }
+  #work { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding-bottom: 20px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  /* 名札：顔 + 名前 を、枠で囲む。ハンターは赤、サバイバーは青 */
+  .tag { width: 66px; border: 2px solid; border-radius: 8px; padding: 3px 2px 2px; text-align: center; cursor: grab; user-select: none; -webkit-user-select: none;
+         touch-action: pan-y; position: relative; background: var(--panel2); }
+  .tag.h { border-color: var(--h); background: linear-gradient(180deg, #3a1219, var(--h2)); }
+  .tag.s { border-color: var(--s); background: linear-gradient(180deg, #11274a, var(--s2)); }
+  .tag .face { width: 56px; height: 56px; margin: 0 auto; border-radius: 6px; background-repeat: no-repeat; background-color: rgba(0,0,0,.35);
+               display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .tag .nm { font-size: 10.5px; line-height: 1.15; margin-top: 2px; word-break: break-all; min-height: 24px; display: flex; align-items: center; justify-content: center; }
+  .tag .rms { position: absolute; top: 17px; right: 3px; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; z-index: 2; }       /* 縦に並べる */
+  .tag .rms span { font-size: 10px; line-height: 1; padding: 1px; border-radius: 8px; background: rgba(0, 0, 0, .6); color: #fff; }
+  .tag.fav.h { background: linear-gradient(180deg, #5a1d29, #a02a3d); border-color: #ff5e75; }                /* 誰かの得意キャラ：少しだけ明るく */
+  .tag.fav.s { background: linear-gradient(180deg, #1c3f73, #2b62b0); border-color: #5ca2ff; }
+  .tag .fstar { position: absolute; top: 1px; left: 3px; font-size: 13px; line-height: 1; color: var(--gold); text-shadow: 0 0 3px #000, 0 1px 0 #000; z-index: 2; pointer-events: none; }
+  .tag { -webkit-touch-callout: none; }
+  html.rot .tag { touch-action: pan-x; }                                             /* 回して表示しているとき：画面の縦（実際の横方向）に指を動かすと、名札の上でもスクロールできる */
+  .tag.gray { filter: grayscale(1) brightness(.8); opacity: .7; }                                    /* 組み合わせ禁止で、選べない／選べなくなったキャラ */
+  .pn.s { color: #6fb0ff; } .pn.h { color: #ff7d8d; } .pn.sh { color: #c79bff; }                    /* 選手名：サバイバー応募＝青／ハンター応募＝赤／両方＝紫 */
+  html[data-tone="light"] .pn.s { color: #1f5fb4; } html[data-tone="light"] .pn.h { color: #c3213a; } html[data-tone="light"] .pn.sh { color: #7b3fc4; }
+  #pcNote { position: fixed; left: 8px; right: 8px; top: 8px; z-index: 100001; background: var(--panel); color: var(--text); border: 2px solid var(--ac); border-radius: 10px; padding: 10px 14px; font-size: 3.4vw; line-height: 1.6; box-shadow: 0 6px 24px rgba(0, 0, 0, .6); }
+  #pcNote b { display: block; margin-bottom: 4px; } #pcNote .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; } #pcNote .btn { font-size: 3vw; }
+  #whyPop { position: fixed; z-index: 100000; max-width: 290px; background: var(--panel); color: var(--text); border: 1px solid var(--ac); border-radius: 10px; padding: 8px 12px 9px; font-size: 12.5px; line-height: 1.6; box-shadow: 0 6px 22px rgba(0,0,0,.5); }
+  #whyPop b { display: block; margin-bottom: 2px; font-size: 13px; } #whyPop div + div { margin-top: 3px; }
+  #gate .who { display: flex; align-items: baseline; gap: 10px; width: 100%; margin: 6px 0; padding: 11px 12px; text-align: left; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 15px; cursor: pointer; }
+  #gate .who:hover { border-color: var(--ac); } #gate .who .tg { font-size: 11px; color: var(--sub); margin-left: auto; }
+  .tag.hl { box-shadow: 0 0 0 3px var(--gold), 0 0 16px 4px rgba(255, 210, 63, .85); transform: translateY(-2px); }              /* 空のスロットをクリックした選手の、得意キャラ */
+  .tag.insL { box-shadow: 0 -5px 0 var(--ac); } .tag.insR { box-shadow: 0 5px 0 var(--ac); }                                         /* 入れる場所の目印（縦の枠：上／下） */
+  .drop:not(.col) .tag.insL { box-shadow: -5px 0 0 var(--ac); } .drop:not(.col) .tag.insR { box-shadow: 5px 0 0 var(--ac); }
+  .slotctl { margin-left: 8px; font-weight: 400; font-size: 12px; color: var(--sub); display: inline-flex; align-items: center; gap: 4px; }
+  .slotctl .sn { color: var(--text); font-size: 13px; }
+  .sbtn { appearance: none; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 6px; width: 24px; height: 22px; line-height: 1; font-size: 14px; cursor: pointer; padding: 0; }
+  .sbtn:hover { border-color: var(--ac); }
+  .pgrid { display: grid; gap: 6px; align-items: start; overflow-x: auto; }                                                       /* 選手の縦列（必ず横に並ぶ）× 編成パターンの行（増やすと、下へ増える） */
+  .pgrid .psel, .pgrid .pname { width: 100%; font: inherit; font-size: 12px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 3px 4px; text-align: center; }
+  .pgrid .pname { color: var(--sub); background: none; border-style: dashed; }
+  .drop.cell { min-height: 84px; justify-content: center; }
+  .tag[data-num]::after, .drop.cell[data-num]::after, .frame::after { content: attr(data-num); position: absolute; top: -1px; right: 3px; z-index: 4; font-size: 14px; font-weight: 800; line-height: 1; color: var(--gold); text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+  .drop.cell { position: relative; }
+  .frame { position: relative; width: 66px; min-height: 78px; border: 2px dashed var(--line); border-radius: 8px; opacity: .8; flex: none; }
+  .mapbar { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 6px; font-size: 12.5px; }
+  .mapbar label { display: inline-flex; align-items: center; gap: 6px; color: var(--sub); } .mapbar select { font: inherit; font-size: 12.5px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+  .gbrow { display: flex; flex-wrap: wrap; gap: 3px; margin: -2px 0 4px; } .gbrow[hidden] { display: none; }
+  .gbface { width: 26px; height: 26px; border-radius: 4px; background-repeat: no-repeat; background-color: rgba(0,0,0,.35); filter: grayscale(1) brightness(.85); flex: none; cursor: pointer; }
+  .drop.col { flex-direction: column; flex-wrap: nowrap; align-items: center; min-height: 100px; }                                      /* キャラは、縦に並ぶ */
+  .tag.sel { outline: 3px solid #fff; }
+  .ghost .gcount { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); background: var(--ac); color: var(--ac-on); font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 10px; }
+  .tag.req { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 12px 2px rgba(255,210,63,.75); }
+  .tag.req .nm { color: var(--gold); font-weight: 700; }
+  .tag.bad { border-color: #ff2b45; animation: blinkTag 4s step-end infinite; }                    /* 使用禁止：枠線だけ、ゆっくり点滅（フェードなし） */
+  .tag.locked { cursor: default; opacity: .92; }
+  .tag.dim { opacity: .35; }
+  .tag .x { position: absolute; right: -6px; top: -7px; width: 18px; height: 18px; line-height: 16px; border-radius: 50%; background: #000; color: #fff; border: 1px solid #888;
+            font-size: 11px; padding: 0; cursor: pointer; display: none; }
+  .tag:hover .x, .tag.sel .x { display: block; }
+  @media (hover: none) { .tag .x { display: block; } }
+  @keyframes blink { 50% { opacity: .35; } }
+  .drop.exact { border: 2px solid #2f9bff; }                                                                /* 人数がピッタリ揃ったとき：枠線に、青いライン */
+  @keyframes blinkTag { 0% { border-color: #ff2b45; } 50% { border-color: #4a1219; } }
+  .ghost { position: fixed; z-index: 99999; pointer-events: none; opacity: .9; transform: translate(-50%, -60%) scale(1.08); }
+  .ghost.rot { transform: translate(-50%, -60%) rotate(90deg) scale(var(--gs, 1.08)); }
+  /* 常用キャラ */
+  .players { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-height: 120px; }
+  .box h4 { margin: 0 0 6px; font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+  .box h4 small { color: var(--sub); font-weight: 400; }
+  .drop { min-height: 84px; border-radius: 8px; padding: 4px; background: rgba(255,255,255,.03); border: 1px dashed var(--line);
+          display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; }          /* 入れた名札は、横に並べる（入りきらなければ、次の段） */
+  .drop.over { background: rgba(255,255,255,.12); border-color: #fff; }
+  .drop.off { display: block; background: repeating-linear-gradient(45deg, #1a1f29, #1a1f29 8px, #141820 8px, #141820 16px); border-style: solid; color: var(--sub); font-size: 12px; text-align: center; padding-top: 28px; }
+  .drop.empty::before { content: attr(data-hint); color: #5d6a82; font-size: 12px; align-self: center; }
+  /* セット */
+  #corners { display: flex; flex-direction: column; gap: 12px; }                  /* 上：サバイバー目線／下：ハンター目線 */
+  .corner { background: var(--panel); border: 2px solid; border-radius: 12px; padding: 8px 10px 10px; min-width: 0; }
+  .corner .chd { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; } .corner .chd > h3 { margin: 0; } .swapbtn { margin-left: auto; }
+  .pair { display: flex; gap: 12px; align-items: stretch; } .pair.swap { flex-direction: row-reverse; }      /* 左：自陣営／右：敵陣営（ハンター目線は入れ替えられる） */
+  .side { flex: 1 1 0; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 4px 8px 8px; background: color-mix(in srgb, var(--bg0) 55%, var(--panel)); }
+  .side.enemy { border-style: dashed; } .side > h5 { margin: 2px 0 0; font-size: 12px; color: var(--sub); letter-spacing: .08em; }
+  .blk.eban .drop, .blk.epick .drop { background: color-mix(in srgb, var(--fg0) 4%, transparent); }
+  .corner.s { border-color: var(--s); } .corner.h { border-color: var(--h); }
+  .corner .chd > h3 { margin: 0 0 6px; font-size: 16px; }
+  .corner.s .chd > h3 { color: #7eb4ff; } .corner.h .chd > h3 { color: #ff8896; }
+  .blk { margin-top: 8px; }
+  .blk h4 { margin: 0 0 4px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; }
+  .blk h4 small { color: var(--sub); font-weight: 400; font-size: 11px; }
+  .blk h4 .cnt { margin-left: auto; font-weight: 400; color: var(--sub); font-size: 12px; }
+  .blk h4 .cnt.over { color: #ff7a85; font-weight: 700; }
+  .blk.gb .drop { background: rgba(160,120,255,.07); border-color: #6b57a8; }
+  .memo { margin-top: 12px; }
+  .memo textarea { width: 100%; min-height: 110px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; resize: vertical; }
+  .hint { color: var(--sub); font-size: 12px; margin: 4px 0; }
+  /* スマホを縦に持っているとき（画面を回して使うとき）は、縦の高さが少ないので、上の部分を小さくする */
+  html.rot header { padding: 4px 12px 2px; gap: 8px; } html.rot header h1 { font-size: 15px; } html.rot header .sub { display: none; }
+  html.rot nav { padding: 2px 12px; gap: 4px; } html.rot nav button { padding: 4px 10px; font-size: 12px; } html.rot #tabs2 button { font-size: 12px; padding: 3px 9px; }
+  html.rot #notice { margin: 2px 12px; font-size: 12px; } html.rot #notice .bar { padding: 3px 8px; margin-bottom: 2px; }
+  html.rot main { padding: 4px 12px 8px; gap: 8px; } html.rot #pal { flex-basis: 290px; padding: 6px; } html.rot #pal .hint { display: none; }
+  html.rot .corner { padding: 6px 8px 8px; } html.rot .corner .chd > h3 { margin-bottom: 2px; font-size: 14px; } html.rot .blk { margin-top: 4px; } html.rot .drop { min-height: 76px; }
+  html.rot .memo textarea { min-height: 70px; }
+  .empty-msg { color: var(--sub); padding: 30px; text-align: center; }
+  .empty-msg a, #notice .bar a { color: var(--ac); word-break: break-all; }
+  /* ルール設定 */
+  .rules .sec { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .rules h4 { margin: 0 0 6px; font-size: 14px; } .rules h5 { margin: 8px 0 4px; font-size: 13px; color: #9cc4ff; }
+  .rules select, .rules input[type=text] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit; font-size: 13px; }
+  .rules table { border-collapse: collapse; font-size: 13px; } .rules td, .rules th { padding: 3px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+  .rules .ropt { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; cursor: pointer; }
+  .rules .plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .rules .off { color: var(--sub); }
+  .rules ul { margin: 4px 0 4px 18px; padding: 0; font-size: 13px; }
+  #notice .newid { background: #3a2a10; border: 1px solid #ff9f1a; color: #ffd28a; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #notice .newid button, .btn { appearance: none; border: 1px solid #6f84ad; background: var(--panel2); color: var(--text); padding: 4px 12px; border-radius: 6px; font: inherit; font-size: 12px; cursor: pointer; }
+  header .hbtn { margin-left: 6px; }
+  #stage[hidden], #gate[hidden], #hist[hidden], #theme[hidden] { display: none; }
+  #gate { position: fixed; inset: 0; overflow: auto; background: var(--bg); display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; z-index: 50; }
+  #gate .card { width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 20px 16px; }
+  #gate h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: .04em; } #gate .tm { color: var(--sub); margin-bottom: 12px; font-size: 14px; }
+  #gate label { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--sub); }
+  #gate input[type=password], #gate input[type=text] { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; font-size: 16px; }
+  #gate .pw, #hist .pw { position: relative; } #gate .pw input, #hist .pw input { padding-right: 64px; width: 100%; }
+  #hist .danger { margin-top: 18px; border: 1px solid #ff3b52; border-radius: 8px; padding: 6px 12px 12px; font-size: 12.5px; line-height: 1.6; color: #ffc9ce; }
+  #hist .danger label { display: block; margin: 8px 0 4px; }
+  #hist .danger .del { margin-top: 10px; background: #c0182d; color: #fff; border: 0; border-radius: 6px; padding: 7px 16px; cursor: pointer; font: inherit; font-weight: 700; }
+  #hist .danger .del[disabled] { opacity: .5; cursor: wait; }
+  #hist .danger .dmsg { margin-top: 8px; min-height: 16px; color: #ff9aa5; }
+  #gate .eye, #hist .eye { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); padding: 5px 10px; font-size: 13px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  #gate .welcome { color: var(--text); line-height: 1.7; margin: 10px 0 4px; } #gate .welcome b { font-size: 17px; } #gate .welcome .steps { margin-top: 8px; font-size: 14px; }
+  #gate .consent h3 { margin: 14px 0 4px; font-size: 14px; color: var(--text); } #gate .consent div { font-size: 12.5px; line-height: 1.7; color: var(--text); margin: 2px 0; }
+  #gate .consent .bul { padding-left: 1em; text-indent: -1em; } #gate .consent .links a { display: block; color: #8cc4ff; word-break: break-all; font-size: 12px; margin: 2px 0; }
+  #gate .nogo { display: block; margin: 10px auto 0; opacity: .85; }
+  #gate .go { margin-top: 14px; width: 100%; padding: 11px; font-size: 16px; font-weight: 700; background: #2f7be0; border: 0; color: #fff; border-radius: 8px; cursor: pointer; }
+  #gate .go[disabled] { opacity: .5; cursor: wait; }
+  #gate .warn { background: #4a1219; border: 1px solid #ff3b52; color: #ffc9ce; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; margin: 10px 0; }
+  #gate .warn b { color: #fff; }
+  #gate .msg { margin-top: 10px; min-height: 18px; color: #ff9aa5; font-size: 13px; }
+  #gate .opt { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--sub); }
+  #gate .rules { font-size: 12px; color: var(--sub); margin-top: 4px; }
+  #hist { position: fixed; inset: 0; z-index: 40; background: rgba(5,8,14,.86); overflow: auto; padding: 14px; }
+  #hist .card { max-width: 900px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  #hist h2 { margin: 0 0 6px; font-size: 18px; } #hist h3 { margin: 14px 0 6px; font-size: 14px; color: var(--sub); }
+  #hist table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  #hist td, #hist th { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
+  #hist th { color: var(--sub); font-weight: 600; }
+  #hist .kv { color: #9cc4ff; } #hist .ke { color: #ffd98a; }
+  #hist .note { font-size: 12.5px; line-height: 1.6; color: #ffc9ce; background: #4a1219; border: 1px solid #ff3b52; border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+  #hist .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; font-size: 13px; }
+  #hist input { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; }
+  /* ───────── デザイン：色（3色）と、スタイル（5種類）。LABごと。軽い動き（transform と opacity だけ） ───────── */
+  #stage { overflow: hidden; }
+  #stage > header, #stage > nav, #stage > #notice, #stage > main { position: relative; z-index: 1; }
+  #stage::before, #stage::after { content: ""; position: absolute; pointer-events: none; display: none; z-index: 0; }
+  #gate { background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--ac) 14%, var(--bg)), var(--bg) 62%); }
+  nav button:hover, .btn:hover { border-color: var(--ac); }
+  nav button.on { border-color: var(--ac); border-bottom-color: var(--panel2); box-shadow: inset 0 2px 0 var(--ac); }
+  #gate .go { background: var(--ac); color: var(--ac-on); }
+  #gate .card { border-color: color-mix(in srgb, var(--ac) 40%, var(--line)); }
+  #theme { position: fixed; inset: 0; z-index: 41; background: rgba(0,0,0,.78); overflow: auto; padding: 14px; } #theme[hidden] { display: none; }
+  #theme .card { max-width: 640px; margin: 0 auto; background: var(--panel); border: 1px solid color-mix(in srgb, var(--ac) 45%, var(--line)); border-radius: 12px; padding: 14px 16px; }
+  #theme h2 { margin: 0 0 6px; font-size: 18px; } #theme h3 { margin: 16px 0 6px; font-size: 14px; color: var(--sub); }
+  #theme .tnote { font-size: 12.5px; line-height: 1.6; background: color-mix(in srgb, var(--ac) 12%, var(--panel)); border: 1px solid color-mix(in srgb, var(--ac) 50%, var(--line)); border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+  #theme .trow { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 14px; } #theme .tl { flex: 1; }
+  #theme input[type=color] { width: 54px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+  #theme .thx { font-family: Consolas, monospace; font-size: 12px; color: var(--sub); width: 64px; }
+  #theme .styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+  #theme .styles button { padding: 12px 8px; font: inherit; font-size: 14px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  #theme .styles button.on { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac); background: color-mix(in srgb, var(--ac) 16%, var(--panel2)); font-weight: 700; }
+  #theme .styles button small { display: block; font-size: 10.5px; color: var(--sub); font-weight: 400; margin-top: 2px; }
+  #theme .trow2 { display: flex; gap: 8px; margin-top: 16px; }
+
+  /* サイバー：ドット絵（ピクセル）の階段状の枠・ドットの格子・画面全体の走査線・ネオン。ゲームのような、角ばった見た目 */
+  html[data-style="cyber"] body, html[data-style="cyber"] button, html[data-style="cyber"] input, html[data-style="cyber"] textarea, html[data-style="cyber"] select {
+    font-family: "MS Gothic", "ＭＳ ゴシック", "Osaka-Mono", "DotGothic16", Consolas, "SF Mono", Menlo, "Hiragino Sans", "Yu Gothic", monospace; -webkit-font-smoothing: none; text-rendering: optimizeSpeed; }
+  html[data-style="cyber"] header h1 { letter-spacing: .12em; color: var(--ac); animation: cy-flicker 7s infinite;
+    text-shadow: 3px 3px 0 color-mix(in srgb, var(--ac) 35%, #000), 0 0 12px color-mix(in srgb, var(--ac) 55%, transparent); }
+  html[data-style="cyber"] header h1::after { content: "_"; animation: cy-cursor 1s steps(1) infinite; }
+  /* 枠：上下左右に、4pxの線を重ねる（角が欠けた、階段状の枠） */
+  html[data-style="cyber"] #pal, html[data-style="cyber"] .box, html[data-style="cyber"] .rules .sec, html[data-style="cyber"] #hist .card, html[data-style="cyber"] #theme .card, html[data-style="cyber"] #gate .card {
+    border: 0; border-radius: 0; clip-path: none;
+    box-shadow: 0 -4px 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), 0 4px 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), -4px 0 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), 4px 0 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), 0 0 22px color-mix(in srgb, var(--ac) 22%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--ac) 14%, transparent); }
+  html[data-style="cyber"] .corner, html[data-style="cyber"] .side { border-radius: 0; } html[data-style="cyber"] .side { border-style: dotted; }
+  html[data-style="cyber"] .rules .sec { margin-bottom: 18px; } html[data-style="cyber"] .players { gap: 18px; } html[data-style="cyber"] #work { padding: 6px 8px 24px; }   /* 枠の線が、くっつかない・切れないように */
+  html[data-style="cyber"] nav button, html[data-style="cyber"] .btn, html[data-style="cyber"] #gate .go, html[data-style="cyber"] #gate .eye {
+    border: 0; border-radius: 0; letter-spacing: .06em;
+    box-shadow: 0 -2px 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), 0 2px 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), -2px 0 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)), 2px 0 0 0 color-mix(in srgb, var(--ac) 75%, var(--bg0)); margin-top: 2px; margin-bottom: 2px; }
+  html[data-style="cyber"] nav button:hover, html[data-style="cyber"] .btn:hover { box-shadow: 0 -2px 0 0 var(--ac), 0 2px 0 0 var(--ac), -2px 0 0 0 var(--ac), 2px 0 0 0 var(--ac), 0 0 12px color-mix(in srgb, var(--ac) 50%, transparent); }
+  html[data-style="cyber"] nav button:active, html[data-style="cyber"] .btn:active, html[data-style="cyber"] #gate .go:active { transform: translateY(2px); }
+  html[data-style="cyber"] nav button.on { background: color-mix(in srgb, var(--ac) 18%, var(--panel2)); color: var(--ac);
+    box-shadow: 0 -2px 0 0 var(--ac), 0 2px 0 0 var(--ac), -2px 0 0 0 var(--ac), 2px 0 0 0 var(--ac), 0 0 12px color-mix(in srgb, var(--ac) 45%, transparent); }
+  html[data-style="cyber"] #gate .go { margin-top: 16px; }
+  html[data-style="cyber"] input, html[data-style="cyber"] textarea, html[data-style="cyber"] select { border-radius: 0; }
+  html[data-style="cyber"] .tag, html[data-style="cyber"] .tag .face { border-radius: 0; }
+  html[data-style="cyber"] .drop { border-radius: 0; border: 2px dotted var(--line); }
+  html[data-style="cyber"] .tag:hover { box-shadow: 0 0 10px color-mix(in srgb, var(--ac) 60%, transparent); }
+  /* 背景：ドットの格子（ゆっくり流れる）。ログイン画面にも */
+  html[data-style="cyber"] #stage::before { display: block; left: 0; right: 0; top: -16px; height: calc(100% + 16px); will-change: transform; animation: cy-grid 4s linear infinite;
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--ac) 40%, transparent) 1.3px, transparent 1.7px); background-size: 16px 16px; }
+  html[data-style="cyber"] #gate { background: radial-gradient(circle, color-mix(in srgb, var(--ac) 32%, transparent) 1.3px, transparent 1.7px) 0 0 / 16px 16px,
+                                              radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--ac) 14%, var(--bg)), var(--bg) 62%); }
+  html[data-style="cyber"] #stage::after { display: block; left: 0; right: 0; top: 0; height: 140px; will-change: transform; animation: cy-scan 6s linear infinite;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ac) 14%, transparent) 50%, transparent); }
+  /* 画面全体の走査線（ブラウン管のような横線） */
+  html[data-style="cyber"] body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .13) 0 1px, transparent 1px 3px); }
+  @keyframes cy-grid { to { transform: translateY(16px); } }
+  @keyframes cy-scan { from { transform: translateY(-160px); } to { transform: translateY(100vh); } }
+  @keyframes cy-flicker { 0%, 92%, 100% { opacity: 1; } 93% { opacity: .55; } 94% { opacity: 1; } 96% { opacity: .7; } 97% { opacity: 1; } }
+  @keyframes cy-cursor { 50% { opacity: 0; } }
+
+  /* キュート：白とピンク・丸いフォント・ふわふわ浮かぶハートと星・レースのふち・弾むボタン */
+  html[data-style="cute"] { accent-color: var(--ac); }
+  html[data-style="cute"] body, html[data-style="cute"] button, html[data-style="cute"] input, html[data-style="cute"] textarea, html[data-style="cute"] select {
+    font-family: "Hiragino Maru Gothic ProN", "HG丸ｺﾞｼｯｸM-PRO", "HGMaruGothicMPRO", "Arial Rounded MT Bold", "Yu Gothic UI", "Meiryo UI", "Meiryo", system-ui, sans-serif; letter-spacing: .03em; }
+  html[data-style="cute"] ::selection { background: color-mix(in srgb, var(--ac) 35%, transparent); }
+  html[data-style="cute"] *::-webkit-scrollbar { width: 10px; height: 10px; }
+  html[data-style="cute"] *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ac) 60%, transparent); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+  html[data-style="cute"] #stage, html[data-style="cute"] #gate {
+    background: radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ac) 24%, transparent), transparent 38%),
+                radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--ac) 16%, transparent), transparent 42%),
+                radial-gradient(circle at 50% 105%, color-mix(in srgb, var(--ac) 22%, transparent), transparent 52%), var(--bg); }
+  html[data-style="cute"] header h1 { color: var(--ac); font-weight: 800; letter-spacing: .08em; display: inline-block;
+    text-shadow: 0 2px 0 color-mix(in srgb, var(--bg0) 70%, #fff), 0 0 14px color-mix(in srgb, var(--ac) 40%, transparent); animation: cu-bob 3.2s ease-in-out infinite; }
+  html[data-style="cute"] header h1::before { content: "♡ "; } html[data-style="cute"] header h1::after { content: " ♡"; animation: cu-twinkle 2.4s ease-in-out infinite; }
+  html[data-style="cute"] #pal, html[data-style="cute"] .box, html[data-style="cute"] .corner, html[data-style="cute"] .side, html[data-style="cute"] .rules .sec, html[data-style="cute"] #hist .card, html[data-style="cute"] #theme .card, html[data-style="cute"] #gate .card { border-radius: 26px; }
+  html[data-style="cute"] #pal, html[data-style="cute"] .box, html[data-style="cute"] .rules .sec, html[data-style="cute"] #hist .card, html[data-style="cute"] #theme .card, html[data-style="cute"] #gate .card {
+    border: 2px dashed color-mix(in srgb, var(--ac) 60%, var(--bg0)); background: var(--panel);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--ac) 18%, transparent), inset 0 0 0 4px color-mix(in srgb, var(--bg0) 60%, transparent); }
+  html[data-style="cute"] #gate .card { position: relative; z-index: 1; }
+  html[data-style="cute"] .tag { border-radius: 16px; transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); } html[data-style="cute"] .tag .face { border-radius: 13px; }
+  html[data-style="cute"] .tag:hover { transform: rotate(-3deg) scale(1.08); }
+  html[data-style="cute"] nav button { border-radius: 999px; margin-bottom: 4px; border: 2px solid color-mix(in srgb, var(--ac) 50%, var(--line)); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s; }
+  html[data-style="cute"] nav button:hover, html[data-style="cute"] .btn:hover { transform: translateY(-2px) scale(1.06); }
+  html[data-style="cute"] nav button:active, html[data-style="cute"] .btn:active, html[data-style="cute"] #gate .go:active { transform: scale(.94); }
+  html[data-style="cute"] nav button.on { background: var(--ac); color: var(--ac-on); border-color: var(--ac); box-shadow: 0 5px 12px color-mix(in srgb, var(--ac) 45%, transparent); }
+  html[data-style="cute"] .btn { border-radius: 999px; border: 2px solid color-mix(in srgb, var(--ac) 50%, var(--line)); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+  html[data-style="cute"] #gate .go { border-radius: 999px; box-shadow: 0 6px 14px color-mix(in srgb, var(--ac) 40%, transparent); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+  html[data-style="cute"] #stage::before, html[data-style="cute"] #gate::before { content: ""; display: block; position: absolute; pointer-events: none; left: 0; right: 0; top: -240px; height: calc(100% + 240px); z-index: 0;
+    background: var(--ac); opacity: .26; will-change: transform; animation: cu-hearts 46s linear infinite;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%20viewBox='0%200%20240%20240'%3E%3Cpath%20transform='translate(30%2040)%20scale(1.0)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(150%20120)%20scale(1.4)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(70%20190)%20scale(0.8)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(200%2030)%20scale(0.7)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(120%2050)%20scale(1.0)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Cpath%20transform='translate(20%20130)%20scale(0.9)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Cpath%20transform='translate(180%20200)%20scale(1.1)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Ccircle%20cx='100'%20cy='110'%20r='3'%20fill='black'/%3E%3Ccircle%20cx='220'%20cy='150'%20r='2.4'%20fill='black'/%3E%3Ccircle%20cx='50'%20cy='90'%20r='2.2'%20fill='black'/%3E%3Ccircle%20cx='130'%20cy='215'%20r='2.6'%20fill='black'/%3E%3C/svg%3E") 0 0 / 240px 240px repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='240'%20height='240'%20viewBox='0%200%20240%20240'%3E%3Cpath%20transform='translate(30%2040)%20scale(1.0)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(150%20120)%20scale(1.4)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(70%20190)%20scale(0.8)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(200%2030)%20scale(0.7)'%20d='M12%2021C5%2015%200%2011.5%200%206.5A5.5%205.5%200%200%201%2012%204.2A5.5%205.5%200%200%201%2024%206.5C24%2011.5%2019%2015%2012%2021Z'%20fill='black'/%3E%3Cpath%20transform='translate(120%2050)%20scale(1.0)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Cpath%20transform='translate(20%20130)%20scale(0.9)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Cpath%20transform='translate(180%20200)%20scale(1.1)'%20d='M10%200C11%206%2014%209%2020%2010C14%2011%2011%2014%2010%2020C9%2014%206%2011%200%2010C6%209%209%206%2010%200Z'%20fill='black'/%3E%3Ccircle%20cx='100'%20cy='110'%20r='3'%20fill='black'/%3E%3Ccircle%20cx='220'%20cy='150'%20r='2.4'%20fill='black'/%3E%3Ccircle%20cx='50'%20cy='90'%20r='2.2'%20fill='black'/%3E%3Ccircle%20cx='130'%20cy='215'%20r='2.6'%20fill='black'/%3E%3C/svg%3E") 0 0 / 240px 240px repeat; }
+  html[data-style="cute"] #gate::before { position: fixed; }
+  html[data-style="cute"] #stage::after { display: block; left: -20px; right: 0; top: 0; height: 14px; z-index: 2; will-change: transform; animation: cu-ribbon 3s linear infinite;
+    background: radial-gradient(circle at 10px 0, var(--ac) 9px, transparent 10px) 0 0 / 20px 14px repeat-x; }
+  @keyframes cu-hearts { from { transform: translateY(0); } to { transform: translateY(240px); } }
+  @keyframes cu-ribbon { to { transform: translateX(20px); } }
+  @keyframes cu-bob { 50% { transform: translateY(-3px); } }
+  @keyframes cu-twinkle { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+  /* ゴシック：明朝体・二重線・暗い縁どり・ろうそくのゆらぎ */
+  html[data-style="gothic"] body, html[data-style="gothic"] button, html[data-style="gothic"] input, html[data-style="gothic"] textarea { font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", "Times New Roman", serif; }
+  html[data-style="gothic"] header h1 { letter-spacing: .18em; color: var(--ac); text-shadow: 0 0 14px color-mix(in srgb, var(--ac) 55%, transparent); animation: go-glow 6s ease-in-out infinite; }
+  html[data-style="gothic"] header h1::before { content: "✠ "; } html[data-style="gothic"] header h1::after { content: " ✠"; }
+  html[data-style="gothic"] #pal, html[data-style="gothic"] .box, html[data-style="gothic"] .rules .sec, html[data-style="gothic"] #hist .card, html[data-style="gothic"] #theme .card, html[data-style="gothic"] #gate .card {
+    border: 3px double color-mix(in srgb, var(--ac) 55%, var(--line)); border-radius: 4px; background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--bg0) 94%, var(--ac))); }
+  html[data-style="gothic"] nav button { border-radius: 0; letter-spacing: .1em; border-color: color-mix(in srgb, var(--ac) 40%, var(--line)); }
+  html[data-style="gothic"] nav button.on { color: var(--ac); background: color-mix(in srgb, var(--ac) 10%, var(--panel2)); }
+  html[data-style="gothic"] #stage::before { display: block; inset: 0; z-index: 2; background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(0, 0, 0, .5) 100%); animation: go-breathe 7s ease-in-out infinite; }
+  html[data-style="gothic"] #stage::after { display: block; left: 0; right: 0; top: 0; height: 45%; background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--ac) 20%, transparent), transparent 70%); animation: go-candle 5s steps(1) infinite; }
+  @keyframes go-breathe { 50% { opacity: .65; } }
+  @keyframes go-candle { 0% { opacity: .9; } 12% { opacity: .7; } 25% { opacity: 1; } 41% { opacity: .8; } 57% { opacity: .95; } 73% { opacity: .7; } 88% { opacity: 1; } }
+  @keyframes go-glow { 50% { text-shadow: 0 0 26px color-mix(in srgb, var(--ac) 80%, transparent); } }
+
+  /* ロック：太い字・斜めに切った形・ひっかき傷・ときどき走る光 */
+  html[data-style="rock"] header h1, html[data-style="rock"] nav button, html[data-style="rock"] .corner .chd > h3, html[data-style="rock"] #hist h2, html[data-style="rock"] #theme h2 { font-family: Impact, "Arial Black", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; font-synthesis: none; }
+  html[data-style="rock"] header h1 { font-weight: 400; font-style: italic; letter-spacing: .06em; color: var(--text); text-shadow: 3px 3px 0 var(--ac); transform-origin: left center; animation: ro-punch 5s ease-in-out infinite; }
+  html[data-style="rock"] #pal, html[data-style="rock"] .box, html[data-style="rock"] .rules .sec, html[data-style="rock"] #hist .card, html[data-style="rock"] #theme .card, html[data-style="rock"] #gate .card {
+    border-radius: 0; border-left: 5px solid var(--ac); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); }
+  html[data-style="rock"] nav button { border-radius: 0; transform: skewX(-12deg); font-weight: 400; letter-spacing: .04em; }
+  html[data-style="rock"] nav button.on { background: var(--ac); color: var(--ac-on); box-shadow: none; }
+  html[data-style="rock"] .tag { border-radius: 3px; } html[data-style="rock"] .btn { border-radius: 0; font-weight: 700; }
+  html[data-style="rock"] #stage::before { display: block; inset: 0; background: repeating-linear-gradient(115deg, color-mix(in srgb, var(--fg0) 5%, transparent) 0 1px, transparent 1px 9px), repeating-linear-gradient(62deg, color-mix(in srgb, var(--fg0) 3%, transparent) 0 1px, transparent 1px 23px); }
+  html[data-style="rock"] #stage::after { display: block; top: 0; bottom: 0; left: -30%; width: 28%; will-change: transform; transform: skewX(-20deg) translateX(-150%); animation: ro-slash 7s ease-in infinite;
+    background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--ac) 22%, transparent) 50%, transparent); }
+  @keyframes ro-slash { 0%, 70% { transform: skewX(-20deg) translateX(-150%); } 100% { transform: skewX(-20deg) translateX(520%); } }
+  @keyframes ro-punch { 0%, 90%, 100% { transform: scale(1); } 94% { transform: scale(1.08); } }
+
+  /* シンプル：すっきりした、ガラスのようなパネル。細い線がゆっくり伸びる */
+  html[data-style="simple"] header h1 { font-weight: 600; letter-spacing: .04em; }
+  html[data-style="simple"] header { border-bottom: 1px solid color-mix(in srgb, var(--ac) 30%, var(--line)); margin: 0 16px; padding: 10px 0 8px; }
+  html[data-style="simple"] header::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; width: 140px; background: var(--ac); transform-origin: left; animation: si-line 4s ease-in-out infinite alternate; }
+  html[data-style="simple"] #pal, html[data-style="simple"] .box, html[data-style="simple"] .rules .sec, html[data-style="simple"] #hist .card, html[data-style="simple"] #theme .card, html[data-style="simple"] #gate .card {
+    border-radius: 10px; border-color: color-mix(in srgb, var(--ac) 28%, var(--line)); background: color-mix(in srgb, var(--panel) 88%, transparent); }
+  html[data-style="simple"] nav button.on { border-bottom-color: var(--panel2); }
+  html[data-style="simple"] #stage::before { display: block; inset: 0; background: radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--ac) 14%, transparent), transparent 55%); will-change: transform; animation: si-drift 12s ease-in-out infinite alternate; }
+  @keyframes si-line { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
+  @keyframes si-drift { to { transform: translateX(6%); opacity: .7; } }
+
+  /* 背景が明るい色のとき（data-tone="light"）：濃い色の地に白い字の名札、読みにくい色の見出し、などを直す */
+  html[data-tone="light"] .tag { color: #fff; } html[data-tone="light"] .tag.sel { outline-color: var(--ac); }
+  html[data-tone="light"] .drop { background: color-mix(in srgb, var(--fg0) 5%, transparent); }
+  html[data-tone="light"] .drop.over { background: color-mix(in srgb, var(--ac) 22%, transparent); border-color: var(--ac); }
+  html[data-tone="light"] .drop.off { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--bg0) 92%, var(--fg0)), color-mix(in srgb, var(--bg0) 92%, var(--fg0)) 8px, color-mix(in srgb, var(--bg0) 85%, var(--fg0)) 8px, color-mix(in srgb, var(--bg0) 85%, var(--fg0)) 16px); }
+  html[data-tone="light"] .drop.empty::before { color: color-mix(in srgb, var(--fg0) 45%, var(--bg0)); }
+  html[data-tone="light"] .rolehd, html[data-tone="light"] .rules h5, html[data-tone="light"] .corner.s .chd > h3, html[data-tone="light"] #hist .kv { color: #1f5fb4; }
+  html[data-tone="light"] .corner.h .chd > h3 { color: #c3213a; } html[data-tone="light"] #hist .ke { color: #9a5b00; }
+  html[data-tone="light"] #hist .danger { color: #9b1428; } html[data-tone="light"] #hist .danger .dmsg, html[data-tone="light"] #gate .msg { color: #c1203f; }
+  html[data-tone="light"] #gate .consent .links a { color: #1f5fb4; }
+  /* 明るい背景では、パネルを白っぽく（くすまないように）。入力欄も、白に近く */
+  html[data-tone="light"][data-style="cute"] #pal, html[data-tone="light"][data-style="cute"] .box, html[data-tone="light"][data-style="cute"] .rules .sec, html[data-tone="light"][data-style="cute"] .corner,
+  html[data-tone="light"][data-style="cute"] #hist .card, html[data-tone="light"][data-style="cute"] #theme .card, html[data-tone="light"][data-style="cute"] #gate .card { background: color-mix(in srgb, var(--panel) 25%, #fff); }
+  html[data-tone="light"] input, html[data-tone="light"] textarea, html[data-tone="light"] select { background: color-mix(in srgb, var(--panel2) 35%, #fff); }
+  html[data-tone="light"] nav button { background: color-mix(in srgb, var(--panel) 30%, #fff); }
+  html[data-tone="light"] nav button.on { background: var(--panel2); }
+  html[data-tone="light"][data-style="cute"] nav button.on { background: var(--ac); }
+
+  @media (prefers-reduced-motion: reduce) { #stage::before, #stage::after, header h1, header h1::after, header::after, #gate::before { animation: none !important; } }
+
+  /* ───── BAN/PICKの入力ページ（LABの見た目に、必要なものを足す） ───── */
+  #app { flex: 1; min-height: 0; width: 100%; max-width: 1100px; margin: 0 auto; padding: 10px 14px 20px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; touch-action: none; scrollbar-width: none; }
+  #app::-webkit-scrollbar { display: none; }
+  html.rot #app { padding: 6px 12px 10px; } html.rot h1 { font-size: 16px; } html.rot .step .frames .tag, html.rot .frame { zoom: 1; }
+  #app header { padding: 6px 0; } #app h1 { font-size: 18px; }
+  .who { margin: 4px 0 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 13.5px; }
+  .who.my { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac); } .who b.s { color: #7db4ff; } .who b.h { color: #ff8a99; }
+  .step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 6px; border-top: 1px solid var(--line); }
+  .step.now { background: color-mix(in srgb, var(--ac) 12%, transparent); border-radius: 8px; }
+  .step .num { font-size: 22px; color: var(--gold); width: 30px; text-align: center; flex: none; }
+  .step .what { font-size: 13px; margin-bottom: 4px; } .step .what.s { color: #9cc4ff; } .step .what.h { color: #ff9fac; }
+  .step .frames { display: flex; flex-wrap: wrap; gap: 6px; }
+  .frame { width: 66px; min-height: 80px; border: 2px dashed var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20px; }
+  .frame.open { border-color: var(--ac); cursor: pointer; } .frame.hid { border-style: solid; opacity: .7; }
+  #pal { flex: none; width: auto; margin-top: 12px; } #pal .grid { padding: 4px 2px; }
+  .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 13px; padding: 2px; }
+  .tag.gray { cursor: not-allowed; } .tag.picked { opacity: .35; }
+  .bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: var(--bg); border-top: 1px solid var(--line); z-index: 5; }
+  .bar .btn { padding: 9px 22px; font-size: 15px; } .bar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; }
+  #msg { min-height: 1.4em; font-size: 13.5px; } #msg.ok { color: var(--ok); } #msg.ng { color: #ff9aa6; }
+  .stop { margin: 30px auto; max-width: 520px; text-align: center; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "bpinput";</script>
+<div id="stage"><div id="app"></div></div>
+<script>
+
+(function () {
+  "use strict";
+  var key = new URLSearchParams(location.search).get("t") || "";
+  var frag = (location.hash || "").replace(/^#/, "").split(".");                       // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
+  var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag.slice(2).join(".");
+  var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
+  var ASSET = "";                                                                      // 顔の画像は、このページと同じ場所（大会の公開サイト）
+  var $ = function (id) { return document.getElementById(id); };
+  var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
+  var S = null, SEL = [], BUSY = false, CH = {}, FACES = {}, timer = null;
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function imgUrl(p) { return ASSET + p.split("/").map(encodeURIComponent).join("/"); }
+  var IMGS = {};
+  function loadImg(src, cb) {
+    var c = IMGS[src];
+    if (c) { if (c.done) cb(c); else c.cbs.push(cb); return; }
+    c = IMGS[src] = { cbs: [cb], done: false };
+    var im = new Image();
+    im.onload = function () { c.done = true; c.ok = true; c.w = im.naturalWidth; c.h = im.naturalHeight; c.cbs.forEach(function (f) { f(c); }); c.cbs = []; };
+    im.onerror = function () { c.done = true; c.ok = false; c.cbs.forEach(function (f) { f(c); }); c.cbs = []; };
+    im.src = imgUrl(src);
+  }
+  function paintFace(box, ch, S) {
+    if (!ch.i) { box.textContent = ch.e || ch.n.slice(0, 1); return; }
+    loadImg(ch.i, function (c) {
+      if (!c.ok) { box.textContent = ch.e || ch.n.slice(0, 1); return; }
+      var f = FACES[ch.i], L, cx, cy;
+      if (f) { L = Math.max(1, f.r * c.h * 2.5); cx = f.cx * c.w; cy = f.cy * c.h; }       // 登録された頭の円を中心に切り出す
+      else { L = c.h * 0.42; cx = c.w / 2; cy = c.h * 0.2; }                                // 登録がなければ、上のほうの真ん中
+      var sc = S / L;
+      box.textContent = "";
+      box.style.backgroundImage = 'url("' + imgUrl(ch.i) + '")';
+      box.style.backgroundSize = (c.w * sc) + "px " + (c.h * sc) + "px";
+      box.style.backgroundPosition = (S / 2 - cx * sc) + "px " + (S / 2 - cy * sc) + "px";
+    });
+  }
+  function getJson(u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+
+  var SIDE_NAME = { s: "サバイバー", h: "ハンター" }, ACT = { b: "BAN", p: "PICK" }, TGT = { s: "サバイバー", h: "ハンター", m: "マップ" };
+  function buildCH(d) {
+    CH = {};
+    ((d.chars || {}).h || []).forEach(function (c) { CH[c.id] = { id: c.id, n: c.n, e: c.e, i: c.i, f: "h" }; });
+    ((d.chars || {}).s || []).forEach(function (c) { CH[c.id] = { id: c.id, n: c.n, e: c.e, i: c.i, f: "s" }; });
+    (d.maps || []).forEach(function (m) { CH[m.id] = { id: m.id, n: m.n, e: "", i: null, f: "m" }; });
+  }
+  function makeTag(ch, cls) {
+    var t = el("div", "tag " + ch.f + (cls ? " " + cls : ""));
+    t.setAttribute("data-id", ch.id);
+    var face = el("div", "face"); t.appendChild(face);
+    t.appendChild(el("div", "nm", ch.n));
+    if (ch.f === "m") face.textContent = ch.n; else paintFace(face, ch, 56);
+    return t;
+  }
+  var LAST = { cls: "", text: "" };                                                      // 画面を描き直しても、直前のメッセージは、消さない
+  // スマホを縦に持っているときは、PCと同じ見た目の画面（幅1200）を90度回して、横向きに使う画面にする（IDV TEAM LABと同じ）
+  var ROT = false, ROT_SCALE = 1;
+  function fit() {
+    var st = $("stage"), W = window.innerWidth, H = window.innerHeight;
+    ROT = W / Math.max(1, H) < 1.25 && W < 900;
+    document.documentElement.classList.toggle("rot", ROT);
+    if (ROT) {
+      var LW = 1200, LH = Math.round(LW * W / H);
+      ROT_SCALE = H / LW;
+      st.style.width = LW + "px"; st.style.height = LH + "px";
+      st.style.transform = "translate(" + W + "px,0) rotate(90deg) scale(" + ROT_SCALE + ")";
+    } else {
+      ROT_SCALE = 1;
+      st.style.width = ""; st.style.height = ""; st.style.transform = "";
+    }
+  }
+  window.addEventListener("resize", fit);
+  window.addEventListener("orientationchange", function () { setTimeout(fit, 150); });
+  fit();
+  // 指でのスクロール（回した画面では、指の左右が、画面の縦になる。名札の上でも、空いている所でも、スライドするとスクロール。動かしたあとは、タップにしない）
+  var PS = null;
+  document.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch") return;
+    var box = $("app");
+    PS = box && box.contains(e.target) ? { box: box, x: e.clientX, y: e.clientY, top: box.scrollTop, moved: false, v: 0, t: Date.now(), id: e.pointerId } : null;
+  }, true);
+  document.addEventListener("pointermove", function (e) {
+    if (!PS || e.pointerId !== PS.id) return;
+    var raw = ROT ? e.clientX - PS.x : PS.y - e.clientY;
+    if (!PS.moved && Math.abs(raw) < 8) return;
+    PS.moved = true;
+    var now = Date.now(), nt = PS.top + (ROT ? raw / ROT_SCALE : raw);
+    PS.v = (nt - PS.box.scrollTop) / Math.max(1, now - PS.t); PS.t = now;
+    PS.box.scrollTop = nt;
+  }, true);
+  function psEnd(e) {
+    var ps = PS; PS = null;
+    if (!ps || !ps.moved) return;
+    var v = Date.now() - ps.t > 80 ? 0 : ps.v;
+    (function step() { if (Math.abs(v) < 0.02 || PS) return; ps.box.scrollTop += v * 16; v *= 0.94; requestAnimationFrame(step); })();
+  }
+  document.addEventListener("pointerup", psEnd, true);
+  document.addEventListener("pointercancel", psEnd, true);
+
+  function msg(cls, text) { LAST = { cls: cls || "", text: text || "" }; var m = $("msg"); if (m) { m.className = LAST.cls; m.textContent = LAST.text; } }
+
+  function cur() { return S && S.cur != null ? S.steps[S.cur] : null; }
+  function myTurn() { return !!(S && S.status === "active" && SIDE && S.side === SIDE); }
+  function render() {
+    if (!S) return;
+    var app = $("app"); app.textContent = "";
+    var head = el("header"); head.appendChild(el("h1", "", "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || ""))); head.appendChild(el("span", "sub", S.title || ""));
+    app.appendChild(head);
+    var who = el("div", "who" + (myTurn() ? " my" : ""));
+    var a = el("div"); a.appendChild(document.createTextNode("🔵 サバイバー：")); a.appendChild(el("b", "s", S.survivor)); a.appendChild(document.createTextNode("　🔴 ハンター：")); a.appendChild(el("b", "h", S.hunter));
+    who.appendChild(a);
+    var me = SIDE ? "あなたは、" + SIDE_NAME[SIDE] + "側の代表です。" : "このURLは、閲覧だけです（ボードの「🌐 ブラウザで入力する」から、個人用のURLを開いてください）。";
+    var st = S.status !== "active" ? "✅ BAN/PICKは完了しました。Discordの案内に進んでください。"
+           : myTurn() ? "👉 **あなたの番です**：名札をタップして選び、「確定」を押してください。" : "⏳ " + SIDE_NAME[({ s: "s", h: "h" })[S.side]] + "側の入力を待っています…";
+    who.appendChild(el("div", "", me)); who.appendChild(el("div", "", st.replace(/\*\*/g, "")));
+    app.appendChild(who);
+    // 手順の一覧：①②…の順に、枠を並べる
+    S.steps.forEach(function (s, i) {
+      var row = el("div", "step" + (i === S.cur ? " now" : ""));
+      row.appendChild(el("div", "num", CIRC.charAt(i)));
+      var box = el("div");
+      box.appendChild(el("div", "what " + s.s, SIDE_NAME[s.s] + "側が " + TGT[s.t] + "を " + ACT[s.a] + " ×" + s.n));
+      var fr = el("div", "frames");
+      for (var k = 0; k < s.n; k++) {
+        var slot;
+        if (s.hidden) { slot = el("div", "frame hid", "🔒"); }
+        else if (s.set && s.ids && CH[s.ids[k]]) { slot = el("div"); slot.appendChild(makeTag(CH[s.ids[k]])); }
+        else if (i === S.cur && myTurn() && SEL[k] != null && CH[SEL[k]]) {
+          slot = el("div"); var tg = makeTag(CH[SEL[k]]); tg.title = "もう一度タップすると、外れます"; (function (id) { tg.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]); slot.appendChild(tg);
+        } else { slot = el("div", "frame" + (i === S.cur && myTurn() ? " open" : ""), i === S.cur && myTurn() ? "＋" : ""); }
+        fr.appendChild(slot);
+      }
+      box.appendChild(fr); row.appendChild(box); app.appendChild(row);
+    });
+    // 名札置き場（自分の番のときだけ）
+    var c = cur();
+    if (myTurn() && c) {
+      var pal = el("div", "box"); pal.id = "pal";
+      pal.appendChild(el("div", "hint", "選べるキャラ（灰色は、選べません）：" + SIDE_NAME[c.t === "h" ? "h" : "s"].replace(/.*/, TGT[c.t])));
+      var grid = el("div", "grid"), list = c.t === "h" ? (S.chars.h || []) : c.t === "s" ? (S.chars.s || []) : S.maps;
+      var avail = {}; (S.avail || []).forEach(function (id) { avail[id] = true; });
+      list.forEach(function (x) {
+        var ch = CH[x.id]; if (!ch) return;
+        var ok = !!avail[ch.id], picked = SEL.indexOf(ch.id) >= 0;
+        var t = makeTag(ch, (ok ? "" : "gray") + (picked ? " picked" : ""));
+        if (!ok) { t.title = "この手順では、選べません（BAN済み・すでに選ばれた・使用済みなど）"; }
+        t.addEventListener("click", function () { pick(ch.id, ok); });
+        grid.appendChild(t);
+      });
+      pal.appendChild(grid); app.appendChild(pal);
+    }
+    // 確定のバー
+    var bar = el("div", "bar"); app.appendChild(bar);
+    if (myTurn() && c) {
+      var go = el("button", "btn go", "確定（" + SEL.length + "/" + c.n + "）"); go.type = "button"; go.disabled = BUSY || SEL.length !== c.n;
+      go.addEventListener("click", send); bar.appendChild(go);
+      var clr = el("button", "btn", "選び直す"); clr.type = "button"; clr.disabled = BUSY || !SEL.length; clr.addEventListener("click", function () { SEL = []; render(); }); bar.appendChild(clr);
+    }
+    var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; bar.appendChild(m);
+  }
+  function pick(id, ok) {
+    var c = cur(); if (!c || BUSY) return;
+    if (!ok) { msg("ng", "「" + CH[id].n + "」は、いま選べません。"); return; }
+    var i = SEL.indexOf(id);
+    if (i >= 0) SEL.splice(i, 1);
+    else if (SEL.length < c.n) SEL.push(id);
+    else { msg("ng", "選べるのは、" + c.n + "個までです。外したいものを、タップしてください。"); return; }
+    render();
+  }
+  function send() {
+    var c = cur(); if (!c || SEL.length !== c.n || BUSY) return;
+    var names = SEL.map(function (id) { return CH[id].n; }).join("、");
+    if (!confirm("「" + names + "」で確定します。確定すると、取り消せません。よろしいですか？")) return;
+    BUSY = true; render(); msg("", "送信しています…");
+    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL } } }) })
+      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
+      .then(function (res) {
+        BUSY = false;
+        if (res && res.ok) { SEL = []; msg("ok", "✅ 確定しました。Discordのボードにも反映されます。"); }
+        else msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。しばらくして、画面を確かめてください。"));
+        return refresh();
+      }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); render(); });
+  }
+  function waitResult(nonce, tries) {
+    return new Promise(function (resolve) {
+      (function tick(n) {
+        getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
+          if (d && d.result && d.result.nonce === nonce) { resolve(d.result); }
+          else if (n <= 0) resolve(null); else setTimeout(function () { tick(n - 1); }, 1200);
+        });
+      })(tries || 20);
+    });
+  }
+  function refresh() {
+    return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
+      if (!d || d.kind !== "bp") { stopped(); return; }
+      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status;
+      if (changed) SEL = [];
+      S = d; buildCH(d);
+      if (changed || !$("app").firstChild) render();
+    });
+  }
+  function stopped() {
+    clearInterval(timer);
+    var app = $("app"); app.textContent = "";
+    var b = el("div", "stop"); b.appendChild(el("h2", "", "このBAN/PICKは、ブラウザでは入力できません"));
+    b.appendChild(el("div", "", "終わったか、中止されたか、管理者が「Discordのボタンで進める」に切り替えました。Discordのボードの、案内に従ってください。"));
+    app.appendChild(b);
+  }
+  function start() {
+    if (!key || !BASE) { stopped(); return; }
+    Promise.all([getJson(ASSET + "face_positions.json"), getJson(ASSET + "assets/face_positions.json")]).then(function (r) {
+      FACES = (r[0] && r[0].faces) || (r[1] && r[1].faces) || {};
+    }).then(refresh).then(function () {
+      timer = setInterval(function () { if (!document.hidden && !BUSY) refresh(); }, 2500);          // 見ていないときは、取りに行かない
+    });
+  }
+  start();
+})();
+
+</script>
+</body>
+</html>
