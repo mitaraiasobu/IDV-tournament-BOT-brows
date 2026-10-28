@@ -16,8 +16,8 @@
     if (document.getElementById("cl-style")) return;
     var st = document.createElement("style"); st.id = "cl-style";
     st.textContent =
-      ".cl-btn{position:fixed;left:12px;top:12px;z-index:9998;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:2px solid #ffb020;" +
-      "background:rgba(10,12,18,.88);color:#ffb020;font:700 13px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 0 10px rgba(255,176,32,.45)}" +
+      ".cl-btn{position:fixed;right:12px;top:10px;z-index:9998;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:2px solid #ffb020;" +
+      "background:rgba(10,12,18,.88);color:#ffb020;font:700 12px/1 system-ui,sans-serif;cursor:pointer;box-shadow:0 0 10px rgba(255,176,32,.45)}" +
       ".cl-btn[hidden]{display:none}.cl-btn b{background:#ff3b3b;color:#fff;border-radius:999px;padding:2px 7px;font-size:11px}" +
       ".cl-back{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.7);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow:auto}" +
       ".cl-back[hidden]{display:none}" +
