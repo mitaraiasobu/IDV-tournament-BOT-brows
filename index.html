@@ -33,6 +33,9 @@
 
   .tabs { flex: none; display: flex; gap: 12px; margin: 0 0 10px; }
   .tabs.hidden { display: none; }
+  .timenote { flex: none; font-size: 16px; line-height: 1.4; color: var(--sub); padding: 6px 4px 0; }
+  .timenote[hidden] { display: none; }
+  html.flow .timenote { font-size: .8em; padding: 8px 4px 0; }
   .tabs button { font: inherit; font-size: 22px; padding: 6px 22px; border-radius: 999px; border: 2px solid var(--line);
                  background: transparent; color: var(--sub); cursor: pointer; }
   .tabs button.on { color: var(--text); border-color: var(--accent); background: var(--panel); }
@@ -328,6 +331,7 @@
   </div>
   <div id="tabs" class="tabs hidden"></div>
   <div id="bracket" class="bracket"></div>
+  <div id="timenote" class="timenote" hidden>トーナメント表の時間は全て延長戦が発生したと仮定しています。延長戦がなかった場合は選手・キャスターの用意ができ次第、予定を前倒しして試合を行う可能性があります。</div>
   <div id="nowbar" class="nowbar idle"></div>
 </div>
 
@@ -793,6 +797,7 @@
     if (data.phase === "none" || !data.rounds || !data.rounds.length) {
       bracket.className = "bracket";
       bracket.appendChild(el("div", "msg", "大会の準備中です"));
+      document.getElementById("timenote").hidden = true;
       document.getElementById("nowbar").className = "nowbar idle";
       document.getElementById("nowbar").textContent = "";
       det.appendChild(el("div", "none", "現在の大会はまだありません。"));
@@ -802,6 +807,7 @@
     if (data.phase === "registration" && tab !== "plan") renderRegistration(data, bracket);
     else renderBracket(data, bracket);                       // 抽選前でも、「予定のトーナメント表」タブなら、対戦カード未定のまま、予定の表を見せる
     renderNow(data);
+    document.getElementById("timenote").hidden = !((data.matches || []).some(function (m) { return m.time; }) || (data.rounds || []).some(function (r) { return r.start; }));    // 時刻が出ているときだけ
     if (data.phase === "registration" && tab === "plan") {
       var nb = document.getElementById("nowbar");
       nb.className = "nowbar idle"; nb.textContent = "📋 予定の表です（対戦カードは、抽選のあとに決まります）";
