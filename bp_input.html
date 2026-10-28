@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BAN/PICK入力</title>
 <meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com; style-src 'unsafe-inline'; img-src 'self' data: https:; media-src https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
 <!--
   BAN/PICKの入力ページ（代表者だけ。個人用のURLで開く）。IDV TEAM LABと同じ見た目・名札・顔の画像を使う。
   ・ボードの「🌐 ブラウザで入力する」ボタンを押した本人にだけ出る、個人用のURL（?t=このBAN/PICKの12文字#側.ユーザー.署名）で開く。URLは、人に教えない。
@@ -365,7 +365,7 @@
   #notice .bar.info { background: var(--panel); border: 1px solid var(--line); color: var(--text); }
   #notice .bar.my { background: #4a3d0a; border: 1px solid var(--gold); color: #ffe48a; }
   #notice .bar b.s { color: #7db4ff; } #notice .bar b.h { color: #ff8a99; }
-  #work { touch-action: none; overscroll-behavior: contain; }
+  #work { touch-action: none; overscroll-behavior: contain; position: relative; }
   main.view #pal { display: none; }
   #pal .palbox.m { border-top: 2px solid var(--gold); }
   #pal .palbox.m .tag { width: 66px; } .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 12px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
@@ -447,6 +447,19 @@
   html[data-style="simple"] .tag .pop { background: var(--fg0); color: var(--bg0); box-shadow: none; border-radius: 6px; font-weight: 700; animation-duration: 1.1s; }
   html[data-style="simple"] .tag.ban .pop { background: var(--h); color: #fff; }
   @keyframes bp-ins-simple { 0% { opacity: 0; transform: scale(.92); } 100% { opacity: 1; transform: none; } }
+  /* PICKされたキャラの一覧（ハンター側にだけ、ハンターが見える）・人格のマーク（自分の側にだけ見える） */
+  .picks { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+  .picks .grp { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px 8px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+  .picks .grp.s { border-color: var(--s); } .picks .grp.h { border-color: var(--h); }
+  .picks h5 { margin: 0 0 4px; font-size: 12px; text-align: center; color: var(--sub); }
+  .picks .prow { display: flex; gap: 6px; justify-content: center; } .picks .pk { display: flex; flex-direction: column; align-items: center; }
+  .picks .marks { min-height: 24px; display: flex; gap: 2px; margin-top: 2px; } .picks .marks img { width: 24px; height: 24px; }
+  .picks .tag.edit { cursor: pointer; outline: 1px dashed var(--dz1); } .picks .lockbox { width: 66px; min-height: 78px; border: 2px solid var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: .75; }
+  .picks .hint { font-size: 11.5px; color: var(--sub); text-align: center; flex-basis: 100%; }
+  .pmod .card { max-width: 480px; } .pmod .pt { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 4px; } .pmod .pn { text-align: center; font-size: 12.5px; color: var(--sub); }
+  .pmod .pgrid { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .pmod .pbtn { border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--panel2); cursor: pointer; } .pmod .pbtn img { width: 58px; height: 58px; display: block; }
+  .pmod .pbtn.on { border-color: var(--dz1); box-shadow: 0 0 12px var(--dz1); }
   /* BAN/PICKのあとの案内（スクショ・確認待ち・カウントダウン・試合中） */
   .sp .card { max-width: 680px; width: 100%; max-height: 94%; overflow-y: auto; touch-action: none; }
   .sp .big { font-size: 28px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
@@ -531,6 +544,7 @@
   html[data-style="cyber"] .gobig.fx { text-shadow: 0 0 22px var(--dz1), 3px 0 0 var(--dz2), -3px 0 0 #0ff; }
   html[data-style="gothic"] .cdnum.fx, html[data-style="gothic"] .gobig.fx { text-shadow: 0 0 26px var(--dz2); }
   html[data-style="rock"] .cdnum.fx, html[data-style="rock"] .gobig.fx { text-shadow: 4px 4px 0 #111; }
+  .cdtxt .cdln { display: block; text-align: center; } .cdtxt b.cdln { font-size: 19px; line-height: 1.7; } .cdtxt .cdsub { margin-top: 8px; font-size: 14px; color: var(--sub); }
 
 </style>
 </head>
@@ -543,13 +557,14 @@
 <main><aside id="pal"></aside><section id="work"></section></main>
 <div class="cbar" id="bar"></div>
 </div></div>
+<script src="music.js"></script>
 <script>
 
 (function () {
   "use strict";
   var key = new URLSearchParams(location.search).get("t") || "";
   var frag = (location.hash || "").replace(/^#/, "").split(".");                       // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
-  var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag.slice(2).join(".");
+  var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag[2] || "", KEY = frag[3] || "";              // 4つ目は、その側だけが持つ鍵（ハンターのPICK・人格を読む）
   var LETTER = frag[0] || "";
   var HOST = new URLSearchParams(location.search).get("host") === "1";                    // スクショを送る人（部屋を立てる人）のURL（体験会）。本当に送れるかは、BOTが確かめる
   var VIEW = frag[0] === "w" ? "s" : frag[0] === "x" ? "h" : "";                         // w＝サバイバー側の参加選手／x＝ハンター側のチームメンバー：見るだけ
@@ -741,6 +756,101 @@
   }
   setInterval(function () { tick(); cdTick(); }, 250);
   // BAN/PICKが全部終わったとき：演出と、次にやることの案内（出すのは、1回だけ。閉じたら、出さない）
+  // ───── 側ごとの秘密：ハンターのPICK・人格のマークは、その側の鍵でだけ読める（相手の側には、バレない） ─────
+  var PERSONA = { s: [["Borrowedtime", "Borrowed Time"], ["FlywheelEffect", "Flywheel Effect"], ["Knee_Jerk_Reflex", "Knee-Jerk Reflex"], ["TideTurner", "Tide Turner"]],
+                  h: [["ConfinedSpace", "Confined Space"], ["Detention", "Detention"], ["Insolence", "Insolence"], ["TrumpCard", "Trump Card"]] };
+  function personaUrl(side, i) { return "assets/persona/" + (side === "h" ? "hunter" : "survivor") + "/" + PERSONA[side][i][0] + ".png"; }
+  var MY = SIDE || VIEW || "", OPENED = { blob: null, data: null, busy: false }, DEMO_PERS = {}, LOCALP = {};
+  function hex2bytes(h) { var a = new Uint8Array(h.length / 2); for (var i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16); return a; }
+  async function openSealed(keyHex, blob) {
+    var bin = atob(blob), raw = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) raw[i] = bin.charCodeAt(i);
+    var nonce = raw.slice(0, 8), body = raw.slice(8), kb = hex2bytes(keyHex), out = new Uint8Array(body.length), c = 0, pos = 0;
+    while (pos < body.length) {
+      var inp = new Uint8Array(kb.length + 12); inp.set(kb, 0); inp.set(nonce, kb.length);
+      inp[kb.length + 8] = (c >>> 24) & 255; inp[kb.length + 9] = (c >>> 16) & 255; inp[kb.length + 10] = (c >>> 8) & 255; inp[kb.length + 11] = c & 255;
+      var h = new Uint8Array(await crypto.subtle.digest("SHA-256", inp));
+      for (var j = 0; j < 32 && pos < body.length; j++, pos++) out[pos] = body[pos] ^ h[j];
+      c++;
+    }
+    return JSON.parse(new TextDecoder().decode(out));
+  }
+  function refreshSealed() {                                                              // 自分の側の秘密を、鍵で開く（開けたら、画面を描き直す）
+    if (!window.crypto || !crypto.subtle || !KEY || !S || !MY || !S.sealed || !S.sealed[MY]) return;
+    var blob = S.sealed[MY];
+    if (blob === OPENED.blob || OPENED.busy) return;
+    OPENED.busy = true;
+    openSealed(KEY, blob).then(function (d) { OPENED = { blob: blob, data: d, busy: false }; render(); })
+      .catch(function () { OPENED = { blob: blob, data: null, busy: false }; });
+  }
+  function ownPers() {                                                                    // 自分の側の、人格（つけたばかりのものも含む）
+    var base = (OPENED.data && OPENED.data.pers) || (window.BP_DEMO ? DEMO_PERS : {}), out = {};
+    for (var k in base) out[k] = base[k];
+    for (var k2 in LOCALP) out[k2] = LOCALP[k2];
+    return out;
+  }
+  function myHunterPick() {                                                               // ハンター側にだけ、ハンターのPICKが見える
+    if (MY !== "h") return null;
+    if (OPENED.data && OPENED.data.hp != null) return OPENED.data.hp;
+    var m = mem(), hi = -1; S.steps.forEach(function (s, i) { if (s.t === "h" && s.a === "p") hi = i; });
+    return hi >= 0 && m[hi] && m[hi][0] != null ? m[hi][0] : null;
+  }
+  function setMarks(side, id, marks, done) {
+    LOCALP[id] = marks.slice();
+    if (window.BP_DEMO) { DEMO_PERS[id] = marks.slice(); if (done) done(); return; }
+    sendAct("persona", { tag: id, marks: marks }).then(function (res) {
+      if (!(res && res.ok)) { delete LOCALP[id]; SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; }
+      return refresh();
+    }).catch(function (e) { delete LOCALP[id]; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; }).then(function () { if (done) done(); });
+  }
+  function personaMenu(side, id) {
+    var ov = el("div", "ask pmod"), card = el("div", "card"), ch = CH[id];
+    card.appendChild(el("div", "pt", (ch ? ch.n : "") + " の人格"));
+    card.appendChild(el("div", "pn", "つけた人格は、自分の側だけに見えます（相手には、バレません）。2つまで。"));
+    var grid = el("div", "pgrid");
+    function paint() {
+      grid.textContent = "";
+      var cur = ownPers()[id] || [];
+      PERSONA[side].forEach(function (p, i) {
+        var b = el("button", "pbtn" + (cur.indexOf(i) >= 0 ? " on" : "")); b.type = "button"; b.title = p[1];
+        var im = el("img"); im.src = personaUrl(side, i); im.alt = p[1]; b.appendChild(im);
+        b.addEventListener("click", function () {
+          var c2 = (ownPers()[id] || []).slice(), k = c2.indexOf(i);
+          if (k >= 0) c2.splice(k, 1); else if (c2.length < 2) c2.push(i); else return;
+          setMarks(side, id, c2, function () { buildPanel(); });
+          paint();
+        });
+        grid.appendChild(b);
+      });
+    }
+    paint(); card.appendChild(grid);
+    var close = el("button", "btn go", "とじる"); close.type = "button"; close.addEventListener("click", function () { ov.remove(); buildPanel(); });
+    var row = el("div", "row"); row.appendChild(close); card.appendChild(row);
+    ov.appendChild(card); $("stage").appendChild(ov);
+  }
+  function picksBlock(editable) {                                                         // PICKされたキャラの一覧：サバイバー目線＝サバイバー4人／ハンター目線＝サバイバー4人＋ハンター（サバイバー側には、ハンターは見えない）
+    var box = el("div", "picks"), pers = ownPers(), canEdit = editable && !!UID && !!MY;
+    function group(side, title, ids, lock) {
+      var g = el("div", "grp " + side); g.appendChild(el("h5", "", title));
+      var row = el("div", "prow");
+      ids.forEach(function (id) {
+        var ch = CH[id]; if (!ch) return;
+        var cell = el("div", "pk"), tg = makeTag(ch, "locked"), marks = el("div", "marks");
+        cell.appendChild(tg);
+        if (MY === side) (pers[id] || []).forEach(function (m) { var im = el("img"); im.src = personaUrl(side, m); im.alt = PERSONA[side][m][1]; im.title = PERSONA[side][m][1]; marks.appendChild(im); });
+        cell.appendChild(marks);
+        if (canEdit && MY === side) { tg.classList.add("edit"); tg.title = "タップして、人格をつける（相手には見えません）"; tg.addEventListener("click", function () { personaMenu(side, id); }); }
+        row.appendChild(cell);
+      });
+      if (lock) row.appendChild(el("div", "lockbox", "🔒"));
+      g.appendChild(row); return g;
+    }
+    var sv = []; S.steps.forEach(function (s) { if (s.t === "s" && s.a === "p" && s.ids) sv = sv.concat(s.ids); });
+    var hp = myHunterPick(), hunterSet = S.steps.some(function (s) { return s.t === "h" && s.a === "p" && s.set; });
+    box.appendChild(group("s", "🔵 サバイバー", sv, false));
+    if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンター" : "🔴 ハンター（非公開）", hp != null ? [hp] : [], hp == null));
+    if (canEdit) box.appendChild(el("div", "hint", "キャラをタップすると、人格をつけられます（自分の側だけに見えます）"));
+    return box;
+  }
   var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
   var GO_AT = 0, SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
   function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
@@ -770,11 +880,24 @@
   }
   function spNote(cls, text) { SP_NOTE = { cls: cls, text: text }; var n = document.getElementById("spnote"); if (n) { n.className = "note " + cls; n.textContent = text; } }
   var PANEL_READY = false, PANEL_TIMER = 0, WAS_ACTIVE = false;
-  function panelGate() {                                                                  // 最後の名札を選んでから2秒後に、案内の画面を出す（最初から完了していたページは、すぐ）
+  function panelGate() {                                                                  // 最後の名札を選んだら、まず「BANPICK完了」（デザインごとのシャットダウンの演出）→そのあと、スクショの画面（最初から完了していたページは、すぐ）
     if (PANEL_READY) return true;
     if (!WAS_ACTIVE) { PANEL_READY = true; return true; }
-    if (!PANEL_TIMER) PANEL_TIMER = setTimeout(function () { PANEL_READY = true; PANEL_TIMER = 0; buildPanel(); }, 2000);
+    if (!PANEL_TIMER) {
+      PANEL_TIMER = setTimeout(function () { completeSplash(); }, 1500);                   // 最後の名札の演出を、少し見せてから
+    }
     return false;
+  }
+  function completeSplash() {
+    if (fx()) $("shell").classList.add("off");
+    var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
+    m.appendChild(el("div", "t1", "BANPICK完了"));
+    m.appendChild(picksBlock(false));                                                       // PICKされたキャラを並べる
+    $("stage").appendChild(m);
+    setTimeout(function () {                                                                // 画面が戻って、スクショの画面
+      m.remove(); $("shell").classList.remove("off");
+      PANEL_READY = true; PANEL_TIMER = 0; buildPanel();
+    }, fx() ? 2600 : 1500);
   }
   function buildPanel() {
     var stg = stageNow();
@@ -795,7 +918,8 @@
     }
     var ov = el("div", "ask sp"), card = el("div", "card");
     ov.id = "sp";
-    card.appendChild(el("div", "big", "BANPICK完了"));
+    card.appendChild(el("div", "big", stg === "shot" ? "📸 スクショの送信" : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
+    card.appendChild(picksBlock(true));
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot") {
       card.appendChild(el("div", "sub2", "次の順に進めてください。"));
@@ -856,6 +980,9 @@
   }
   function hhmm(sec) { var d = new Date(sec * 1000); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
   // カウントダウン：試合開始まで。00:00になった瞬間に、ゲーム内でチェックボタンを押して始める（デザインごとの演出つき。体験会では、演出なし）
+  function cdWrap(parent, lines, tag, cls) {                                              // 長い文は、意味の切れ目で、改行して、中央にそろえて出す
+    lines.forEach(function (x) { parent.appendChild(el(tag, "cdln" + (cls ? " " + cls : ""), x)); });
+  }
   function cdTick() {
     var box = $("cd"); if (!box || !S || !S.confirmed) return;
     var rem = S.start_at ? Math.ceil(S.start_at - Date.now() / 1000) : 0, f = fx() ? " fx" : "";
@@ -866,14 +993,14 @@
         if (CD_LAST !== "t" || box.firstChild == null) {
           box.textContent = "";
           box.appendChild(el("div", "cdhead", "試合開始まで")); var tm = el("div", "cdtime", txt); tm.id = "cdtime"; box.appendChild(tm);
-          var tx = el("div", "cdtxt"); tx.appendChild(el("b", "", "00:00になった瞬間に、ゲーム内でチェックボタンを押して始めてください。")); tx.appendChild(el("div", "", "タイミングがズレると、キャスターと進行がズレます。")); box.appendChild(tx);
+          var tx = el("div", "cdtxt"); cdWrap(tx, ["00:00になった瞬間に、", "ゲーム内でチェックボタンを押して", "始めてください。"], "b"); cdWrap(tx, ["タイミングがズレると、", "キャスターと進行がズレます。"], "div", "cdsub"); box.appendChild(tx);
           CD_LAST = "t";
         } else $("cdtime").textContent = txt;
       } else if (CD_LAST !== mode) {
         box.textContent = "";
         box.appendChild(el("div", "cdhead", "試合開始まで"));
         box.appendChild(el("div", "cdnum" + f, String(rem)));
-        var tx2 = el("div", "cdtxt"); tx2.appendChild(el("b", "", "00:00になった瞬間に、ゲーム内でチェックボタンを押して始めてください。")); box.appendChild(tx2);
+        var tx2 = el("div", "cdtxt"); cdWrap(tx2, ["00:00になった瞬間に、", "ゲーム内でチェックボタンを押して", "始めてください。"], "b"); box.appendChild(tx2);
         CD_LAST = mode;
         if (fx() && CUR_STYLE === "rock") shake();
       }
@@ -902,17 +1029,27 @@
     card.appendChild(el("div", "big", S.expo ? "🎉 体験おつかれさまでした！" : "🏁 試合開始！"));
     card.appendChild(el("div", "cdtxt", S.expo ? (S.end_text || "") : "ゲームを始めてください。試合が終わったら、Discordへ戻って「🏁 試合が終了した」ボタンを押してください（結果の入力は、Discordで行います）。"));
     ov.appendChild(card); $("stage").appendChild(ov);
-    setTimeout(function () { SHUT = true; var o = $("sp"); if (o) o.remove(); shutdown(); }, 6000);
   }
   function shutdown() {
     if (fx()) $("shell").classList.add("off");
     var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
     m.appendChild(el("div", "t1", S && S.expo ? "BANPICK体験会" : "BANPICK完了"));
-    m.appendChild(el("div", "t2", S && S.expo ? (S.end_text || "") : "Discordへ戻って次のステップへ進んでください"));
+    if (S && S.expo && S.end_text) m.appendChild(el("div", "t2", S.end_text));
     $("stage").appendChild(m);
+  }
+  var musicInit = false;
+  function updateMusic() {                                                                // 大会に設定されている、BAN/PICKの音楽。?music=0 で、流さない
+    if (!window.MusicPlayer || new URLSearchParams(location.search).get("music") === "0") return;
+    if (!musicInit) {
+      musicInit = true;
+      MusicPlayer.init({ ui: true, volume: 0.2 });                                          // 初期は、20%の音量（右上のバーで、変えられる）
+      var ms = document.createElement("style"); ms.textContent = ".mp-bar{left:auto !important;right:12px;top:12px;bottom:auto !important}"; document.head.appendChild(ms);
+    }
+    MusicPlayer.set(S.music || null, { fade: 600 });
   }
   function render() {
     if (!S) return;
+    updateMusic();
     applyColor(SIDE || VIEW || "s");
     if (S.status === "active") WAS_ACTIVE = true;
     if (S.style && fx() && !BPX_LOCK) applyStyle(S.style);
@@ -945,7 +1082,15 @@
     });
     corner.appendChild(pair); work.appendChild(corner);
     work.scrollTop = top;
-    if (NEWSTEP) { NEWSTEP = false; var nw = work.querySelector(".blk.now"); if (nw) work.scrollTop = Math.max(0, nw.offsetTop - 70); }
+    if (NEWSTEP) {                                                                       // 次のステップへ：いまの手順の見出し（何をどうするか）が、ちゃんと見えるように、上に余裕をとって、スクロールする
+      NEWSTEP = false;
+      var nw = work.querySelector(".blk.now");
+      if (nw) {
+        var y = 0, e = nw;
+        while (e && e !== work) { y += e.offsetTop; e = e.offsetParent; }                    // 右の枠（work）の中での、いまの手順の位置
+        work.scrollTop = Math.max(0, y - Math.round(work.clientHeight * 0.3));                // 枠の上から3割のところに、見出しが来る（前の手順も、少し見える）
+      }
+    }
     var bar = $("bar"); bar.textContent = "";
     var c = cur();
     if (myTurn() && c) {
@@ -955,7 +1100,7 @@
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; bar.appendChild(m);
     S.steps.forEach(function (s, i) { if (s.set) SEEN[i] = true; }); FIRSTR = false;
-    tick(); buildPanel();
+    tick(); refreshSealed(); buildPanel();
   }
   function pick(id, ok) {
     var c = cur(); if (!c || BUSY) return;
