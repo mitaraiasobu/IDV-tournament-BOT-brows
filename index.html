@@ -86,6 +86,7 @@
   /* キャスターの名前：遠くからでも読めるように、大きく・太く（試合が多いラウンドでは、カードに収まる範囲で、できるだけ大きく） */
   .mcast { padding: 6px 16px 9px; font-size: 20px; color: var(--sub); border-top: 1px solid var(--line); letter-spacing: .03em; }
   .mcast b { color: var(--text); font-weight: 800; font-size: 26px; }
+  .mcast .mset { display: inline-block; margin-right: .8em; } .mcast .mset:last-child { margin-right: 0; }          /* セットごとの担当（セットのまとまりを、途中で折り返さない） */
   .round.dense .mcast { padding: 2px 12px 4px; font-size: 15px; }
   .round.dense .mcast b { font-size: 19px; }
   .round.xdense .mcast, .round.xxdense .mcast { padding: 0 10px 1px; font-size: 12px; }
@@ -507,10 +508,21 @@
   }
 
   // 割り当てられたキャスター：「🎙 キャスター 名前」（2人は「名前・名前」）。実況・解説の区別は書かない。割り当てが無ければ、何も出さない
+  function setLabel(k) { return k === "ext" ? "延長戦" : /^s\d+$/.test(k) ? "第" + k.slice(1) + "セット" : k; }
   function casterLine(m) {
     var c = m.casters;
     if (!c || m.bye) return null;
     var f = document.createDocumentFragment();
+    if (m.casters_sets && m.casters_sets.length) {                                // セットごとに担当が違う試合：セットごとに書く（「🎙 第1セット 名前・名前　第2セット 名前…」）
+      f.appendChild(document.createTextNode("🎙 "));
+      m.casters_sets.forEach(function (s, i) {
+        var g = el("span", "mset");
+        g.appendChild(document.createTextNode(setLabel(s.k) + " "));
+        (s.names || []).forEach(function (n, j) { if (j) g.appendChild(document.createTextNode("・")); g.appendChild(el("b", null, n)); });
+        f.appendChild(g);
+      });
+      return f;
+    }
     f.appendChild(document.createTextNode("🎙 "));
     f.appendChild(document.createTextNode("キャスター "));                      // 実況・解説の区別は書かない。名前だけ（2人は「・」でつなぐ）
     var names = [c.live, c.commentary].filter(function (x) { return x; }).concat(c.more || []);        // 2人（3人以上のときは、全員）を「・」でつなぐ
@@ -830,7 +842,7 @@
       ["hunter", "survivor", "hunter_side", "time_sec", "time"].forEach(function (k) { if (h[k] === undefined) h[k] = null; });
     }
     d.matches.forEach(function (m) {
-      ["team_a", "team_b", "winner", "winner_id", "extension", "next", "casters"].forEach(function (k) { if (m[k] === undefined) m[k] = null; });
+      ["team_a", "team_b", "winner", "winner_id", "extension", "next", "casters", "casters_sets"].forEach(function (k) { if (m[k] === undefined) m[k] = null; });
       ["by_dq", "bye", "decided_by_admin", "extension_needed"].forEach(function (k) { if (m[k] === undefined) m[k] = false; });
       m.sets = m.sets || [];
       m.set_wins = m.set_wins || { a: 0, b: 0 };
