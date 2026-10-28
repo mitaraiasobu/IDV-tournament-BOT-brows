@@ -320,6 +320,7 @@
   html[data-design="gothic"] .round.dense .orn { font-size: 15px; top: 1px; right: 6px; }
   html[data-design="gothic"] .round.xdense .orn, html[data-design="gothic"] .regboard .orn { font-size: 13px; top: 0; right: 4px; }
   html[data-design="gothic"] .champ .box .cname { font-family: var(--fb); font-weight: 400; }
+  .chg { text-decoration: underline; text-decoration-color: #ff3b3b; text-decoration-thickness: 3px; text-underline-offset: 4px; text-shadow: 0 0 8px rgba(255, 59, 59, .75); }       /* 最近（3日以内）変わったところ：文字の色はそのまま、赤い下線 */
 </style>
 </head>
 <body>
@@ -479,6 +480,10 @@
     return el("span", "delay", min > 0 ? "⏱ 遅延 " + min + "分" : "⏱ " + (-min) + "分 早まり");
   }
 
+  // ── 最近（3日以内）に変わったところは、文字の色はそのままで、赤い下線と赤い光をつける（選手が、どこが変わったか分かるように） ──
+  function recent(iso) { var t = Date.parse(iso || ""); return !isNaN(t) && Date.now() - t <= 3 * 24 * 60 * 60 * 1000; }
+  function mark(node, iso) { if (node && recent(iso)) { node.className = (node.className ? node.className + " " : "") + "chg"; node.title = "最近、変更されました"; } return node; }
+
   // ── ステージ（配信用） ──
   function teamRow(m, side) {
     var t = m["team_" + side];
@@ -489,7 +494,7 @@
     else if (m.winner) cls += " lose";
     if (t && t.dq) cls += " dq";
     var row = el("div", cls);
-    var nm = el("span", "tname", t ? t.name : "未定");
+    var nm = mark(el("span", "tname", t ? t.name : "未定"), (m.chg || {}).teams);                // 対戦カード（誰と当たるか）が変わったら、チーム名に
     if (t && !t.bye && t.abbr) nm.appendChild(el("span", "abbr", t.abbr));
     var lsrc = t && !t.bye ? logoSrc(t) : null;                       // 承認されたロゴがあれば、チーム名の左に（文字と同じ大きさで）出す
     if (lsrc) { var li = el("img", "tlogo"); li.src = lsrc; li.alt = ""; row.appendChild(li); }
@@ -540,7 +545,7 @@
     var head = el("div", "mhead");
     var label = m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1);
     if (m.time && !m.bye) {                                                                       // 開始予定の時間（大きく）。遅れ・繰り上げのときは、もとの予定の時間に、ずれた先の時刻を足す
-      var tspan = el("span", "mtimebig", fmtDT(m.time_base || m.time));
+      var tspan = mark(el("span", "mtimebig", fmtDT(m.time_base || m.time)), (m.chg || {}).time);       // 開始時間が変わったら、時間に
       var tag = m.time_base ? shiftTag(m.time_base, m.time, m.shift) : "";
       if (tag) tspan.appendChild(el("small", "shifttag" + (m.shift > 0 ? " late" : " early"), tag));
       head.appendChild(tspan);
@@ -552,7 +557,7 @@
     card.appendChild(teamRow(m, "a"));
     card.appendChild(teamRow(m, "b"));
     var cast = casterLine(m);
-    if (cast) { var cl = el("div", "mcast"); cl.appendChild(cast); card.appendChild(cl); }
+    if (cast) { var cl = mark(el("div", "mcast"), (m.chg || {}).casters); cl.appendChild(cast); card.appendChild(cl); }        // キャスターが変わったら、キャスター名に
     if (m.team_a && m.team_b && !m.bye && (m.sets.length || m.extension_needed || m.status === "undecided")) {
       var f = el("div", "mfoot");
       m.sets.forEach(function (s) {
