@@ -377,6 +377,23 @@
   .drop.col0 { min-height: 84px; }
   .cbar { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px solid var(--line); background: var(--bg); }
   .cbar .btn { padding: 13px 40px; font-size: 18px; } .cbar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .cbar .btn[disabled] { opacity: .5; }
+  #status.ok { color: var(--ok); } #status.warn { color: var(--gold); } #status.ng { color: #ff7a85; font-weight: 700; }
+  #late { margin: 4px 16px; padding: 9px 14px; border-radius: 6px; background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; font-weight: 700; font-size: 15px; animation: blink 1s steps(2, start) infinite; }
+  #late[hidden] { display: none; }
+  html.rot #late { margin: 2px 12px; padding: 5px 10px; font-size: 14px; }
+  .done .card { text-align: center; max-width: 640px; animation: bp-pop .6s cubic-bezier(.3, 1.5, .5, 1) both; box-shadow: 0 0 40px 4px color-mix(in srgb, var(--ac) 45%, transparent); }
+  .done .big { font-size: 30px; font-weight: 800; color: var(--ac); letter-spacing: .06em; margin-bottom: 4px; }
+  .done .mark { display: inline-block; width: 64px; height: 64px; line-height: 64px; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-size: 38px; font-weight: 800; margin-bottom: 8px; animation: bp-ring 1.6s ease-out infinite; }
+  .done ol { text-align: left; margin: 10px auto 12px; padding: 0; list-style: none; font-size: 14.5px; line-height: 1.6; counter-reset: s; }
+  .done li { counter-increment: s; margin: 6px 0; padding: 6px 10px 6px 40px; position: relative; border: 1px solid var(--line); border-radius: 8px; opacity: 0; animation: bp-in .5s ease-out forwards; }
+  .done li::before { content: counter(s); position: absolute; left: 10px; top: 6px; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 13px; }
+  .done li.now { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+  .done .sub2 { font-size: 12.5px; color: var(--sub); margin-bottom: 12px; }
+  .done .conf { position: absolute; top: 0; width: 10px; height: 16px; opacity: 0; pointer-events: none; animation: bp-fall linear infinite; }
+  @keyframes bp-pop { 0% { transform: scale(.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes bp-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ac) 70%, transparent); } 100% { box-shadow: 0 0 0 26px transparent; } }
+  @keyframes bp-in { 0% { opacity: 0; transform: translateX(-16px); } 100% { opacity: 1; transform: none; } }
+  @keyframes bp-fall { 0% { transform: translateY(-30px) rotate(0); opacity: 1; } 100% { transform: translateY(var(--fh, 700px)) rotate(600deg); opacity: .85; } }
   .ask { position: absolute; inset: 0; z-index: 200; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .ask .card { max-width: 520px; background: var(--panel); border: 2px solid var(--ac); border-radius: 12px; padding: 18px 22px; }
   .ask .q { font-size: 16px; line-height: 1.7; margin-bottom: 16px; } .ask .row { display: flex; gap: 10px; justify-content: flex-end; }
@@ -390,8 +407,9 @@
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "bpinput";</script>
 <div id="stage">
-<header><h1 id="ttl">BAN/PICK</h1><span class="sub" id="sub"></span></header>
+<header><h1 id="ttl">BAN/PICK</h1><span class="sub" id="sub"></span><span id="status"></span></header>
 <div id="notice"></div>
+<div id="late" hidden></div>
 <main><aside id="pal"></aside><section id="work"></section></main>
 <div class="cbar" id="bar"></div>
 </div>
@@ -556,6 +574,47 @@
     if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
     var r = document.documentElement.style; r.setProperty("--ac", hex); r.setProperty("--ac-on", lum(hex) > .5 ? "#05070b" : "#ffffff");
   }
+  // 1ステップの時間：前回の入力からの経過を出し、目安（90秒）を超えたら、お知らせを出す（Discordの催促と同じ基準・同じ文）
+  function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
+  function tick() {
+    var st = $("status"), lt = $("late");
+    if (!S || S.status !== "active" || !S.since) { st.textContent = ""; st.className = ""; lt.hidden = true; return; }
+    var e = Math.max(0, Math.floor(Date.now() / 1000 - S.since)), lim = S.limit || 90, over = e >= lim;
+    st.textContent = "⏱ このステップ " + mmss(e) + " / " + lim + "秒" + (over ? "（超えています）" : "");
+    st.className = over ? "ng" : e >= lim - 20 ? "warn" : "ok";
+    if (over) { lt.textContent = "⏰ " + (S.slow_text || "入力に90秒以上かかっています。") + (S.side ? "（いま：" + SIDE_NAME[S.side] + "側の入力待ち）" : ""); }
+    lt.hidden = !over;
+  }
+  setInterval(tick, 1000);
+  // BAN/PICKが全部終わったとき：演出と、次にやることの案内（出すのは、1回だけ。閉じたら、出さない）
+  var DONE_SHOWN = false;
+  var NEXT_STEPS = [
+    "選手を呼び、試合モードを設定して、試合が始められる状態にします（試合モードでは、ハンターもサバイバーもBAN数を0にします）。",
+    "対戦画面をスクショして、Discordの対戦のチャンネルに、直接送ります（DMではありません）。送ったら「📸 送信した」ボタンを押します。",
+    "モデレーターが、スクショを確認します。確認が済むまで、少し待ちます。",
+    "開始時刻になったら「🎮 試合開始」ボタンを押し、00:00になった瞬間に、ゲーム内でチェックボタンを押して始めます。"
+  ];
+  var STAGE_NOW = { shot: 0, confirm: 2, play: 3 };
+  function showDone() {
+    if (!S || S.status !== "done" || DONE_SHOWN) return;
+    DONE_SHOWN = true;
+    var ov = el("div", "ask done"), card = el("div", "card");
+    for (var k = 0; k < 28; k++) {                                                          // 紙吹雪
+      var c = el("div", "conf"), cols = ["var(--s)", "var(--h)", "var(--gold)", "var(--ok)", "var(--ac)"];
+      c.style.left = (Math.random() * 100) + "%"; c.style.background = cols[k % cols.length];
+      c.style.animationDuration = (2.6 + Math.random() * 2.4) + "s"; c.style.animationDelay = (Math.random() * 2.5) + "s";
+      c.style.setProperty("--fh", ($("stage").offsetHeight + 40) + "px");
+      ov.appendChild(c);
+    }
+    card.appendChild(el("div", "mark", "✓"));
+    card.appendChild(el("div", "big", "BAN/PICK 完了！"));
+    card.appendChild(el("div", "sub2", "次にやることは、この順です（この続きは、Discordの対戦のチャンネルの案内で進めます）。"));
+    var ol = el("ol"), now = STAGE_NOW[S.stage] != null ? STAGE_NOW[S.stage] : 0;
+    NEXT_STEPS.forEach(function (x, i) { var li = el("li", i === now ? "now" : "", x); li.style.animationDelay = (0.5 + i * 0.35) + "s"; ol.appendChild(li); });
+    card.appendChild(ol);
+    var close = el("button", "btn go", "閉じる"); close.type = "button"; close.addEventListener("click", function () { ov.remove(); });
+    card.appendChild(close); ov.appendChild(card); $("stage").appendChild(ov);
+  }
   function render() {
     if (!S) return;
     applyColor(SIDE || VIEW || "s");
@@ -596,6 +655,7 @@
       var clr = el("button", "btn", "選び直す"); clr.type = "button"; clr.disabled = BUSY || !SEL.length; clr.addEventListener("click", function () { SEL = []; render(); }); bar.appendChild(clr);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; bar.appendChild(m);
+    tick(); showDone();
   }
   function pick(id, ok) {
     var c = cur(); if (!c || BUSY) return;
