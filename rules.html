@@ -1155,6 +1155,7 @@
 </div>
 
 <script src="music.js"></script>
+<script src="changelog.js"></script>
 <script>
 (function () {
   var params = new URLSearchParams(location.search);
@@ -2314,8 +2315,9 @@
   function render(data, force) {
     if (!data) data = { state: "idle" };
     initMusic();
-    var musicData = data.music;
-    if (window.PAGE_KIND === "rules" && data.state !== "rules") data = { state: "idle", title: data.title, music: musicData };    // ルールだけのページには、ルール以外は出さない
+    var musicData = data.music, changesData = data.changes;
+    if (window.PAGE_KIND === "rules" && data.state !== "rules") data = { state: "idle", title: data.title, music: musicData, changes: changesData };
+    if (window.PAGE_KIND === "rules" && window.Changelog) window.Changelog.update(changesData);          // ✏ 更新履歴（公開のルールのページだけ）    // ルールだけのページには、ルール以外は出さない
     var sig = JSON.stringify(data, function (k, v) { return k === "generated_at" ? undefined : v; });
     if (sig === lastSig && !force) return;
     lastSig = sig;
