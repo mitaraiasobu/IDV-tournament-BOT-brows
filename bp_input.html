@@ -381,19 +381,125 @@
   #late { margin: 4px 16px; padding: 9px 14px; border-radius: 6px; background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; font-weight: 700; font-size: 15px; animation: blink 1s steps(2, start) infinite; }
   #late[hidden] { display: none; }
   html.rot #late { margin: 2px 12px; padding: 5px 10px; font-size: 14px; }
-  .done .card { text-align: center; max-width: 640px; animation: bp-pop .6s cubic-bezier(.3, 1.5, .5, 1) both; box-shadow: 0 0 40px 4px color-mix(in srgb, var(--ac) 45%, transparent); }
-  .done .big { font-size: 30px; font-weight: 800; color: var(--ac); letter-spacing: .06em; margin-bottom: 4px; }
-  .done .mark { display: inline-block; width: 64px; height: 64px; line-height: 64px; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-size: 38px; font-weight: 800; margin-bottom: 8px; animation: bp-ring 1.6s ease-out infinite; }
-  .done ol { text-align: left; margin: 10px auto 12px; padding: 0; list-style: none; font-size: 14.5px; line-height: 1.6; counter-reset: s; }
-  .done li { counter-increment: s; margin: 6px 0; padding: 6px 10px 6px 40px; position: relative; border: 1px solid var(--line); border-radius: 8px; opacity: 0; animation: bp-in .5s ease-out forwards; }
-  .done li::before { content: counter(s); position: absolute; left: 10px; top: 6px; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 13px; }
-  .done li.now { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
-  .done .sub2 { font-size: 12.5px; color: var(--sub); margin-bottom: 12px; }
-  .done .conf { position: absolute; top: 0; width: 10px; height: 16px; opacity: 0; pointer-events: none; animation: bp-fall linear infinite; }
-  @keyframes bp-pop { 0% { transform: scale(.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes bp-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ac) 70%, transparent); } 100% { box-shadow: 0 0 0 26px transparent; } }
-  @keyframes bp-in { 0% { opacity: 0; transform: translateX(-16px); } 100% { opacity: 1; transform: none; } }
-  @keyframes bp-fall { 0% { transform: translateY(-30px) rotate(0); opacity: 1; } 100% { transform: translateY(var(--fh, 700px)) rotate(600deg); opacity: .85; } }
+  #shell { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+  /* BAN/PICKが終わったら、画面が、デザインごとの消え方で、シャットダウンする */
+  #shell.off { animation: bp-off-simple .9s ease-in forwards; pointer-events: none; }
+  html[data-style="cyber"] #shell.off { animation-name: bp-off-cyber; }
+  html[data-style="cute"] #shell.off { animation-name: bp-off-cute; }
+  html[data-style="gothic"] #shell.off { animation-name: bp-off-gothic; animation-duration: 1.6s; }
+  html[data-style="rock"] #shell.off { animation-name: bp-off-rock; animation-duration: .7s; }
+  @keyframes bp-off-simple { 0% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes bp-off-cyber { 0% { transform: scale(1, 1); filter: brightness(1); opacity: 1; } 55% { transform: scale(1, .006); filter: brightness(4); opacity: 1; } 85% { transform: scale(.02, .006); filter: brightness(6); opacity: 1; } 100% { transform: scale(0, 0); filter: brightness(0); opacity: 0; } }
+  @keyframes bp-off-cute { 0% { transform: scale(1) rotate(0); opacity: 1; } 25% { transform: scale(1.06) rotate(1deg); opacity: 1; } 100% { transform: scale(0) rotate(-14deg); opacity: 0; } }
+  @keyframes bp-off-gothic { 0% { opacity: 1; filter: none; } 15% { opacity: .55; } 25% { opacity: .95; } 45% { opacity: .35; } 55% { opacity: .6; } 100% { opacity: 0; filter: blur(8px) brightness(.3); } }
+  @keyframes bp-off-rock { 0% { transform: none; opacity: 1; } 30% { transform: translateX(-12px) skewX(4deg); opacity: 1; } 100% { transform: translateX(110%) skewX(-24deg); opacity: 0; } }
+  .shutmsg.plain { animation-delay: 0s; animation-duration: .01s; }
+  .shutmsg { position: absolute; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; opacity: 0; animation: bp-msgin 1s ease-out 1s forwards; }
+  .shutmsg .t1 { font-size: 40px; font-weight: 800; color: var(--ac); letter-spacing: .08em; }
+  .shutmsg .t2 { font-size: 20px; color: var(--fg0); line-height: 1.7; }
+  html.rot .shutmsg .t1 { font-size: 34px; } html.rot .shutmsg .t2 { font-size: 18px; }
+  @keyframes bp-msgin { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+  /* 名札を入れたときの演出（体験会では出さない）：弾む・光が走る・「○○ PICK！」の吹き出し */
+  .tag { position: relative; }
+  .tag.ins { animation: bp-ins .6s cubic-bezier(.2, 1.6, .4, 1) both; z-index: 6; }
+  .tag.ins.ban { animation-name: bp-ins-ban; }
+  .tag .shine { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+  .tag .shine::before { content: ""; position: absolute; top: -10%; bottom: -10%; width: 45%; left: -60%; background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .95), transparent); transform: skewX(-18deg); animation: bp-shine .7s .12s ease-out forwards; }
+  .tag .pop { position: absolute; left: 50%; top: -4px; transform: translate(-50%, -100%); white-space: nowrap; padding: 3px 10px; border-radius: 12px; font-weight: 800; font-size: 13px; background: var(--gold); color: #1a1400; box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 70%, transparent); animation: bp-pop 1.4s ease-out forwards; pointer-events: none; z-index: 8; }
+  .tag.ban .pop { background: var(--h); color: #fff; box-shadow: 0 0 14px color-mix(in srgb, var(--h) 70%, transparent); }
+  @keyframes bp-ins { 0% { transform: scale(.2) rotate(-14deg); opacity: 0; filter: brightness(3); } 55% { transform: scale(1.3) rotate(4deg); opacity: 1; filter: brightness(1.8); } 100% { transform: none; filter: none; } }
+  @keyframes bp-ins-ban { 0% { transform: scale(1.8) rotate(8deg); opacity: 0; filter: brightness(2) saturate(2); } 55% { transform: scale(.85) rotate(-3deg); opacity: 1; filter: brightness(1.4); } 75% { transform: translateX(-4px); } 100% { transform: none; filter: none; } }
+  @keyframes bp-shine { 0% { left: -60%; } 100% { left: 130%; } }
+  @keyframes bp-pop { 0% { opacity: 0; transform: translate(-50%, -60%) scale(.4); } 18% { opacity: 1; transform: translate(-50%, -110%) scale(1.15); } 70% { opacity: 1; transform: translate(-50%, -125%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -160%) scale(1); } }
+  .tag .xcut { position: absolute; left: -6%; width: 112%; top: 48%; height: 3px; background: #ff3b52; box-shadow: 0 0 8px #ff3b52; transform: rotate(-35deg) scaleX(0); transform-origin: left center; animation: bp-xcut 1.3s .2s ease-out forwards; z-index: 7; pointer-events: none; }
+  @keyframes bp-xcut { 0% { transform: rotate(-35deg) scaleX(0); opacity: 1; } 25% { transform: rotate(-35deg) scaleX(1); opacity: 1; } 100% { transform: rotate(-35deg) scaleX(1); opacity: 0; } }
+  /* サイバー：ブツッと映る（走査線がずれて、色がにじむ）。吹き出しは、角ばったネオン */
+  html[data-style="cyber"] .tag.ins, html[data-style="cyber"] .tag.ins.ban { animation-name: bp-ins-cyber; animation-duration: .6s; animation-timing-function: steps(14, end); }
+  html[data-style="cyber"] .tag .shine::before { background: linear-gradient(105deg, transparent, rgba(120, 255, 255, .95), transparent); }
+  html[data-style="cyber"] .tag .pop { font-family: "Consolas", "Menlo", monospace; border-radius: 0; background: var(--ac); color: var(--ac-on); text-shadow: 2px 0 #f0f, -2px 0 #0ff; clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%); padding: 3px 14px; }
+  html[data-style="cyber"] .tag.ban .pop { background: var(--h); color: #fff; }
+  @keyframes bp-ins-cyber { 0% { opacity: 0; transform: scaleY(.04) scaleX(1.5); filter: brightness(3) hue-rotate(40deg); } 30% { opacity: 1; transform: scaleY(1.15); } 45% { transform: translateX(-5px); filter: hue-rotate(-50deg) brightness(1.6); } 60% { transform: translateX(5px); } 80% { transform: translateX(-2px); filter: none; } 100% { transform: none; filter: none; } }
+  /* キュート：ぽよんと跳ねる。キラキラが舞う。吹き出しは、ピンクの丸 */
+  html[data-style="cute"] .tag.ins, html[data-style="cute"] .tag.ins.ban { animation-name: bp-ins-cute; animation-duration: .75s; }
+  html[data-style="cute"] .tag .shine::before { content: "✨"; background: none; width: auto; top: -10px; left: auto; right: -8px; font-size: 20px; transform: none; animation: bp-twinkle .9s ease-out forwards; }
+  html[data-style="cute"] .tag .shine::after { content: "✨"; position: absolute; left: -6px; bottom: -8px; font-size: 16px; animation: bp-twinkle .9s .2s ease-out forwards; opacity: 0; }
+  html[data-style="cute"] .tag .pop { border-radius: 999px; background: #ff7ab8; color: #fff; box-shadow: 0 3px 0 #d94a8c; } html[data-style="cute"] .tag .pop::before { content: "♡ "; }
+  html[data-style="cute"] .tag.ban .pop { background: #ff5a6a; box-shadow: 0 3px 0 #c93a48; }
+  @keyframes bp-ins-cute { 0% { transform: scale(0) rotate(-28deg); opacity: 0; } 45% { transform: scale(1.4) rotate(9deg); opacity: 1; } 65% { transform: scale(.88) rotate(-5deg); } 82% { transform: scale(1.08) rotate(2deg); } 100% { transform: none; } }
+  @keyframes bp-twinkle { 0% { opacity: 0; transform: scale(.2) rotate(0); } 40% { opacity: 1; transform: scale(1.3) rotate(40deg); } 100% { opacity: 0; transform: scale(.8) rotate(90deg); } }
+  /* ゴシック：闇からゆっくり浮かぶ。血の色の光がにじむ。吹き出しは、明朝の金の縁 */
+  html[data-style="gothic"] .tag.ins, html[data-style="gothic"] .tag.ins.ban { animation-name: bp-ins-goth; animation-duration: 1s; animation-timing-function: ease-out; }
+  html[data-style="gothic"] .tag .shine::before { background: linear-gradient(105deg, transparent, rgba(255, 70, 70, .6), transparent); animation-duration: 1s; }
+  html[data-style="gothic"] .tag .pop { font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif; letter-spacing: .12em; border-radius: 2px; background: #2a0a10; color: #f3d9a4; border: 1px solid #b89657; box-shadow: 0 0 14px #b01020; animation-duration: 1.8s; }
+  html[data-style="gothic"] .tag.ban .pop { background: #4a0a14; color: #ffb8b8; border-color: #b01020; }
+  html[data-style="gothic"] .tag .xcut { background: #b01020; box-shadow: 0 0 10px #b01020; height: 2px; }
+  @keyframes bp-ins-goth { 0% { opacity: 0; transform: translateY(-22px) scale(1.12); filter: blur(10px) brightness(.4); } 55% { opacity: 1; filter: blur(0) brightness(1.1) drop-shadow(0 0 12px #b01020); } 100% { transform: none; filter: none; } }
+  /* ロック：ドンッと叩きつける。画面が揺れるような衝撃。吹き出しは、黄色に黒の縁 */
+  html[data-style="rock"] .tag.ins, html[data-style="rock"] .tag.ins.ban { animation-name: bp-ins-rock; animation-duration: .5s; }
+  html[data-style="rock"] .tag .shine::before { background: linear-gradient(105deg, transparent, rgba(255, 232, 90, .95), transparent); animation-duration: .35s; }
+  html[data-style="rock"] .tag .pop { border-radius: 0; background: #ffe14a; color: #111; font-weight: 900; border: 2px solid #111; box-shadow: 3px 3px 0 #111; clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%); padding: 3px 14px; animation-duration: 1.2s; }
+  html[data-style="rock"] .tag.ban .pop { background: #e8203a; color: #fff; }
+  html[data-style="rock"] .tag .xcut { height: 6px; background: #fff; box-shadow: 0 0 0 2px #111; }
+  @keyframes bp-ins-rock { 0% { transform: translateY(-130px) scale(2) rotate(-10deg); opacity: 0; } 40% { transform: translateY(0) scale(1.18, .8) rotate(1deg); opacity: 1; } 55% { transform: translate(-5px, 3px) scale(.95, 1.06); } 70% { transform: translate(5px, -3px); } 100% { transform: none; } }
+  /* シンプル：すっと出る。吹き出しは、控えめ */
+  html[data-style="simple"] .tag.ins, html[data-style="simple"] .tag.ins.ban { animation-name: bp-ins-simple; animation-duration: .35s; animation-timing-function: ease-out; }
+  html[data-style="simple"] .tag .shine { display: none; }
+  html[data-style="simple"] .tag .pop { background: var(--fg0); color: var(--bg0); box-shadow: none; border-radius: 6px; font-weight: 700; animation-duration: 1.1s; }
+  html[data-style="simple"] .tag.ban .pop { background: var(--h); color: #fff; }
+  @keyframes bp-ins-simple { 0% { opacity: 0; transform: scale(.92); } 100% { opacity: 1; transform: none; } }
+  /* BAN/PICKのあとの案内（スクショ・確認待ち・カウントダウン・試合中） */
+  .sp .card { max-width: 680px; width: 100%; max-height: 94%; overflow-y: auto; touch-action: none; }
+  .sp .big { font-size: 28px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
+  .sp .sub2 { text-align: center; color: var(--sub); font-size: 13px; margin: 4px 0 10px; }
+  .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 14px; line-height: 1.6; }
+  .sp li { counter-increment: s; margin: 5px 0; padding: 6px 10px 6px 38px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
+  .sp li::before { content: counter(s); position: absolute; left: 9px; top: 6px; width: 21px; height: 21px; line-height: 21px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 12px; }
+  .sp .warn { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); font-size: 13.5px; }
+  .sp .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
+  .sp .btn { padding: 11px 26px; font-size: 16px; } .sp .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .sp .btn[disabled] { opacity: .45; }
+  .sp img.prev { display: block; max-width: 100%; max-height: 190px; margin: 8px auto 0; border: 1px solid var(--line); border-radius: 6px; }
+  .sp .note { text-align: center; font-size: 13px; color: var(--sub); margin-top: 8px; min-height: 1.3em; } .sp .note.ng { color: #ff9aa6; } .sp .note.ok { color: var(--ok); }
+  .spchip { position: absolute; right: 14px; top: 56px; z-index: 201; }
+  .cdbox { text-align: center; padding: 6px 0; position: relative; }
+  .cdhead { font-size: 22px; font-weight: 800; } .cdtime { font-size: 64px; font-weight: 800; color: var(--ac); font-variant-numeric: tabular-nums; letter-spacing: .06em; line-height: 1.2; }
+  .cdtxt { font-size: 15px; line-height: 1.7; margin-top: 6px; } .cdtxt b { color: var(--gold); }
+  .cdnum { display: inline-block; font-size: 120px; font-weight: 800; line-height: 1.05; color: var(--ac); font-variant-numeric: tabular-nums; }
+  .gobig { font-size: 56px; font-weight: 800; color: var(--gold); line-height: 1.2; display: inline-block; } .gosub { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  html.rot .cdnum { font-size: 96px; } html.rot .gobig { font-size: 46px; } html.rot .cdtime { font-size: 54px; }
+  /* カウントダウン・試合開始の演出：デザインごと（体験会では、出さない） */
+  .cdnum.fx { animation-duration: .95s; animation-fill-mode: both; }
+  html[data-style="cyber"] .cdnum.fx { animation-name: bp-cd-cyber; text-shadow: 0 0 18px var(--ac), 3px 0 0 #f0f, -3px 0 0 #0ff; }
+  html[data-style="cute"] .cdnum.fx { animation-name: bp-cd-cute; text-shadow: 0 4px 0 color-mix(in srgb, var(--ac) 40%, #fff); }
+  html[data-style="gothic"] .cdnum.fx { animation-name: bp-cd-goth; animation-duration: 1s; text-shadow: 0 0 26px #b01020; }
+  html[data-style="rock"] .cdnum.fx { animation-name: bp-cd-rock; animation-duration: .8s; text-shadow: 4px 4px 0 #000; }
+  html[data-style="simple"] .cdnum.fx { animation-name: bp-cd-simple; }
+  @keyframes bp-cd-cyber { 0% { transform: scale(1.9) skewX(14deg); opacity: 0; filter: blur(6px); } 20% { opacity: 1; transform: scale(1.05) skewX(-8deg); filter: none; } 40% { transform: translateX(5px); } 60% { transform: translateX(-5px); } 100% { transform: scale(.92); opacity: .5; } }
+  @keyframes bp-cd-cute { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 50% { transform: scale(1.35) rotate(8deg); opacity: 1; } 70% { transform: scale(.9) rotate(-4deg); } 100% { transform: scale(1) rotate(0); opacity: .6; } }
+  @keyframes bp-cd-goth { 0% { opacity: 0; filter: blur(14px); transform: scale(1.25); } 40% { opacity: 1; filter: blur(0); } 55% { opacity: .65; } 70% { opacity: .95; } 100% { opacity: .15; filter: blur(3px); } }
+  @keyframes bp-cd-rock { 0% { transform: translateY(-170px) scale(2.5) rotate(-8deg); opacity: 0; } 35% { transform: translateY(0) scale(1) rotate(2deg); opacity: 1; } 45% { transform: translate(-7px, 5px); } 55% { transform: translate(7px, -5px); } 100% { transform: scale(.9); opacity: .4; } }
+  @keyframes bp-cd-simple { 0% { opacity: 0; transform: scale(1.2); } 30% { opacity: 1; transform: none; } 100% { opacity: .3; } }
+  .gobig.fx { animation-duration: 1.1s; animation-fill-mode: both; }
+  html[data-style="cyber"] .gobig.fx { animation-name: bp-go-cyber; text-shadow: 0 0 22px var(--gold), 3px 0 0 #f0f, -3px 0 0 #0ff; }
+  html[data-style="cute"] .gobig.fx { animation-name: bp-go-cute; }
+  html[data-style="gothic"] .gobig.fx { animation-name: bp-go-goth; animation-duration: 1.6s; text-shadow: 0 0 28px #b01020; }
+  html[data-style="rock"] .gobig.fx { animation-name: bp-go-rock; animation-duration: .8s; text-shadow: 5px 5px 0 #000; }
+  html[data-style="simple"] .gobig.fx { animation-name: bp-cd-simple; animation-duration: .6s; }
+  @keyframes bp-go-cyber { 0% { transform: scale(2.4) skewX(20deg); opacity: 0; } 25% { transform: scale(1) skewX(-10deg); opacity: 1; } 40% { transform: translateX(8px); } 55% { transform: translateX(-8px); } 100% { transform: none; } }
+  @keyframes bp-go-cute { 0% { transform: scale(0) rotate(-30deg); } 55% { transform: scale(1.4) rotate(10deg); } 75% { transform: scale(.92) rotate(-5deg); } 100% { transform: none; } }
+  @keyframes bp-go-goth { 0% { opacity: 0; transform: scale(1.5); filter: blur(16px); } 60% { opacity: 1; filter: blur(0); } 100% { transform: none; } }
+  @keyframes bp-go-rock { 0% { transform: translateY(-220px) scale(3) rotate(-10deg); opacity: 0; } 40% { transform: none; opacity: 1; } 55% { transform: translate(-9px, 6px); } 70% { transform: translate(9px, -6px); } 100% { transform: none; } }
+  .flashov { position: absolute; inset: 0; pointer-events: none; z-index: 210; opacity: 0; animation: bp-flash .7s ease-out; }
+  html[data-style="gothic"] .flashov { background: radial-gradient(circle, rgba(176, 16, 32, .75), rgba(0, 0, 0, .9)); animation-duration: 1.4s; }
+  html[data-style="cyber"] .flashov, html[data-style="simple"] .flashov { background: #fff; }
+  html[data-style="cute"] .flashov { background: radial-gradient(circle, rgba(255, 255, 255, .95), rgba(255, 150, 200, .6)); }
+  html[data-style="rock"] .flashov { background: #fff; animation-duration: .35s; }
+  @keyframes bp-flash { 0% { opacity: 0; } 12% { opacity: .9; } 100% { opacity: 0; } }
+  .star { position: absolute; left: 50%; top: 45%; z-index: 211; font-size: 26px; pointer-events: none; animation: bp-star 1.2s ease-out forwards; }
+  @keyframes bp-star { 0% { transform: translate(-50%, -50%) scale(.2); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2) rotate(240deg); opacity: 0; } }
+  .slash { position: absolute; left: -10%; right: -10%; top: 45%; height: 8px; z-index: 211; background: #fff; box-shadow: 0 0 24px 6px rgba(255, 255, 255, .8); transform: rotate(-14deg) scaleX(0); animation: bp-slash .45s ease-out forwards; pointer-events: none; }
+  @keyframes bp-slash { 0% { transform: rotate(-14deg) scaleX(0); opacity: 1; } 60% { transform: rotate(-14deg) scaleX(1); opacity: 1; } 100% { transform: rotate(-14deg) scaleX(1); opacity: 0; } }
+  #shell.shake { animation: bp-shake .5s linear; }
+  @keyframes bp-shake { 0%, 100% { transform: none; } 15% { transform: translate(-9px, 5px); } 30% { transform: translate(8px, -6px); } 45% { transform: translate(-6px, 4px); } 60% { transform: translate(5px, -3px); } 80% { transform: translate(-2px, 2px); } }
   .ask { position: absolute; inset: 0; z-index: 200; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .ask .card { max-width: 520px; background: var(--panel); border: 2px solid var(--ac); border-radius: 12px; padding: 18px 22px; }
   .ask .q { font-size: 16px; line-height: 1.7; margin-bottom: 16px; } .ask .row { display: flex; gap: 10px; justify-content: flex-end; }
@@ -406,13 +512,13 @@
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "bpinput";</script>
-<div id="stage">
+<div id="stage"><div id="shell">
 <header><h1 id="ttl">BAN/PICK</h1><span class="sub" id="sub"></span><span id="status"></span></header>
 <div id="notice"></div>
 <div id="late" hidden></div>
 <main><aside id="pal"></aside><section id="work"></section></main>
 <div class="cbar" id="bar"></div>
-</div>
+</div></div>
 <script>
 
 (function () {
@@ -420,6 +526,7 @@
   var key = new URLSearchParams(location.search).get("t") || "";
   var frag = (location.hash || "").replace(/^#/, "").split(".");                       // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
   var SIDE = frag[0] === "s" ? "s" : frag[0] === "h" ? "h" : "", UID = frag[1] || "", TOK = frag.slice(2).join(".");
+  var LETTER = frag[0] || "";
   var VIEW = frag[0] === "w" ? "s" : frag[0] === "x" ? "h" : "";                         // w＝サバイバー側の参加選手／x＝ハンター側のチームメンバー：見るだけ
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var ASSET = "";                                                                      // 顔の画像は、このページと同じ場所（大会の公開サイト）
@@ -493,7 +600,7 @@
   var PS = null;
   document.addEventListener("pointerdown", function (e) {
     if (e.pointerType !== "touch") return;
-    var box = e.target.closest ? e.target.closest(".palbox, #work") : null;
+    var box = e.target.closest ? e.target.closest(".palbox, #work, .sp .card") : null;
     PS = box ? { box: box, x: e.clientX, y: e.clientY, top: box.scrollTop, moved: false, v: 0, t: Date.now(), id: e.pointerId } : null;
   }, true);
   document.addEventListener("pointermove", function (e) {
@@ -557,11 +664,15 @@
       var rem = s.hidden && s.set && SIDE === s.s ? mem()[i] : null;                          // 自分（ハンター側の代表）が選んだ、非公開のPICK
       if (mine && SEL[k] != null && CH[SEL[k]]) {
         slot = makeTag(CH[SEL[k]]); slot.title = "もう一度タップすると、外れます";
+        if (fx() && LASTADD === SEL[k]) { flair(slot, CH[SEL[k]], s); LASTADD = null; }
         (function (id) { slot.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]);
       } else if (s.hidden && !mine) {
         if (rem && CH[rem[k]]) { slot = makeTag(CH[rem[k]], "locked"); slot.title = "あなたが選んだハンターです（相手には、試合が終わるまで、非公開）"; }
         else { slot = el("div", "frame hid", "🔒"); slot.title = "ハンターのPICKは、試合が終わるまで、公開されません"; }
-      } else if (s.set && s.ids && CH[s.ids[k]]) { slot = makeTag(CH[s.ids[k]], "locked"); }
+      } else if (s.set && s.ids && CH[s.ids[k]]) {
+        slot = makeTag(CH[s.ids[k]], "locked");
+        if (fx() && !FIRSTR && !SEEN[i]) flair(slot, CH[s.ids[k]], s);                      // 相手（や、ほかの人）が確定したものも、入ったときに演出する
+      }
       else { slot = el("div", "frame" + (mine ? " open" : ""), mine ? "＋" : ""); }
       drop.appendChild(slot);
     }
@@ -569,6 +680,24 @@
     return blk;
   }
   function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+  // デザイン（LABと同じ5種類）。体験会では、標準の見た目だけ（演出もなし）
+  var STYLES = ["cyber", "cute", "gothic", "rock", "simple"], STYLE_DEF = { cute: { bg: "#fff5f9", fg: "#6b3550" } }, CUR_STYLE = "";
+  function applyStyle(st) {
+    if (STYLES.indexOf(st) < 0) st = "cyber";
+    if (CUR_STYLE === st) return;
+    CUR_STYLE = st;
+    var r = document.documentElement, d = STYLE_DEF[st] || {}, bg = d.bg || "#05070b", fg = d.fg || "#f2f6ff";
+    r.style.setProperty("--bg0", bg); r.style.setProperty("--fg0", fg);
+    r.setAttribute("data-style", st); r.setAttribute("data-tone", lum(bg) > .5 ? "light" : "dark");
+  }
+  function fx() { return !(S && S.expo); }                                                // 演出（アニメーション）を出してよいか
+  var SEEN = {}, FIRSTR = true, LASTADD = null;
+  function flair(tag, ch, s) {                                                           // 名札を入れた演出
+    tag.classList.add("ins", s.a === "b" ? "ban" : "pk");
+    tag.appendChild(el("span", "shine"));
+    if (s.a === "b") tag.appendChild(el("span", "xcut"));                                  // BANは、切り傷が走る
+    tag.appendChild(el("span", "pop", (ch.f === "m" ? "マップ" : ch.n) + " " + ACT[s.a] + "！"));
+  }
   function applyColor(side) {                                                              // 自陣営の色が、サブカラー（サバイバー＝青／ハンター＝赤。LABと同じ色）
     var hex = getComputedStyle(document.documentElement).getPropertyValue(side === "h" ? "--h" : "--s").trim();
     if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
@@ -585,39 +714,168 @@
     if (over) { lt.textContent = "⏰ " + (S.slow_text || "入力に90秒以上かかっています。") + (S.side ? "（いま：" + SIDE_NAME[S.side] + "側の入力待ち）" : ""); }
     lt.hidden = !over;
   }
-  setInterval(tick, 1000);
+  setInterval(function () { tick(); cdTick(); }, 250);
   // BAN/PICKが全部終わったとき：演出と、次にやることの案内（出すのは、1回だけ。閉じたら、出さない）
-  var DONE_SHOWN = false;
-  var NEXT_STEPS = [
-    "選手を呼び、試合モードを設定して、試合が始められる状態にします（試合モードでは、ハンターもサバイバーもBAN数を0にします）。",
-    "対戦画面をスクショして、Discordの対戦のチャンネルに、直接送ります（DMではありません）。送ったら「📸 送信した」ボタンを押します。",
-    "モデレーターが、スクショを確認します。確認が済むまで、少し待ちます。",
-    "開始時刻になったら「🎮 試合開始」ボタンを押し、00:00になった瞬間に、ゲーム内でチェックボタンを押して始めます。"
-  ];
-  var STAGE_NOW = { shot: 0, confirm: 2, play: 3 };
-  function showDone() {
-    if (!S || S.status !== "done" || DONE_SHOWN) return;
-    DONE_SHOWN = true;
-    var ov = el("div", "ask done"), card = el("div", "card");
-    for (var k = 0; k < 28; k++) {                                                          // 紙吹雪
-      var c = el("div", "conf"), cols = ["var(--s)", "var(--h)", "var(--gold)", "var(--ok)", "var(--ac)"];
-      c.style.left = (Math.random() * 100) + "%"; c.style.background = cols[k % cols.length];
-      c.style.animationDuration = (2.6 + Math.random() * 2.4) + "s"; c.style.animationDelay = (Math.random() * 2.5) + "s";
-      c.style.setProperty("--fh", ($("stage").offsetHeight + 40) + "px");
-      ov.appendChild(c);
+  var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
+  var SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
+  function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
+  function sendAct(act, extra) {                                                         // スクショの送信・試合開始：署名つきの依頼を、受け箱へ
+    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    var body = { side: LETTER, uid: UID, tok: TOK, act: act }; for (var k in (extra || {})) body[k] = extra[k];
+    return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: body } }) })
+      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 30); });
+  }
+  function shrinkImage(file, cb) {                                                       // スクショを、JPEGに縮める（幅1600px以内・約1.3MB以内）
+    var rd = new FileReader();
+    rd.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var w = im.naturalWidth, h = im.naturalHeight, sc = Math.min(1, 1600 / Math.max(w, h)), cv = document.createElement("canvas");
+        cv.width = Math.round(w * sc); cv.height = Math.round(h * sc);
+        cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+        var q = .85, out = cv.toDataURL("image/jpeg", q);
+        while (out.length > 1.7e6 && q > .4) { q -= .1; out = cv.toDataURL("image/jpeg", q); }
+        cb(out.length > 2.4e6 ? "" : out);
+      };
+      im.onerror = function () { cb(""); };
+      im.src = rd.result;
+    };
+    rd.onerror = function () { cb(""); };
+    rd.readAsDataURL(file);
+  }
+  function spNote(cls, text) { SP_NOTE = { cls: cls, text: text }; var n = document.getElementById("spnote"); if (n) { n.className = "note " + cls; n.textContent = text; } }
+  function buildPanel() {
+    var stg = stageNow();
+    if (stg === "play" && PLAY_AT) return;                                               // 試合中の案内は、出したままにする
+    var old = $("sp"); if (old) old.remove();
+    var old2 = $("spchip"); if (old2) old2.remove();
+    if (!stg || SHUT) return;
+    if (stg === "play") { startPlayView(); return; }
+    if (PANEL_MIN) {
+      var chip = el("button", "btn spchip", "◀ 案内を開く"); chip.id = "spchip"; chip.type = "button";
+      chip.addEventListener("click", function () { PANEL_MIN = false; buildPanel(); });
+      $("stage").appendChild(chip); return;
     }
-    card.appendChild(el("div", "mark", "✓"));
-    card.appendChild(el("div", "big", "BAN/PICK 完了！"));
-    card.appendChild(el("div", "sub2", "次にやることは、この順です（この続きは、Discordの対戦のチャンネルの案内で進めます）。"));
-    var ol = el("ol"), now = STAGE_NOW[S.stage] != null ? STAGE_NOW[S.stage] : 0;
-    NEXT_STEPS.forEach(function (x, i) { var li = el("li", i === now ? "now" : "", x); li.style.animationDelay = (0.5 + i * 0.35) + "s"; ol.appendChild(li); });
-    card.appendChild(ol);
-    var close = el("button", "btn go", "閉じる"); close.type = "button"; close.addEventListener("click", function () { ov.remove(); });
-    card.appendChild(close); ov.appendChild(card); $("stage").appendChild(ov);
+    var ov = el("div", "ask sp"), card = el("div", "card");
+    ov.id = "sp";
+    card.appendChild(el("div", "big", "BANPICK完了"));
+    var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
+    if (stg === "shot") {
+      card.appendChild(el("div", "sub2", "次の順に進めてください。"));
+      var ol = el("ol");
+      ["選手を呼び、試合モードを設定して、試合が始められる状態にします（試合モードでは、ハンターもサバイバーもBAN数を0にします）。",
+       "対戦画面をスクショします。", "このページで、スクショを選んで「送信する」を押します（Discordのチャンネルに、投稿されます）。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
+      card.appendChild(ol);
+      if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
+      if (can) {
+        var inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.style.display = "none"; inp.id = "shotfile";
+        var pick = el("button", "btn", SHOT_IMG ? "📷 選び直す" : "📷 スクショを選ぶ"); pick.type = "button";
+        var snd = el("button", "btn go", SHOT_BUSY ? "送信しています…" : "📸 送信する"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
+        pick.addEventListener("click", function () { inp.click(); });
+        inp.addEventListener("change", function () {
+          var f = inp.files && inp.files[0]; if (!f) return;
+          spNote("", "画像を読み込んでいます…");
+          shrinkImage(f, function (d) { if (!d) { spNote("ng", "⚠ この画像は、使えません（大きすぎるか、画像ではありません）。"); return; } SHOT_IMG = d; SP_NOTE = { cls: "", text: "" }; buildPanel(); });
+        });
+        snd.addEventListener("click", function () {
+          if (!SHOT_IMG || SHOT_BUSY) return;
+          SHOT_BUSY = true; buildPanel(); spNote("", "送信しています…");
+          sendAct("shot", { img: SHOT_IMG }).then(function (res) {
+            SHOT_BUSY = false;
+            if (res && res.ok) { SHOT_IMG = ""; SP_NOTE = { cls: "ok", text: "✅ 送信しました。" }; }
+            else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。しばらくして、画面を確かめてください。") };
+            return refresh().then(buildPanel);
+          }).catch(function (e) { SHOT_BUSY = false; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
+        });
+        if (SHOT_IMG) { var im = el("img", "prev"); im.src = SHOT_IMG; card.appendChild(im); }
+        var row = el("div", "row"); row.appendChild(inp); row.appendChild(pick); row.appendChild(snd); card.appendChild(row);
+      } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
+    } else if (stg === "confirm" && !S.confirmed) {
+      card.appendChild(el("div", "sub2", "スクショを送信しました。"));
+      card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
+      if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
+    } else if (stg === "confirm") {
+      var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
+      var go = el("div", "row"); go.id = "gorow"; card.appendChild(go);
+    }
+    var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
+    var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
+    mn.addEventListener("click", function () { PANEL_MIN = true; buildPanel(); }); rowm.appendChild(mn); card.appendChild(rowm);
+    ov.appendChild(card); $("stage").appendChild(ov);
+    CD_LAST = ""; GO_SHOWN = false; cdTick();
+  }
+  function hhmm(sec) { var d = new Date(sec * 1000); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  // カウントダウン：試合開始まで。00:00になった瞬間に、ゲーム内でチェックボタンを押して始める（デザインごとの演出つき。体験会では、演出なし）
+  function cdTick() {
+    var box = $("cd"); if (!box || !S || !S.confirmed) return;
+    var rem = S.start_at ? Math.ceil(S.start_at - Date.now() / 1000) : 0, f = fx() ? " fx" : "";
+    if (rem > 0) {
+      var mode = rem <= 10 ? "n" + rem : "t";
+      if (rem > 10) {
+        var m = Math.floor(rem / 60), s = rem % 60, txt = ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
+        if (CD_LAST !== "t" || box.firstChild == null) {
+          box.textContent = "";
+          box.appendChild(el("div", "cdhead", "試合開始まで")); var tm = el("div", "cdtime", txt); tm.id = "cdtime"; box.appendChild(tm);
+          var tx = el("div", "cdtxt"); tx.appendChild(el("b", "", "00:00になった瞬間に、ゲーム内でチェックボタンを押して始めてください。")); tx.appendChild(el("div", "", "タイミングがズレると、キャスターと進行がズレます。")); box.appendChild(tx);
+          CD_LAST = "t";
+        } else $("cdtime").textContent = txt;
+      } else if (CD_LAST !== mode) {
+        box.textContent = "";
+        box.appendChild(el("div", "cdhead", "試合開始まで"));
+        box.appendChild(el("div", "cdnum" + f, String(rem)));
+        var tx2 = el("div", "cdtxt"); tx2.appendChild(el("b", "", "00:00になった瞬間に、ゲーム内でチェックボタンを押して始めてください。")); box.appendChild(tx2);
+        CD_LAST = mode;
+        if (fx() && CUR_STYLE === "rock") shake();
+      }
+      return;
+    }
+    if (GO_SHOWN) return;
+    GO_SHOWN = true; CD_LAST = "go";
+    box.textContent = "";
+    box.appendChild(el("div", "gobig" + f, "試合開始！")); box.appendChild(el("div", "gosub", "今すぐチェックボタンを押してください！"));
+    burst();
+    var gr = $("gorow");
+    if (gr && (SIDE === "s" || SIDE === "h")) {                                            // ゲームで始めたら、BOTにも記録する（代表者）
+      var b = el("button", "btn go", "🎮 試合開始（BOTに記録）"); b.type = "button";
+      b.addEventListener("click", function () {
+        b.disabled = true; spNote("", "送信しています…");
+        sendAct("start").then(function (res) {
+          if (res && res.ok) { spNote("ok", "✅ 試合開始を記録しました。"); } else { b.disabled = false; spNote("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); }
+          return refresh();
+        }).catch(function (e) { b.disabled = false; spNote("ng", "⚠ " + (e.message || "つながりませんでした。")); });
+      });
+      gr.appendChild(b);
+    }
+  }
+  function shake() { var sh = $("shell"); sh.classList.remove("shake"); void sh.offsetWidth; sh.classList.add("shake"); }
+  function burst() {                                                                     // 試合開始の瞬間の演出（デザインごと）
+    if (!fx()) return;
+    var st = $("stage");
+    if (CUR_STYLE === "rock") { shake(); var sl = el("div", "slash"); st.appendChild(sl); setTimeout(function () { sl.remove(); }, 700); }
+    if (CUR_STYLE === "cute") for (var k = 0; k < 16; k++) { var s2 = el("div", "star", k % 2 ? "✨" : "⭐"), a = Math.random() * Math.PI * 2, d = 160 + Math.random() * 220; s2.style.setProperty("--dx", Math.cos(a) * d + "px"); s2.style.setProperty("--dy", Math.sin(a) * d + "px"); st.appendChild(s2); setTimeout(function (e) { return function () { e.remove(); }; }(s2), 1400); }
+    var fl = el("div", "flashov"); st.appendChild(fl); setTimeout(function () { fl.remove(); }, 1500);
+  }
+  // 試合中：少し見せてから、画面をシャットダウンして、Discordへ戻る案内（体験会では、シャットダウンの演出なし）
+  function startPlayView() {
+    if (PLAY_AT) return;
+    PLAY_AT = Date.now();
+    var ov = el("div", "ask sp"), card = el("div", "card"); ov.id = "sp";
+    card.appendChild(el("div", "big", "🏁 試合開始！"));
+    card.appendChild(el("div", "cdtxt", "ゲームを始めてください。試合が終わったら、Discordへ戻って「🏁 試合が終了した」ボタンを押してください（結果の入力は、Discordで行います）。"));
+    ov.appendChild(card); $("stage").appendChild(ov);
+    setTimeout(function () { SHUT = true; var o = $("sp"); if (o) o.remove(); shutdown(); }, 6000);
+  }
+  function shutdown() {
+    if (fx()) $("shell").classList.add("off");
+    var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
+    m.appendChild(el("div", "t1", "BANPICK完了"));
+    m.appendChild(el("div", "t2", "Discordへ戻って次のステップへ進んでください"));
+    $("stage").appendChild(m);
   }
   function render() {
     if (!S) return;
     applyColor(SIDE || VIEW || "s");
+    if (S.style && fx() && !BPX_LOCK) applyStyle(S.style);
     var v = SIDE || VIEW || "s";
     $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
     $("sub").textContent = S.title || "";
@@ -655,14 +913,15 @@
       var clr = el("button", "btn", "選び直す"); clr.type = "button"; clr.disabled = BUSY || !SEL.length; clr.addEventListener("click", function () { SEL = []; render(); }); bar.appendChild(clr);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; bar.appendChild(m);
-    tick(); showDone();
+    S.steps.forEach(function (s, i) { if (s.set) SEEN[i] = true; }); FIRSTR = false;
+    tick(); buildPanel();
   }
   function pick(id, ok) {
     var c = cur(); if (!c || BUSY) return;
     if (!ok) { msg("ng", "「" + CH[id].n + "」は、いま選べません。"); return; }
     var i = SEL.indexOf(id);
     if (i >= 0) SEL.splice(i, 1);
-    else if (SEL.length < c.n) SEL.push(id);
+    else if (SEL.length < c.n) { SEL.push(id); LASTADD = id; }
     else { msg("ng", "選べるのは、" + c.n + "個までです。外したいものを、タップしてください。"); return; }
     render();
   }
@@ -706,7 +965,7 @@
   function refresh() {
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
       if (!d || d.kind !== "bp") { stopped(); return; }
-      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status;
+      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending;
       if (changed) { SEL = []; NEWSTEP = true; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) render();
@@ -728,6 +987,12 @@
       timer = setInterval(function () { if (!document.hidden && !BUSY) refresh(); }, 2500);          // 見ていないときは、取りに行かない
     });
   }
+  if (window.BP_DEMO) window.BPX = {                                                     // 確認用のHTML（見る専門）からの操作。本番のページでは、使われない
+    style: function (st) { BPX_LOCK = true; applyStyle(st); }, refresh: function () { return refresh(); },
+    insert: function (kind) { PANEL_MIN = true; buildPanel(); var ids = Object.keys(CH).filter(function (k) { return CH[k].f === "s"; }), id = +ids[Math.floor(Math.random() * ids.length)], blk = document.querySelectorAll(".blk .drop"), dr = blk[Math.floor(Math.random() * blk.length)];
+      if (!dr) return; var t0 = makeTag(CH[id], "locked"); flair(t0, CH[id], { a: kind === "b" ? "b" : "p" }); dr.appendChild(t0); setTimeout(function () { t0.remove(); }, 2200); },
+    burst: function () { burst(); }, shutdown: function () { SHUT = false; var o = $("sp"); if (o) o.remove(); shutdown(); }, reset: function () { SHUT = false; PLAY_AT = 0; $("shell").classList.remove("off"); var m = document.querySelector(".shutmsg"); if (m) m.remove(); PANEL_MIN = false; buildPanel(); }
+  };
   start();
 })();
 
