@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大会設定</title>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https:; base-uri 'none'; form-action 'none'">
+<!--
+  大会設定用ブラウザ（管理者だけ。URLは、絶対に誰にも教えない）。
+  ・URLの ?t=（設定用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いたデータ）を読む。
+  ・最初にこのURLを開いた人が、パスワードを決める。ページは、パスワードから鍵を作って（PBKDF2）、鍵を、BOTだけが読める受け箱に1回書く（パスワードは送らない）。
+  ・保存：変更の内容に、鍵から作った署名（HMAC）をつけて、受け箱に書く。BOTが、署名を確かめて、反映する。
+  ・Discordのボタンは、そのまま使える。どちらで変えても、同じ内容になる。
+-->
+<style>
+  :root { --bg: #0d1017; --panel: #151a24; --panel2: #1c2230; --line: #2b3347; --text: #eceff6; --sub: #9aa3b5; --ac: #ffb020; --h: #e5484d; --s: #3b82f6; --ok: #3ccf91; --bad: #ff5d5d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, "Hiragino Sans", "Yu Gothic UI", sans-serif; }
+  button, select, input { font: inherit; color: var(--text); }
+  button { cursor: pointer; border: 1px solid var(--line); background: var(--panel2); border-radius: 8px; padding: 7px 14px; }
+  button:hover:not(:disabled) { border-color: var(--ac); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--ac); border-color: var(--ac); color: #1a1200; font-weight: 700; }
+  button.danger { border-color: var(--bad); color: var(--bad); }
+  input[type=text], input[type=password], select { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; }
+  header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 18px; background: rgba(13, 16, 23, .94); border-bottom: 1px solid var(--line); backdrop-filter: blur(4px); }
+  header h1 { margin: 0; font-size: 17px; } header .sp { flex: 1; }
+  #dirty { color: var(--ac); font-size: 13px; } #dirty.clean { color: var(--sub); }
+  main { max-width: 1100px; margin: 0 auto; padding: 18px; }
+  h2 { font-size: 16px; margin: 26px 0 10px; border-left: 4px solid var(--ac); padding-left: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .warn { background: rgba(255, 93, 93, .12); border: 1px solid var(--bad); border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+  .gate { max-width: 460px; margin: 60px auto; } .gate h1 { font-size: 20px; margin-top: 0; } .gate label { display: block; margin: 12px 0 4px; color: var(--sub); }
+  .gate .msg { min-height: 1.5em; color: var(--bad); margin-top: 8px; } .gate button { margin-top: 14px; width: 100%; }
+  .cols { display: grid; grid-template-columns: 250px 1fr; gap: 14px; } @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .plist { display: flex; flex-direction: column; gap: 6px; }
+  .pitem { text-align: left; display: flex; align-items: center; gap: 8px; background: var(--panel2); } .pitem.sel { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac); }
+  .pitem small { color: var(--sub); } .tagb { font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--line); color: var(--sub); }
+  .step { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); }
+  .step:first-child { border-top: 0; } .num { font-size: 22px; color: var(--ac); text-align: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 2px 6px 2px 0; }
+  .seg button { border: 0; border-radius: 0; padding: 6px 11px; background: var(--panel2); }
+  .seg button.on { background: var(--ac); color: #1a1200; font-weight: 700; } .seg button.on.h { background: var(--h); color: #fff; } .seg button.on.s { background: var(--s); color: #fff; }
+  .cnt { display: inline-flex; align-items: center; gap: 4px; } .cnt b { min-width: 2.2em; text-align: center; }
+  .acts { display: flex; gap: 4px; } .acts button { padding: 5px 9px; }
+  .sum { color: var(--sub); font-size: 13px; margin: 8px 0; } .sum.err { color: var(--bad); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .rounds { width: 100%; border-collapse: collapse; } .rounds td { padding: 6px 8px; border-top: 1px solid var(--line); } .rounds td:first-child { white-space: nowrap; }
+  #result { margin: 12px 0; } #result.ok { color: var(--ok); } #result.ng { color: var(--bad); }
+  .note { color: var(--sub); font-size: 13px; }
+  .cl-btn { top: auto !important; bottom: 14px; }                       /* ✏ 更新履歴：ヘッダーに重ならないよう、左下に */
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "editor";</script>
+<div id="gate" class="gate card" hidden></div>
+<div id="app" hidden>
+  <header>
+    <h1 id="title">大会設定</h1>
+    <span id="dirty" class="clean">変更はありません</span>
+    <span class="sp"></span>
+    <span class="note">5分ごとに、BOTがバックアップを保存します</span>
+    <button id="reload" type="button">↻ 最新を読み込む</button>
+    <button id="save" type="button" class="primary" disabled>💾 保存</button>
+  </header>
+  <main>
+    <div id="result"></div>
+    <h2>BAN/PICKの手順</h2>
+    <div class="cols">
+      <div class="card"><div class="plist" id="plist"></div><div class="row"><button id="newp" type="button">＋ 新しい手順（白紙）</button></div></div>
+      <div class="card" id="pedit"></div>
+    </div>
+    <h2>ラウンドごとの手順</h2>
+    <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
+  </main>
+</div>
+<script src="changelog.js"></script>
+<script>
+(function () {
+  "use strict";
+  var key = new URLSearchParams(location.search).get("t") || "";
+  var BASE = window.TOURNAMENT_DATA_BASE || "";
+  var DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
+  var $ = function (id) { return document.getElementById(id); };
+  var enc = new TextEncoder();
+  var data = null, AUTH = null;                         // data＝BOTが書いたデータ／AUTH＝パスワードから作った鍵（16進。このページの中だけ）
+  var P = [], ROUNDS = [], SEL = null, DELETED = [];    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号
+  var BASEJSON = "";                                    // 最後に読み込んだ・保存した内容（変更の有無の判定用）
+  var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
+  var SIDE = { survivor: "サバイバー側", hunter: "ハンター側" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (x) { return (x < 16 ? "0" : "") + x.toString(16); }).join(""); }
+  function unhex(s) { var a = new Uint8Array(s.length / 2); for (var i = 0; i < a.length; i++) a[i] = parseInt(s.substr(i * 2, 2), 16); return a; }
+  function canon(v) {                                   // BOTと同じ形のJSON（キーを並べ替え・空白なし）。署名の対象
+    if (v === null || typeof v !== "object") return JSON.stringify(v);
+    if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+    return "{" + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ":" + canon(v[k]); }).join(",") + "}";
+  }
+  function deriveAuth(pw, salt, iter) {
+    return crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]).then(function (k) {
+      return crypto.subtle.deriveBits({ name: "PBKDF2", salt: enc.encode(salt), iterations: iter, hash: "SHA-256" }, k, 256);
+    }).then(hex);
+  }
+  function hmac(authHex, text) {
+    return crypto.subtle.importKey("raw", unhex(authHex), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]).then(function (k) {
+      return crypto.subtle.sign("HMAC", k, enc.encode(text));
+    }).then(hex);
+  }
+  function load() { return fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }); }
+  function sendInbox(body) {
+    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _editor: body } }) })
+      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return nonce; });
+  }
+  function waitResult(nonce, tries) {                   // BOTが処理して、結果を書き戻すのを待つ
+    return new Promise(function (res) {
+      (function tick(n) {
+        load().then(function (d) {
+          if (d && d.result && d.result.nonce === nonce) { data = d; res(d.result); }
+          else if (n <= 0) res(null); else setTimeout(function () { tick(n - 1); }, 1500);
+        }).catch(function () { if (n <= 0) res(null); else setTimeout(function () { tick(n - 1); }, 1500); });
+      })(tries || 20);
+    });
+  }
+
+  // ───────── ゲート（パスワードを決める・入れる）
+  function gate(build) { var g = $("gate"); g.textContent = ""; build(g); g.hidden = false; $("app").hidden = true; }
+  function warnBox(g) {
+    var w = el("div", "warn");
+    w.appendChild(el("b", "", "⚠ このURLは、管理者だけが使います。絶対に、誰にも教えないでください。"));
+    w.appendChild(el("div", "", "URLを知っている人が、パスワードも知っていれば、大会の設定を変えられます。"));
+    g.appendChild(w);
+  }
+  function field(g, label, type) { g.appendChild(el("label", "", label)); var i = el("input"); i.type = type; i.autocomplete = "off"; g.appendChild(i); return i; }
+  function showSetup() {
+    gate(function (g) {
+      g.appendChild(el("h1", "", "🛠 " + (data.title || "大会") + "の設定"));
+      g.appendChild(el("div", "", "はじめに、パスワードを決めてください。"));
+      warnBox(g);
+      var a = field(g, "パスワード（8文字以上）", "password"), b = field(g, "もう一度", "password");
+      var msg = el("div", "msg"); g.appendChild(msg);
+      var go = el("button", "primary", "パスワードを決めてはじめる"); go.type = "button"; g.appendChild(go);
+      go.addEventListener("click", function () {
+        if (a.value.length < 8) { msg.textContent = "8文字以上にしてください。"; return; }
+        if (a.value !== b.value) { msg.textContent = "2つの入力が違います。"; return; }
+        go.disabled = true; msg.textContent = "準備しています…（数秒かかります）";
+        var salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+        deriveAuth(a.value, salt, data.iter).then(function (auth) {
+          AUTH = auth;
+          return sendInbox({ type: "setup", salt: salt, auth: auth }).then(waitResult);
+        }).then(function (r) {
+          if (r && r.ok) { init(); } else { go.disabled = false; msg.textContent = (r && r.error) || "BOTからの返事がありません。しばらくして、もう一度お試しください。"; }
+        }).catch(function (e) { go.disabled = false; msg.textContent = e.message || "つながりませんでした。"; });
+      });
+    });
+  }
+  function showLogin() {
+    gate(function (g) {
+      g.appendChild(el("h1", "", "🛠 " + (data.title || "大会") + "の設定"));
+      warnBox(g);
+      var pw = field(g, "パスワード", "password");
+      var msg = el("div", "msg"); g.appendChild(msg);
+      var go = el("button", "primary", "ログイン"); go.type = "button"; g.appendChild(go);
+      function ok() {
+        go.disabled = true; msg.textContent = "確かめています…";
+        deriveAuth(pw.value, data.salt, data.iter).then(function (auth) {
+          return hmac(auth, "check").then(function (c) {
+            if (c !== data.chk) { go.disabled = false; msg.textContent = "パスワードが違います。"; return; }
+            AUTH = auth; init();
+          });
+        });
+      }
+      go.addEventListener("click", ok);
+      pw.addEventListener("keydown", function (e) { if (e.key === "Enter") ok(); });
+    });
+  }
+
+  // ───────── 手順の検査（BOTと同じ決まり）
+  function stepText(s) { return SIDE[s.side] + "が " + TGT[s.target] + "を " + ACT[s.action] + " ×" + s.count; }
+  function check(steps, lim) {
+    if (!steps.length) return "手順が1つもありません。";
+    if (steps.length > lim.max_steps) return "手順は" + lim.max_steps + "個までです。";
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      if (s.action === "ban" && s.side === s.target) return (i + 1) + "番：自分の側と同じものを、BANすることはできません。";
+      if (s.count < 1 || s.count > lim.max_count) return (i + 1) + "番：人数は、1〜" + lim.max_count + "です。";
+    }
+    return "";
+  }
+  function summary(steps) {
+    var t = { pick: { survivor: 0, hunter: 0, map: 0 }, ban: { survivor: 0, hunter: 0, map: 0 } };
+    steps.forEach(function (s) { t[s.action][s.target] += s.count; });
+    function one(a) { return "サバイバー" + t[a].survivor + "・ハンター" + t[a].hunter + "・マップ" + t[a].map; }
+    var warn = [];
+    if (t.pick.survivor !== 4) warn.push("サバイバーのPICKが合計" + t.pick.survivor + "人です（通常は4人）");
+    if (t.pick.hunter !== 1) warn.push("ハンターのPICKが合計" + t.pick.hunter + "人です（通常は1人）");
+    return "PICK：" + one("pick") + "／BAN：" + one("ban") + (warn.length ? "　⚠ " + warn.join("／") : "");
+  }
+
+  // ───────── 画面
+  function dirty() { return JSON.stringify([P, ROUNDS, DELETED]) !== BASEJSON; }
+  function refreshDirty() {
+    var d = dirty(), e = $("dirty");
+    e.textContent = d ? "● 保存していない変更があります" : "変更はありません"; e.className = d ? "" : "clean";
+    $("save").disabled = !d;
+  }
+  function renderList() {
+    var box = $("plist"); box.textContent = "";
+    P.forEach(function (p, i) {
+      var b = el("button", "pitem" + (i === SEL ? " sel" : "")); b.type = "button";
+      b.appendChild(el("span", "", p.name || "（名前なし）"));
+      if (p.builtin) b.appendChild(el("span", "tagb", "標準"));
+      if (p.id == null) b.appendChild(el("span", "tagb", "新規"));
+      b.addEventListener("click", function () { SEL = i; render(); });
+      box.appendChild(b);
+    });
+  }
+  function seg(opts, cur, cls, onPick, disabled) {
+    var d = el("span", "seg");
+    opts.forEach(function (o) {
+      var b = el("button", (o[0] === cur ? "on " + (cls && cls[o[0]] || "") : ""), o[1]); b.type = "button"; b.disabled = !!disabled;
+      b.addEventListener("click", function () { onPick(o[0]); }); d.appendChild(b);
+    });
+    return d;
+  }
+  function renderEdit() {
+    var box = $("pedit"); box.textContent = "";
+    var p = P[SEL];
+    if (!p) { box.appendChild(el("div", "note", "左の一覧から、手順を選んでください。")); return; }
+    var ro = !!p.builtin;
+    if (ro) {
+      var w = el("div", "warn"); w.appendChild(el("b", "", "標準の手順は、変更できません。"));
+      var cp = el("button", "", "コピーして、新しい手順にする"); cp.type = "button"; cp.style.marginLeft = "12px";
+      cp.addEventListener("click", function () { P.push({ id: null, name: (p.name + "のコピー").slice(0, 30), builtin: false, steps: clone(p.steps) }); SEL = P.length - 1; render(); });
+      w.appendChild(cp); box.appendChild(w);
+    }
+    var nm = el("input"); nm.type = "text"; nm.maxLength = 30; nm.value = p.name; nm.disabled = ro; nm.placeholder = "手順の名前（30文字まで）";
+    nm.addEventListener("input", function () { p.name = nm.value; renderList(); refreshDirty(); });
+    box.appendChild(nm);
+    var list = el("div"); box.appendChild(list);
+    p.steps.forEach(function (s, i) {
+      var row = el("div", "step");
+      row.appendChild(el("div", "num", CIRC.charAt(i)));
+      var mid = el("div");
+      mid.appendChild(seg([["survivor", "サバイバー側"], ["hunter", "ハンター側"]], s.side, { survivor: "s", hunter: "h" }, function (v) { s.side = v; if (s.action === "ban" && s.target === v) s.target = v === "survivor" ? "hunter" : "survivor"; render(); }, ro));
+      mid.appendChild(seg([["ban", "BAN"], ["pick", "PICK"]], s.action, null, function (v) { s.action = v; if (v === "ban" && s.target === s.side) s.target = s.side === "survivor" ? "hunter" : "survivor"; if (s.target === "map" && v === "pick") s.count = 1; render(); }, ro));
+      mid.appendChild(seg([["survivor", "サバイバー"], ["hunter", "ハンター"], ["map", "マップ"]].filter(function (o) { return !(s.action === "ban" && o[0] === s.side); }), s.target, { survivor: "s", hunter: "h" }, function (v) { s.target = v; if (v === "map" && s.action === "pick") s.count = 1; render(); }, ro));
+      var c = el("span", "cnt"), mn = el("button", "", "−"), pl = el("button", "", "＋");
+      mn.type = pl.type = "button"; mn.disabled = ro || s.count <= 1; pl.disabled = ro || s.count >= data.limits.max_count || (s.target === "map" && s.action === "pick");
+      mn.addEventListener("click", function () { s.count--; render(); }); pl.addEventListener("click", function () { s.count++; render(); });
+      c.appendChild(mn); c.appendChild(el("b", "", s.count + "つ")); c.appendChild(pl); mid.appendChild(c);
+      row.appendChild(mid);
+      var acts = el("div", "acts");
+      function ab(label, title, fn, dis, cls) { var b = el("button", cls || "", label); b.type = "button"; b.title = title; b.disabled = ro || dis; b.addEventListener("click", fn); acts.appendChild(b); }
+      ab("↑", "上へ", function () { var t = p.steps[i - 1]; p.steps[i - 1] = s; p.steps[i] = t; render(); }, i === 0);
+      ab("↓", "下へ", function () { var t = p.steps[i + 1]; p.steps[i + 1] = s; p.steps[i] = t; render(); }, i === p.steps.length - 1);
+      ab("⧉", "この手順を、すぐ下にコピー", function () { p.steps.splice(i + 1, 0, clone(s)); render(); }, p.steps.length >= data.limits.max_steps);
+      ab("✕", "この手順を消す", function () { p.steps.splice(i, 1); render(); }, false, "danger");
+      row.appendChild(acts); list.appendChild(row);
+    });
+    var err = check(p.steps, data.limits);
+    var sm = el("div", "sum" + (err ? " err" : ""), err || summary(p.steps)); box.appendChild(sm);
+    var bar = el("div", "row");
+    var add = el("button", "", "＋ 手順を追加"); add.type = "button"; add.disabled = ro || p.steps.length >= data.limits.max_steps;
+    add.addEventListener("click", function () { p.steps.push({ side: "survivor", action: "ban", target: "hunter", count: 1 }); render(); });
+    bar.appendChild(add);
+    if (!ro) {
+      var del = el("button", "danger", "🗑 この手順を削除"); del.type = "button";
+      del.addEventListener("click", function () {
+        if (!confirm("手順「" + p.name + "」を削除します。保存すると、元に戻せません。よろしいですか？")) return;
+        if (p.id != null) DELETED.push(p.id);
+        P.splice(SEL, 1); SEL = P.length ? 0 : null; render();
+      });
+      bar.appendChild(del);
+    }
+    box.appendChild(bar);
+  }
+  function renderRounds() {
+    var t = $("rounds"); t.textContent = "";
+    ROUNDS.forEach(function (r) {
+      var tr = el("tr"), a = el("td", "", r.name + "（" + r.fmt + "）"), b = el("td"), sel = el("select");
+      P.forEach(function (p, i) { var o = el("option", "", p.name || "（名前なし）"); o.value = String(i); sel.appendChild(o); });
+      var idx = P.findIndex(function (p) { return (r.pname != null ? p.name === r.pname : p.id === r.pattern); });
+      sel.value = String(idx < 0 ? 0 : idx);
+      sel.addEventListener("change", function () { var p = P[Number(sel.value)]; r.pattern = p.id; r.pname = p.id == null ? p.name : null; refreshDirty(); });
+      b.appendChild(sel); tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
+    });
+  }
+  function render() { renderList(); renderEdit(); renderRounds(); refreshDirty(); }
+
+  function adopt(d) {                                   // BOTのデータを、作業中の内容にする
+    data = d;
+    P = clone(d.patterns); ROUNDS = clone(d.rounds); DELETED = [];
+    if (SEL == null || SEL >= P.length) SEL = 0;
+    BASEJSON = JSON.stringify([P, ROUNDS, DELETED]);
+    $("title").textContent = (d.title || "大会") + "の設定";
+    if (window.Changelog) window.Changelog.update(d.changes);
+  }
+  function init() {
+    $("gate").hidden = true; $("app").hidden = false;
+    adopt(data); render();
+  }
+
+  function save() {
+    var ops = [], bad = "";
+    DELETED.forEach(function (id) { ops.push({ op: "delete_pattern", id: id }); });
+    P.forEach(function (p) {
+      if (p.builtin) return;
+      var orig = data.patterns.filter(function (q) { return q.id === p.id; })[0];
+      if (p.id != null && orig && JSON.stringify([orig.name, orig.steps]) === JSON.stringify([p.name, p.steps])) return;
+      var err = check(p.steps, data.limits); if (err) bad = "「" + p.name + "」：" + err;
+      if (!(p.name || "").trim()) bad = bad || "名前のない手順があります。";
+      ops.push({ op: "save_pattern", id: p.id, name: p.name.trim(), steps: p.steps });
+    });
+    ROUNDS.forEach(function (r) {
+      var orig = data.rounds.filter(function (q) { return q.no === r.no; })[0];
+      if (orig && orig.pattern === r.pattern && r.pname == null) return;
+      var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
+    });
+    if (bad) { setResult("ng", "⚠ " + bad); return; }
+    if (!ops.length) { setResult("ok", "変更はありません。"); return; }
+    var n = (data.n || 0) + 1;
+    $("save").disabled = true; setResult("", "保存しています…");
+    hmac(AUTH, n + "|" + canon(ops)).then(function (mac) {
+      return sendInbox({ type: "edit", n: n, ops: ops, mac: mac });
+    }).then(waitResult).then(function (r) {
+      if (!r) { setResult("ng", "BOTからの返事がありません。しばらくして「最新を読み込む」を押して、確かめてください。"); refreshDirty(); return; }
+      if (r.ok) { setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); return load().then(function (d) { adopt(d); render(); }); }
+      setResult("ng", "⚠ " + (r.error || "保存できませんでした。")); refreshDirty();
+    }).catch(function (e) { setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
+  }
+  function setResult(cls, text) { var r = $("result"); r.className = cls; r.textContent = text; }
+
+  $("save").addEventListener("click", save);
+  $("reload").addEventListener("click", function () {
+    if (dirty() && !confirm("保存していない変更は、消えます。最新を読み込みますか？")) return;
+    load().then(function (d) { adopt(d); render(); setResult("", ""); });
+  });
+  $("newp").addEventListener("click", function () { P.push({ id: null, name: "新しい手順" + (P.length + 1), builtin: false, steps: [{ side: "survivor", action: "ban", target: "hunter", count: 1 }] }); SEL = P.length - 1; render(); });
+  window.addEventListener("beforeunload", function (e) { if (AUTH && dirty()) { e.preventDefault(); e.returnValue = ""; } });
+
+  if (!key || !BASE) { gate(function (g) { g.appendChild(el("h1", "", "URLが正しくありません")); g.appendChild(el("div", "", "管理者メニューで出る、設定用のURLから開いてください。")); }); return; }
+  if (!(window.crypto && crypto.subtle)) { gate(function (g) { g.appendChild(el("div", "", "このブラウザでは使えません（https:// のURLで、新しいブラウザで開いてください）。")); }); return; }
+  load().then(function (d) {
+    if (!d || d.kind !== "editor") throw new Error("x");
+    data = d;
+    if (d.setup) showLogin(); else showSetup();
+  }).catch(function () { gate(function (g) { g.appendChild(el("h1", "", "読み込めませんでした")); g.appendChild(el("div", "", "URLが正しいか、確かめてください。BOTがまだ準備していないときは、しばらくして開き直してください。")); }); });
+})();
+</script>
+</body>
+</html>
