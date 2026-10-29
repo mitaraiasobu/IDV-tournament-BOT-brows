@@ -89,8 +89,13 @@
   var EDIT = /^[A-Za-z0-9]{12}$/.test(EDIT_KEY);
   var RELAY = params.get("relay") || "ws://127.0.0.1:8778";
   var POLL_MS = 3000;
-  var LABELS = { wait: "待機", play: "BAN/PICK・試合", result: "戦績画面" };
-  var SCENES = ["wait", "play", "result"];
+  var LABELS = { wait: "待機", intro_caster: "キャスター紹介", intro_player: "選手紹介（チーム紹介・VSも）", banpick: "BAN/PICK", play: "試合中", result: "戦績画面" };
+  var SCENES = ["wait", "intro_caster", "intro_player", "banpick", "play", "result"];
+  function nowScene() {                                                  // BOTのデータの「場面の切り替わり」を、このブラウザの時計で数える（時刻で進む場面（紹介・BAN/PICKの表示）は、データが変わらなくても切り替わる）
+    var plan = data && data.plan, now = Date.now() / 1000, sc = (data && data.scene) || "wait";
+    if (plan && plan.length) { sc = "wait"; plan.forEach(function (p) { if (p[0] <= now) sc = p[1]; }); }
+    return sc;
+  }
   var NAMES = { row: [["bottom", "下"], ["top", "上"]], column: [["right", "右"], ["left", "左"]] };
   var $ = function (id) { return document.getElementById(id); };
   var stage = $("stage"), ul = $("list");
@@ -106,7 +111,7 @@
 
   // ── 配置の反映 ──
   function curLayout() {
-    var s = EDIT ? editScene : (data && data.scene) || "wait";
+    var s = EDIT ? editScene : nowScene();
     var src = EDIT ? work : (data && data.layouts);
     return (src && src[s]) || { x: 50, y: 70, d: 150, gap: 15, orient: "row", name: "bottom" };
   }
@@ -173,7 +178,7 @@
         data = d;
         if (d.css !== $("data-css").textContent) $("data-css").textContent = d.css;
         st.data = "最新";
-        st.scene = LABELS[d.scene] || d.scene;
+        st.scene = LABELS[nowScene()] || d.scene;
         if (EDIT && (first || !work)) { work = JSON.parse(JSON.stringify(d.layouts)); workK = d.deco_scale; workNG = d.name_gap != null ? d.name_gap : -0.5; buildPanel(); sample(); }
         applyLayout(); status();
         if (!EDIT && d.live && d.live !== liveKey) startLive(d.live);
@@ -356,7 +361,14 @@
   window.addEventListener("resize", applyLayout);
   status();
   if (EDIT) { startEdit(); load(true); }
-  else { load(true); setInterval(function () { load(false); }, POLL_MS); connect(); }
+  else {
+    load(true); setInterval(function () { load(false); }, POLL_MS); connect();
+    var lastScene = null;
+    setInterval(function () {                                                // 時刻で進む場面（紹介・BAN/PICKの表示）の切り替わり：データが変わらなくても、1秒ごとに確かめる
+      var s = nowScene();
+      if (s !== lastScene) { lastScene = s; st.scene = LABELS[s] || s; applyLayout(); status(); }
+    }, 1000);
+  }
 })();
 </script>
 </body>
