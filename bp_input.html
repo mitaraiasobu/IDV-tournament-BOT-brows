@@ -415,6 +415,9 @@
   .drop.col0 { min-height: 84px; }
   .cbar { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px solid var(--line); background: var(--bg); }
   .cbar .btn { padding: 13px 40px; font-size: 18px; } .cbar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .cbar .btn[disabled] { opacity: .5; }
+  .authlost { position: absolute; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 5%; box-sizing: border-box; background: #7a0b16; color: #fff; text-align: center; }
+  .authlost .al1 { font-size: min(7vw, 54px); font-weight: 800; line-height: 1.5; }
+  html.rot .authlost .al1 { font-size: 40px; }
   .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
   .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
   .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -1174,11 +1177,20 @@
   var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
   var GO_AT = 0, SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
   function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
+  // ───── 認証が切れたとき：画面いっぱいに、大きく、やることを出す ─────
+  function isAuthLost(res) { return !!(res && !res.ok && /このURLでは、操作できません/.test(res.error || "")); }
+  function showAuthLost() {
+    if ($("authlost")) return;
+    var ov = el("div", "authlost"); ov.id = "authlost";
+    ov.appendChild(el("div", "al1", "認証が切れたのでDiscordに戻って再度「ブラウザで開く」ボタンを押して新しいURLを発行してください。"));
+    $("stage").appendChild(ov);
+  }
   function sendAct(act, extra) {                                                         // スクショの送信・試合開始：署名つきの依頼を、受け箱へ
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     var body = { side: LETTER, uid: UID, tok: TOK, act: act }; for (var k in (extra || {})) body[k] = extra[k];
     return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: body } }) })
-      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 30); });
+      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 30); })
+      .then(function (res) { if (isAuthLost(res)) showAuthLost(); return res; });
   }
   function shrinkImage(file, cb) {                                                       // スクショを、JPEGに縮める（幅1600px以内・約1.3MB以内）
     var rd = new FileReader();
@@ -1245,7 +1257,12 @@
     card.appendChild(el("div", "big", stg === "shot" ? "📸 スクショの送信" : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
     card.appendChild(picksBlock(true));
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
-    if (stg === "shot") {
+    if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
+      card.appendChild(el("div", "sub2", "サバイバーがゲーム内で公開募集を開いているので、"));
+      card.appendChild(el("div", "big", "「" + (S.room_name || "") + "」"));
+      card.appendChild(el("div", "sub2", "という名前の部屋にお入りください。"));
+      card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
+    } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
       card.appendChild(el("div", "sub2", "このページで、スクショを選んで「送信する」を押します（DMではなく、Discordのチャンネルに直接、投稿されます）。"));
       card.appendChild(el("div", "sub2", "⬇"));
@@ -1590,6 +1607,7 @@
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
       .then(function (res) {
         BUSY = false;
+        if (isAuthLost(res)) showAuthLost();
         if (res && res.ok) { if (wasHidden) remember(stepNo, picked); SEL = []; msg("ok", "✅ 確定しました。Discordのボードにも反映されます。"); }
         else msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。しばらくして、画面を確かめてください。"));
         return refresh();
