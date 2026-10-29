@@ -418,6 +418,9 @@
   .authlost { position: absolute; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 5%; box-sizing: border-box; background: #7a0b16; color: #fff; text-align: center; }
   .authlost .al1 { font-size: min(7vw, 54px); font-weight: 800; line-height: 1.5; }
   html.rot .authlost .al1 { font-size: 40px; }
+  .pmsel { display: flex; align-items: center; gap: 10px; justify-content: center; margin: 8px 0; font-size: 16px; } .pmsel select { font: inherit; font-size: 16px; padding: 6px 10px; border-radius: 8px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); min-width: 170px; }
+  .hrn { margin: 8px 0 12px; }
+  .selcount { font-size: 14px; color: var(--gold); margin: -4px 0 10px; line-height: 1.6; }
   .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
   .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
   .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -519,11 +522,12 @@
   .holdbtn { position: relative; overflow: hidden; padding: 16px 54px; font-size: 21px; font-weight: 800; border-radius: 12px; border: 2px solid var(--dz1); background: var(--panel2); color: var(--text); cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
   .holdbtn .holdbar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: color-mix(in srgb, var(--dz1) 55%, transparent); } .holdbtn .holdlab { position: relative; }
   .scary { position: absolute; inset: 0; z-index: 400; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 20px; animation: bp-shake .5s linear; }
-  .scary .sc1 { color: #ff1a1a; font-size: 46px; font-weight: 900; text-shadow: 0 0 14px #f00, 3px 3px 0 #500; letter-spacing: .04em; line-height: 1.4; animation: sc-pulse .8s ease-in-out infinite; }
-  .scary .sc2 { color: #ff2a2a; font-size: 30px; font-weight: 900; text-shadow: 0 0 10px #f00; line-height: 1.5; }
+  .scary .sc1 { font-size: 46px; font-weight: 900; letter-spacing: .04em; line-height: 1.4; background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: sc-rainbow 3.2s linear infinite, sc-pulse .8s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(255, 255, 255, .55)) drop-shadow(0 0 22px rgba(160, 120, 255, .6)); }
+  .scary .sc2 { font-size: 30px; font-weight: 900; line-height: 1.5; background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: sc-rainbow 3.2s linear infinite; filter: drop-shadow(0 0 10px rgba(255, 255, 255, .55)) drop-shadow(0 0 22px rgba(160, 120, 255, .6)); }
+  @keyframes sc-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
   body.scaryon, html:has(body.scaryon) { background: #000 !important; } body.scaryon .mp-bar, body.scaryon #demoBar { display: none !important; }
   .scary .scbtn[disabled] { opacity: .45; cursor: not-allowed; }
-  .scary .scbtn { margin-top: 16px; padding: 12px 34px; font-size: 20px; font-weight: 800; border: 2px solid #ff1a1a; background: #200; color: #ff6a6a; border-radius: 10px; cursor: pointer; }
+  .scary .scbtn { margin-top: 16px; padding: 12px 34px; font-size: 20px; font-weight: 800; border: 2px solid #c0a8ff; background: #111; color: #e8dcff; border-radius: 10px; cursor: pointer; }
   @keyframes sc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   html.rot .scary .sc1 { font-size: 36px; } html.rot .scary .sc2 { font-size: 24px; }
   .resform { margin-top: 8px; } .resform .btnrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; } .resform .btnrow .btn { padding: 10px 16px; font-size: 15px; }
@@ -1079,7 +1083,7 @@
         e.preventDefault(); fired = false; t0 = Date.now(); bar.style.transition = "none"; bar.style.width = "0%"; void bar.offsetWidth;
         bar.style.transition = "width 2s linear"; bar.style.width = "100%";
         timer = setTimeout(function () {
-          fired = true; reset(); lab.textContent = "送信しています…";
+          fired = true; reset(); lab.textContent = "データ送信中…";
           sendAct("roomok").then(function (res) {
             if (res && res.ok) { lab.textContent = "OK"; return refresh(); }
             lab.textContent = "OK"; note.className = "note ng"; note.textContent = "⚠ " + ((res && res.error) || "BOTからの返事がありません。");
@@ -1127,7 +1131,7 @@
         if (rep && !S.ended[mySide]) {
           var eb = el("button", "btn go", "🏁 試合が終了した"); eb.type = "button"; eb.id = "endbtn"; eb.disabled = true;
           eb.addEventListener("click", function () {
-            eb.disabled = true; spNote("", "送信しています…");
+            eb.disabled = true; spNote("", "データ送信中…");
             sendAct("end").then(function (res) { if (res && res.ok) SP_NOTE = { cls: "ok", text: "✅ 押しました。" }; else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; return refresh().then(buildPanel); })
               .catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
           });
@@ -1156,7 +1160,7 @@
           form.appendChild(hg);
           var sb = el("button", "btn go", "📨 この内容で入力する"); sb.type = "button"; sb.disabled = RES.h == null || RES.c == null;
           sb.addEventListener("click", function () {
-            sb.disabled = true; spNote("", "送信しています…");
+            sb.disabled = true; spNote("", "データ送信中…");
             sendAct("result", { hangs: RES.h, hunter: RES.c }).then(function (res) {
               if (res && res.ok) SP_NOTE = { cls: "ok", text: res.status === "wait" ? "✅ 入力しました。相手側の入力を待っています。" : "" }; else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") };
               return refresh().then(buildPanel);
@@ -1231,9 +1235,93 @@
       PANEL_READY = true; PANEL_TIMER = 0; buildPanel();
     }, fx() ? 2600 : 1500);
   }
+  // ───── 体験会：試合のあと（本番と同じ流れ）。省略の選択・結果の入力（ハンター）はここ。試合終了・確認はDiscord。報告が終わったら、ここに出して、6秒後にシャットダウン ─────
+  var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, e: null, c: null };
+  function hunterRoomNote(card) {                                                           // ハンター側：入る部屋の名前（部屋を開くのは、サバイバー）
+    if (!(S.expo && MY === "h" && S.room_name)) return;
+    var box = el("div", "hrn");
+    box.appendChild(el("div", "sub2", "サバイバーがゲーム内で公開募集を開いているので、"));
+    box.appendChild(el("div", "big", "「" + S.room_name + "」"));
+    box.appendChild(el("div", "sub2", "という名前の部屋にお入りください。"));
+    card.appendChild(box);
+  }
+  function pmSelect(label, opts, cur, onChange) {
+    var wrap = el("label", "pmsel"); wrap.appendChild(el("span", "", label));
+    var sel = el("select"); var o0 = el("option", "", "選んでください"); o0.value = ""; sel.appendChild(o0);
+    opts.forEach(function (o) { var op = el("option", "", o[1]); op.value = String(o[0]); if (String(cur) === String(o[0])) op.selected = true; sel.appendChild(op); });
+    sel.addEventListener("change", function () { onChange(sel.value === "" ? null : Number(sel.value)); buildPmPanel(); });
+    wrap.appendChild(sel); return wrap;
+  }
+  function pmSend(act, extra, after) {
+    PM_BUSY = true; buildPmPanel();
+    sendAct(act, extra).then(function (res) {
+      PM_BUSY = false;
+      if (!(res && res.ok)) SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; else { SP_NOTE = { cls: "", text: "" }; if (after) after(); }
+      return refresh().then(buildPmPanel);
+    }).catch(function (e) { PM_BUSY = false; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPmPanel(); });
+  }
+  function buildPmPanel() {
+    var old = $("sp"); if (old) old.remove();
+    var old2 = $("spchip"); if (old2) old2.remove();
+    var pm = S.pm || {}, ov = el("div", "ask sp"), card = el("div", "card"); ov.id = "sp";
+    if (pm.phase === "done") {
+      card.appendChild(el("div", "big", "試合結果が正常に報告されました。"));
+      card.appendChild(el("div", "big", "対戦ありがとうございました。"));
+      card.appendChild(el("div", "sub2", "ブラウザを閉じて次の試合に進みます。"));
+      ov.appendChild(card); $("stage").appendChild(ov);
+      if (!SHUT) {                                                                          // 6秒見せてから、シャットダウン（このページは、ここで終わり）
+        SHUT = true;
+        setTimeout(function () { $("shell").classList.add("off"); var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", "BANPICK体験会")); m.appendChild(el("div", "t2", "ご参加ありがとうございました")); $("stage").appendChild(m); }, 6000);
+      }
+      return;
+    }
+    var entryMine = (pm.entry === "hunter" && SIDE === "h") || (pm.entry === "survivor" && SIDE === "s");
+    card.appendChild(el("div", "big", "🏁 試合中"));
+    if (pm.phase === "choose") {
+      hunterRoomNote(card);
+      if (SIDE === "s" && UID) {
+        card.appendChild(el("div", "sub2", "試合を省略しますか？（サバイバー代表が、選んで、確定します）"));
+        var row = el("div", "row");
+        [[true, "試合を省略する"], [false, "試合をする"]].forEach(function (o) {
+          var b = el("button", "btn" + (PM_PEND === o[0] ? " go" : ""), o[1]); b.type = "button"; b.disabled = PM_BUSY;
+          b.addEventListener("click", function () { PM_PEND = o[0]; buildPmPanel(); });
+          row.appendChild(b);
+        });
+        card.appendChild(row);
+        var ok = el("button", "btn go", PM_BUSY ? "データ送信中…" : "確定"); ok.type = "button"; ok.disabled = PM_PEND === null || PM_BUSY;
+        ok.addEventListener("click", function () { pmSend("pm_choose", { skip: !!PM_PEND }, function () { PM_PEND = null; }); });
+        var rowb = el("div", "row"); rowb.appendChild(ok); card.appendChild(rowb);
+      } else card.appendChild(el("div", "sub2", "サバイバー代表が、試合を省略するかを選んでいます…"));
+    } else if (pm.phase === "game") {
+      hunterRoomNote(card);
+      card.appendChild(el("div", "sub2", MY === "h" ? "試合が終了したら、Discordの「試合が終了した」ボタンを押してください。" : "試合中です。試合が終了すると、ハンター選手が、Discordのボタンを押します。"));
+    } else if (pm.phase === "result") {
+      if (pm.skip) card.appendChild(el("div", "sub2", "試合を省略して結果入力に移ります。好きな結果を入力してください。"));
+      if (entryMine && UID) {
+        var hunters = ((S.chars && S.chars.h) || []).map(function (c) { return [c.id, c.n]; }), N4 = [0, 1, 2, 3, 4].map(function (n) { return [n, String(n)]; });
+        card.appendChild(el("div", "sub2", "試合結果を入力してください。"));
+        card.appendChild(pmSelect("吊り数", N4, PM_FORM.h, function (v) { PM_FORM.h = v; }));
+        card.appendChild(pmSelect("逃げ数", N4, PM_FORM.e, function (v) { PM_FORM.e = v; }));
+        card.appendChild(pmSelect("実際に使用したハンター", hunters, PM_FORM.c, function (v) { PM_FORM.c = v; }));
+        var snd = el("button", "btn go", PM_BUSY ? "データ送信中…" : "送信"); snd.type = "button";
+        snd.disabled = PM_BUSY || PM_FORM.h === null || PM_FORM.e === null || PM_FORM.c === null;
+        snd.addEventListener("click", function () { pmSend("pm_submit", { hangs: PM_FORM.h, escapes: PM_FORM.e, hunter: PM_FORM.c }, function () { PM_FORM = { h: null, e: null, c: null }; }); });
+        var rs = el("div", "row"); rs.appendChild(snd); card.appendChild(rs);
+        card.appendChild(el("div", "sub2", "吊り数と逃げ数の合計は、4人です。"));
+      } else card.appendChild(el("div", "sub2", "結果の入力を待っています…（" + (pm.entry === "hunter" ? "ハンター選手" : "サバイバー代表") + "が、入力します）"));
+    } else {
+      card.appendChild(el("div", "sub2", "サバイバー代表が、Discordで、結果を確認しています…"));
+    }
+    if (SP_NOTE.text) card.appendChild(el("div", "note " + SP_NOTE.cls, SP_NOTE.text));
+    ov.appendChild(card); $("stage").appendChild(ov);
+  }
   function buildPanel() {
     var stg = stageNow();
     if (stg && !panelGate()) return;
+    if (stg === "play" && S.expo && S.pm) {                                              // 体験会：試合のあと
+      if (GO_AT && Date.now() - GO_AT < 4000) { setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50); return; }       // 「試合開始！」を、4秒は見せてから
+      buildPmPanel(); return;
+    }
     if (stg === "play" && hasResultFlow()) {                                              // 試合終了・結果の入力まで、ブラウザで
       if (GO_AT && Date.now() - GO_AT < 4000) { setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50); return; }       // 「試合開始！」を、4秒は見せてから
       buildPlayPanel(); return;
@@ -1258,9 +1346,7 @@
     card.appendChild(picksBlock(true));
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
-      card.appendChild(el("div", "sub2", "サバイバーがゲーム内で公開募集を開いているので、"));
-      card.appendChild(el("div", "big", "「" + (S.room_name || "") + "」"));
-      card.appendChild(el("div", "sub2", "という名前の部屋にお入りください。"));
+      hunterRoomNote(card);
       card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
     } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
@@ -1282,7 +1368,7 @@
       if (can && (!S.opener || HOST)) {
         var inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.style.display = "none"; inp.id = "shotfile";
         var pick = el("button", "btn", SHOT_IMG ? "📷 選び直す" : "📷 スクショを選ぶ"); pick.type = "button";
-        var snd = el("button", "btn go", SHOT_BUSY ? "送信しています…" : SHOT_IMG ? "📸 送信する" : "📸 送信する（先に画像を選ぶ）"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
+        var snd = el("button", "btn go", SHOT_BUSY ? "データ送信中…" : SHOT_IMG ? "📸 送信する" : "📸 送信する（先に画像を選ぶ）"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
         pick.addEventListener("click", function () { inp.click(); });
         inp.addEventListener("change", function () {
           var f = inp.files && inp.files[0]; if (!f) return;
@@ -1291,7 +1377,7 @@
         });
         snd.addEventListener("click", function () {
           if (!SHOT_IMG || SHOT_BUSY) return;
-          SHOT_BUSY = true; buildPanel(); spNote("", "送信しています…");
+          SHOT_BUSY = true; buildPanel(); spNote("", "データ送信中…");
           sendAct("shot", { img: SHOT_IMG }).then(function (res) {
             SHOT_BUSY = false;
             if (res && res.ok) { SHOT_IMG = ""; SP_NOTE = { cls: "ok", text: "✅ 送信しました。" }; }
@@ -1316,10 +1402,12 @@
         card.appendChild(el("div", "warn", "スクショは、" + S.opener + " さんが送ります。しばらくお待ちください。"));
       } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
     } else if (stg === "confirm" && !S.confirmed) {
+      hunterRoomNote(card);
       card.appendChild(el("div", "sub2", "スクショを送信しました。"));
       card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
       if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
     } else if (stg === "confirm") {
+      hunterRoomNote(card);
       var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
     }
     var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
@@ -1420,7 +1508,7 @@
   var SELP = {};                                                                           // 選びかけの内容（「確定」を押すまで、送らない）：att＝出場する／しない、vote＝代表にしたい人、hunter＝ハンターの選手
   function selAct(act, k) {
     if (BUSY) return;
-    BUSY = true; render();
+    BUSY = true; msg("", "データ送信中…（BOTが確認します。数秒かかります。そのままお待ちください）"); render();
     sendAct(act, k ? { k: k } : {}).then(function (res) {
       BUSY = false;
       if (!(res && res.ok)) msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); else { msg("", ""); SELP = {}; }
@@ -1445,7 +1533,8 @@
       if (!sd.locked) {
         var srvAtt = att.indexOf(me) >= 0, pendAtt = SELP.att == null ? srvAtt : SELP.att;
         if (pendAtt === srvAtt) SELP.att = null;
-        cs.appendChild(el("div", "selhint", "出場する人は、自分のアイコンを押して、「確定」を押してください。　出場：" + att.length + "/" + need + "人"));
+        cs.appendChild(el("div", "selhint", "この試合に出場する選手のアイコンを押してください。押したら、「出場を確定」を押してください。出場する選手が" + need + "人そろうまで、次には進みません。"));
+        cs.appendChild(el("div", "selcount", "出場が確定した人：" + att.length + "/" + need + "人" + (srvAtt ? "（あなたは、確定済みです。あと" + Math.max(0, need - att.length) + "人を、待っています）" : "")));
         SPL.forEach(function (p) {
           var isMe = p.k === me, on = isMe ? pendAtt : att.indexOf(p.k) >= 0;
           tiles.appendChild(selTile(p, { on: on, badge: on ? "✔" : "", me: isMe, click: isMe && !BUSY ? function () { SELP.att = !pendAtt; render(); } : null, dim: !isMe && !on }));
@@ -1453,7 +1542,7 @@
         if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend"); }];
       } else {
         cs.appendChild(el("div", "selhint", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。"
-          : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを、全員で押してください（全員が同じ人を押すと決まります）。"));
+          : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを押して、「代表を確定」を押してください。出場する全員が、同じ人を選ぶと、代表が決まります。"));
         var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
         var myVote = me ? votes[me] : null, pendVote = SELP.vote || myVote;
         if (SELP.vote && SELP.vote === myVote) SELP.vote = null;
@@ -1487,7 +1576,7 @@
     ch.appendChild(t2); if (side !== "s") wrap.appendChild(ch);
     work.appendChild(wrap);
     if (confirmBtn) {
-      var go = el("button", "btn go", BUSY ? "送信しています…" : confirmBtn[0]); go.type = "button"; go.disabled = BUSY;
+      var go = el("button", "btn go", BUSY ? "データ送信中…" : confirmBtn[0]); go.type = "button"; go.disabled = BUSY;
       go.addEventListener("click", confirmBtn[1]); $("bar").appendChild(go);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
@@ -1601,7 +1690,7 @@
   }
   function sendNow(stepNo, picked, wasHidden) {
     if (BUSY) return;
-    BUSY = true; render(); msg("", "送信しています…");
+    BUSY = true; render(); msg("", "データ送信中…");
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL } } }) })
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
@@ -1623,6 +1712,13 @@
       })(tries || 20);
     });
   }
+  // 押している最中に、画面が描き直されて、ボタンが作り直されると、クリックが消える（連打しないと進まない）。押している間は、描き直しを待つ
+  var PTR_DOWN = false, PTR_PEND = false;
+  document.addEventListener("pointerdown", function () { PTR_DOWN = true; }, true);
+  ["pointerup", "pointercancel"].forEach(function (n) {
+    document.addEventListener(n, function () { PTR_DOWN = false; if (PTR_PEND) { PTR_PEND = false; setTimeout(function () { render(); }, 0); } }, true);
+  });
+  function softRender() { if (PTR_DOWN) { PTR_PEND = true; return; } render(); }
   var NULLS = 0;
   function refresh() {
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
@@ -1637,10 +1733,10 @@
       var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
-        || JSON.stringify([d.select, d.sealed]) !== JSON.stringify([S.select, S.sealed]);
+        || JSON.stringify([d.select, d.sealed, d.pm]) !== JSON.stringify([S.select, S.sealed, S.pm]);
       if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; }
       S = d; buildCH(d);
-      if (changed || !$("work").firstChild) render();
+      if (changed || !$("work").firstChild) softRender();
     });
   }
   function stopped() {
