@@ -370,6 +370,12 @@
   #pal .palbox.m { border-top: 2px solid var(--gold); }
   #pal .palbox.m .tag { width: 66px; } .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 12px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
   .tag.gray { cursor: not-allowed; } .tag.picked { opacity: .35; }
+  .lurow { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 4px; }
+  .luchip { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; }
+  .luchip.on { background: var(--gold); border-color: var(--gold); color: #05070b; font-weight: 700; }
+  .frame.open[title] { cursor: pointer; }
+  .curslot.frame { border-color: var(--gold); border-style: solid; } .curslot.tag { box-shadow: 0 0 0 2px var(--gold); }
+  .blk .drop { display: flex; flex-wrap: wrap; gap: 6px; }
   .blk.now { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
   .blk h4 .cnt.now { color: var(--gold); font-weight: 700; }
   .frame { display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20px; }
@@ -698,41 +704,88 @@
     if (!turn) { grid.appendChild(el("div", "hint", S.status === "active" ? "いまは、あなたの番ではありません。相手の入力が終わると、ここに、選べる名札が出ます。" : "BAN/PICKは、完了しました。")); return; }
     var avail = {}; (S.avail || []).forEach(function (id) { avail[id] = true; });
     var list = c.t === "h" ? (S.chars.h || []) : c.t === "s" ? (S.chars.s || []) : (S.maps || []);
+    var fv = ownPickTurn(c) ? favMap() : {}, hlp = ownPickTurn(c) && HL != null ? lineupOf()[HL] : null, hl = {};
+    if (hlp) (hlp.fav || []).forEach(function (id) { hl[id] = true; });
+    list = list.filter(function (x) { return CH[x.id] && avail[x.id]; });
+    if (hlp) list = list.filter(function (x) { return hl[x.id]; }).concat(list.filter(function (x) { return !hl[x.id]; }));          // 選んだ選手の常用キャラは、先頭へ
     list.forEach(function (x) {
-      var ch = CH[x.id]; if (!ch || !avail[ch.id]) return;
-      var t = makeTag(ch, SEL.indexOf(ch.id) >= 0 ? "picked" : "");
+      var ch = CH[x.id];
+      var t = makeTag(ch, (SEL.indexOf(ch.id) >= 0 ? "picked " : "") + (fv[ch.id] ? "fav " : "") + (hl[ch.id] ? "hl" : ""));
+      if (fv[ch.id]) { var fs = el("span", "fstar", "★"); t.appendChild(fs); t.title = "★ " + fv[ch.id].join("・") + "さんの常用キャラです"; }
       t.addEventListener("click", function () { pick(ch.id, true); });
       grid.appendChild(t);
     });
+  }
+  // ───── 選手の名前と常用キャラ（自分の側の鍵でだけ読める。相手には見えない） ─────
+  var HL = null, DEMO_LU = null;                                                          // HL：常用キャラを強調している選手（自分の側の何番目か）
+  function lineupOf() {
+    var lu = OPENED.data && OPENED.data.lu;
+    if (lu && lu.length) return lu;
+    if (!window.BP_DEMO || !S || !S.chars) return [];
+    if (!DEMO_LU) {                                                                        // デモ用：名前と常用キャラを、仮に作る
+      var pool = (MY === "h" ? S.chars.h : S.chars.s) || [], names = MY === "h" ? ["ハンター選手"] : ["選手A", "選手B", "選手C", "選手D"];
+      DEMO_LU = names.map(function (n, i) { return { n: n, fav: [pool[(i * 5) % Math.max(1, pool.length)], pool[(i * 5 + 2) % Math.max(1, pool.length)], pool[(i * 5 + 3) % Math.max(1, pool.length)]].filter(Boolean).map(function (x) { return x.id; }) }; });
+    }
+    return DEMO_LU;
+  }
+  function ownPickTurn(c) { return !!c && c.a === "p" && c.s === MY && c.t === MY; }       // 自分の側の、自分の側のキャラのPICK（常用キャラが関係する手順）
+  function favMap() {                                                                      // キャラID → その常用キャラの選手の名前たち
+    var m = {}; lineupOf().forEach(function (p) { (p.fav || []).forEach(function (id) { (m[id] = m[id] || []).push(p.n); }); });
+    return m;
+  }
+  function slotBase(i) {                                                                   // この手順のスロットの前に、自分の側のPICKが何スロットあったか（スロットの番号→選手の番号）
+    var n = 0;
+    for (var j = 0; j < i; j++) { var q = S.steps[j]; if (q.a === "p" && q.s === MY && q.t === MY) n += q.n; }
+    return n;
   }
   // ハンター側の代表が選んだ「ハンターのPICK」は、相手には試合が終わるまで非公開（公開データには入らない）。本人の画面だけは、自分が選んだものを、この端末に覚えておいて、見せる
   var HKEY = "bp_h_" + key;
   function mem() { try { return JSON.parse(localStorage.getItem(HKEY) || "{}"); } catch (e) { return {}; } }
   function remember(i, ids) { try { var m = mem(); m[i] = ids; localStorage.setItem(HKEY, JSON.stringify(m)); } catch (e) { /* 無視 */ } }
-  function stepBlock(s, i) {
-    var mine = i === S.cur && myTurn(), blk = el("div", "blk" + (i === S.cur ? " now" : ""));
-    var h = el("h4", "", CIRC.charAt(i) + " " + TGT[s.t] + "を" + ACT[s.a]);
-    h.appendChild(el("small", "", "×" + s.n));
-    if (i === S.cur && S.status === "active") h.appendChild(el("span", "cnt now", mine ? "← ここを選びます" : "← いま入力中"));
-    blk.appendChild(h);
-    var drop = el("div", "drop");
-    for (var k = 0; k < s.n; k++) {
-      var slot;
-      var rem = s.hidden && s.set && SIDE === s.s ? mem()[i] : null;                          // 自分（ハンター側の代表）が選んだ、非公開のPICK
-      if (mine && SEL[k] != null && CH[SEL[k]]) {
-        slot = makeTag(CH[SEL[k]]); slot.title = "もう一度タップすると、外れます";
-        if (fx() && LASTADD === SEL[k]) { flair(slot, CH[SEL[k]], s); LASTADD = null; }
-        (function (id) { slot.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]);
-      } else if (s.hidden && !mine) {
-        if (rem && CH[rem[k]]) { slot = makeTag(CH[rem[k]], "locked"); slot.title = "あなたが選んだハンターです（相手には、試合が終わるまで、非公開）"; }
-        else { slot = el("div", "frame hid", "🔒"); slot.title = "ハンターのPICKは、試合が終わるまで、公開されません"; }
-      } else if (s.set && s.ids && CH[s.ids[k]]) {
-        slot = makeTag(CH[s.ids[k]], "locked");
-        if (fx() && !FIRSTR && !SEEN[i]) flair(slot, CH[s.ids[k]], s);                      // 相手（や、ほかの人）が確定したものも、入ったときに演出する
+  // LABと同じ並び：自陣営・敵陣営それぞれに、「BAN」「PICK」の枠をまとめて置き、枠ごとに、手順の番号（①②③…）を右上に書く
+  function slotNode(s, i, k, base, blkIdx) {
+    var mine = i === S.cur && myTurn(), lu = lineupOf(), slot;
+    var rem = s.hidden && s.set && SIDE === s.s ? mem()[i] : null;                          // 自分（ハンター側の代表）が選んだ、非公開のPICK
+    if (mine && SEL[k] != null && CH[SEL[k]]) {
+      slot = makeTag(CH[SEL[k]]); slot.title = "もう一度タップすると、外れます";
+      if (fx() && LASTADD === SEL[k]) { flair(slot, CH[SEL[k]], s); LASTADD = null; }
+      (function (id) { slot.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== id; }); render(); }); })(SEL[k]);
+    } else if (s.hidden && !mine) {
+      if (rem && CH[rem[k]]) { slot = makeTag(CH[rem[k]], "locked"); slot.title = "あなたが選んだハンターです（相手には、試合が終わるまで、非公開）"; }
+      else { slot = el("div", "frame hid", "🔒"); slot.title = "ハンターのPICKは、試合が終わるまで、公開されません"; }
+    } else if (s.set && s.ids && CH[s.ids[k]]) {
+      slot = makeTag(CH[s.ids[k]], "locked");
+      if (fx() && !FIRSTR && !SEEN[i]) flair(slot, CH[s.ids[k]], s);                      // 相手（や、ほかの人）が確定したものも、入ったときに演出する
+    } else {
+      slot = el("div", "frame" + (mine ? " open" : ""), mine ? "＋" : "");
+      if (mine && lu.length && s.a === "p" && s.s === MY && s.t === MY) {               // 空のスロットを押すと、その選手の常用キャラが、強調されて先頭に来る
+        (function (pi) { slot.style.cursor = "pointer"; slot.title = (lu[pi] ? lu[pi].n + "さんの" : "") + "常用キャラを光らせる"; slot.addEventListener("click", function () { HL = HL === pi ? null : pi; render(); }); })(Math.min(lu.length - 1, blkIdx));
       }
-      else { slot = el("div", "frame" + (mine ? " open" : ""), mine ? "＋" : ""); }
-      drop.appendChild(slot);
     }
+    slot.setAttribute("data-num", CIRC.charAt(i));                                       // 手順の番号（右上）
+    if (i === S.cur && S.status === "active") slot.classList.add("curslot");
+    return slot;
+  }
+  function blockOf(sd, act, tg) {                                                          // 側（s/h）・BAN/PICK・対象（s/h/m）の枠：その手順の枠を、順番に並べる
+    var list = []; S.steps.forEach(function (s, i) { if (s.s === sd && s.a === act && s.t === tg) list.push([s, i]); });
+    if (!list.length) return null;
+    var hasCur = list.some(function (x) { return x[1] === S.cur; }) && S.status === "active";
+    var blk = el("div", "blk " + (act === "b" ? "ban" : "pick") + (hasCur ? " now" : ""));
+    var h = el("h4", "", TGT[tg] + ACT[act]);
+    if (hasCur) { var cs = S.steps[S.cur]; h.appendChild(el("span", "cnt now", (myTurn() ? "← ここを選びます " : "← いま入力中 ") + CIRC.charAt(S.cur) + "（×" + cs.n + "）")); }
+    blk.appendChild(h);
+    var lu = lineupOf();
+    if (act === "p" && sd === MY && tg === MY && lu.length) {                               // 選手の名前（押すと、その人の常用キャラが光る）
+      var lr = el("div", "lurow");
+      lu.forEach(function (p, pi) {
+        var chip = el("button", "luchip" + (HL === pi ? " on" : ""), p.n); chip.type = "button"; chip.title = "押すと、この選手の常用キャラが光ります";
+        chip.addEventListener("click", function () { HL = HL === pi ? null : pi; render(); });
+        lr.appendChild(chip);
+      });
+      blk.appendChild(lr);
+    }
+    var drop = el("div", "drop"), idx = 0;
+    list.forEach(function (x) { for (var k = 0; k < x[0].n; k++) { drop.appendChild(slotNode(x[0], x[1], k, 0, idx)); idx++; } });
     blk.appendChild(drop);
     return blk;
   }
@@ -1231,7 +1284,9 @@
     [["own", "自陣営", v], ["enemy", "敵陣営", v === "s" ? "h" : "s"]].forEach(function (sd) {
       var side = el("div", "side " + sd[0]); side.appendChild(el("h5", "", sd[1] + "（" + SIDE_NAME[sd[2]] + "）"));
       var n = 0;
-      S.steps.forEach(function (s, i) { if (s.s === sd[2]) { side.appendChild(stepBlock(s, i)); n++; } });
+      [["m", "p"], ["m", "b"], ["h", "b"], ["s", "b"], ["h", "p"], ["s", "p"]].forEach(function (q) {            // BANを先に、PICKをあとに（マップは、いちばん上）
+        var bl = blockOf(sd[2], q[1], q[0]); if (bl) { side.appendChild(bl); n++; }
+      });
       if (!n) side.appendChild(el("div", "hint", "（この側の手順は、ありません）"));
       pair.appendChild(side);
     });
@@ -1308,7 +1363,7 @@
       if (!d || d.kind !== "bp") { stopped(); return; }
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done]);
-      if (changed) { SEL = []; NEWSTEP = true; }
+      if (changed) { SEL = []; NEWSTEP = true; HL = null; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) render();
     });
