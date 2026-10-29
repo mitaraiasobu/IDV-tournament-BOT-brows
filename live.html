@@ -1618,7 +1618,8 @@
     var bar = el("div", "bar");
     var surv = el("div", "surv");
     var spn = lv.survivor_players === undefined ? null : arr(lv.survivor_players);          // カードの下は選手名（選手がいない枠は空欄）
-    slots(lv.survivor_picks, k).forEach(function (it, i) { surv.appendChild(card(it, spn ? (spn[i] || "") : undefined, k)); });
+    var hasP = arr((lv.survivor_picks || {}).items).some(function (x) { return x && x.p; });          // 選手の枠に入れて決めたとき：キャラごとの選手名／そうでないとき：これまでどおり
+    slots(lv.survivor_picks, k).forEach(function (it, i) { surv.appendChild(card(it, hasP ? ((it && it.p) || "") : (spn ? (spn[i] || "") : undefined), k)); });
     bar.appendChild(surv);
     var c = el("div", "center");
     c.appendChild(el("div", "ttl", lv.title || ""));
@@ -1687,7 +1688,8 @@
     sp.appendChild(sbn);
     var g = el("div", "grid");
     var spn = lv.survivor_players === undefined ? null : arr(lv.survivor_players);
-    slots(lv.survivor_picks, k).forEach(function (it, i) { g.appendChild(card(it, spn ? (spn[i] || "") : undefined, k)); });
+    var hasP2 = arr((lv.survivor_picks || {}).items).some(function (x) { return x && x.p; });         // 選手の枠に入れて決めたとき：キャラごとの選手名
+    slots(lv.survivor_picks, k).forEach(function (it, i) { g.appendChild(card(it, hasP2 ? ((it && it.p) || "") : (spn ? (spn[i] || "") : undefined), k)); });
     sp.appendChild(g);
     wrap.appendChild(sp);
     var hp = el("div", "box");
