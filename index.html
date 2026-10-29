@@ -194,6 +194,10 @@
   .layoutbtn { position: fixed; z-index: 50; right: 8px; bottom: 8px; font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px;
                border: 1px solid var(--line); background: rgba(27,31,41,.85); color: var(--text); }
   .layoutbtn[hidden] { display: none; }
+  /* スマホを横にして、90°回した表を見るとき（html.rot）：ボタンも、表と同じ向きに回す（回した表の、左上と右上の角に置く） */
+  html.rot .layoutbtn { right: auto; bottom: auto; left: calc(100% - 10px); top: 12px; width: max-content; white-space: nowrap; transform-origin: 0 0; transform: rotate(90deg); }
+  html.rot .cl-btn { right: 10px; top: calc(100% - 12px); white-space: nowrap; transform-origin: 100% 0; transform: rotate(90deg); }
+  html.rot .cl-back { inset: auto; left: 0; top: 0; width: 100vh; height: 100vw; transform-origin: 0 0; transform: translateX(100vw) rotate(90deg); }
   /* ════════ flow：縦長・狭い画面（スマホなど）。ラウンドを縦に並べ、幅に合わせて文字を大きくし、スクロールできる ════════ */
   html.flow { font-size: clamp(15px, 1.5vw, 30px); }
   @media (max-width: 900px) { html.flow { font-size: clamp(15px, 4vw, 20px); } }
@@ -398,7 +402,7 @@
     var W = window.innerWidth, H = window.innerHeight;
     var portrait = W / Math.max(1, H) < 1.25;
     var flowNow = portrait && getLayout() === "flow";
-    document.documentElement.className = flowNow ? "flow" : "stage";
+    document.documentElement.className = flowNow ? "flow" : portrait ? "stage rot" : "stage";        // rot＝スマホで表を90°回しているとき
     layoutButton(portrait, flowNow);
     if (flowNow) {
       st.style.transform = ""; st.style.left = ""; st.style.top = "";
