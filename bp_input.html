@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
 <title>BAN/PICK入力</title>
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com; style-src 'unsafe-inline'; img-src 'self' data: https:; media-src https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self' https:; base-uri 'none'; form-action 'none'">
@@ -379,6 +380,21 @@
 
   /* ───── BAN/PICKの入力ページ（LABと同じ作り：左＝名札置き場／右＝目線の枠。足りないものだけ、足す） ───── */
   #notice .bar.info { background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+  #notice .bar { font-size: clamp(20px, 3vw, 30px); font-weight: 700; line-height: 1.45; padding: 12px 18px; }
+  #notice .bar.waiting { font-size: clamp(26px, 4.4vw, 44px); font-weight: 800; padding: 18px 20px; gap: 14px; }
+  #notice .bar.my { font-size: clamp(24px, 4vw, 40px); font-weight: 800; }
+  .wdots i { font-size: 14px; }
+  .hrnwarn { margin: 12px 0; padding: 14px 18px; border: 3px solid #ff5a6b; border-radius: 12px; background: rgba(255, 60, 80, .16); color: #ffd0d6; font-size: 34px; font-weight: 900; line-height: 1.5; text-align: center; }
+  /* ───── BAN/PICKの盤面（サバイバー目線もハンター目線も）：見出し・状態の文字も、大きく ───── */
+  html #status { font-size: 20px; font-weight: 700; }
+  html #late { font-size: 22px; }
+  html .corner .chd > h3 { font-size: 26px; }
+  html .blk h4 { font-size: 22px; } html .blk h4 small { font-size: 16px; } html .blk h4 .cnt { font-size: 18px; }
+  html .bgrid > h5.gh { font-size: 20px; color: var(--text); }
+  html .picks .grp h5 { font-size: 20px; }
+  html .pmsel { font-size: 24px; } html .pmsel select { font-size: 24px; }
+  html .holdbtn { font-size: 28px; }
+  html.rot #notice .bar { font-size: 28px; } html.rot #notice .bar.waiting { font-size: 42px; } html.rot #notice .bar.my { font-size: 38px; }   /* 横向きに回した画面では、vw が回る前の幅になるので、決まった大きさで */
   #notice .bar.waiting { position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; }
   .wspin { display: inline-block; animation: wspin 1.6s ease-in-out infinite; }
   .wdots i { font-style: normal; font-size: 9px; margin-left: 4px; display: inline-block; animation: wdot 1.2s ease-in-out infinite; } .wdots i:nth-child(2) { animation-delay: .2s; } .wdots i:nth-child(3) { animation-delay: .4s; }
@@ -398,9 +414,9 @@
   .bgrid > .side.none { visibility: hidden; }
   .bgrid > .side { flex: none; }
   .blk.hasnums { position: relative; } .blk .bnums { position: absolute; top: 2px; right: 6px; color: var(--gold); font-weight: 800; font-size: 14px; letter-spacing: 1px; }
-  .labbar { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--sub); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
-  .labbar[hidden] { display: none; } .labbar .labbtn { font-size: 12px; padding: 4px 10px; }
-  .pkhint { font-size: 12px; color: var(--sub); margin: 0 0 6px; line-height: 1.5; }
+  .labbar { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 16px; color: var(--sub); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
+  .labbar[hidden] { display: none; } .labbar .labbtn { font-size: 16px; padding: 6px 14px; }
+  .pkhint { font-size: 18px; font-weight: 700; color: var(--text) !important; color: var(--sub); margin: 0 0 6px; line-height: 1.5; }
   .frame.tslot { border-color: var(--gold); border-style: solid; color: var(--gold); font-weight: 800; box-shadow: 0 0 12px 3px rgba(255, 210, 63, .7); }
   .pgrid { display: flex; gap: 8px; flex-wrap: nowrap; } .pcol { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 70px; flex: none; }
   .pcol .pn { font: inherit; font-size: 11.5px; width: 70px; box-sizing: border-box; padding: 2px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
@@ -412,6 +428,7 @@
   .frame.open[title] { cursor: pointer; }
   .curslot.frame { border-color: var(--gold); border-style: solid; } .curslot.tag { box-shadow: 0 0 0 2px var(--gold); }
   .blk .drop { display: flex; flex-wrap: wrap; gap: 6px; }
+  .blk .drop.pgrid { flex-wrap: nowrap; gap: 8px; }                                   /* サバイバーPICKの4つの枠は、必ず、横1列（折り返さない） */
   .blk.now { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; background: color-mix(in srgb, var(--gold) 9%, transparent); }
   .blk h4 .cnt.now { color: var(--gold); font-weight: 700; }
   .frame { display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 20px; }
@@ -425,21 +442,23 @@
   .pmsel { display: flex; align-items: center; gap: 10px; justify-content: center; margin: 8px 0; font-size: 16px; } .pmsel select { font: inherit; font-size: 16px; padding: 6px 10px; border-radius: 8px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); min-width: 170px; }
   .hrn { margin: 8px 0 12px; }
   .selcol .selhint.selbig { font-size: 44px; font-weight: 800; line-height: 1.4; color: var(--text); margin: 6px 0 20px; text-align: center; }
-  html.rot .selcol .selhint.selbig { font-size: 32px; }
+  html.rot .selcol .selhint.selbig { font-size: 40px; } html.rot .selcol .selhint.selmid { font-size: 28px; } html.rot .selcol .selhint { font-size: 26px; } html.rot .selcount { font-size: 26px; }
+  #notice .bar.info.selbar { font-size: 30px; font-weight: 800; line-height: 1.4; padding: 14px 18px; text-align: center; }
+  html.rot #notice .bar.info.selbar { font-size: 34px; }
   .selcol .selhint.selmid { font-size: 22px; font-weight: 700; color: var(--text); margin: 0 0 12px; text-align: center; }
-  .selcount { font-size: 14px; color: var(--gold); margin: -4px 0 10px; line-height: 1.6; }
+  .selcount { font-size: 22px; font-weight: 700; color: var(--gold); margin: -4px 0 10px; line-height: 1.6; }
   .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
-  .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
+  .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 6px; font-size: 24px; } .selcol .selhint { font-size: 20px; color: var(--text); line-height: 1.6; margin: 0 0 10px; }
   .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
   .seltile { position: relative; width: 92px; text-align: center; padding: 8px 4px 6px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel2); user-select: none; }
   .seltile.click { cursor: pointer; } .seltile.click:hover { border-color: var(--gold); } .seltile.dim { opacity: .55; }
   .seltile.on { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 14px 2px rgba(255, 210, 63, .6); }
   .seltile .av { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto; background: rgba(0, 0, 0, .35); display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; }
-  .seltile .av img { width: 64px; height: 64px; display: block; } .seltile .nm { font-size: 12px; margin-top: 5px; line-height: 1.25; word-break: break-all; overflow: hidden; max-height: 2.6em; }
+  .seltile .av img { width: 64px; height: 64px; display: block; } .seltile .nm { font-size: 15px; margin-top: 5px; line-height: 1.25; word-break: break-all; overflow: hidden; max-height: 2.6em; }
   .seltile .chk { position: absolute; top: -6px; right: -6px; min-width: 26px; height: 26px; border-radius: 13px; background: var(--gold); color: #05070b; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0 5px; box-shadow: 0 1px 4px #000; }
   .seltile .me { font-size: 10.5px; color: var(--ac); }
   .selspec { font-size: 14px; color: var(--gold); margin: 6px 0 0; }
-  #selstat { font-size: 14px; padding: 4px 16px; } #selstat.warn { color: var(--gold); } #selstat.ng { color: #ff7a85; font-weight: 700; }
+  #selstat { font-size: 20px; padding: 4px 16px; } #selstat.warn { color: var(--gold); } #selstat.ng { color: #ff7a85; font-weight: 700; }
   #status.ok { color: var(--ok); } #status.warn { color: var(--gold); } #status.ng { color: #ff7a85; font-weight: 700; }
   #late { margin: 4px 16px; padding: 9px 14px; border-radius: 6px; background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; font-weight: 700; font-size: 15px; animation: blink 1s steps(2, start) infinite; }
   #late[hidden] { display: none; }
@@ -518,7 +537,13 @@
   .picks .prow { display: flex; gap: 6px; justify-content: center; } .picks .pk { display: flex; flex-direction: column; align-items: center; }
   .picks .marks { min-height: 24px; display: flex; gap: 2px; margin-top: 2px; } .picks .marks img { width: 24px; height: 24px; }
   .picks .tag.edit { cursor: pointer; outline: 1px dashed var(--dz1); } .picks .lockbox { width: 66px; min-height: 78px; border: 2px solid var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: .75; }
-  .picks .hint { font-size: 11.5px; color: var(--sub); text-align: center; flex-basis: 100%; }
+  .picks.v { flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 12px; margin: 0; }
+  .picks.v .grp { padding: 8px 12px 10px; } .picks.v .prow { flex-wrap: nowrap; }
+  .sppick { position: absolute; z-index: 201; left: 16px; top: 16px; bottom: 16px; width: min(400px, 40%); box-sizing: border-box; overflow-y: auto; padding: 12px; background: var(--panel); border: 2px solid var(--line); border-radius: 12px; }
+  html.rot .sppick .picks { zoom: .6; } @media (max-height: 480px) { html:not(.rot) .sppick .picks { zoom: .6; } } @media (min-height: 481px) and (max-height: 660px) { html:not(.rot) .sppick .picks { zoom: .8; } }   /* 小さい画面（スマホ）でも、3つとも、スクロールなしで入るように */
+  .ask.sp.split { padding-left: calc(min(400px, 40%) + 32px); }
+  .ask.sp.split .card { flex: 1 1 auto; max-width: none; max-height: 100%; }
+  .picks .hint { font-size: 17px; color: var(--sub); text-align: center; flex-basis: 100%; }
   .pmod .card { max-width: 480px; } .pmod .pt { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 4px; } .pmod .pn { text-align: center; font-size: 12.5px; color: var(--sub); }
   .pmod .pgrid { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
   .pmod .pbtn { border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--panel2); cursor: pointer; } .pmod .pbtn img { width: 58px; height: 58px; display: block; }
@@ -539,20 +564,20 @@
   html.rot .scary .sc1 { font-size: 36px; } html.rot .scary .sc2 { font-size: 24px; }
   .resform { margin-top: 8px; } .resform .btnrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; } .resform .btnrow .btn { padding: 10px 16px; font-size: 15px; }
   .resform .hgrid { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 8px 0; } .resform h5 { margin: 10px 0 2px; text-align: center; font-size: 13px; color: var(--sub); }
-  .sp .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; } .sp .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: 13.5px; }
+  .sp .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; } .sp .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 18px; font-size: 22px; }
   .sp .chip.ok { border-color: var(--ok); color: var(--ok); }
   /* BAN/PICKのあとの案内（スクショ・確認待ち・カウントダウン・試合中） */
-  .sp .card { max-width: 680px; width: 100%; max-height: 94%; overflow-y: auto; touch-action: none; }
-  .sp .big { font-size: 28px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
-  .sp .sub2 { text-align: center; color: var(--sub); font-size: 13px; margin: 4px 0 10px; }
-  .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 14px; line-height: 1.6; }
-  .sp li { counter-increment: s; margin: 5px 0; padding: 6px 10px 6px 38px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
-  .sp li::before { content: counter(s); position: absolute; left: 9px; top: 6px; width: 21px; height: 21px; line-height: 21px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 12px; }
-  .sp .warn { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); font-size: 13.5px; }
+  .sp .card { max-width: 980px; width: 100%; max-height: 94%; overflow-y: auto; touch-action: none; }
+  .sp .big { font-size: 46px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
+  .sp .sub2 { text-align: center; color: var(--text); font-size: 28px; line-height: 1.5; margin: 4px 0 10px; }
+  .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 26px; line-height: 1.6; }
+  .sp li { counter-increment: s; margin: 8px 0; padding: 10px 14px 10px 58px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
+  .sp li::before { content: counter(s); position: absolute; left: 12px; top: 12px; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 20px; }
+  .sp .warn { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); font-size: 24px; }
   .sp .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
-  .sp .btn { padding: 11px 26px; font-size: 16px; } .sp .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .sp .btn[disabled] { opacity: .45; }
+  .sp .btn { padding: 14px 34px; font-size: 26px; } .sp .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .sp .btn[disabled] { opacity: .45; }
   .sp img.prev { display: block; max-width: 100%; max-height: 190px; margin: 8px auto 0; border: 1px solid var(--line); border-radius: 6px; }
-  .sp .note { text-align: center; font-size: 13px; color: var(--sub); margin-top: 8px; min-height: 1.3em; } .sp .note.ng { color: #ff9aa6; } .sp .note.ok { color: var(--ok); }
+  .sp .note { text-align: center; font-size: 26px; color: var(--sub); margin-top: 8px; min-height: 1.3em; } .sp .note.ng { color: #ff9aa6; } .sp .note.ok { color: var(--ok); }
   .spchip { position: absolute; right: 14px; top: 56px; z-index: 201; }
   .cdbox { text-align: center; padding: 6px 0; position: relative; }
   .cdhead { font-size: 22px; font-weight: 800; } .cdtime { font-size: 64px; font-weight: 800; color: var(--ac); font-variant-numeric: tabular-nums; letter-spacing: .06em; line-height: 1.2; }
@@ -595,9 +620,9 @@
   #shell.shake { animation: bp-shake .5s linear; }
   @keyframes bp-shake { 0%, 100% { transform: none; } 15% { transform: translate(-9px, 5px); } 30% { transform: translate(8px, -6px); } 45% { transform: translate(-6px, 4px); } 60% { transform: translate(5px, -3px); } 80% { transform: translate(-2px, 2px); } }
   .ask { position: absolute; inset: 0; z-index: 200; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .ask .card { max-width: 520px; background: var(--panel); border: 2px solid var(--ac); border-radius: 12px; padding: 18px 22px; }
-  .ask .q { font-size: 16px; line-height: 1.7; margin-bottom: 16px; } .ask .row { display: flex; gap: 10px; justify-content: flex-end; }
-  .ask .btn { padding: 9px 22px; font-size: 15px; } .ask .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; }
+  .ask .card { max-width: 820px; background: var(--panel); border: 2px solid var(--ac); border-radius: 12px; padding: 18px 22px; }
+  .ask .q { font-size: 26px; line-height: 1.7; margin-bottom: 16px; } .ask .row { display: flex; gap: 10px; justify-content: flex-end; }
+  .ask .btn { padding: 12px 30px; font-size: 24px; } .ask .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; }
   #msg { min-height: 1.4em; font-size: 13.5px; } #msg.ok { color: var(--ok); } #msg.ng { color: #ff9aa6; }
   .stop { margin: 30px auto; max-width: 520px; text-align: center; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
   html.rot .cbar { padding: 4px 12px 6px; } html.rot .cbar .btn { padding: 10px 34px; font-size: 19px; }
@@ -644,7 +669,7 @@
 (function () {
   "use strict";
   var key = new URLSearchParams(location.search).get("t") || "";
-  var rawFrag = (location.hash || "").replace(/^#/, "");                                 // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
+  var rawFrag = (location.hash || "").replace(/^#/, "") || new URLSearchParams(location.search).get("f") || "";  // # のあとが消えても（アプリの行き来で、よくある）、? のあと（f=）に同じものがある                                 // 側（s／h）・ユーザー番号・署名（# のあとは、サーバーに送られない）
   try {                                                                                  // ゲーム画面とブラウザを行き来すると、ページが読み込み直されて、# が消えることがある：この端末に覚えておいて、続けられるようにする
     if (rawFrag) localStorage.setItem("bp_frag_" + key, rawFrag);
     else { var savedFrag = localStorage.getItem("bp_frag_" + key); if (savedFrag) { rawFrag = savedFrag; history.replaceState(null, "", "#" + savedFrag); } }
@@ -1144,8 +1169,8 @@
     var row = el("div", "row"); row.appendChild(close); card.appendChild(row);
     ov.appendChild(card); $("stage").appendChild(ov);
   }
-  function picksBlock(editable) {                                                         // PICKされたキャラの一覧：サバイバー目線＝サバイバー4人／ハンター目線＝サバイバー4人＋ハンター（サバイバー側には、ハンターは見えない）
-    var box = el("div", "picks"), pers = ownPers(), canEdit = editable && !!UID && !!MY;
+  function picksBlock(editable, vertical) {                                                         // PICKされたキャラの一覧：サバイバー目線＝サバイバー4人／ハンター目線＝サバイバー4人＋ハンター（サバイバー側には、ハンターは見えない）
+    var box = el("div", "picks" + (vertical ? " v" : "")), pers = ownPers(), canEdit = editable && !!UID && !!MY;
     function group(side, title, ids, lock) {
       var g = el("div", "grp " + side); g.appendChild(el("h5", "", title));
       var row = el("div", "prow");
@@ -1163,8 +1188,15 @@
     }
     var sv = []; S.steps.forEach(function (s) { if (s.t === "s" && s.a === "p" && s.ids) sv = sv.concat(s.ids); });
     var hp = myHunterPick(), hunterSet = S.steps.some(function (s) { return s.t === "h" && s.a === "p" && s.set; });
-    box.appendChild(group("s", "🔵 サバイバー", sv, false));
-    if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンター" : "🔴 ハンター（非公開）", hp != null ? [hp] : [], hp == null));
+    if (vertical) {                                                                         // 縦：マップPICK → ハンターPICK → サバイバーPICK4人（横並び）
+      var mp = null; S.steps.forEach(function (s) { if (s.t === "m" && s.a === "p" && s.ids && s.ids[0] != null) mp = s.ids[0]; });
+      if (mp != null) { var mg = group("m", "🗺 マップPICK", [mp], false); box.appendChild(mg); }
+      if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンターPICK" : "🔴 ハンターPICK（非公開）", hp != null ? [hp] : [], hp == null));
+      box.appendChild(group("s", "🔵 サバイバーPICK", sv, false));
+    } else {
+      box.appendChild(group("s", "🔵 サバイバー", sv, false));
+      if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンター" : "🔴 ハンター（非公開）", hp != null ? [hp] : [], hp == null));
+    }
     if (canEdit) box.appendChild(el("div", "hint", "キャラをタップすると、人格をつけられます（自分の側だけに見えます）"));
     return box;
   }
@@ -1225,6 +1257,7 @@
   var RES = { h: null, c: null, miss: 0 };
   function hasResultFlow() { return !!(S && (S.expo || S.end_ok_at != null) && S.ended); }
   function buildPlayPanel() {
+    removePickCol();
     var old = $("sp"); if (old) old.remove();
     var old2 = $("spchip"); if (old2) old2.remove();
     if (PANEL_MIN) {
@@ -1357,6 +1390,10 @@
   }
   // ───── 体験会：試合のあと（本番と同じ流れ）。省略の選択・結果の入力（ハンター）はここ。試合終了・確認はDiscord。報告が終わったら、ここに出して、6秒後にシャットダウン ─────
   var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, e: null, c: null };
+  function holdNote(card) {                                                                 // ハンター側：部屋に入っても、合図があるまで始めない（強調）
+    if (MY !== "h") return;
+    card.appendChild(el("div", "hrnwarn", "⚠ 部屋に入っても、合図（カウントダウンが00:00になる）があるまで、まだ試合を始めないでください。"));
+  }
   function hunterRoomNote(card) {                                                           // ハンター側：入る部屋の名前（部屋を開くのは、サバイバー）
     if (!(S.expo && MY === "h" && S.room_name)) return;
     var box = el("div", "hrn");
@@ -1380,15 +1417,28 @@
       return refresh().then(buildPmPanel);
     }).catch(function (e) { PM_BUSY = false; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPmPanel(); });
   }
+  var SP_TOP = 0;
+  function removePickCol() { var pc = $("sppick"); if (pc) pc.remove(); }
+  function ensurePickCol() {                                                              // 左の「PICK」の枠：説明の枠の外に置いて、説明が更新されても、描き直さない（チカチカしない）。PICKの中身が変わったときだけ、作り直す
+    var sig = JSON.stringify([S.steps.map(function (s) { return s.ids || null; }), myHunterPick(), ownPers(), MY, !!UID]);
+    var pc = $("sppick");
+    if (pc && pc.getAttribute("data-sig") === sig) return pc;
+    var top = pc ? pc.scrollTop : 0; if (pc) pc.remove();
+    pc = el("div", "sppick"); pc.id = "sppick"; pc.setAttribute("data-sig", sig);
+    pc.appendChild(picksBlock(true, true));
+    $("stage").appendChild(pc); pc.scrollTop = top;
+    return pc;
+  }
   function buildPmPanel() {
-    var old = $("sp"); if (old) old.remove();
+    removePickCol();
+    var old = $("sp"); SP_TOP = old && old.firstChild ? old.firstChild.scrollTop : 0; if (old) old.remove();
     var old2 = $("spchip"); if (old2) old2.remove();
     var pm = S.pm || {}, ov = el("div", "ask sp"), card = el("div", "card"); ov.id = "sp";
     if (pm.phase === "done") {
       card.appendChild(el("div", "big", "試合結果が正常に報告されました。"));
       card.appendChild(el("div", "big", "対戦ありがとうございました。"));
       card.appendChild(el("div", "sub2", "ブラウザを閉じて次の試合に進みます。"));
-      ov.appendChild(card); $("stage").appendChild(ov);
+      ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
       if (!SHUT) {                                                                          // 6秒見せてから、シャットダウン（このページは、ここで終わり）
         SHUT = true;
         setTimeout(function () { $("shell").classList.add("off"); var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", "BANPICK体験会")); m.appendChild(el("div", "t2", "ご参加ありがとうございました")); $("stage").appendChild(m); }, 6000);
@@ -1433,7 +1483,7 @@
       card.appendChild(el("div", "sub2", "サバイバー代表が、Discordで、結果を確認しています…"));
     }
     if (SP_NOTE.text) card.appendChild(el("div", "note " + SP_NOTE.cls, SP_NOTE.text));
-    ov.appendChild(card); $("stage").appendChild(ov);
+    ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
   }
   function buildPanel() {
     var stg = stageNow();
@@ -1451,38 +1501,39 @@
       setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50);
       return;
     }
-    var old = $("sp"); if (old) old.remove();
+    var old = $("sp"); SP_TOP = old && old.firstChild ? old.firstChild.scrollTop : 0; if (old) old.remove();
     var old2 = $("spchip"); if (old2) old2.remove();
-    if (!stg || SHUT) return;
+    if (!stg || SHUT) { removePickCol(); return; }
     if (stg === "play") { startPlayView(); return; }
     if (PANEL_MIN) {
+      removePickCol();
       var chip = el("button", "btn spchip", "◀ 案内を開く"); chip.id = "spchip"; chip.type = "button";
       chip.addEventListener("click", function () { PANEL_MIN = false; buildPanel(); });
       $("stage").appendChild(chip); return;
     }
-    var ov = el("div", "ask sp"), card = el("div", "card");
+    ensurePickCol();
+    var ov = el("div", "ask sp split"), card = el("div", "card");
     ov.id = "sp";
     card.appendChild(el("div", "big", stg === "shot" ? (S.expo && MY === "h" ? "⏳ サバイバーが、部屋を開いています" : "🚪 部屋を開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
-    card.appendChild(picksBlock(true));
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
-      hunterRoomNote(card);
+      hunterRoomNote(card); holdNote(card);
       card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
     } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
-      card.appendChild(el("div", "sub2", "このページで、スクショを選んで「送信する」を押します（DMではなく、Discordのチャンネルに直接、投稿されます）。"));
-      card.appendChild(el("div", "sub2", "⬇"));
       var ol = el("ol");
       ["カスタム戦【試合モード】でサバイバーBAN0 ハンターBAN0、スポーン選択オンに設定してください。※必ず試合モードにしてください！",
        "マップを" + (mapName || "（選ばれたマップ）") + "に設定してください。",
        "自チーム選手を試合モードに呼んでください。",
        S.hunter_dummy ? "敵ハンターを招待するために「" + (S.room_name || "") + "」という名前で公開募集を行ってください。（今回はハンターが不在（ダミー）なので、募集せずそのまま進んでください）"
                       : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。",
-       "準備が出来たらゲームの準備画面をスクショします。それをモデレーターが確認します。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
+       "準備が出来たらゲームの準備画面をスクショします。それをモデレーターが確認します。",
+       "スクリーンショットを送ったあと、「モデレーターが確認し、カウントダウンが始まるまではまだ試合を始めないでください」。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
       card.appendChild(ol);
       if (S.opener) { card.appendChild(el("div", "big", S.opener + "さん、試合モードを開いて")); card.appendChild(el("div", "big", "スクショを送ってください")); }
       else card.appendChild(el("div", "big", "試合モードを開いて、スクショを送ってください"));
       card.appendChild(el("div", "sub2", "モデレーターが確認すると次に進めます。"));
+      holdNote(card);
       if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
       if (can && (!S.opener || HOST)) {
@@ -1522,18 +1573,18 @@
         card.appendChild(el("div", "warn", "スクショは、" + S.opener + " さんが送ります。しばらくお待ちください。"));
       } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
     } else if (stg === "confirm" && !S.confirmed) {
-      hunterRoomNote(card);
+      hunterRoomNote(card); holdNote(card);
       card.appendChild(el("div", "sub2", "スクショを送信しました。"));
       card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
       if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
     } else if (stg === "confirm") {
-      hunterRoomNote(card);
+      hunterRoomNote(card); holdNote(card);
       var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
     }
     var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
     var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
     mn.addEventListener("click", function () { PANEL_MIN = true; buildPanel(); }); rowm.appendChild(mn); card.appendChild(rowm);
-    ov.appendChild(card); $("stage").appendChild(ov);
+    ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
     CD_LAST = ""; GO_SHOWN = false; cdTick();
   }
   function hhmm(sec) { var d = new Date(sec * 1000); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
@@ -1581,6 +1632,7 @@
   }
   // 試合中：少し見せてから、画面をシャットダウンして、Discordへ戻る案内（体験会では、シャットダウンの演出なし）
   function startPlayView() {
+    removePickCol();
     if (PLAY_AT) return;
     PLAY_AT = Date.now();
     var ov = el("div", "ask sp"), card = el("div", "card"); ov.id = "sp";
@@ -1589,6 +1641,7 @@
     ov.appendChild(card); $("stage").appendChild(ov);
   }
   function shutdown() {
+    removePickCol();
     if (fx()) $("shell").classList.add("off");
     var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
     m.appendChild(el("div", "t1", S && S.expo ? "BANPICK体験会" : "BANPICK完了"));
@@ -1671,7 +1724,7 @@
     var SPL = arr0(sel.s && sel.s.players), HPL = arr0(sel.h && sel.h.players);                 // 空のリストは、公開の場所（Firebase）では、項目ごと消える：無いときは、空として扱う
     document.querySelector("main").classList.add("view");
     var nt = $("notice"); nt.textContent = "";
-    nt.appendChild(el("div", "bar info", "🎯 試合開始｜プレイする選手を選んでください（" + (side === "h" ? "ハンター側" : "サバイバー側") + "）"));
+    nt.appendChild(el("div", "bar info selbar", "🎯 試合開始｜プレイする選手を選んでください（" + (side === "h" ? "ハンター側" : "サバイバー側") + "）"));
     var st = el("div"); st.id = "selstat"; nt.appendChild(st);
     var work = $("work"); work.textContent = ""; $("pal").textContent = ""; $("bar").textContent = "";
     var wrap = el("div", "selwrap"), confirmBtn = null;
@@ -1684,7 +1737,8 @@
       if (!sd.locked) {
         var srvAtt = att.indexOf(me) >= 0, pendAtt = SELP.att == null ? srvAtt : SELP.att;
         if (pendAtt === srvAtt) SELP.att = null;
-        cs.appendChild(el("div", "selhint", "この試合に出場する選手のアイコンを押してください。押したら、「出場を確定」を押してください。出場する選手が" + need + "人そろうまで、次には進みません。"));
+        cs.appendChild(el("div", "selhint selbig", "この試合に出場する選手のアイコンを押してください。"));
+        cs.appendChild(el("div", "selhint selmid", "押したら、「出場を確定」を押してください。出場する選手が" + need + "人そろうまで、次には進みません。"));
         cs.appendChild(el("div", "selcount", "出場が確定した人：" + att.length + "/" + need + "人" + (srvAtt ? "（あなたは、確定済みです。あと" + Math.max(0, need - att.length) + "人を、待っています）" : "")));
         SPL.forEach(function (p) {
           var isMe = p.k === me, on = isMe ? pendAtt : att.indexOf(p.k) >= 0;
@@ -1714,7 +1768,7 @@
     if (!HPL.length) ch.appendChild(el("div", "selhint", "ハンター側に人がいません（ダミーが自動で入ります）。"));
     else if (side === "h" && sd) {
       var hp = sd.hp;
-      ch.appendChild(el("div", "selhint", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押して、「確定」を押してください。"));
+      ch.appendChild(el("div", hp ? "selhint selmid" : "selhint selbig", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押して、「確定」を押してください。"));
       var pendH = hp || SELP.hunter;
       HPL.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: pendH === p.k, badge: pendH === p.k ? "✔" : "", me: p.k === me, click: !hp && !BUSY ? function () { SELP.hunter = p.k; render(); } : null })); });
       if (!hp && SELP.hunter) { var hk = SELP.hunter; confirmBtn = ["確定", function () { ask("この選手で確定します。確定すると、取り消せません。よろしいですか？", function () { selAct("sel_hunter", hk); }); }]; }
@@ -1778,9 +1832,9 @@
     var work = $("work"), top = work.scrollTop; work.textContent = "";
     var corner = el("div", "corner " + v), chd = el("div", "chd");
     chd.appendChild(el("h3", "", SIDE_NAME[v] + "目線")); corner.appendChild(chd);
-    var pair = el("div", "pair bgrid"), sides = [["own", "自陣営", v], ["enemy", "敵陣営", v === "s" ? "h" : "s"]];
+    var pair = el("div", "pair bgrid"), sides = ["s", "h"].map(function (x) { return [x === v ? "own" : "enemy", x === v ? "自陣営" : "敵陣営", x]; });   // 並びは、どちらの目線でも同じ：左＝サバイバー、右＝ハンター（自陣営が左右に動くと、見る場所が変わってしまうため）
     sides.forEach(function (sd) { pair.appendChild(el("h5", "gh " + sd[0], sd[1] + "（" + SIDE_NAME[sd[2]] + "）")); });
-    var mapCells = sides.map(function (sd) {                                                    // マップ：左（自陣営）と右（敵陣営）に、半分ずつ。サバイバーのマップBAN（あるとき）とハンターのマップPICKが、それぞれの側に入る
+    var mapCells = sides.map(function (sd) {                                                    // マップ：左（サバイバー側）と右（ハンター側）に、半分ずつ。サバイバーのマップBAN（あるとき）とハンターのマップPICKが、それぞれの側に入る
       var cell = el("div", "side " + sd[0] + " mapside"), any = false;
       ["b", "p"].forEach(function (a) { var mb = blockOf(sd[2], a, "m"); if (mb) { cell.appendChild(mb); any = true; } });
       if (!any) cell.classList.add("none");
