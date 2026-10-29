@@ -1140,6 +1140,12 @@
   .in-half.hn .pl { flex-direction: row-reverse; }
   .in-half .pl .mini { width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 4px solid var(--ic); background: var(--ta); flex: none; }
   .in-half .pl .mini img { width: 100%; height: 100%; object-fit: cover; }
+  /* BAN/PICKの表示が始まる前の、10秒のカウントダウン：サバイバーVSハンターの構図の、上から被せる（点滅はしない。数字が切り替わるときに、ふわっと出るだけ） */
+  .in-cd { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .in-cd[data-n] { background: rgba(0, 0, 0, .38); }
+  .in-cd .num { font-family: var(--disp); font-size: 560px; line-height: 1; color: #fff; text-shadow: 0 0 60px rgba(255,255,255,.5), 8px 10px 0 rgba(0,0,0,.45); animation: inNum .5s cubic-bezier(.2,.9,.2,1) both; }
+  html[data-design="fantasy"] .in-cd .num, html[data-design="gothic"] .in-cd .num { font-family: var(--fa); font-weight: 400; color: var(--gold); }
+  @keyframes inNum { from { opacity: 0; transform: scale(1.22); } to { opacity: 1; transform: none; } }
   .in-slash { position: absolute; inset: 0; z-index: 2; pointer-events: none; clip-path: polygon(56% 0, 58.6% 0, 44.6% 100%, 42% 100%);
               background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--sc, #3d7bff) 40%, #fff), color-mix(in srgb, var(--hc, #ff4b5e) 40%, #fff), #fff); filter: drop-shadow(0 0 18px rgba(255,255,255,.7)); animation: inGlow 3.6s ease-in-out infinite; }
   @keyframes inGlow { 0%, 100% { opacity: .8; } 50% { opacity: 1; } }
@@ -2540,6 +2546,7 @@
       w.appendChild(half);
     });
     w.appendChild(el("div", "in-slash"));
+    w.appendChild(el("div", "in-cd"));                                  // 10秒前から、大きなカウントダウンを、上から被せる
     w.appendChild(introTimerBox("試合開始まで"));
     return w;
   }
@@ -2566,6 +2573,13 @@
       var left = ph.kind === "split" ? iv.play_at - nowS : ph.start + ph.dur - nowS;
       var cnt = sc.querySelector(".iv-count");
       if (cnt) cnt.textContent = fmtCount(left);
+      var cd = ph.kind === "split" ? sc.querySelector(".in-cd") : null;
+      if (cd) {                                                           // BAN/PICKの表示が始まる10秒前から：10・9・…・1
+        var n = Math.ceil(left);
+        if (n >= 1 && n <= 10) {
+          if (cd.getAttribute("data-n") !== String(n)) { cd.setAttribute("data-n", String(n)); cd.textContent = ""; cd.appendChild(el("span", "num", String(n))); }
+        } else if (cd.hasAttribute("data-n")) { cd.removeAttribute("data-n"); cd.textContent = ""; }
+      }
       if (ph.kind !== "split" && left <= 0.9 && !sc.classList.contains("leave")) { sc.classList.remove("enter"); sc.classList.add("leave"); }
     }
     tick();
