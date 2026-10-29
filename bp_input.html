@@ -779,6 +779,7 @@
   function myTurn() { return !!(S && S.status === "active" && SIDE && S.side === SIDE); }
   var NEWSTEP = true;
   // ───── LABの常用キャラ（LABの中身は、チームのパスワードで暗号化されている。BOTは読めないので、このブラウザの中で、鍵かパスワードで、直接読む） ─────
+  var LABTHEME = null;                                                                       // LABのデザイン：{bg, fg, ac, st}
   var LABFAV = null, LABST = { s: "", note: "" };                                            // LABFAV：{選手ID: {キャラID: 日時}}／LABST.s："" 未連携・"load" 読み込み中・"ok" 連携済み・"ng" 失敗
   var labEnc = new TextEncoder(), labDec = new TextDecoder();
   function labUnb64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < a.length; i++) a[i] = bin.charCodeAt(i); return a; }
@@ -817,7 +818,7 @@
           if (ev.k === "wipe") { state = {}; return; }
           if (ev.k === "e" && ev.o && typeof ev.o === "object") Object.keys(ev.o).forEach(function (p) { state = labSet(state, p, ev.o[p]); });
         });
-        return (state && state.fav) || {};
+        return state || {};                                                              // fav（常用キャラ）と theme（デザイン：色3つ・スタイル）
       });
     });
   }
@@ -839,7 +840,12 @@
           return labFetchFav(info.db, info.id, key);
         });
       });
-    }).then(function (fav) { LABFAV = fav; LABST = { s: "ok", note: "" }; render(); })
+    }).then(function (st) {
+      LABFAV = (st && st.fav) || {};
+      LABTHEME = st && typeof st.theme === "object" && st.theme ? st.theme : null;
+      LABST = { s: "ok", note: "" };
+      applyLabTheme(); render();                                                         // LABのデザイン（色・スタイル）も、このページに反映する
+    })
       .catch(function (e) { LABST = { s: e && e.message ? "ng" : "", note: (e && e.message) || "" }; fillPal(); });
   }
   function favOf(p) {                                                                        // 選手の常用キャラ：LABを連携していれば、LABのもの。まだなら、選手登録の得意キャラ
@@ -849,11 +855,25 @@
     }
     return p.fav || [];
   }
-  function labInfo() { var l = OPENED.data && OPENED.data.lab; return l && l.id && l.db ? l : null; }
+  function labInfo() {
+    var d = OPENED.data, l = d && d.lab;
+    if (!l && d && d.sel && d.sel.labs && UID && d.sel.who) l = d.sel.labs[d.sel.who[UID]];       // 体験会：自分の所属チームのLAB
+    return l && l.id && l.db ? l : null;
+  }
+  function applyLabTheme() {
+    var t = LABTHEME; if (!t) return;
+    var ok = function (v) { return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v); };
+    if (STYLES.indexOf(t.st) >= 0) { CUR_STYLE = ""; applyStyleRaw(t.st); }
+    var r = document.documentElement;
+    if (ok(t.bg)) { r.style.setProperty("--bg0", t.bg); r.setAttribute("data-tone", lum(t.bg) > .5 ? "light" : "dark"); }
+    if (ok(t.fg)) r.style.setProperty("--fg0", t.fg);
+    if (ok(t.ac)) { r.style.setProperty("--ac", t.ac); r.style.setProperty("--ac-on", lum(t.ac) > .5 ? "#05070b" : "#ffffff"); }
+  }
   var LAB_TRIED = false;
   function labAuto() {                                                                       // 開いたとき：このサイトに、LABの鍵が保存されていれば、自動でつなぐ
     var info = labInfo(); if (!info || LAB_TRIED || !window.crypto || !crypto.subtle) return;
-    LAB_TRIED = true; labConnect(info, null, false);
+    LAB_TRIED = true;
+    labConnect(info, null, false).then(function () { if (LABST.s === "") labAsk(); });            // 鍵が無ければ、開いたときに、パスワードを入れてもらう
   }
   if (window.BP_DEMO) window.__labHook = { connect: labConnect, favOf: favOf, get: function () { return { fav: LABFAV, st: LABST }; }, setLab: function (l, lu) { OPENED.data = OPENED.data || {}; OPENED.data.lab = l; if (lu) OPENED.data.lu = lu; LAB_TRIED = true; render(); } };      // 確認用のHTMLだけ
   function labAsk() {                                                                        // パスワードを入れる（パスワードは、このブラウザの中だけで使う。BOTには、送らない）
@@ -1046,7 +1066,8 @@
   function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   // デザイン（LABと同じ5種類）。体験会では、標準の見た目だけ（演出もなし）
   var STYLES = ["cyber", "cute", "gothic", "rock", "simple"], STYLE_DEF = { cute: { bg: "#fff5f9", fg: "#6b3550" } }, CUR_STYLE = "";
-  function applyStyle(st) {
+  function applyStyle(st) { if (LABTHEME) return; applyStyleRaw(st); }                  // LABにつないでいるときは、LABのデザインを使う
+  function applyStyleRaw(st) {
     if (STYLES.indexOf(st) < 0) st = "cyber";
     if (CUR_STYLE === st) return;
     CUR_STYLE = st;
@@ -1062,7 +1083,8 @@
     if (s.a === "b") tag.appendChild(el("span", "xcut"));                                  // BANは、切り傷が走る
     tag.appendChild(el("span", "pop", (ch.f === "m" ? "マップ" : ch.n) + " " + ACT[s.a] + "！"));
   }
-  function applyColor(side) {                                                              // 自陣営の色が、サブカラー（サバイバー＝青／ハンター＝赤。LABと同じ色）
+  function applyColor(side) {
+    if (LABTHEME && /^#[0-9a-fA-F]{6}$/.test(LABTHEME.ac || "")) return;                  // LABの色（アクセント）を使う                                                              // 自陣営の色が、サブカラー（サバイバー＝青／ハンター＝赤。LABと同じ色）
     var hex = getComputedStyle(document.documentElement).getPropertyValue(side === "h" ? "--h" : "--s").trim();
     if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
     var r = document.documentElement.style; r.setProperty("--ac", hex); r.setProperty("--ac-on", lum(hex) > .5 ? "#05070b" : "#ffffff");
