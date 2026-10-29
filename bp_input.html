@@ -989,7 +989,8 @@
     blk.appendChild(h);
     if (own && myTurn() && list.some(function (x) { return x[1] === S.cur; })) {
       var tn = TSLOT != null && lineupOf()[TSLOT] ? lineupOf()[TSLOT].n : (TSLOT != null ? "選手" + (TSLOT + 1) : "");
-      blk.appendChild(el("div", "pkhint", TSLOT != null ? "「" + tn + "」さんが使うキャラを、名札置き場から選んでください。" : "好きな枠（選手）を押してから名札を押すと、その選手が使うキャラになります。押さないと、左の空き枠から入ります。"));
+      var unp = SEL.filter(function (id) { return CH[id] && PSLOT[id] == null; })[0];
+      blk.appendChild(el("div", "pkhint", unp != null ? "「" + CH[unp].n + "」を入れる、選手の枠を押してください。" : TSLOT != null ? "「" + tn + "」さんが使うキャラを、名札置き場から選んでください。" : "名札を押したあと、キャラを入れる選手の枠を押してください（先に枠を押してから、名札を押しても入ります）。"));
     }
     var items = [];
     list.forEach(function (x) { if (x[0].set && x[0].ids) x[0].ids.forEach(function (id) { if (CH[id]) items.push({ id: id, pend: false }); }); });
@@ -997,10 +998,11 @@
     var nCommitted = items.length;
     if (mine) SEL.forEach(function (id) { if (CH[id]) items.push({ id: id, pend: true }); });
     var a = own ? (asgLoad()[sd] = asgLoad()[sd] || {}) : {}, used = {};
-    items.forEach(function (it, ix) {                                                          // 場所：前に決めた場所を使い、新しい名札は、選んだ枠（無ければ、空いている最初の枠）へ。確定していない名札の場所は、覚えない
+    items.forEach(function (it, ix) {                                                          // 場所：前に決めた場所を使う。確定していない名札は、選んだ枠にだけ入る（枠を押すまでは、盤面に入らない）。確定していない名札の場所は、覚えない
       var want = ix < nCommitted ? (a[it.id] != null ? a[it.id] : CSLOT[it.id]) : PSLOT[it.id];
       if (want != null && want < total && !used[want]) { used[want] = true; it.pos = want; if (ix < nCommitted) a[it.id] = want; return; }
-      for (var q = 0; q < total; q++) if (!used[q]) { used[q] = true; it.pos = q; if (ix < nCommitted) a[it.id] = q; return; }
+      if (ix >= nCommitted) return;                                                            // 枠を決めていない名札：盤面には、置かない
+      for (var q = 0; q < total; q++) if (!used[q]) { used[q] = true; it.pos = q; a[it.id] = q; return; }       // 確定済みで、場所の記録が無いもの（相手側の画面・別の端末など）：見えるように、空いている枠に並べるだけ
     });
     if (own) asgSave();
     var grid = el("div", "drop pgrid");
@@ -1028,6 +1030,8 @@
         slot = el("div", "frame" + (mine || MOVING ? " open" : ""), mine || MOVING ? "＋" : "");
         if (own) slot.addEventListener("click", function () {
           if (MOVING != null) { a[MOVING] = q; MOVING = null; asgSave(); render(); return; }
+          var unp2 = mine ? SEL.filter(function (id) { return CH[id] && PSLOT[id] == null; })[0] : null;
+          if (unp2 != null) { PSLOT[unp2] = q; TSLOT = null; HL = null; render(); return; }               // 名札を押したあとに、枠を押した：その枠に入れる
           if (mine) { var on = TSLOT === q; TSLOT = on ? null : q; HL = on || !lu.length ? null : q; render(); return; }        // 空の枠を押す：この選手が使うキャラを選ぶ枠にする（その選手の常用キャラも、光って先頭に来る）
           if (lu.length) { HL = HL === q ? null : q; render(); }
         });
@@ -1883,7 +1887,7 @@
     var bar = $("bar"); bar.textContent = "";
     var c = cur();
     if (myTurn() && c) {
-      var go = el("button", "btn go", "確定（" + SEL.length + "/" + c.n + "）"); go.type = "button"; go.disabled = BUSY || SEL.length !== c.n;
+      var go = el("button", "btn go", "確定（" + SEL.length + "/" + c.n + "）"); go.type = "button"; go.disabled = BUSY || SEL.length !== c.n || needSlot();
       go.addEventListener("click", send); bar.appendChild(go);
       var clr = el("button", "btn", "選び直す"); clr.type = "button"; clr.disabled = BUSY || !SEL.length; clr.addEventListener("click", function () { SEL = []; render(); }); bar.appendChild(clr);
     }
@@ -1903,8 +1907,12 @@
     else { msg("ng", "選べるのは、" + c.n + "個までです。外したいものを、タップしてください。"); return; }
     render();
   }
+  function needSlot() {                                                                       // サバイバーPICKで、枠を押していない名札がある
+    var c = cur();
+    return !!c && c.a === "p" && c.t === "s" && SEL.some(function (id) { return CH[id] && PSLOT[id] == null; });
+  }
   function send() {
-    var c = cur(); if (!c || SEL.length !== c.n || BUSY) return;
+    var c = cur(); if (!c || SEL.length !== c.n || BUSY || needSlot()) return;
     var names = SEL.map(function (id) { return CH[id].n; }).join("、"), stepNo = S.cur, picked = SEL.slice(), wasHidden = !!c.hidden;
     ask("「" + names + "」で確定します。確定すると、取り消せません。よろしいですか？", function () { sendNow(stepNo, picked, wasHidden); });
   }
@@ -1922,7 +1930,7 @@
     CSLOT = {}; picked.forEach(function (id) { if (PSLOT[id] != null) CSLOT[id] = PSLOT[id]; });                // 確定した名札が入る枠（確定したあとの描き直しで、同じ枠に入れる）
     BUSY = true; render(); msg("", "データ送信中…");
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL } } }) })
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL, slots: SEL.map(function (id) { return PSLOT[id] != null ? PSLOT[id] : -1; }) } } }) })
       .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
       .then(function (res) {
         BUSY = false;
