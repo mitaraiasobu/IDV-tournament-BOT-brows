@@ -1606,7 +1606,8 @@
     } else if (stg === "confirm" && !S.confirmed) {
       hunterRoomNote(card); holdNote(card);
       card.appendChild(el("div", "sub2", "スクショを送信しました。"));
-      card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
+      if (S.casters_wait) card.appendChild(el("div", "cdtxt", "✅ スクショは確認されました。\n👥 いま、キャスターが試合に入るのを待っています。モデレーターが、キャスターの参加を確認すると、カウントダウンが始まります。"));
+      else card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
       if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
     } else if (stg === "confirm") {
       hunterRoomNote(card); holdNote(card);
