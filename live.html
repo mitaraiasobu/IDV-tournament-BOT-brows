@@ -2241,7 +2241,7 @@
   // 成績の画面を見せる時間は、このブラウザの時計で数える（ページを開き直すと、もう一度、数える）。
   var FINAL_RESULT_MS = 12000;
   var finalSeen = { key: null, at: 0 }, finalTimer = null;
-  var CHAMPION_MS = 30000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
+  var CHAMPION_MS = 40000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
   var championSeen = { key: null, at: 0 }, championTimer = null;
   function finaleMode(data) {
     var f = data && data.finale;
