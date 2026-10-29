@@ -89,8 +89,8 @@
   var EDIT = /^[A-Za-z0-9]{12}$/.test(EDIT_KEY);
   var RELAY = params.get("relay") || "ws://127.0.0.1:8778";
   var POLL_MS = 3000;
-  var LABELS = { wait: "待機", intro_caster: "キャスター紹介", intro_player: "選手紹介（チーム紹介・VSも）", banpick: "BAN/PICK", play: "試合中", result: "戦績画面" };
-  var SCENES = ["wait", "intro_caster", "intro_player", "banpick", "play", "result"];
+  var LABELS = { hidden: "非表示（配信の開始前・開会の演出・終了後）", open_greet: "開会の挨拶", close_greet: "閉会の挨拶", wait: "待機", intro_caster: "キャスター紹介", intro_player: "選手紹介（チーム紹介・VSも）", banpick: "BAN/PICK", play: "試合中", result: "戦績画面" };
+  var SCENES = ["wait", "open_greet", "intro_caster", "intro_player", "banpick", "play", "result", "close_greet"];
   function nowScene() {                                                  // BOTのデータの「場面の切り替わり」を、このブラウザの時計で数える（時刻で進む場面（紹介・BAN/PICKの表示）は、データが変わらなくても切り替わる）
     var plan = data && data.plan, now = Date.now() / 1000, sc = (data && data.scene) || "wait";
     if (plan && plan.length) { sc = "wait"; plan.forEach(function (p) { if (p[0] <= now) sc = p[1]; }); }
@@ -113,6 +113,7 @@
   function curLayout() {
     var s = EDIT ? editScene : nowScene();
     var src = EDIT ? work : (data && data.layouts);
+    ul.style.display = !EDIT && s === "hidden" ? "none" : "";                      // 配信の開始前・開会の演出の間・終了のあとは、キャスターを出さない
     return (src && src[s]) || { x: 50, y: 70, d: 150, gap: 15, orient: "row", name: "bottom" };
   }
   function applyLayout() {
