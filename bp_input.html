@@ -1587,9 +1587,18 @@
       })(tries || 20);
     });
   }
+  var NULLS = 0;
   function refresh() {
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
-      if (!d || d.kind !== "bp") { stopped(); return; }
+      if (!d || d.kind !== "bp") {
+        if (!S && NULLS++ < 30) {                                                          // 開いた直後で、まだデータが無い（BOTが公開するまで、数秒かかることがある）：止めずに、待って、取り直す
+          var lw = $("work"); if (!lw.firstChild) { var lh = el("div", "hint", "読み込んでいます…（準備ができるまで、少しお待ちください）"); lw.appendChild(lh); }
+          return;
+        }
+        stopped(); return;
+      }
+      NULLS = 0;
+      var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
         || JSON.stringify([d.select, d.sealed]) !== JSON.stringify([S.select, S.sealed]);
