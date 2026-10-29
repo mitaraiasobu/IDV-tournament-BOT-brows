@@ -1069,8 +1069,6 @@
   .iv-count { font-family: var(--disp); font-size: 96px; line-height: 1; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--accent);
               text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 55%, transparent), 4px 4px 0 rgba(0,0,0,.5); }
   .iv-who { font-family: var(--cond); font-weight: 800; font-size: 40px; margin-top: 4px; letter-spacing: .05em; }
-  .iv-timer.over .iv-count { color: #ff4b5e; animation: ivBlink 1.1s ease-in-out infinite; }
-  @keyframes ivBlink { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
   .iv.enter .iv-tag { animation: ivSlideL .8s cubic-bezier(.2,.9,.2,1) both; }
   .iv.enter .iv-mid { animation: finIn .9s cubic-bezier(.2,.9,.2,1) .15s both; }
   .iv.enter .iv-timer { animation: ivSlideR .8s cubic-bezier(.2,.9,.2,1) .35s both; }
@@ -1086,6 +1084,94 @@
   html.flow .iv-mid { top: 3.6em; gap: .4em; } html.flow .iv-ring { width: 10em; height: 10em; } html.flow .iv-avatar { font-size: 3em; }
   html.flow .iv-name { font-size: 2em; } html.flow .iv-team .tn2 { font-size: 1.1em; } html.flow .iv-team .fin-logo { width: 2em; height: 2em; font-size: .7em; }
   html.flow .iv-timer { right: 1em; bottom: 1em; min-width: 0; padding: .4em 1em; } html.flow .iv-count { font-size: 2.4em; } html.flow .iv-who { font-size: 1em; }
+  /* 紹介の場面（キャスター → チーム紹介 → 選手 → チーム紹介 → 選手 → 試合開始まで）。チームカラー（--ic）の雰囲気。デザインごとに、動きと質感を変える */
+  .intro { position: absolute; inset: 0; overflow: hidden; color: var(--text); --ic: var(--accent); }
+  .in-bg { position: absolute; inset: 0; background-color: #05070b; background-image:
+      radial-gradient(ellipse at 26% 50%, color-mix(in srgb, var(--ic) 40%, transparent), transparent 58%),
+      radial-gradient(ellipse at 50% 130%, rgba(0,0,0,.7), transparent 60%),
+      linear-gradient(115deg, color-mix(in srgb, var(--ic) 30%, #000) 0 36%, color-mix(in srgb, var(--ic) 11%, #05070b) 36.1% 100%); }
+  .in-streak { position: absolute; top: -20%; bottom: -20%; left: -20%; width: 170px; transform: skewX(-18deg); opacity: 0;
+               background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ic) 42%, transparent), transparent); animation: inStreak 4.4s linear infinite; }
+  .in-streak.s2 { width: 80px; animation-delay: 1.5s; } .in-streak.s3 { width: 250px; animation-delay: 3s; }
+  @keyframes inStreak { 0% { left: -20%; opacity: 0; } 12% { opacity: .85; } 88% { opacity: .85; } 100% { left: 112%; opacity: 0; } }
+  .in-tag { z-index: 3; }
+  .in-row { position: absolute; left: 130px; right: 130px; top: 180px; bottom: 250px; display: flex; align-items: center; gap: 100px; z-index: 2; }
+  .in-av { position: relative; flex: none; width: 520px; height: 520px; border-radius: 50%; padding: 12px; box-sizing: border-box;
+           background: conic-gradient(from 0deg, var(--ic), color-mix(in srgb, var(--ic) 30%, #fff), var(--ic), color-mix(in srgb, var(--ic) 45%, #000), var(--ic));
+           box-shadow: 0 0 80px color-mix(in srgb, var(--ic) 55%, transparent), 0 24px 50px rgba(0,0,0,.6); }
+  .in-av .pic { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: var(--ta); border: 8px solid rgba(0,0,0,.55); box-sizing: border-box;
+                display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 160px; color: #fff; }
+  .in-av .pic img { width: 100%; height: 100%; object-fit: cover; }
+  .in-av .deco { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; object-fit: contain; pointer-events: none; }
+  .in-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .in-nm { font-family: var(--cond); font-weight: 800; font-size: 132px; line-height: 1.05; overflow-wrap: anywhere; text-shadow: 0 0 14px rgba(0,0,0,.85), 5px 6px 0 rgba(0,0,0,.45); }
+  .in-rd { font-family: var(--cond); font-size: 46px; color: var(--sub); letter-spacing: .12em; margin-top: -8px; }
+  .in-pill { display: inline-flex; align-items: center; gap: 20px; align-self: flex-start; padding: 8px 40px 8px 12px; border-radius: 80px; background: rgba(0,0,0,.5);
+             border: 2px solid color-mix(in srgb, var(--ic) 70%, transparent); }
+  .in-pill .fin-logo { width: 72px; height: 72px; font-size: 28px; border-width: 4px; box-shadow: none; flex: none; }
+  .in-pill .tn2 { font-family: var(--cond); font-weight: 700; font-size: 48px; letter-spacing: .06em; }
+  .in-kv { padding: 6px 26px 9px; border-left: 9px solid var(--ic); background: rgba(0,0,0,.5); max-width: 1000px; }
+  .in-kv .k { font-family: var(--cond); font-size: 24px; color: var(--sub); letter-spacing: .14em; }
+  .in-kv .v { font-family: var(--cond); font-weight: 700; font-size: 38px; line-height: 1.25; overflow-wrap: anywhere; }
+  .in-team { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; z-index: 2; text-align: center; }
+  .in-team .fin-logo { width: 360px; height: 360px; font-size: 130px; border-width: 10px; box-shadow: 0 0 80px color-mix(in srgb, var(--ic) 55%, transparent); }
+  .in-team .side { font-family: var(--cond); font-weight: 800; font-size: 44px; letter-spacing: .3em; color: var(--ic); text-shadow: 0 0 24px color-mix(in srgb, var(--ic) 60%, transparent); }
+  .in-team .tnm { font-family: var(--cond); font-weight: 800; font-size: 150px; line-height: 1.05; max-width: 1600px; overflow-wrap: anywhere; text-shadow: 0 0 14px rgba(0,0,0,.85), 6px 7px 0 rgba(0,0,0,.45); }
+  .in-team .trd { font-family: var(--cond); font-size: 58px; color: var(--sub); letter-spacing: .14em; }
+  /* 試合開始まで：左にサバイバー側・右にハンター側。斜めの切れ込みで、半分ずつ */
+  .in-half { position: absolute; inset: 0; z-index: 1; }
+  .in-half.sv { clip-path: polygon(0 0, 57% 0, 43% 100%, 0 100%); --ic: var(--sc, #3d7bff); }
+  .in-half.hn { clip-path: polygon(57.8% 0, 100% 0, 100% 100%, 43.8% 100%); --ic: var(--hc, #ff4b5e); }
+  .in-half .bgc { position: absolute; inset: 0; background:
+      radial-gradient(ellipse at var(--gx, 30%) 55%, color-mix(in srgb, var(--ic) 52%, transparent), transparent 62%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ic) 30%, #000), color-mix(in srgb, var(--ic) 12%, #000)); }
+  .in-half .bgc::after { content: ""; position: absolute; inset: -30%; opacity: .5;
+      background: repeating-linear-gradient(115deg, transparent 0 70px, color-mix(in srgb, var(--ic) 38%, transparent) 70px 74px); animation: inRun 6s linear infinite; }
+  .in-half.hn .bgc::after { animation-direction: reverse; }
+  @keyframes inRun { from { transform: translateX(0); } to { transform: translateX(148px); } }
+  .intro .iv-timer { z-index: 5; }
+  .in-half .side { position: absolute; top: 200px; font-family: var(--cond); font-weight: 800; font-size: 54px; letter-spacing: .3em; color: var(--text); text-shadow: 0 0 24px color-mix(in srgb, var(--ic) 65%, transparent); }
+  .in-half.sv .side { left: 150px; } .in-half.hn .side { right: 150px; text-align: right; }
+  .in-half .box { position: absolute; top: 290px; width: 640px; display: flex; flex-direction: column; gap: 20px; }
+  .in-half.sv .box { left: 130px; align-items: flex-start; } .in-half.hn .box { right: 130px; align-items: flex-end; text-align: right; }
+  .in-half .fin-logo { width: 230px; height: 230px; font-size: 90px; border-width: 8px; }
+  .in-half .tnm { font-family: var(--cond); font-weight: 800; font-size: 84px; line-height: 1.05; text-shadow: 0 0 14px rgba(0,0,0,.85), 4px 5px 0 rgba(0,0,0,.45); overflow-wrap: anywhere; }
+  .in-half .pl { display: flex; align-items: center; gap: 16px; font-family: var(--cond); font-weight: 700; font-size: 46px; }
+  .in-half.hn .pl { flex-direction: row-reverse; }
+  .in-half .pl .mini { width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 4px solid var(--ic); background: var(--ta); flex: none; }
+  .in-half .pl .mini img { width: 100%; height: 100%; object-fit: cover; }
+  .in-slash { position: absolute; inset: 0; z-index: 2; pointer-events: none; clip-path: polygon(56% 0, 58.6% 0, 44.6% 100%, 42% 100%);
+              background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--sc, #3d7bff) 40%, #fff), color-mix(in srgb, var(--hc, #ff4b5e) 40%, #fff), #fff); filter: drop-shadow(0 0 18px rgba(255,255,255,.7)); animation: inGlow 3.6s ease-in-out infinite; }
+  @keyframes inGlow { 0%, 100% { opacity: .8; } 50% { opacity: 1; } }
+  /* 登場・退場（デザインごと） */
+  .intro.enter .in-av { animation: inInL .75s cubic-bezier(.2,.9,.2,1) both; }
+  .intro.enter .in-info { animation: inInR .75s cubic-bezier(.2,.9,.2,1) .12s both; }
+  .intro.enter .in-team > * { animation: inInUp .7s cubic-bezier(.2,.9,.2,1) both; }
+  .intro.enter .in-team > *:nth-child(2) { animation-delay: .12s; } .intro.enter .in-team > *:nth-child(3) { animation-delay: .22s; } .intro.enter .in-team > *:nth-child(4) { animation-delay: .3s; }
+  .intro.enter .in-half.sv .box, .intro.enter .in-half.sv .side { animation: inInL .8s cubic-bezier(.2,.9,.2,1) both; }
+  .intro.enter .in-half.hn .box, .intro.enter .in-half.hn .side { animation: inInR .8s cubic-bezier(.2,.9,.2,1) both; }
+  .intro.enter .in-slash { animation: inSlashIn .7s cubic-bezier(.2,.9,.2,1) both, inGlow 3.6s ease-in-out .7s infinite; }
+  .intro.leave .in-av, .intro.leave .in-info, .intro.leave .in-team > * { animation: inOut .8s ease-in both; }
+  @keyframes inInL { from { opacity: 0; transform: translateX(-160px) skewX(-8deg); } to { opacity: 1; transform: none; } }
+  @keyframes inInR { from { opacity: 0; transform: translateX(160px) skewX(-8deg); } to { opacity: 1; transform: none; } }
+  @keyframes inInUp { from { opacity: 0; transform: translateY(70px) scale(.94); } to { opacity: 1; transform: none; } }
+  @keyframes inOut { to { opacity: 0; transform: translateX(-140px) skewX(8deg); } }
+  @keyframes inSlashIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+  @keyframes inInSoft { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+  @keyframes inOutSoft { to { opacity: 0; transform: translateY(-20px); } }
+  html[data-design="simple"] .intro.enter .in-av, html[data-design="simple"] .intro.enter .in-info, html[data-design="fantasy"] .intro.enter .in-av, html[data-design="fantasy"] .intro.enter .in-info,
+  html[data-design="gothic"] .intro.enter .in-av, html[data-design="gothic"] .intro.enter .in-info { animation: inInSoft .9s ease-out both; }
+  html[data-design="simple"] .intro.leave .in-av, html[data-design="simple"] .intro.leave .in-info, html[data-design="simple"] .intro.leave .in-team > *,
+  html[data-design="fantasy"] .intro.leave .in-av, html[data-design="fantasy"] .intro.leave .in-info, html[data-design="fantasy"] .intro.leave .in-team > *,
+  html[data-design="gothic"] .intro.leave .in-av, html[data-design="gothic"] .intro.leave .in-info, html[data-design="gothic"] .intro.leave .in-team > * { animation: inOutSoft .8s ease-in both; }
+  html[data-design="rock"] .in-kv, html[data-design="rock"] .in-pill { transform: skewX(-8deg); } html[data-design="rock"] .in-kv > *, html[data-design="rock"] .in-pill > * { transform: skewX(8deg); }
+  html[data-design="rock"] .in-nm, html[data-design="rock"] .in-team .tnm { font-family: var(--disp); letter-spacing: .03em; }
+  html[data-design="simple"] .in-kv { border-radius: 12px; border-left-width: 6px; backdrop-filter: blur(6px); }
+  html[data-design="fantasy"] .in-nm, html[data-design="gothic"] .in-nm, html[data-design="fantasy"] .in-team .tnm, html[data-design="gothic"] .in-team .tnm,
+  html[data-design="fantasy"] .in-half .tnm, html[data-design="gothic"] .in-half .tnm, html[data-design="fantasy"] .in-pill .tn2, html[data-design="gothic"] .in-pill .tn2 { font-family: var(--fa); font-weight: 400; color: var(--cream); }
+  html[data-design="fantasy"] .in-av, html[data-design="gothic"] .in-av { background: conic-gradient(from 0deg, var(--gold), #fff3c4, var(--gold), color-mix(in srgb, var(--gold) 45%, #000), var(--gold)); }
+  html[data-design="fantasy"] .in-kv, html[data-design="gothic"] .in-kv { border-left-color: var(--gold); border-radius: 4px; }
+  html[data-design="fantasy"] .in-streak, html[data-design="gothic"] .in-streak { animation-duration: 7s; }
   /* 最後のトーナメント表：負けたチームは暗く／優勝チームの欄に、ロゴ・名前・全員の選手名 */
   .fbframe { position: absolute; inset: 0; }
   .fbframe iframe { width: 100%; height: 100%; border: 0; background: transparent; }
@@ -1180,7 +1266,8 @@
   // ── 表示の種類：BAN/PICKの画面で、横長なら stage（1920x1080を拡縮）／ルール表示・縦長・狭い画面は flow ──
   var lastData = null, kind = "flow";
   function wantKind(data) {
-    var big = data && (data.state === "play" || data.state === "result" || data.state === "hold" || (data.finale && data.finale.champion));      // BAN/PICKの画面・成績の画面・優勝画面・インタビュー画面
+    var big = data && (data.state === "play" || data.state === "result" || data.state === "hold" || data.state === "intro" || (data.finale && data.finale.champion));      // BAN/PICKの画面・成績の画面・優勝画面・インタビュー画面
+    if (data && data.state === "intro") return "stage";           // 紹介の場面は、画面の形に関係なく、1920x1080
     if (params.get("layout") === "stage" && big) return "stage";      // 確認用：URLに &layout=stage を付けると、画面の形に関係なく1920x1080の表示にする
     if (big && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
     return "flow";
@@ -2320,6 +2407,169 @@
     if (pub) { var mpStyle = document.createElement("style"); mpStyle.textContent = ".mp-bar{left:auto !important;right:12px;top:12px;bottom:auto !important}"; document.head.appendChild(mpStyle); }          // 公開のページ：音量バーは、右上
   }
 
+  // ── 紹介の場面：キャスター（20秒ずつ）→ サバイバー側のチーム紹介（10秒）→ サバイバー選手（30秒ずつ）→ ハンター側のチーム紹介（10秒）→ ハンター選手（30秒）→ 試合開始まで ──
+  // 時刻から数えて、自動で進める（BOTの操作を待たない）。選手が分かるまでと、終わったあとの隙間は、いつもの待機の画面。
+  var introTimer = null, introKey = null;
+  function stopIntroTimer() { if (introTimer) { clearInterval(introTimer); introTimer = null; } introKey = null; }
+  function introPhase(iv, nowS) {
+    var C = iv.caster_sec || 20, T = iv.team_sec || 10, P = iv.player_sec || 30;
+    var cs = arr(iv.casters), t0 = iv.caster_start;
+    var i = Math.floor((nowS - t0) / C);
+    if (nowS >= t0 && i >= 0 && i < cs.length) return { kind: "caster", idx: i, p: cs[i], start: t0 + i * C, dur: C };
+    var sv = iv.survivor, hn = iv.hunter;
+    if (sv && hn && iv.team_start != null) {
+      var segs = [{ kind: "team", side: "survivor", team: sv, dur: T }];
+      arr(sv.players).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });
+      segs.push({ kind: "team", side: "hunter", team: hn, dur: T });
+      arr(hn.players).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });
+      var at = iv.team_start;
+      for (var k = 0; k < segs.length; k++) {
+        if (nowS >= at && nowS < at + segs[k].dur) return { kind: segs[k].kind, side: segs[k].side, team: segs[k].team, p: segs[k].p, idx: k, start: at, dur: segs[k].dur };
+        at += segs[k].dur;
+      }
+      if (nowS >= at) return { kind: "split", start: at, dur: 0 };
+    }
+    return { kind: "wait" };
+  }
+  function okColor(c) { return typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : ""; }
+  function introTag(text) {
+    var tag = el("div", "iv-tag in-tag");
+    tag.appendChild(el("span", "dot"));
+    tag.appendChild(el("span", "tx", text));
+    return tag;
+  }
+  function introTimerBox(label) {
+    var box = el("div", "iv-timer");
+    box.appendChild(el("div", "iv-count", ""));
+    box.appendChild(el("div", "iv-who", label));
+    return box;
+  }
+  function introBase(color) {
+    var w = el("div", "intro enter");
+    if (okColor(color)) w.style.setProperty("--ic", color);
+    w.appendChild(el("div", "in-bg"));
+    ["s1", "s2", "s3"].forEach(function (c) { w.appendChild(el("i", "in-streak " + c)); });
+    return w;
+  }
+  function introAvatar(p, withDeco) {
+    var av = el("div", "in-av"), pic = el("div", "pic");
+    if (p.avatar) { var im = new Image(); im.src = p.avatar; im.alt = ""; pic.appendChild(im); }
+    else pic.textContent = (p.name || "").slice(0, 2);
+    av.appendChild(pic);
+    if (withDeco && p.deco) { var d = new Image(); d.className = "deco"; d.src = p.deco; d.alt = ""; av.appendChild(d); }
+    return av;
+  }
+  function kvRow(k, v) {
+    var r = el("div", "in-kv");
+    r.appendChild(el("div", "k", k));
+    r.appendChild(el("div", "v", v));
+    return r;
+  }
+  function introScene(ph, iv) {
+    var w, row;
+    if (ph.kind === "caster") {
+      w = introBase("");
+      w.appendChild(introTag("キャスター自己紹介"));
+      row = el("div", "in-row");
+      row.appendChild(introAvatar(ph.p, true));
+      var info = el("div", "in-info");
+      info.appendChild(el("div", "in-nm", ph.p.name || ""));
+      row.appendChild(info);
+      w.appendChild(row);
+      w.appendChild(introTimerBox("のこり時間"));
+      return w;
+    }
+    if (ph.kind === "team") {
+      var tm = ph.team;
+      w = introBase(tm.color);
+      w.appendChild(introTag(ph.side === "survivor" ? "サバイバー側 チーム紹介" : "ハンター側 チーム紹介"));
+      var box = el("div", "in-team");
+      box.appendChild(finLogo(tm));
+      box.appendChild(el("div", "side", ph.side === "survivor" ? "SURVIVOR" : "HUNTER"));
+      box.appendChild(el("div", "tnm", tm.name || ""));
+      if (tm.reading) box.appendChild(el("div", "trd", tm.reading));
+      w.appendChild(box);
+      w.appendChild(introTimerBox("のこり時間"));
+      return w;
+    }
+    if (ph.kind === "player") {
+      var p = ph.p;
+      w = introBase(p.color);
+      w.appendChild(introTag("選手自己紹介"));
+      row = el("div", "in-row");
+      row.appendChild(introAvatar(p, false));
+      var inf = el("div", "in-info");
+      inf.appendChild(el("div", "in-nm", p.name || ""));
+      if (p.reading) inf.appendChild(el("div", "in-rd", p.reading));
+      var pill = el("div", "in-pill");
+      pill.appendChild(finLogo(p));
+      pill.appendChild(el("span", "tn2", p.team || ""));
+      inf.appendChild(pill);
+      if (p.fav) inf.appendChild(kvRow("得意キャラ", p.fav));
+      if (p.message) inf.appendChild(kvRow("一言メッセージ", p.message));
+      var nw = p.nw || {};
+      arr(nw.rows).forEach(function (r) { inf.appendChild(kvRow((nw.title ? nw.title + "：" : "") + r.k, r.v)); });
+      row.appendChild(inf);
+      w.appendChild(row);
+      w.appendChild(introTimerBox("のこり時間"));
+      return w;
+    }
+    // 試合開始まで：左にサバイバー側・右にハンター側。斜めの切れ込みで、半分ずつ
+    w = el("div", "intro enter");
+    var s = iv.survivor || {}, h = iv.hunter || {};
+    if (okColor(s.color)) w.style.setProperty("--sc", s.color);
+    if (okColor(h.color)) w.style.setProperty("--hc", h.color);
+    w.appendChild(introTag("VS"));
+    [["sv", s, "SURVIVOR"], ["hn", h, "HUNTER"]].forEach(function (x) {
+      var half = el("div", "in-half " + x[0]);
+      half.appendChild(el("div", "bgc"));
+      half.appendChild(el("div", "side", x[2]));
+      var bx = el("div", "box");
+      bx.appendChild(finLogo(x[1]));
+      bx.appendChild(el("div", "tnm", x[1].name || ""));
+      arr(x[1].players).forEach(function (pl) {
+        var line = el("div", "pl"), mini = el("div", "mini");
+        if (pl.avatar) { var im = new Image(); im.src = pl.avatar; im.alt = ""; mini.appendChild(im); }
+        line.appendChild(mini);
+        line.appendChild(el("span", "", pl.name || ""));
+        bx.appendChild(line);
+      });
+      half.appendChild(bx);
+      w.appendChild(half);
+    });
+    w.appendChild(el("div", "in-slash"));
+    w.appendChild(introTimerBox("試合開始まで"));
+    return w;
+  }
+  function renderIntro(data) {
+    var iv = data.intro;
+    function tick() {
+      var nowS = Date.now() / 1000, ph = introPhase(iv, nowS);
+      var key = ph.kind + ":" + (ph.idx == null ? "" : ph.idx);
+      if (key !== introKey) {
+        introKey = key;
+        if (ph.kind === "wait") {                                      // 選手が分かるまで・隙間：いつもの待機の画面
+          root.className = "flow"; kind = "flow";
+          renderRules(data.rules || {});
+          setMedia([]);
+          return;
+        }
+        root.className = "stage"; kind = "stage";
+        screenEl.replaceChildren(introScene(ph, iv));
+        fit();
+      }
+      if (ph.kind === "wait") return;
+      var sc = screenEl.firstChild;
+      if (!sc || !sc.classList || !sc.classList.contains("intro")) return;
+      var left = ph.kind === "split" ? iv.play_at - nowS : ph.start + ph.dur - nowS;
+      var cnt = sc.querySelector(".iv-count");
+      if (cnt) cnt.textContent = fmtCount(left);
+      if (ph.kind !== "split" && left <= 0.9 && !sc.classList.contains("leave")) { sc.classList.remove("enter"); sc.classList.add("leave"); }
+    }
+    tick();
+    introTimer = setInterval(tick, 200);
+  }
+
   function render(data, force) {
     if (!data) data = { state: "idle" };
     initMusic();
@@ -2332,6 +2582,7 @@
     lastData = data;
     ensureLogos(data.logos);
     stopIvTimer();
+    stopIntroTimer();
     var fm = finaleMode(data);                                // 優勝画面・インタビュー画面にするか（成績の画面を先に見せる間は、null）
     lastFm = fm;
     updateMusic(data, fm);
@@ -2345,6 +2596,11 @@
     kind = wantKind(data);
     root.className = kind;
     document.getElementById("msg").textContent = "";
+    if (data.state === "intro" && data.intro) {               // 紹介の場面（キャスター・チーム・選手・試合開始まで）：時刻から数えて、自動で進める
+      stopReplay();
+      renderIntro(data);
+      return;
+    }
     if (data.state === "play" && data.live) {
       if (replay && replay.key === data.live.key) {            // 同じ試合開始：時間は、そのまま数え続ける（画面の形が変わったときなどは、描き直す）
         replay.lv = data.live;
