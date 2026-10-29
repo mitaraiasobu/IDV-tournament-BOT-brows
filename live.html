@@ -1089,8 +1089,8 @@
   .in-bg { position: absolute; inset: 0; background-color: #05070b; background-image:
       radial-gradient(ellipse at 26% 50%, color-mix(in srgb, var(--ic) 40%, transparent), transparent 58%),
       radial-gradient(ellipse at 50% 130%, rgba(0,0,0,.7), transparent 60%),
-      linear-gradient(115deg, color-mix(in srgb, var(--ic) 30%, #000) 0 36%, color-mix(in srgb, var(--ic) 11%, #05070b) 36.1% 100%); }
-  .in-streak { position: absolute; top: -20%; bottom: -20%; left: -20%; width: 170px; transform: skewX(-18deg); opacity: 0;
+      linear-gradient(105deg, color-mix(in srgb, var(--ic) 30%, #000) 0 36%, color-mix(in srgb, var(--ic) 11%, #05070b) 36.1% 100%); }
+  .in-streak { position: absolute; top: -20%; bottom: -20%; left: -20%; width: 170px; transform: skewX(-15deg); opacity: 0;
                background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ic) 42%, transparent), transparent); animation: inStreak 4.4s linear infinite; }
   .in-streak.s2 { width: 80px; animation-delay: 1.5s; } .in-streak.s3 { width: 250px; animation-delay: 3s; }
   @keyframes inStreak { 0% { left: -20%; opacity: 0; } 12% { opacity: .85; } 88% { opacity: .85; } 100% { left: 112%; opacity: 0; } }
@@ -1120,15 +1120,14 @@
   .in-team .trd { font-family: var(--cond); font-size: 58px; color: var(--sub); letter-spacing: .14em; }
   /* 試合開始まで：左にサバイバー側・右にハンター側。斜めの切れ込みで、半分ずつ */
   .in-half { position: absolute; inset: 0; z-index: 1; }
-  .in-half.sv { clip-path: polygon(0 0, 57% 0, 43% 100%, 0 100%); --ic: var(--sc, #3d7bff); }
-  .in-half.hn { clip-path: polygon(57.8% 0, 100% 0, 100% 100%, 43.8% 100%); --ic: var(--hc, #ff4b5e); }
+  .in-half.sv { clip-path: polygon(0 0, 57.5% 0, 42.5% 100%, 0 100%); --ic: var(--sc, #3d7bff); }
+  .in-half.hn { clip-path: polygon(58.3% 0, 100% 0, 100% 100%, 43.3% 100%); --ic: var(--hc, #ff4b5e); }
   .in-half .bgc { position: absolute; inset: 0; background:
       radial-gradient(ellipse at var(--gx, 30%) 55%, color-mix(in srgb, var(--ic) 52%, transparent), transparent 62%),
       linear-gradient(180deg, color-mix(in srgb, var(--ic) 30%, #000), color-mix(in srgb, var(--ic) 12%, #000)); }
   .in-half .bgc::after { content: ""; position: absolute; inset: -30%; opacity: .5;
-      background: repeating-linear-gradient(115deg, transparent 0 70px, color-mix(in srgb, var(--ic) 38%, transparent) 70px 74px); animation: inRun 6s linear infinite; }
-  .in-half.hn .bgc::after { animation-direction: reverse; }
-  @keyframes inRun { from { transform: translateX(0); } to { transform: translateX(148px); } }
+      background: repeating-linear-gradient(105deg, transparent 0 70px, color-mix(in srgb, var(--ic) 38%, transparent) 70px 74px); animation: inRun 6s linear infinite; }
+  @keyframes inRun { from { transform: translateX(0); } to { transform: translateX(153.2px); } }       /* 縞2本ぶん（74px÷cos15°×2）：つなぎ目なしで、ずっと右へ */
   .intro .iv-timer { z-index: 5; }
   .in-half .side { position: absolute; top: 200px; font-family: var(--cond); font-weight: 800; font-size: 54px; letter-spacing: .3em; color: var(--text); text-shadow: 0 0 24px color-mix(in srgb, var(--ic) 65%, transparent); }
   .in-half.sv .side { left: 150px; } .in-half.hn .side { right: 150px; text-align: right; }
@@ -1146,7 +1145,7 @@
   .in-cd .num { font-family: var(--disp); font-size: 560px; line-height: 1; color: #fff; text-shadow: 0 0 60px rgba(255,255,255,.5), 8px 10px 0 rgba(0,0,0,.45); animation: inNum .5s cubic-bezier(.2,.9,.2,1) both; }
   html[data-design="fantasy"] .in-cd .num, html[data-design="gothic"] .in-cd .num { font-family: var(--fa); font-weight: 400; color: var(--gold); }
   @keyframes inNum { from { opacity: 0; transform: scale(1.22); } to { opacity: 1; transform: none; } }
-  .in-slash { position: absolute; inset: 0; z-index: 2; pointer-events: none; clip-path: polygon(56% 0, 58.6% 0, 44.6% 100%, 42% 100%);
+  .in-slash { position: absolute; inset: 0; z-index: 2; pointer-events: none; clip-path: polygon(56.6% 0, 59.2% 0, 44.2% 100%, 41.6% 100%);
               background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--sc, #3d7bff) 40%, #fff), color-mix(in srgb, var(--hc, #ff4b5e) 40%, #fff), #fff); filter: drop-shadow(0 0 18px rgba(255,255,255,.7)); animation: inGlow 3.6s ease-in-out infinite; }
   @keyframes inGlow { 0%, 100% { opacity: .8; } 50% { opacity: 1; } }
   /* 登場・退場（デザインごと） */
@@ -1155,13 +1154,13 @@
   .intro.enter .in-team > * { animation: inInUp .7s cubic-bezier(.2,.9,.2,1) both; }
   .intro.enter .in-team > *:nth-child(2) { animation-delay: .12s; } .intro.enter .in-team > *:nth-child(3) { animation-delay: .22s; } .intro.enter .in-team > *:nth-child(4) { animation-delay: .3s; }
   .intro.enter .in-half.sv .box, .intro.enter .in-half.sv .side { animation: inInL .8s cubic-bezier(.2,.9,.2,1) both; }
-  .intro.enter .in-half.hn .box, .intro.enter .in-half.hn .side { animation: inInR .8s cubic-bezier(.2,.9,.2,1) both; }
+  .intro.enter .in-half.hn .box, .intro.enter .in-half.hn .side { animation: inInL .8s cubic-bezier(.2,.9,.2,1) both; }
   .intro.enter .in-slash { animation: inSlashIn .7s cubic-bezier(.2,.9,.2,1) both, inGlow 3.6s ease-in-out .7s infinite; }
   .intro.leave .in-av, .intro.leave .in-info, .intro.leave .in-team > * { animation: inOut .8s ease-in both; }
-  @keyframes inInL { from { opacity: 0; transform: translateX(-160px) skewX(-8deg); } to { opacity: 1; transform: none; } }
-  @keyframes inInR { from { opacity: 0; transform: translateX(160px) skewX(-8deg); } to { opacity: 1; transform: none; } }
+  @keyframes inInL { from { opacity: 0; transform: translateX(-160px) skewX(-15deg); } to { opacity: 1; transform: none; } }
+  @keyframes inInR { from { opacity: 0; transform: translateX(160px) skewX(-15deg); } to { opacity: 1; transform: none; } }
   @keyframes inInUp { from { opacity: 0; transform: translateY(70px) scale(.94); } to { opacity: 1; transform: none; } }
-  @keyframes inOut { to { opacity: 0; transform: translateX(-140px) skewX(8deg); } }
+  @keyframes inOut { to { opacity: 0; transform: translateX(-140px) skewX(15deg); } }
   @keyframes inSlashIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
   @keyframes inInSoft { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
   @keyframes inOutSoft { to { opacity: 0; transform: translateY(-20px); } }
@@ -1170,7 +1169,7 @@
   html[data-design="simple"] .intro.leave .in-av, html[data-design="simple"] .intro.leave .in-info, html[data-design="simple"] .intro.leave .in-team > *,
   html[data-design="fantasy"] .intro.leave .in-av, html[data-design="fantasy"] .intro.leave .in-info, html[data-design="fantasy"] .intro.leave .in-team > *,
   html[data-design="gothic"] .intro.leave .in-av, html[data-design="gothic"] .intro.leave .in-info, html[data-design="gothic"] .intro.leave .in-team > * { animation: inOutSoft .8s ease-in both; }
-  html[data-design="rock"] .in-kv, html[data-design="rock"] .in-pill { transform: skewX(-8deg); } html[data-design="rock"] .in-kv > *, html[data-design="rock"] .in-pill > * { transform: skewX(8deg); }
+  html[data-design="rock"] .in-kv, html[data-design="rock"] .in-pill { transform: skewX(-15deg); } html[data-design="rock"] .in-kv > *, html[data-design="rock"] .in-pill > * { transform: skewX(15deg); }
   html[data-design="rock"] .in-nm, html[data-design="rock"] .in-team .tnm { font-family: var(--disp); letter-spacing: .03em; }
   html[data-design="simple"] .in-kv { border-radius: 12px; border-left-width: 6px; backdrop-filter: blur(6px); }
   html[data-design="fantasy"] .in-nm, html[data-design="gothic"] .in-nm, html[data-design="fantasy"] .in-team .tnm, html[data-design="gothic"] .in-team .tnm,
@@ -1178,6 +1177,17 @@
   html[data-design="fantasy"] .in-av, html[data-design="gothic"] .in-av { background: conic-gradient(from 0deg, var(--gold), #fff3c4, var(--gold), color-mix(in srgb, var(--gold) 45%, #000), var(--gold)); }
   html[data-design="fantasy"] .in-kv, html[data-design="gothic"] .in-kv { border-left-color: var(--gold); border-radius: 4px; }
   html[data-design="fantasy"] .in-streak, html[data-design="gothic"] .in-streak { animation-duration: 7s; }
+  /* ゴシック・ファンタジー：斜めの線のかわりに、ひし形の背景（金の細い線。ゆっくり右へ流れる）。流れる線は出さない */
+  html[data-design="fantasy"] .in-streak, html[data-design="gothic"] .in-streak { display: none; }
+  html[data-design="fantasy"] .in-bg, html[data-design="gothic"] .in-bg { background-image:
+      radial-gradient(ellipse at 26% 50%, color-mix(in srgb, var(--ic) 34%, transparent), transparent 58%),
+      radial-gradient(ellipse at 50% 130%, rgba(0,0,0,.7), transparent 60%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ic) 16%, #05070b), #05070b); }
+  html[data-design="fantasy"] .in-bg::after, html[data-design="gothic"] .in-bg::after,
+  html[data-design="fantasy"] .in-half .bgc::after, html[data-design="gothic"] .in-half .bgc::after { content: ""; position: absolute; inset: -30%; opacity: .55; background:
+      repeating-linear-gradient(60deg, transparent 0 88px, color-mix(in srgb, var(--gold) 34%, transparent) 88px 90px),
+      repeating-linear-gradient(-60deg, transparent 0 88px, color-mix(in srgb, var(--gold) 34%, transparent) 88px 90px); animation: inDia 9s linear infinite; }
+  @keyframes inDia { from { transform: translateX(0); } to { transform: translateX(207.85px); } }       /* ひし形2つぶん（90px÷cos30°×2）：つなぎ目なし */
   /* 最後のトーナメント表：負けたチームは暗く／優勝チームの欄に、ロゴ・名前・全員の選手名 */
   .fbframe { position: absolute; inset: 0; }
   .fbframe iframe { width: 100%; height: 100%; border: 0; background: transparent; }
@@ -2449,7 +2459,7 @@
   function introTimerBox(label) {
     var box = el("div", "iv-timer");
     box.appendChild(el("div", "iv-count", ""));
-    if (label) box.appendChild(el("div", "iv-who", label));                     // 「のこり時間」とは書かない（数字を見れば分かる）。「試合開始まで」だけ、書く
+    if (label) box.appendChild(el("div", "iv-who", label));                     // 「のこり時間」とは書かない（数字を見れば分かる）。「試合予定時刻まで」だけ、書く
     return box;
   }
   function introBase(color) {
@@ -2547,7 +2557,7 @@
     });
     w.appendChild(el("div", "in-slash"));
     w.appendChild(el("div", "in-cd"));                                  // 10秒前から、大きなカウントダウンを、上から被せる
-    w.appendChild(introTimerBox("試合開始まで"));
+    w.appendChild(introTimerBox(iv.confirmed ? "試合開始まで" : "試合予定時刻まで"));       // 予定の時刻は、ただの予定。確認が済んだら、本当の開始までを数える
     return w;
   }
   function renderIntro(data) {
@@ -2573,7 +2583,7 @@
       var left = ph.kind === "split" ? iv.play_at - nowS : ph.start + ph.dur - nowS;
       var cnt = sc.querySelector(".iv-count");
       if (cnt) cnt.textContent = fmtCount(left);
-      var cd = ph.kind === "split" ? sc.querySelector(".in-cd") : null;
+      var cd = ph.kind === "split" && iv.confirmed ? sc.querySelector(".in-cd") : null;        // 大きなカウントダウンは、モデレーターの確認のあとだけ（選手側の10秒カウントダウンと同じ時刻）
       if (cd) {                                                           // BAN/PICKの表示が始まる10秒前から：10・9・…・1
         var n = Math.ceil(left);
         if (n >= 1 && n <= 10) {
