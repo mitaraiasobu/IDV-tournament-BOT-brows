@@ -32,6 +32,22 @@
                font: inherit; font-size: 14px; cursor: pointer; }
   nav button.on { background: var(--panel2); border-color: #6f84ad; border-bottom-color: var(--panel2); font-weight: 700; }
   #tabs2 button { font-size: 13px; padding: 5px 12px; }
+  #simbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 16px; border-bottom: 1px solid var(--line); }
+  #simbar[hidden] { display: none; }
+  #simbar button { font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; }
+  #simbar button.simgo { background: var(--gold); border-color: var(--gold); color: #05070b; font-weight: 700; }
+  #simbar .simhint { font-size: 12px; color: var(--sub); } #simbar .simlabel { font-size: 14px; font-weight: 700; color: var(--gold); }
+  .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); cursor: pointer; }
+  .tag.m .face { font-size: 12px; padding: 2px; line-height: 1.1; text-align: center; word-break: break-all; }
+  .tag.m.sel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px 3px rgba(255, 210, 63, .8); }
+  .mslot { display: inline-flex; min-width: 66px; min-height: 60px; align-items: center; justify-content: center; border: 2px dashed var(--line); border-radius: 8px; cursor: pointer; vertical-align: middle; }
+  .mslot .ph { color: var(--sub); font-size: 20px; } .mslot.armed { border-color: var(--gold); background: rgba(255, 210, 63, .08); }
+  .simnow.mslot, label.simnow .mslot { border-color: var(--gold); }
+  .simfuture { opacity: .12; filter: grayscale(1); transition: opacity .35s, filter .35s; }
+  .simnow.tag { box-shadow: 0 0 0 3px var(--gold), 0 0 18px 6px rgba(255, 210, 63, .9); transform: translateY(-3px) scale(1.06); z-index: 5; animation: simpulse 1.1s ease-in-out infinite; }
+  .simnow.frame, .simnow.drop { border-color: var(--gold); border-style: solid; box-shadow: 0 0 14px 3px rgba(255, 210, 63, .7); animation: simpulse 1.1s ease-in-out infinite; }
+  .simnow.msel, label.simnow { color: var(--gold); text-shadow: 0 0 8px rgba(255, 210, 63, .9); }
+  @keyframes simpulse { 50% { filter: brightness(1.35); } }
   #notice { margin: 4px 16px; font-size: 13px; }
   #notice .bar { padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; }
   #notice .bad { background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; animation: blink 1s steps(2, start) infinite; }
@@ -370,8 +386,17 @@
   #pal .palbox.m { border-top: 2px solid var(--gold); }
   #pal .palbox.m .tag { width: 66px; } .tag.m { border-color: var(--gold); background: linear-gradient(180deg, #3a3210, #6a5a14); } .tag.m .face { width: 56px; height: 56px; font-size: 12px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
   .tag.gray { cursor: not-allowed; } .tag.picked { opacity: .35; }
+  .bgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; align-items: stretch; }
+  .bgrid > h5.gh { margin: 2px 0 0; font-size: 12px; color: var(--sub); letter-spacing: .08em; }
+  .bgrid > .side.none { visibility: hidden; }
+  .bgrid > .side { flex: none; }
+  .blk.hasnums { position: relative; } .blk .bnums { position: absolute; top: 2px; right: 6px; color: var(--gold); font-weight: 800; font-size: 14px; letter-spacing: 1px; }
+  .pgrid { display: flex; gap: 8px; flex-wrap: nowrap; } .pcol { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 70px; flex: none; }
+  .pcol .pn { font: inherit; font-size: 11.5px; width: 70px; box-sizing: border-box; padding: 2px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+  .pcol .pn.on { background: var(--gold); border-color: var(--gold); color: #05070b; font-weight: 700; }
+  .pcol .tag.sel { box-shadow: 0 0 0 3px var(--gold), 0 0 12px 3px rgba(255, 210, 63, .8); }
   .lurow { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 4px; }
-  .luchip { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; }
+  .luchip { font: inherit; font-size: 12px; width: 92px; padding: 3px 8px; box-sizing: border-box; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; }
   .luchip.on { background: var(--gold); border-color: var(--gold); color: #05070b; font-weight: 700; }
   .frame.open[title] { cursor: pointer; }
   .curslot.frame { border-color: var(--gold); border-style: solid; } .curslot.tag { box-shadow: 0 0 0 2px var(--gold); }
@@ -383,6 +408,18 @@
   .drop.col0 { min-height: 84px; }
   .cbar { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px solid var(--line); background: var(--bg); }
   .cbar .btn { padding: 13px 40px; font-size: 18px; } .cbar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .cbar .btn[disabled] { opacity: .5; }
+  .selwrap { display: flex; gap: 18px; flex-wrap: wrap; padding: 6px 4px 20px; } .selcol { flex: 1 1 320px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+  .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
+  .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
+  .seltile { position: relative; width: 92px; text-align: center; padding: 8px 4px 6px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel2); user-select: none; }
+  .seltile.click { cursor: pointer; } .seltile.click:hover { border-color: var(--gold); } .seltile.dim { opacity: .55; }
+  .seltile.on { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 14px 2px rgba(255, 210, 63, .6); }
+  .seltile .av { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto; background: rgba(0, 0, 0, .35); display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; }
+  .seltile .av img { width: 64px; height: 64px; display: block; } .seltile .nm { font-size: 12px; margin-top: 5px; line-height: 1.25; word-break: break-all; overflow: hidden; max-height: 2.6em; }
+  .seltile .chk { position: absolute; top: -6px; right: -6px; min-width: 26px; height: 26px; border-radius: 13px; background: var(--gold); color: #05070b; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0 5px; box-shadow: 0 1px 4px #000; }
+  .seltile .me { font-size: 10.5px; color: var(--ac); }
+  .selspec { font-size: 14px; color: var(--gold); margin: 6px 0 0; }
+  #selstat { font-size: 14px; padding: 4px 16px; } #selstat.warn { color: var(--gold); } #selstat.ng { color: #ff7a85; font-weight: 700; }
   #status.ok { color: var(--ok); } #status.warn { color: var(--gold); } #status.ng { color: #ff7a85; font-weight: 700; }
   #late { margin: 4px 16px; padding: 9px 14px; border-radius: 6px; background: #4a1219; border: 1px solid #ff3b52; color: #ffb3bb; font-weight: 700; font-size: 15px; animation: blink 1s steps(2, start) infinite; }
   #late[hidden] { display: none; }
@@ -467,8 +504,8 @@
   .pmod .pbtn { border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--panel2); cursor: pointer; } .pmod .pbtn img { width: 58px; height: 58px; display: block; }
   .pmod .pbtn.on { border-color: var(--dz1); box-shadow: 0 0 12px var(--dz1); }
   /* カスタム戦を開く人の「OK」：長押し（短く押すと、怒られる） */
-  .gatebox .card { text-align: center; max-width: 720px; } .gatebox .gt1 { font-size: 26px; font-weight: 800; color: var(--dz1); margin-bottom: 10px; line-height: 1.5; }
-  .gatebox .gt2 { font-size: 17px; line-height: 1.8; margin-bottom: 14px; } .gatebox .gt3 { font-size: 22px; font-weight: 800; color: var(--gold); margin-bottom: 16px; line-height: 1.6; }
+  .gatebox .card { text-align: center; max-width: 720px; } .gatebox .gt1 { font-size: 16px; margin-bottom: 8px; line-height: 1.7; }
+  .gatebox .gt2 { font-size: 16px; line-height: 1.7; margin-bottom: 8px; } .gatebox .gt3 { font-size: 16px; line-height: 1.7; margin-bottom: 16px; }
   .holdbtn { position: relative; overflow: hidden; padding: 16px 54px; font-size: 21px; font-weight: 800; border-radius: 12px; border: 2px solid var(--dz1); background: var(--panel2); color: var(--text); cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
   .holdbtn .holdbar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: color-mix(in srgb, var(--dz1) 55%, transparent); } .holdbtn .holdlab { position: relative; }
   .scary { position: absolute; inset: 0; z-index: 400; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 20px; animation: bp-shake .5s linear; }
@@ -655,6 +692,13 @@
       ROT_SCALE = 1;
       st.style.width = ""; st.style.height = ""; st.style.transform = "";
     }
+    if (typeof placeMusicBar === "function") placeMusicBar();
+  }
+  function placeMusicBar() {                                                           // 音楽の音量バー：スマホで画面を回しているときは、画面（stage）の中に入れて、いっしょに回す（右上のまま）
+    var bar = document.querySelector(".mp-bar"), st = $("stage");
+    if (!bar || !st) return;
+    if (ROT && bar.parentNode !== st) st.appendChild(bar);
+    else if (!ROT && bar.parentNode === st) document.body.appendChild(bar);
   }
   window.addEventListener("resize", fit);
   window.addEventListener("orientationchange", function () { setTimeout(fit, 150); });
@@ -766,19 +810,76 @@
     if (i === S.cur && S.status === "active") slot.classList.add("curslot");
     return slot;
   }
+  // ───── サバイバーのPICK：手順の番号は、大枠に（⑤⑤⑦⑨）。枠は、選手ごとに4つ。どの枠にキャラを入れてもよい（名札を押して、移したい枠を押す） ─────
+  var ASGK = "bp_asg_" + key, ASG = null, MOVING = null;
+  function asgLoad() { if (ASG) return ASG; try { ASG = JSON.parse(localStorage.getItem(ASGK) || "{}"); } catch (e) { ASG = {}; } return ASG; }
+  function asgSave() { try { localStorage.setItem(ASGK, JSON.stringify(ASG)); } catch (e) { /* 無視 */ } }
+  function survivorPickBlock(sd, list) {
+    var total = list.reduce(function (n, x) { return n + x[0].n; }, 0), own = sd === MY, lu = own ? lineupOf() : [];
+    var hasCur = list.some(function (x) { return x[1] === S.cur; }) && S.status === "active";
+    var blk = el("div", "blk pick hasnums" + (hasCur ? " now" : "")), h = el("h4", "", "サバイバーPICK");
+    var nums = ""; list.forEach(function (x) { for (var k = 0; k < x[0].n; k++) nums += CIRC.charAt(x[1]); });
+    blk.appendChild(el("span", "bnums", nums));                                                // 大枠に、手順の番号（枠ごとには、付けない）
+    blk.appendChild(h);
+    var items = [];
+    list.forEach(function (x) { if (x[0].set && x[0].ids) x[0].ids.forEach(function (id) { if (CH[id]) items.push({ id: id, pend: false }); }); });
+    var curX = list.filter(function (x) { return x[1] === S.cur; })[0], mine = !!curX && myTurn();
+    var nCommitted = items.length;
+    if (mine) SEL.forEach(function (id) { if (CH[id]) items.push({ id: id, pend: true }); });
+    var a = own ? (asgLoad()[sd] = asgLoad()[sd] || {}) : {}, used = {};
+    items.forEach(function (it, ix) {                                                          // 場所：前に決めた場所を使い、新しい名札は、空いている最初の枠へ（確定していない名札の場所は、覚えない）
+      if (a[it.id] != null && a[it.id] < total && !used[a[it.id]]) { used[a[it.id]] = true; it.pos = a[it.id]; return; }
+      for (var q = 0; q < total; q++) if (!used[q]) { used[q] = true; it.pos = q; if (ix < nCommitted) a[it.id] = q; return; }
+    });
+    if (own) asgSave();
+    var grid = el("div", "drop pgrid");
+    for (var q = 0; q < total; q++) (function (q) {
+      var col = el("div", "pcol"), occ = items.filter(function (it) { return it.pos === q; })[0];
+      if (lu.length) {
+        var nmb = el("button", "pn" + (HL === q ? " on" : ""), lu[q] ? lu[q].n : ("選手" + (q + 1))); nmb.type = "button"; fitName(nmb, lu[q] ? lu[q].n : "");
+        nmb.title = (lu[q] ? lu[q].n + "：" : "") + "押すと、この選手の常用キャラが光ります";
+        nmb.addEventListener("click", function () { HL = HL === q ? null : q; render(); });
+        col.appendChild(nmb);
+      }
+      var slot;
+      if (occ) {
+        slot = makeTag(CH[occ.id], occ.pend ? "" : (MOVING === occ.id ? "sel" : "locked"));
+        if (occ.pend) { slot.title = "もう一度タップすると、外れます"; slot.addEventListener("click", function () { SEL = SEL.filter(function (x) { return x !== occ.id; }); render(); }); }
+        else if (own) {
+          slot.style.cursor = "pointer"; slot.title = MOVING ? "ここと入れ替えます" : "押して、移したい枠を押してください";
+          slot.addEventListener("click", function () {
+            if (MOVING == null) { MOVING = occ.id; render(); return; }
+            if (MOVING === occ.id) { MOVING = null; render(); return; }
+            var o = a[MOVING]; a[MOVING] = a[occ.id]; a[occ.id] = o; MOVING = null; asgSave(); render();       // 入れ替え
+          });
+        }
+      } else {
+        slot = el("div", "frame" + (mine || MOVING ? " open" : ""), mine || MOVING ? "＋" : "");
+        if (own) slot.addEventListener("click", function () {
+          if (MOVING != null) { a[MOVING] = q; MOVING = null; asgSave(); render(); return; }
+          if (lu.length) { HL = HL === q ? null : q; render(); }                               // 空の枠を押すと、その選手の常用キャラが、光って先頭に来る
+        });
+        if (own) slot.style.cursor = "pointer";
+      }
+      if (hasCur && !occ) slot.classList.add("curslot");
+      col.appendChild(slot); grid.appendChild(col);
+    })(q);
+    blk.appendChild(grid);
+    return blk;
+  }
   function blockOf(sd, act, tg) {                                                          // 側（s/h）・BAN/PICK・対象（s/h/m）の枠：その手順の枠を、順番に並べる
     var list = []; S.steps.forEach(function (s, i) { if (s.s === sd && s.a === act && s.t === tg) list.push([s, i]); });
     if (!list.length) return null;
+    if (act === "p" && tg === "s") return survivorPickBlock(sd, list);
     var hasCur = list.some(function (x) { return x[1] === S.cur; }) && S.status === "active";
     var blk = el("div", "blk " + (act === "b" ? "ban" : "pick") + (hasCur ? " now" : ""));
     var h = el("h4", "", TGT[tg] + ACT[act]);
-    if (hasCur) { var cs = S.steps[S.cur]; h.appendChild(el("span", "cnt now", (myTurn() ? "← ここを選びます " : "← いま入力中 ") + CIRC.charAt(S.cur) + "（×" + cs.n + "）")); }
     blk.appendChild(h);
     var lu = lineupOf();
     if (act === "p" && sd === MY && tg === MY && lu.length) {                               // 選手の名前（押すと、その人の常用キャラが光る）
       var lr = el("div", "lurow");
       lu.forEach(function (p, pi) {
-        var chip = el("button", "luchip" + (HL === pi ? " on" : ""), p.n); chip.type = "button"; chip.title = "押すと、この選手の常用キャラが光ります";
+        var chip = el("button", "luchip" + (HL === pi ? " on" : ""), p.n); chip.type = "button"; fitName(chip, p.n); chip.title = p.n + "：押すと、この選手の常用キャラが光ります";
         chip.addEventListener("click", function () { HL = HL === pi ? null : pi; render(); });
         lr.appendChild(chip);
       });
@@ -816,6 +917,12 @@
   // 1ステップの時間：前回の入力からの経過を出し、目安（90秒）を超えたら、お知らせを出す（Discordの催促と同じ基準・同じ文）
   function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
   function tick() {
+    var ss = document.getElementById("selstat");
+    if (ss && S && S.select && S.select.since) {                                          // 選手選び：90秒の目安。過ぎたら、警告
+      var el0 = Math.max(0, Math.floor(Date.now() / 1000 - S.select.since)), lim0 = S.select.limit || 90, over0 = el0 >= lim0;
+      ss.textContent = "⏱ " + mmss(el0) + " / " + lim0 + "秒" + (over0 ? "　⏰ 時間をこえています。早く選んでください！" : "");
+      ss.className = over0 ? "ng" : el0 >= lim0 - 20 ? "warn" : "";
+    }
     var ei = document.getElementById("endin");
     if (ei && S && S.end_ok_at) {
       var left = Math.ceil(S.end_ok_at - Date.now() / 1000), eb = document.getElementById("endbtn");
@@ -855,7 +962,7 @@
     var blob = S.sealed[MY];
     if (blob === OPENED.blob || OPENED.busy) return;
     OPENED.busy = true;
-    openSealed(KEY, blob).then(function (d) { OPENED = { blob: blob, data: d, busy: false }; render(); })
+    openSealed(KEY, blob).then(function (d) { OPENED = { blob: blob, data: d, busy: false }; upgradeRole(); render(); })
       .catch(function () { OPENED = { blob: blob, data: null, busy: false }; });
   }
   function ownPers() {                                                                    // 自分の側の、人格（つけたばかりのものも含む）
@@ -949,10 +1056,10 @@
     if (old) return;                                                                      // 同じ状態では、作り直さない（長押しの途中で、消えないように）
     var ov = el("div", "ask gatebox"), card = el("div", "card"); ov.id = "gate";
     if (HOST && UID) {
-      card.appendChild(el("div", "gt1", "あなたがカスタム戦を開いてください。"));
+      card.appendChild(el("div", "gt1", (S.gate_name || "") + "がカスタム戦を開いてください。"));
       card.appendChild(el("div", "gt2", "BAN/PICKを行っている間に、選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
       card.appendChild(el("div", "gt3", "理解した場合は、OKボタンを長押ししてください。"));
-      var b = el("button", "holdbtn"), bar = el("span", "holdbar"), lab = el("span", "holdlab", "✅ OK（長押し）"), note = el("div", "note", "");
+      var b = el("button", "holdbtn"), bar = el("span", "holdbar"), lab = el("span", "holdlab", "OK"), note = el("div", "note", "");
       b.type = "button"; b.appendChild(bar); b.appendChild(lab);
       var timer = null, t0 = 0, fired = false;
       function reset() { clearTimeout(timer); timer = null; bar.style.transition = "none"; bar.style.width = "0%"; }
@@ -962,9 +1069,9 @@
         timer = setTimeout(function () {
           fired = true; reset(); lab.textContent = "送信しています…";
           sendAct("roomok").then(function (res) {
-            if (res && res.ok) { lab.textContent = "✅ OKしました"; return refresh(); }
-            lab.textContent = "✅ OK（長押し）"; note.className = "note ng"; note.textContent = "⚠ " + ((res && res.error) || "BOTからの返事がありません。");
-          }).catch(function (e2) { lab.textContent = "✅ OK（長押し）"; note.className = "note ng"; note.textContent = "⚠ " + (e2.message || "つながりませんでした。"); });
+            if (res && res.ok) { lab.textContent = "OK"; return refresh(); }
+            lab.textContent = "OK"; note.className = "note ng"; note.textContent = "⚠ " + ((res && res.error) || "BOTからの返事がありません。");
+          }).catch(function (e2) { lab.textContent = "OK"; note.className = "note ng"; note.textContent = "⚠ " + (e2.message || "つながりませんでした。"); });
         }, 2000);
       });
       function release() { if (fired || !timer) return; var short = Date.now() - t0 < 2000; reset(); if (short) scary(); }
@@ -973,8 +1080,8 @@
       var row = el("div", "row"); row.appendChild(b); card.appendChild(note);
       setTimeout(function () { if (ov.parentNode) card.insertBefore(row, note); }, 5000);          // OKボタンは、5秒間は、出さない（先に、よく読んでもらう）
     } else {
-      card.appendChild(el("div", "gt1", (S.gate_name || "部屋を立てる人") + " さんが、カスタム戦を開く準備をしています。"));
-      card.appendChild(el("div", "gt2", "BAN/PICKは、そのあとに始まります（始まると、この画面は自動で進みます）。"));
+      card.appendChild(el("div", "gt1", (S.gate_name || "部屋を立てる人") + "がカスタム戦を開いてください。"));
+      card.appendChild(el("div", "gt2", "BAN/PICKを行っている間に、選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
     }
     ov.appendChild(card); $("stage").appendChild(ov);
   }
@@ -1251,9 +1358,92 @@
     if (!musicInit) {
       musicInit = true;
       MusicPlayer.init({ ui: true, volume: 0.2 });                                          // 初期は、20%の音量（右上のバーで、変えられる）
-      var ms = document.createElement("style"); ms.textContent = ".mp-bar{left:auto !important;right:12px;top:12px;bottom:auto !important}"; document.head.appendChild(ms);
+      var ms = document.createElement("style"); ms.textContent = ".mp-bar{left:auto !important;right:8px;top:5px;bottom:auto !important} header{padding-right:200px !important}";   // 右上に置く：ヘッダーの右側を空けて、何にも被らないようにする document.head.appendChild(ms);
+      setTimeout(placeMusicBar, 0);
     }
     MusicPlayer.set(S.music || null, { fade: 600 });
+    placeMusicBar();
+  }
+  // ───── ブラウザでの選手選び（サバイバー：出場する人が各自で押す→その中から全員で代表を押す／ハンター：プレイする選手を押す） ─────
+  function fitName(e, name) {                                                             // 長い名前は、横幅を変えずに、文字を小さくする
+    var n = (name || "").length;
+    e.style.fontSize = n > 16 ? "8.5px" : n > 12 ? "9.5px" : n > 9 ? "10.5px" : "";
+    e.title = name;
+  }
+  function selTile(p, o) {
+    var tl = el("div", "seltile" + (o.click ? " click" : "") + (o.on ? " on" : "") + (o.dim ? " dim" : "")), av = el("div", "av");
+    if (p.a) { var im = el("img"); im.src = p.a; im.alt = ""; av.appendChild(im); } else av.textContent = (p.n || "?").charAt(0);
+    var nmEl = el("div", "nm", p.n); fitName(nmEl, p.n);
+    tl.appendChild(av); tl.appendChild(nmEl);
+    if (o.me) tl.appendChild(el("div", "me", "あなた"));
+    if (o.badge) tl.appendChild(el("div", "chk", o.badge));
+    if (o.click) tl.addEventListener("click", o.click);
+    return tl;
+  }
+  function selAct(act, k) {
+    if (BUSY) return;
+    BUSY = true;
+    sendAct(act, k ? { k: k } : {}).then(function (res) {
+      BUSY = false;
+      if (!(res && res.ok)) msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); else msg("", "");
+      return refresh();
+    }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); });
+  }
+  function renderSelect() {
+    var sel = S.select, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, side = MY;
+    document.querySelector("main").classList.add("view");
+    var nt = $("notice"); nt.textContent = "";
+    nt.appendChild(el("div", "bar info", "🎯 試合開始｜プレイする選手を選んでください（" + (side === "h" ? "ハンター側" : "サバイバー側") + "）"));
+    var st = el("div"); st.id = "selstat"; nt.appendChild(st);
+    var work = $("work"); work.textContent = ""; $("pal").textContent = ""; $("bar").textContent = "";
+    var wrap = el("div", "selwrap");
+    // サバイバー側
+    var cs = el("div", "selcol s"); cs.appendChild(el("h3", "", "🔵 サバイバー側"));
+    var tiles = el("div", "seltiles");
+    if (side === "s" && sd) {
+      var roster = sd.roster || [], att = sd.att || [], votes = sd.votes || {}, need = sel.s.need || 1;
+      var inRoster = !!me && roster.indexOf(me) >= 0;
+      if (!sd.locked) {
+        cs.appendChild(el("div", "selhint", "出場する人は、自分のアイコンを押してください（もう一度押すと、取り消せます）。　出場：" + att.length + "/" + need + "人"));
+        sel.s.players.forEach(function (p) { tiles.appendChild(selTile(p, { on: att.indexOf(p.k) >= 0, badge: att.indexOf(p.k) >= 0 ? "✔" : "", me: p.k === me, click: p.k === me ? function () { selAct("sel_attend"); } : null, dim: p.k !== me && att.indexOf(p.k) < 0 })); });
+      } else {
+        cs.appendChild(el("div", "selhint", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。"
+          : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを、全員で押してください（全員が同じ人を押すと決まります）。"));
+        var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
+        sel.s.players.filter(function (p) { return roster.indexOf(p.k) >= 0; }).forEach(function (p) {
+          tiles.appendChild(selTile(p, { on: sd.rep === p.k || (me && votes[me] === p.k), badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
+            click: inRoster && !sd.rep ? function () { selAct("sel_vote", p.k); } : null }));
+        });
+        if (!inRoster) cs.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
+      }
+    } else {
+      cs.appendChild(el("div", "selhint", side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
+      sel.s.players.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
+    }
+    cs.appendChild(tiles); wrap.appendChild(cs);
+    // ハンター側
+    var ch = el("div", "selcol h"); ch.appendChild(el("h3", "", "🔴 ハンター側"));
+    var t2 = el("div", "seltiles");
+    if (!sel.h.players.length) ch.appendChild(el("div", "selhint", "ハンター側に人がいません（ダミーが自動で入ります）。"));
+    else if (side === "h" && sd) {
+      var hp = sd.hp;
+      ch.appendChild(el("div", "selhint", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押してください。"));
+      sel.h.players.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: hp === p.k, badge: hp === p.k ? "✔" : "", me: p.k === me, click: !hp ? function () { selAct("sel_hunter", p.k); } : null })); });
+      if (hp && me !== hp) ch.appendChild(el("div", "selspec", "👀 観戦モード（選ばれなかった人は、見るだけです）"));
+    } else {
+      ch.appendChild(el("div", "selhint", side === "h" ? "読み込んでいます…" : "ハンター側が、選んでいます（プレイする選手は、サバイバー側が決まるまで、非公開です）。"));
+      sel.h.players.forEach(function (p) { t2.appendChild(selTile(p, { dim: true })); });
+    }
+    ch.appendChild(t2); wrap.appendChild(ch);
+    work.appendChild(wrap);
+    var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
+    tick(); refreshSealed();
+  }
+  function upgradeRole() {                                                                // 選手選びで代表になった人は、同じURLのまま、代表として操作できるようにする
+    var sd = OPENED.data && OPENED.data.sel;
+    if (!sd || SIDE || !VIEW || !UID || !sd.who) return;
+    var me = sd.who[UID];
+    if (me && (VIEW === "s" ? sd.rep === me : sd.hp === me)) { SIDE = VIEW; VIEW = ""; }
   }
   function render() {
     if (!S) return;
@@ -1264,6 +1454,7 @@
     var v = SIDE || VIEW || "s";
     $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
     $("sub").textContent = S.title || "";
+    if (S.select) { renderSelect(); return; }                                              // 選手選びの段階
     document.querySelector("main").classList.toggle("view", !SIDE);
     var nt = $("notice"); nt.textContent = "";
     var b1 = el("div", "bar info");
@@ -1280,15 +1471,21 @@
     var work = $("work"), top = work.scrollTop; work.textContent = "";
     var corner = el("div", "corner " + v), chd = el("div", "chd");
     chd.appendChild(el("h3", "", SIDE_NAME[v] + "目線")); corner.appendChild(chd);
-    var pair = el("div", "pair");
-    [["own", "自陣営", v], ["enemy", "敵陣営", v === "s" ? "h" : "s"]].forEach(function (sd) {
-      var side = el("div", "side " + sd[0]); side.appendChild(el("h5", "", sd[1] + "（" + SIDE_NAME[sd[2]] + "）"));
-      var n = 0;
-      [["m", "p"], ["m", "b"], ["h", "b"], ["s", "b"], ["h", "p"], ["s", "p"]].forEach(function (q) {            // BANを先に、PICKをあとに（マップは、いちばん上）
-        var bl = blockOf(sd[2], q[1], q[0]); if (bl) { side.appendChild(bl); n++; }
+    var pair = el("div", "pair bgrid"), sides = [["own", "自陣営", v], ["enemy", "敵陣営", v === "s" ? "h" : "s"]];
+    sides.forEach(function (sd) { pair.appendChild(el("h5", "gh " + sd[0], sd[1] + "（" + SIDE_NAME[sd[2]] + "）")); });
+    var mapCells = sides.map(function (sd) {                                                    // マップ：左（自陣営）と右（敵陣営）に、半分ずつ。サバイバーのマップBAN（あるとき）とハンターのマップPICKが、それぞれの側に入る
+      var cell = el("div", "side " + sd[0] + " mapside"), any = false;
+      ["b", "p"].forEach(function (a) { var mb = blockOf(sd[2], a, "m"); if (mb) { cell.appendChild(mb); any = true; } });
+      if (!any) cell.classList.add("none");
+      return [cell, any];
+    });
+    if (mapCells.some(function (c) { return c[1]; })) mapCells.forEach(function (c) { pair.appendChild(c[0]); });
+    ["h", "s"].forEach(function (tg) {                                                         // 段：ハンターのキャラ（BANとPICK）→サバイバーのキャラ（BANとPICK）
+      sides.forEach(function (sd) {
+        var cell = el("div", "side " + sd[0]);
+        ["b", "p"].forEach(function (a) { var bl = blockOf(sd[2], a, tg); if (bl) cell.appendChild(bl); });
+        pair.appendChild(cell);
       });
-      if (!n) side.appendChild(el("div", "hint", "（この側の手順は、ありません）"));
-      pair.appendChild(side);
     });
     corner.appendChild(pair); work.appendChild(corner);
     work.scrollTop = top;
@@ -1362,8 +1559,9 @@
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
       if (!d || d.kind !== "bp") { stopped(); return; }
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
-        || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done]);
-      if (changed) { SEL = []; NEWSTEP = true; HL = null; }
+        || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
+        || JSON.stringify([d.select, d.sealed]) !== JSON.stringify([S.select, S.sealed]);
+      if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) render();
     });
