@@ -946,7 +946,9 @@
   /* 下の四角：現在の点数 */
   html[data-design="gothic"].stage .center { position: absolute; left: 790px; top: 888px; right: auto; bottom: auto; width: 340px; height: 280px; flex: none; align-self: auto; justify-content: flex-start; padding: 14px 24px; box-sizing: border-box;
         border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: linear-gradient(180deg, #151521, #0a0a12); box-shadow: 0 10px 28px rgba(0,0,0,.6); }
-  html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .st, html[data-design="gothic"].stage .center .role, html[data-design="gothic"].stage .center .map { display: none; }
+  html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .st, html[data-design="gothic"].stage .center .role { display: none; }
+  html[data-design="gothic"].stage .center .map { display: block; margin-top: 6px; text-align: center; font-size: 24px; letter-spacing: .08em; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 点数の下に、マップの名前 */
+  html[data-design="gothic"].stage .center .map b { color: var(--gold); }
   html[data-design="gothic"].stage .center .vs { font-size: 34px; margin-bottom: 4px; }
   html[data-design="gothic"].stage .center .vs .mid { font-size: 28px; }
   html[data-design="gothic"].stage .center .sc div { font-size: 96px; }
