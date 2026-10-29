@@ -420,6 +420,9 @@
   html.rot .authlost .al1 { font-size: 40px; }
   .pmsel { display: flex; align-items: center; gap: 10px; justify-content: center; margin: 8px 0; font-size: 16px; } .pmsel select { font: inherit; font-size: 16px; padding: 6px 10px; border-radius: 8px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); min-width: 170px; }
   .hrn { margin: 8px 0 12px; }
+  .selcol .selhint.selbig { font-size: 44px; font-weight: 800; line-height: 1.4; color: var(--text); margin: 6px 0 20px; text-align: center; }
+  html.rot .selcol .selhint.selbig { font-size: 32px; }
+  .selcol .selhint.selmid { font-size: 22px; font-weight: 700; color: var(--text); margin: 0 0 12px; text-align: center; }
   .selcount { font-size: 14px; color: var(--gold); margin: -4px 0 10px; line-height: 1.6; }
   .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
   .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
@@ -1515,6 +1518,37 @@
       return refresh().then(render);
     }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); });
   }
+  // ───── 共感覚モードの確認（出場するサバイバー全員が、オフにして、OKを押す） ─────
+  function renderSync() {
+    var sy = S.sync, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, roster = (sd && sd.roster) || [];
+    var players = arr0(sy.players), inRoster = !!me && roster.indexOf(me) >= 0, mine = players.filter(function (p) { return p.k === me; })[0];
+    document.querySelector("main").classList.add("view");
+    var nt = $("notice"); nt.textContent = "";
+    nt.appendChild(el("div", "bar info", "👻 共感覚モードの確認"));
+    var work = $("work"); work.textContent = ""; $("pal").textContent = ""; $("bar").textContent = "";
+    var wrap = el("div", "selwrap"), col = el("div", "selcol s");
+    if (MY === "h") {
+      col.appendChild(el("h3", "", "🔴 ハンター側"));
+      col.appendChild(el("div", "selhint", "サバイバー側が、共感覚モードの確認をしています。しばらくお待ちください。"));
+    } else {
+      col.appendChild(el("h3", "", "🔵 サバイバー側"));
+      col.appendChild(el("div", "selhint selbig", "共感覚モード（脱落後の幽霊モード）をオフにしてください。"));
+      col.appendChild(el("div", "selhint selmid", "オフにしたら「OK」ボタンを押してください。（" + (sy.done || 0) + "/" + (sy.total || 0) + "）"));
+      col.appendChild(el("div", "selcount", "確認するメンバー（この枠に出場するサバイバー）"));
+      var tiles = el("div", "seltiles");
+      players.forEach(function (p) { tiles.appendChild(selTile(p, { on: !!p.ok, badge: p.ok ? "✅" : "⬜", me: p.k === me, dim: !p.ok && p.k !== me })); });
+      col.appendChild(tiles);
+      if (!inRoster) col.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
+    }
+    wrap.appendChild(col); work.appendChild(wrap);
+    if (MY !== "h" && inRoster && mine && !mine.ok) {
+      var go = el("button", "btn go", BUSY ? "データ送信中…" : "OK"); go.type = "button"; go.disabled = BUSY;
+      go.addEventListener("click", function () { selAct("sync_ok"); });
+      $("bar").appendChild(go);
+    }
+    var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
+    refreshSealed();
+  }
   function renderSelect() {
     var sel = S.select, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, side = MY;
     var SPL = arr0(sel.s && sel.s.players), HPL = arr0(sel.h && sel.h.players);                 // 空のリストは、公開の場所（Firebase）では、項目ごと消える：無いときは、空として扱う
@@ -1541,8 +1575,7 @@
         });
         if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend"); }];
       } else {
-        cs.appendChild(el("div", "selhint", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。"
-          : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを押して、「代表を確定」を押してください。出場する全員が、同じ人を選ぶと、代表が決まります。"));
+        cs.appendChild(el("div", sd.rep ? "selhint" : "selhint selbig", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。" : "出場する全員が同じ人を選ぶと、代表が決まります。"));
         var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
         var myVote = me ? votes[me] : null, pendVote = SELP.vote || myVote;
         if (SELP.vote && SELP.vote === myVote) SELP.vote = null;
@@ -1603,6 +1636,7 @@
     $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
     $("sub").textContent = S.title || "";
     if (S.select) { renderSelect(); return; }                                              // 選手選びの段階
+    if (S.sync) { renderSync(); return; }                                                  // 共感覚モードの確認
     document.querySelector("main").classList.toggle("view", !SIDE);
     var nt = $("notice"); nt.textContent = "";
     var b1 = el("div", "bar info");
@@ -1733,7 +1767,7 @@
       var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
-        || JSON.stringify([d.select, d.sealed, d.pm]) !== JSON.stringify([S.select, S.sealed, S.pm]);
+        || JSON.stringify([d.select, d.sealed, d.pm, d.sync]) !== JSON.stringify([S.select, S.sealed, S.pm, S.sync]);
       if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) softRender();
