@@ -460,6 +460,23 @@
   .pmod .pgrid { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
   .pmod .pbtn { border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--panel2); cursor: pointer; } .pmod .pbtn img { width: 58px; height: 58px; display: block; }
   .pmod .pbtn.on { border-color: var(--dz1); box-shadow: 0 0 12px var(--dz1); }
+  /* カスタム戦を開く人の「OK」：長押し（短く押すと、怒られる） */
+  .gatebox .card { text-align: center; max-width: 720px; } .gatebox .gt1 { font-size: 26px; font-weight: 800; color: var(--dz1); margin-bottom: 10px; line-height: 1.5; }
+  .gatebox .gt2 { font-size: 17px; line-height: 1.8; margin-bottom: 14px; } .gatebox .gt3 { font-size: 22px; font-weight: 800; color: var(--gold); margin-bottom: 16px; line-height: 1.6; }
+  .holdbtn { position: relative; overflow: hidden; padding: 16px 54px; font-size: 21px; font-weight: 800; border-radius: 12px; border: 2px solid var(--dz1); background: var(--panel2); color: var(--text); cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
+  .holdbtn .holdbar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: color-mix(in srgb, var(--dz1) 55%, transparent); } .holdbtn .holdlab { position: relative; }
+  .scary { position: absolute; inset: 0; z-index: 400; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 20px; animation: bp-shake .5s linear; }
+  .scary .sc1 { color: #ff1a1a; font-size: 46px; font-weight: 900; text-shadow: 0 0 14px #f00, 3px 3px 0 #500; letter-spacing: .04em; line-height: 1.4; animation: sc-pulse .8s ease-in-out infinite; }
+  .scary .sc2 { color: #ff2a2a; font-size: 30px; font-weight: 900; text-shadow: 0 0 10px #f00; line-height: 1.5; }
+  body.scaryon, html:has(body.scaryon) { background: #000 !important; } body.scaryon .mp-bar, body.scaryon #demoBar { display: none !important; }
+  .scary .scbtn[disabled] { opacity: .45; cursor: not-allowed; }
+  .scary .scbtn { margin-top: 16px; padding: 12px 34px; font-size: 20px; font-weight: 800; border: 2px solid #ff1a1a; background: #200; color: #ff6a6a; border-radius: 10px; cursor: pointer; }
+  @keyframes sc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  html.rot .scary .sc1 { font-size: 36px; } html.rot .scary .sc2 { font-size: 24px; }
+  .resform { margin-top: 8px; } .resform .btnrow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 8px 0; } .resform .btnrow .btn { padding: 10px 16px; font-size: 15px; }
+  .resform .hgrid { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 8px 0; } .resform h5 { margin: 10px 0 2px; text-align: center; font-size: 13px; color: var(--sub); }
+  .sp .chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; } .sp .chip { border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: 13.5px; }
+  .sp .chip.ok { border-color: var(--ok); color: var(--ok); }
   /* BAN/PICKのあとの案内（スクショ・確認待ち・カウントダウン・試合中） */
   .sp .card { max-width: 680px; width: 100%; max-height: 94%; overflow-y: auto; touch-action: none; }
   .sp .big { font-size: 28px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
@@ -746,6 +763,12 @@
   // 1ステップの時間：前回の入力からの経過を出し、目安（90秒）を超えたら、お知らせを出す（Discordの催促と同じ基準・同じ文）
   function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
   function tick() {
+    var ei = document.getElementById("endin");
+    if (ei && S && S.end_ok_at) {
+      var left = Math.ceil(S.end_ok_at - Date.now() / 1000), eb = document.getElementById("endbtn");
+      ei.textContent = left > 0 ? "試合終了を押せるまで あと " + mmss(left) + "（試合開始の3分後から）" : "✅ 試合終了を押せます";
+      if (eb && left <= 0 && !eb.dataset.sent) eb.disabled = false;
+    }
     var st = $("status"), lt = $("late");
     if (!S || S.status !== "active" || !S.since) { st.textContent = ""; st.className = ""; lt.hidden = true; return; }
     var e = Math.max(0, Math.floor(Date.now() / 1000 - S.since)), lim = S.limit || 90, over = e >= lim;
@@ -851,6 +874,134 @@
     if (canEdit) box.appendChild(el("div", "hint", "キャラをタップすると、人格をつけられます（自分の側だけに見えます）"));
     return box;
   }
+  // ───── カスタム戦を開く人の「OK」：ブラウザで、長押し（本人だけ）。短く押すと、怖い画面で怒られる ─────
+  function scary() {
+    if ($("scary")) return;
+    var s = el("div", "scary"); s.id = "scary";
+    s.appendChild(el("div", "sc1", "おい！適当にポチポチしてんじゃねぇ！"));
+    s.appendChild(el("div", "sc2", "大事なこと書いてるんだから読みなさい！💢💢💢"));
+    s.appendChild(el("div", "scwait", ""));                                               // ボタンの場所（5秒後に、ボタンが現れる）
+    $("stage").appendChild(s);
+    setTimeout(function () {                                                               // ボタンが現れるのは、5秒後（読む時間）
+      if (!s.parentNode) return;
+      var b = el("button", "scbtn", "ひぇー！ごめんなさい！！"); b.type = "button";
+      b.addEventListener("click", function () { s.remove(); document.body.classList.remove("scaryon"); });
+      s.replaceChild(b, s.querySelector(".scwait"));
+    }, 5000);
+    document.body.classList.add("scaryon");                                                // 画面の全体を、真っ黒に（音量のバーなども、隠す）
+  }
+  function buildGate() {
+    var old = $("gate");
+    if (!S || !S.gate) { if (old) old.remove(); return; }
+    if (old) return;                                                                      // 同じ状態では、作り直さない（長押しの途中で、消えないように）
+    var ov = el("div", "ask gatebox"), card = el("div", "card"); ov.id = "gate";
+    if (HOST && UID) {
+      card.appendChild(el("div", "gt1", "あなたがカスタム戦を開いてください。"));
+      card.appendChild(el("div", "gt2", "BAN/PICKを行っている間に、選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
+      card.appendChild(el("div", "gt3", "理解した場合は、OKボタンを長押ししてください。"));
+      var b = el("button", "holdbtn"), bar = el("span", "holdbar"), lab = el("span", "holdlab", "✅ OK（長押し）"), note = el("div", "note", "");
+      b.type = "button"; b.appendChild(bar); b.appendChild(lab);
+      var timer = null, t0 = 0, fired = false;
+      function reset() { clearTimeout(timer); timer = null; bar.style.transition = "none"; bar.style.width = "0%"; }
+      b.addEventListener("pointerdown", function (e) {
+        e.preventDefault(); fired = false; t0 = Date.now(); bar.style.transition = "none"; bar.style.width = "0%"; void bar.offsetWidth;
+        bar.style.transition = "width 2s linear"; bar.style.width = "100%";
+        timer = setTimeout(function () {
+          fired = true; reset(); lab.textContent = "送信しています…";
+          sendAct("roomok").then(function (res) {
+            if (res && res.ok) { lab.textContent = "✅ OKしました"; return refresh(); }
+            lab.textContent = "✅ OK（長押し）"; note.className = "note ng"; note.textContent = "⚠ " + ((res && res.error) || "BOTからの返事がありません。");
+          }).catch(function (e2) { lab.textContent = "✅ OK（長押し）"; note.className = "note ng"; note.textContent = "⚠ " + (e2.message || "つながりませんでした。"); });
+        }, 2000);
+      });
+      function release() { if (fired || !timer) return; var short = Date.now() - t0 < 2000; reset(); if (short) scary(); }
+      ["pointerup", "pointerleave", "pointercancel"].forEach(function (n) { b.addEventListener(n, release); });
+      b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      var row = el("div", "row"); row.appendChild(b); card.appendChild(note);
+      setTimeout(function () { if (ov.parentNode) card.insertBefore(row, note); }, 5000);          // OKボタンは、5秒間は、出さない（先に、よく読んでもらう）
+    } else {
+      card.appendChild(el("div", "gt1", (S.gate_name || "部屋を立てる人") + " さんが、カスタム戦を開く準備をしています。"));
+      card.appendChild(el("div", "gt2", "BAN/PICKは、そのあとに始まります（始まると、この画面は自動で進みます）。"));
+    }
+    ov.appendChild(card); $("stage").appendChild(ov);
+  }
+  // ───── 試合中：試合終了（サバイバー側・ハンター側の両方が押す。試合開始の3分後から）→結果の入力（両側が入力して、一致したら登録） ─────
+  var RES = { h: null, c: null, miss: 0 };
+  function hasResultFlow() { return !!(S && (S.expo || S.end_ok_at != null) && S.ended); }
+  function buildPlayPanel() {
+    var old = $("sp"); if (old) old.remove();
+    var old2 = $("spchip"); if (old2) old2.remove();
+    if (PANEL_MIN) {
+      var chip = el("button", "btn spchip", "◀ 案内を開く"); chip.id = "spchip"; chip.type = "button";
+      chip.addEventListener("click", function () { PANEL_MIN = false; buildPanel(); });
+      $("stage").appendChild(chip); return;
+    }
+    var ov = el("div", "ask sp"), card = el("div", "card"), mySide = SIDE === "s" ? "survivor" : SIDE === "h" ? "hunter" : "", rep = !!mySide && !!UID;
+    ov.id = "sp";
+    card.appendChild(el("div", "big", S.res_done ? "🏁 結果が登録されました" : "🏁 試合中"));
+    var note = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); note.id = "spnote";
+    if (S.res_done) {
+      var fin = S.res_final || {}, hc = CH[fin.hunter];
+      card.appendChild(el("div", "cdtxt", "ハンター：" + (hc ? hc.n : "?") + "｜" + fin.hangs + "吊り／" + (4 - fin.hangs) + "逃げ"));
+      if (S.expo && S.end_text) card.appendChild(el("div", "cdtxt", S.end_text));
+    } else {
+      var chips = el("div", "chips");
+      [["survivor", "🔵 サバイバー側"], ["hunter", "🔴 ハンター側"]].forEach(function (x) { chips.appendChild(el("div", "chip" + (S.ended[x[0]] ? " ok" : ""), x[1] + "：" + (S.ended[x[0]] ? "✅ 試合終了を押しました" : "⏳ まだ"))); });
+      card.appendChild(chips);
+      var both = S.ended.survivor && S.ended.hunter;
+      if (!both) {
+        card.appendChild(el("div", "cdtxt", "ゲームを始めてください。試合が終わったら、サバイバー側・ハンター側の**両方**の代表者が「試合が終了した」を押してください。".replace(/\*\*/g, "")));
+        var ei = el("div", "sub2", ""); ei.id = "endin"; card.appendChild(ei);
+        if (rep && !S.ended[mySide]) {
+          var eb = el("button", "btn go", "🏁 試合が終了した"); eb.type = "button"; eb.id = "endbtn"; eb.disabled = true;
+          eb.addEventListener("click", function () {
+            eb.disabled = true; spNote("", "送信しています…");
+            sendAct("end").then(function (res) { if (res && res.ok) SP_NOTE = { cls: "ok", text: "✅ 押しました。" }; else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; return refresh().then(buildPanel); })
+              .catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
+          });
+          var r0 = el("div", "row"); r0.appendChild(eb); card.appendChild(r0);
+        } else if (rep) card.appendChild(el("div", "sub2", "✅ 押しました。相手側の代表者が押すのを、待っています。"));
+        else card.appendChild(el("div", "sub2", "サバイバー側・ハンター側の代表者が、試合終了を押します。"));
+      } else {
+        var form = el("div", "resform");
+        card.appendChild(el("div", "cdtxt", "結果を入力してください。サバイバー側・ハンター側の**両方**が入力して、内容が一致したら、登録されます。".replace(/\*\*/g, "")));
+        if (S.res_mismatch) { if (RES.miss !== S.res_mismatch) { RES = { h: null, c: null, miss: S.res_mismatch }; } card.appendChild(el("div", "warn", "入力が一致しませんでした（" + S.res_mismatch + "回目）。お互いに確かめて、もう一度入力してください。")); }
+        if (rep && !S.res_in[mySide]) {
+          if (RES.c == null && S.hunter_pick != null) RES.c = S.hunter_pick;                                  // 初期は、BAN/PICKでPICKしたハンター
+          form.appendChild(el("h5", "", "吊り数（逃げ数）"));
+          var br = el("div", "btnrow");
+          for (var n = 0; n <= 4; n++) (function (n) {
+            var b = el("button", "btn" + (RES.h === n ? " go" : ""), n + "吊り／" + (4 - n) + "逃げ"); b.type = "button";
+            b.addEventListener("click", function () { RES.h = n; buildPanel(); }); br.appendChild(b);
+          })(n);
+          form.appendChild(br);
+          form.appendChild(el("h5", "", "ハンターが実際に使用したハンター"));
+          var hg = el("div", "hgrid");
+          ((S.chars && S.chars.h) || []).forEach(function (x) {
+            var ch = CH[x.id]; if (!ch) return;
+            var tg = makeTag(ch, RES.c === ch.id ? "" : "gray"); tg.addEventListener("click", function () { RES.c = ch.id; buildPanel(); }); hg.appendChild(tg);
+          });
+          form.appendChild(hg);
+          var sb = el("button", "btn go", "📨 この内容で入力する"); sb.type = "button"; sb.disabled = RES.h == null || RES.c == null;
+          sb.addEventListener("click", function () {
+            sb.disabled = true; spNote("", "送信しています…");
+            sendAct("result", { hangs: RES.h, hunter: RES.c }).then(function (res) {
+              if (res && res.ok) SP_NOTE = { cls: "ok", text: res.status === "wait" ? "✅ 入力しました。相手側の入力を待っています。" : "" }; else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") };
+              return refresh().then(buildPanel);
+            }).catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
+          });
+          var r1 = el("div", "row"); r1.appendChild(sb); form.appendChild(r1);
+        } else if (rep) form.appendChild(el("div", "sub2", "✅ 入力しました。相手側の入力を、待っています。"));
+        else form.appendChild(el("div", "sub2", "サバイバー側・ハンター側の代表者が、結果を入力しています。"));
+        card.appendChild(form);
+      }
+    }
+    card.appendChild(note);
+    var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
+    mn.addEventListener("click", function () { PANEL_MIN = true; buildPanel(); }); rowm.appendChild(mn); card.appendChild(rowm);
+    ov.appendChild(card); $("stage").appendChild(ov);
+    tick();
+  }
   var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
   var GO_AT = 0, SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
   function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
@@ -902,6 +1053,10 @@
   function buildPanel() {
     var stg = stageNow();
     if (stg && !panelGate()) return;
+    if (stg === "play" && hasResultFlow()) {                                              // 試合終了・結果の入力まで、ブラウザで
+      if (GO_AT && Date.now() - GO_AT < 4000) { setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50); return; }       // 「試合開始！」を、4秒は見せてから
+      buildPlayPanel(); return;
+    }
     if (stg === "play" && PLAY_AT) return;                                               // 試合中の案内は、出したままにする
     if (stg === "play" && GO_AT && Date.now() - GO_AT < 4000) {                          // 「試合開始！」を、4秒は見せてから、次の案内へ
       setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50);
@@ -1100,7 +1255,7 @@
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; bar.appendChild(m);
     S.steps.forEach(function (s, i) { if (s.set) SEEN[i] = true; }); FIRSTR = false;
-    tick(); refreshSealed(); buildPanel();
+    tick(); refreshSealed(); buildPanel(); buildGate();
   }
   function pick(id, ok) {
     var c = cur(); if (!c || BUSY) return;
@@ -1151,7 +1306,8 @@
   function refresh() {
     return getJson(DATA_URL + "?t=" + Date.now()).then(function (d) {
       if (!d || d.kind !== "bp") { stopped(); return; }
-      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending;
+      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
+        || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done]);
       if (changed) { SEL = []; NEWSTEP = true; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) render();
