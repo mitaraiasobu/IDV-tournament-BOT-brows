@@ -379,6 +379,13 @@
 
   /* ───── BAN/PICKの入力ページ（LABと同じ作り：左＝名札置き場／右＝目線の枠。足りないものだけ、足す） ───── */
   #notice .bar.info { background: var(--panel); border: 1px solid var(--line); color: var(--text); }
+  #notice .bar.waiting { position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; }
+  .wspin { display: inline-block; animation: wspin 1.6s ease-in-out infinite; }
+  .wdots i { font-style: normal; font-size: 9px; margin-left: 4px; display: inline-block; animation: wdot 1.2s ease-in-out infinite; } .wdots i:nth-child(2) { animation-delay: .2s; } .wdots i:nth-child(3) { animation-delay: .4s; }
+  .wshine { position: absolute; left: 0; bottom: 0; height: 3px; width: 35%; background: linear-gradient(90deg, transparent, var(--ac), transparent); animation: wshine 1.8s linear infinite; }
+  @keyframes wspin { 0% { transform: rotate(0); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+  @keyframes wdot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
+  @keyframes wshine { 0% { left: -35%; } 100% { left: 100%; } }
   #notice .bar.my { background: #4a3d0a; border: 1px solid var(--gold); color: #ffe48a; }
   #notice .bar b.s { color: #7db4ff; } #notice .bar b.h { color: #ff8a99; }
   #work { touch-action: none; overscroll-behavior: contain; position: relative; }
@@ -1053,8 +1060,10 @@
   function buildGate() {
     var old = $("gate");
     if (!S || !S.gate) { if (old) old.remove(); return; }
-    if (old) return;                                                                      // 同じ状態では、作り直さない（長押しの途中で、消えないように）
-    var ov = el("div", "ask gatebox"), card = el("div", "card"); ov.id = "gate";
+    var hostNow = HOST && UID ? "1" : "0";
+    if (old && old.getAttribute("data-host") === hostNow) return;                           // 同じ状態では、作り直さない（長押しの途中で、消えないように）
+    if (old) old.remove();                                                                 // 部屋を立てる人と分かったら、ボタンつきに作り直す
+    var ov = el("div", "ask gatebox"), card = el("div", "card"); ov.id = "gate"; ov.setAttribute("data-host", hostNow);
     if (HOST && UID) {
       card.appendChild(el("div", "gt1", (S.gate_name || "") + "がカスタム戦を開いてください。"));
       card.appendChild(el("div", "gt2", "BAN/PICKを行っている間に、選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
@@ -1237,12 +1246,21 @@
     card.appendChild(picksBlock(true));
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot") {
-      card.appendChild(el("div", "sub2", "次の順に進めてください。"));
+      var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
+      card.appendChild(el("div", "sub2", "このページで、スクショを選んで「送信する」を押します（DMではなく、Discordのチャンネルに直接、投稿されます）。"));
+      card.appendChild(el("div", "sub2", "⬇"));
       var ol = el("ol");
-      ["選手を呼び、モードを設定し、試合が始められる状態にします。",
-       "対戦画面をスクショします。", "このページで、スクショを選んで「送信する」を押します（DMではなく、Discordのチャンネルに直接、投稿されます）。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
+      ["カスタム戦【試合モード】でサバイバーBAN0 ハンターBAN0、スポーン選択オンに設定してください。※必ず試合モードにしてください！",
+       "マップを" + (mapName || "（選ばれたマップ）") + "に設定してください。",
+       "自チーム選手を試合モードに呼んでください。",
+       S.hunter_dummy ? "敵ハンターを招待するために「" + (S.room_name || "") + "」という名前で公開募集を行ってください。（今回はハンターが不在（ダミー）なので、募集せずそのまま進んでください）"
+                      : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。",
+       "準備が出来たらゲームの準備画面をスクショします。それをモデレーターが確認します。"].forEach(function (x) { ol.appendChild(el("li", "", x)); });
       card.appendChild(ol);
-      if (S.opener) card.appendChild(el("div", "cdtxt", "📸 スクショを送る人：" + S.opener + " さん（部屋を立てた人）"));
+      if (S.opener) { card.appendChild(el("div", "big", S.opener + "さん、試合モードを開いて")); card.appendChild(el("div", "big", "スクショを送ってください")); }
+      else card.appendChild(el("div", "big", "試合モードを開いて、スクショを送ってください"));
+      card.appendChild(el("div", "sub2", "モデレーターが確認すると次に進めます。"));
+      if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
       if (can && (!S.opener || HOST)) {
         var inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.style.display = "none"; inp.id = "shotfile";
@@ -1267,7 +1285,7 @@
         if (SHOT_IMG) { var im = el("img", "prev"); im.src = SHOT_IMG; card.appendChild(im); }
         var row = el("div", "row"); row.appendChild(inp); row.appendChild(pick); row.appendChild(snd);
         if (S.expo) {                                                                         // 体験会：送れなくても、進める
-          var sk = el("button", "btn", "送れない（このまま進む）"); sk.type = "button"; sk.disabled = SHOT_BUSY;
+          var sk = el("button", "btn", "何も送らずに進む"); sk.type = "button"; sk.disabled = SHOT_BUSY;
           sk.addEventListener("click", function () {
             SHOT_BUSY = true; buildPanel(); spNote("", "進めています…");
             sendAct("shot_skip").then(function (res) { SHOT_BUSY = false; if (!(res && res.ok)) SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; return refresh().then(buildPanel); })
@@ -1358,7 +1376,8 @@
     if (!musicInit) {
       musicInit = true;
       MusicPlayer.init({ ui: true, volume: 0.2 });                                          // 初期は、20%の音量（右上のバーで、変えられる）
-      var ms = document.createElement("style"); ms.textContent = ".mp-bar{left:auto !important;right:8px;top:5px;bottom:auto !important} header{padding-right:200px !important}";   // 右上に置く：ヘッダーの右側を空けて、何にも被らないようにする document.head.appendChild(ms);
+      // 右上に置く：ヘッダーの右側を空けて、何にも被らないようにする
+      var ms = document.createElement("style"); ms.textContent = ".mp-bar{left:auto !important;right:8px;top:5px;bottom:auto !important} header{padding-right:290px !important}"; document.head.appendChild(ms);
       setTimeout(placeMusicBar, 0);
     }
     MusicPlayer.set(S.music || null, { fade: 600 });
@@ -1417,7 +1436,7 @@
         if (!inRoster) cs.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
       }
     } else {
-      cs.appendChild(el("div", "selhint", side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
+      cs.appendChild(el("div", "selhint", !sel.s.players.length ? "サバイバー側に人がいません（ダミーが自動で入ります）。" : side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
       sel.s.players.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
     }
     cs.appendChild(tiles); wrap.appendChild(cs);
@@ -1439,7 +1458,12 @@
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
     tick(); refreshSealed();
   }
+  function detectHost() {                                                                // 部屋を立てる人かは、URLの印ではなく、側ごとの秘密（自分の側の鍵で開く）からも、分かる
+    var sd = OPENED.data && OPENED.data.sel;
+    if (!HOST && sd && sd.who && UID && sd.host && sd.who[UID] === sd.host) HOST = true;
+  }
   function upgradeRole() {                                                                // 選手選びで代表になった人は、同じURLのまま、代表として操作できるようにする
+    detectHost();
     var sd = OPENED.data && OPENED.data.sel;
     if (!sd || SIDE || !VIEW || !UID || !sd.who) return;
     var me = sd.who[UID];
@@ -1465,8 +1489,16 @@
     b1.appendChild(document.createTextNode(me)); nt.appendChild(b1);
     var st = S.status !== "active" ? "✅ BAN/PICKは完了しました。Discordの案内に進んでください。"
            : S.wait ? "⏳ " + S.wait
-           : myTurn() ? "👉 あなたの番です：名札をタップして選び、「確定」を押してください。" : "⏳ " + SIDE_NAME[S.side] + "側の入力を待っています…";
-    nt.appendChild(el("div", "bar " + (myTurn() ? "my" : "info"), st));
+           : myTurn() ? "👉 あなたの番です：名札をタップして選び、「確定」を押してください。" : "";
+    if (st) nt.appendChild(el("div", "bar " + (myTurn() ? "my" : "info"), st));
+    else {                                                                                  // 相手の側の操作中：止まっていると思われないように、動くお知らせ（体験会でも、動かす）
+      var wb = el("div", "bar info waiting");
+      wb.appendChild(el("span", "wspin", "⏳"));
+      wb.appendChild(el("span", "", "現在は" + SIDE_NAME[S.side] + "の操作中です"));
+      var dots = el("span", "wdots"); for (var di = 0; di < 3; di++) dots.appendChild(el("i", "", "●")); wb.appendChild(dots);
+      wb.appendChild(el("span", "wshine"));
+      nt.appendChild(wb);
+    }
     if (SIDE) { if (!$("palGrid")) buildPal(); fillPal(); }
     var work = $("work"), top = work.scrollTop; work.textContent = "";
     var corner = el("div", "corner " + v), chd = el("div", "chd");
