@@ -415,7 +415,7 @@
   .drop.col0 { min-height: 84px; }
   .cbar { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px solid var(--line); background: var(--bg); }
   .cbar .btn { padding: 13px 40px; font-size: 18px; } .cbar .btn.go { background: var(--ac); color: var(--ac-on); border-color: var(--ac); font-weight: 800; } .cbar .btn[disabled] { opacity: .5; }
-  .selwrap { display: flex; gap: 18px; flex-wrap: wrap; padding: 6px 4px 20px; } .selcol { flex: 1 1 320px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+  .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
   .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 4px; font-size: 15px; } .selcol .selhint { font-size: 13px; color: var(--sub); line-height: 1.6; margin: 0 0 10px; }
   .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
   .seltile { position: relative; width: 92px; text-align: center; padding: 8px 4px 6px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel2); user-select: none; }
@@ -1400,13 +1400,14 @@
     if (o.click) tl.addEventListener("click", o.click);
     return tl;
   }
+  var SELP = {};                                                                           // 選びかけの内容（「確定」を押すまで、送らない）：att＝出場する／しない、vote＝代表にしたい人、hunter＝ハンターの選手
   function selAct(act, k) {
     if (BUSY) return;
-    BUSY = true;
+    BUSY = true; render();
     sendAct(act, k ? { k: k } : {}).then(function (res) {
       BUSY = false;
-      if (!(res && res.ok)) msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); else msg("", "");
-      return refresh();
+      if (!(res && res.ok)) msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); else { msg("", ""); SELP = {}; }
+      return refresh().then(render);
     }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); });
   }
   function renderSelect() {
@@ -1417,7 +1418,7 @@
     nt.appendChild(el("div", "bar info", "🎯 試合開始｜プレイする選手を選んでください（" + (side === "h" ? "ハンター側" : "サバイバー側") + "）"));
     var st = el("div"); st.id = "selstat"; nt.appendChild(st);
     var work = $("work"); work.textContent = ""; $("pal").textContent = ""; $("bar").textContent = "";
-    var wrap = el("div", "selwrap");
+    var wrap = el("div", "selwrap"), confirmBtn = null;
     // サバイバー側
     var cs = el("div", "selcol s"); cs.appendChild(el("h3", "", "🔵 サバイバー側"));
     var tiles = el("div", "seltiles");
@@ -1425,38 +1426,53 @@
       var roster = sd.roster || [], att = sd.att || [], votes = sd.votes || {}, need = (sel.s && sel.s.need) || 1;
       var inRoster = !!me && roster.indexOf(me) >= 0;
       if (!sd.locked) {
-        cs.appendChild(el("div", "selhint", "出場する人は、自分のアイコンを押してください（もう一度押すと、取り消せます）。　出場：" + att.length + "/" + need + "人"));
-        SPL.forEach(function (p) { tiles.appendChild(selTile(p, { on: att.indexOf(p.k) >= 0, badge: att.indexOf(p.k) >= 0 ? "✔" : "", me: p.k === me, click: p.k === me ? function () { selAct("sel_attend"); } : null, dim: p.k !== me && att.indexOf(p.k) < 0 })); });
+        var srvAtt = att.indexOf(me) >= 0, pendAtt = SELP.att == null ? srvAtt : SELP.att;
+        if (pendAtt === srvAtt) SELP.att = null;
+        cs.appendChild(el("div", "selhint", "出場する人は、自分のアイコンを押して、「確定」を押してください。　出場：" + att.length + "/" + need + "人"));
+        SPL.forEach(function (p) {
+          var isMe = p.k === me, on = isMe ? pendAtt : att.indexOf(p.k) >= 0;
+          tiles.appendChild(selTile(p, { on: on, badge: on ? "✔" : "", me: isMe, click: isMe && !BUSY ? function () { SELP.att = !pendAtt; render(); } : null, dim: !isMe && !on }));
+        });
+        if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend"); }];
       } else {
         cs.appendChild(el("div", "selhint", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。"
           : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを、全員で押してください（全員が同じ人を押すと決まります）。"));
         var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
+        var myVote = me ? votes[me] : null, pendVote = SELP.vote || myVote;
+        if (SELP.vote && SELP.vote === myVote) SELP.vote = null;
         SPL.filter(function (p) { return roster.indexOf(p.k) >= 0; }).forEach(function (p) {
-          tiles.appendChild(selTile(p, { on: sd.rep === p.k || (me && votes[me] === p.k), badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
-            click: inRoster && !sd.rep ? function () { selAct("sel_vote", p.k); } : null }));
+          tiles.appendChild(selTile(p, { on: sd.rep === p.k || pendVote === p.k, badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
+            click: inRoster && !sd.rep && !BUSY ? function () { SELP.vote = p.k; render(); } : null }));
         });
+        if (inRoster && !sd.rep && SELP.vote && SELP.vote !== myVote) confirmBtn = ["代表を確定", function () { selAct("sel_vote", SELP.vote); }];
         if (!inRoster) cs.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
       }
     } else {
       cs.appendChild(el("div", "selhint", !SPL.length ? "サバイバー側に人がいません（ダミーが自動で入ります）。" : side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
       SPL.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
     }
-    cs.appendChild(tiles); wrap.appendChild(cs);
+    cs.appendChild(tiles); if (side !== "h") wrap.appendChild(cs);                          // 自分の陣営だけ見せる（相手の陣営は、出さない）
     // ハンター側
     var ch = el("div", "selcol h"); ch.appendChild(el("h3", "", "🔴 ハンター側"));
     var t2 = el("div", "seltiles");
     if (!HPL.length) ch.appendChild(el("div", "selhint", "ハンター側に人がいません（ダミーが自動で入ります）。"));
     else if (side === "h" && sd) {
       var hp = sd.hp;
-      ch.appendChild(el("div", "selhint", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押してください。"));
-      HPL.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: hp === p.k, badge: hp === p.k ? "✔" : "", me: p.k === me, click: !hp ? function () { selAct("sel_hunter", p.k); } : null })); });
+      ch.appendChild(el("div", "selhint", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押して、「確定」を押してください。"));
+      var pendH = hp || SELP.hunter;
+      HPL.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: pendH === p.k, badge: pendH === p.k ? "✔" : "", me: p.k === me, click: !hp && !BUSY ? function () { SELP.hunter = p.k; render(); } : null })); });
+      if (!hp && SELP.hunter) { var hk = SELP.hunter; confirmBtn = ["確定", function () { ask("この選手で確定します。確定すると、取り消せません。よろしいですか？", function () { selAct("sel_hunter", hk); }); }]; }
       if (hp && me !== hp) ch.appendChild(el("div", "selspec", "👀 観戦モード（選ばれなかった人は、見るだけです）"));
     } else {
       ch.appendChild(el("div", "selhint", side === "h" ? "読み込んでいます…" : "ハンター側が、選んでいます（プレイする選手は、サバイバー側が決まるまで、非公開です）。"));
       HPL.forEach(function (p) { t2.appendChild(selTile(p, { dim: true })); });
     }
-    ch.appendChild(t2); wrap.appendChild(ch);
+    ch.appendChild(t2); if (side !== "s") wrap.appendChild(ch);
     work.appendChild(wrap);
+    if (confirmBtn) {
+      var go = el("button", "btn go", BUSY ? "送信しています…" : confirmBtn[0]); go.type = "button"; go.disabled = BUSY;
+      go.addEventListener("click", confirmBtn[1]); $("bar").appendChild(go);
+    }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
     tick(); refreshSealed();
   }
