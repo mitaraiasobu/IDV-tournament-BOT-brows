@@ -1389,6 +1389,7 @@
     e.style.fontSize = n > 16 ? "8.5px" : n > 12 ? "9.5px" : n > 9 ? "10.5px" : "";
     e.title = name;
   }
+  function arr0(x) { return Array.isArray(x) ? x : (x && typeof x === "object" ? Object.keys(x).map(function (k) { return x[k]; }) : []); }
   function selTile(p, o) {
     var tl = el("div", "seltile" + (o.click ? " click" : "") + (o.on ? " on" : "") + (o.dim ? " dim" : "")), av = el("div", "av");
     if (p.a) { var im = el("img"); im.src = p.a; im.alt = ""; av.appendChild(im); } else av.textContent = (p.n || "?").charAt(0);
@@ -1410,6 +1411,7 @@
   }
   function renderSelect() {
     var sel = S.select, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, side = MY;
+    var SPL = arr0(sel.s && sel.s.players), HPL = arr0(sel.h && sel.h.players);                 // 空のリストは、公開の場所（Firebase）では、項目ごと消える：無いときは、空として扱う
     document.querySelector("main").classList.add("view");
     var nt = $("notice"); nt.textContent = "";
     nt.appendChild(el("div", "bar info", "🎯 試合開始｜プレイする選手を選んでください（" + (side === "h" ? "ハンター側" : "サバイバー側") + "）"));
@@ -1420,38 +1422,38 @@
     var cs = el("div", "selcol s"); cs.appendChild(el("h3", "", "🔵 サバイバー側"));
     var tiles = el("div", "seltiles");
     if (side === "s" && sd) {
-      var roster = sd.roster || [], att = sd.att || [], votes = sd.votes || {}, need = sel.s.need || 1;
+      var roster = sd.roster || [], att = sd.att || [], votes = sd.votes || {}, need = (sel.s && sel.s.need) || 1;
       var inRoster = !!me && roster.indexOf(me) >= 0;
       if (!sd.locked) {
         cs.appendChild(el("div", "selhint", "出場する人は、自分のアイコンを押してください（もう一度押すと、取り消せます）。　出場：" + att.length + "/" + need + "人"));
-        sel.s.players.forEach(function (p) { tiles.appendChild(selTile(p, { on: att.indexOf(p.k) >= 0, badge: att.indexOf(p.k) >= 0 ? "✔" : "", me: p.k === me, click: p.k === me ? function () { selAct("sel_attend"); } : null, dim: p.k !== me && att.indexOf(p.k) < 0 })); });
+        SPL.forEach(function (p) { tiles.appendChild(selTile(p, { on: att.indexOf(p.k) >= 0, badge: att.indexOf(p.k) >= 0 ? "✔" : "", me: p.k === me, click: p.k === me ? function () { selAct("sel_attend"); } : null, dim: p.k !== me && att.indexOf(p.k) < 0 })); });
       } else {
         cs.appendChild(el("div", "selhint", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。"
           : "出場する選手が決まりました。この中から、代表にしたい人のアイコンを、全員で押してください（全員が同じ人を押すと決まります）。"));
         var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
-        sel.s.players.filter(function (p) { return roster.indexOf(p.k) >= 0; }).forEach(function (p) {
+        SPL.filter(function (p) { return roster.indexOf(p.k) >= 0; }).forEach(function (p) {
           tiles.appendChild(selTile(p, { on: sd.rep === p.k || (me && votes[me] === p.k), badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
             click: inRoster && !sd.rep ? function () { selAct("sel_vote", p.k); } : null }));
         });
         if (!inRoster) cs.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
       }
     } else {
-      cs.appendChild(el("div", "selhint", !sel.s.players.length ? "サバイバー側に人がいません（ダミーが自動で入ります）。" : side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
-      sel.s.players.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
+      cs.appendChild(el("div", "selhint", !SPL.length ? "サバイバー側に人がいません（ダミーが自動で入ります）。" : side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
+      SPL.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
     }
     cs.appendChild(tiles); wrap.appendChild(cs);
     // ハンター側
     var ch = el("div", "selcol h"); ch.appendChild(el("h3", "", "🔴 ハンター側"));
     var t2 = el("div", "seltiles");
-    if (!sel.h.players.length) ch.appendChild(el("div", "selhint", "ハンター側に人がいません（ダミーが自動で入ります）。"));
+    if (!HPL.length) ch.appendChild(el("div", "selhint", "ハンター側に人がいません（ダミーが自動で入ります）。"));
     else if (side === "h" && sd) {
       var hp = sd.hp;
       ch.appendChild(el("div", "selhint", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押してください。"));
-      sel.h.players.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: hp === p.k, badge: hp === p.k ? "✔" : "", me: p.k === me, click: !hp ? function () { selAct("sel_hunter", p.k); } : null })); });
+      HPL.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: hp === p.k, badge: hp === p.k ? "✔" : "", me: p.k === me, click: !hp ? function () { selAct("sel_hunter", p.k); } : null })); });
       if (hp && me !== hp) ch.appendChild(el("div", "selspec", "👀 観戦モード（選ばれなかった人は、見るだけです）"));
     } else {
       ch.appendChild(el("div", "selhint", side === "h" ? "読み込んでいます…" : "ハンター側が、選んでいます（プレイする選手は、サバイバー側が決まるまで、非公開です）。"));
-      sel.h.players.forEach(function (p) { t2.appendChild(selTile(p, { dim: true })); });
+      HPL.forEach(function (p) { t2.appendChild(selTile(p, { dim: true })); });
     }
     ch.appendChild(t2); wrap.appendChild(ch);
     work.appendChild(wrap);
