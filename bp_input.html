@@ -525,6 +525,8 @@
   .picks .prow { display: flex; gap: 6px; justify-content: center; } .picks .pk { display: flex; flex-direction: column; align-items: center; }
   .picks .marks { min-height: 24px; display: flex; gap: 2px; margin-top: 2px; } .picks .marks img { width: 24px; height: 24px; }
   .picks .tag.edit { cursor: pointer; outline: 1px dashed var(--dz1); } .picks .lockbox { width: 66px; min-height: 78px; border: 2px solid var(--line); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; opacity: .75; }
+  .picks .mapname { font-size: 44px; font-weight: 900; line-height: 1.2; text-align: center; padding: 8px 4px 10px; color: var(--gold); text-shadow: 0 0 16px rgba(0, 0, 0, .7); overflow-wrap: anywhere; }
+  html.rot .picks .mapname { font-size: 34px; padding: 2px 4px 4px; }
   .picks.v { flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-items: stretch; gap: 12px; margin: 0; }
   .picks.v .grp { padding: 8px 12px 10px; } .picks.v .prow { flex-wrap: nowrap; }
   .sppick { position: absolute; z-index: 201; left: 16px; top: 16px; bottom: 16px; width: min(400px, 40%); box-sizing: border-box; overflow-y: auto; padding: 12px; background: var(--panel); border: 2px solid var(--line); border-radius: 12px; }
@@ -535,6 +537,7 @@
   .ask.sp.split { padding-left: calc(min(400px, 40%) + 32px); }
   .ask.sp.split .card { flex: 1 1 auto; max-width: none; max-height: 100%; }
   .picks .hint { font-size: 12px; color: var(--sub); text-align: center; flex-basis: 100%; }
+  .ask.pmod { z-index: 400; }                                                          /* 左のPICKの枠（z-index 201）より、上 */
   .pmod .card { max-width: 480px; } .pmod .pt { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 4px; } .pmod .pn { text-align: center; font-size: 12.5px; color: var(--sub); }
   .pmod .pgrid { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
   .pmod .pbtn { border: 2px solid var(--line); border-radius: 10px; padding: 6px; background: var(--panel2); cursor: pointer; } .pmod .pbtn img { width: 58px; height: 58px; display: block; }
@@ -1167,7 +1170,7 @@
   function personaMenu(side, id) {
     var ov = el("div", "ask pmod"), card = el("div", "card"), ch = CH[id];
     card.appendChild(el("div", "pt", (ch ? ch.n : "") + " の人格"));
-    card.appendChild(el("div", "pn", "つけた人格は、自分の側だけに見えます（相手には、バレません）。2つまで。"));
+    card.appendChild(el("div", "pn", "人格設定は相談用に表示しているだけであり、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
     var grid = el("div", "pgrid");
     function paint() {
       grid.textContent = "";
@@ -1210,7 +1213,7 @@
     var hp = myHunterPick(), hunterSet = S.steps.some(function (s) { return s.t === "h" && s.a === "p" && s.set; });
     if (vertical) {                                                                         // 縦：マップPICK → ハンターPICK → サバイバーPICK4人（横並び）
       var mp = null; S.steps.forEach(function (s) { if (s.t === "m" && s.a === "p" && s.ids && s.ids[0] != null) mp = s.ids[0]; });
-      if (mp != null) { var mg = group("m", "🗺 マップPICK", [mp], false); box.appendChild(mg); }
+      if (mp != null && CH[mp]) { var mg = el("div", "grp m"); mg.appendChild(el("h5", "", "🗺 マップPICK")); mg.appendChild(el("div", "mapname", CH[mp].n)); box.appendChild(mg); }       // マップは、名札ではなく、名前を、大きな文字で
       if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンターPICK" : "🔴 ハンターPICK（非公開）", hp != null ? [hp] : [], hp == null));
       box.appendChild(group("s", "🔵 サバイバーPICK", sv, false));
     } else {
@@ -1356,6 +1359,10 @@
   function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
   // ───── 認証が切れたとき：画面いっぱいに、大きく、やることを出す ─────
   function isAuthLost(res) { return !!(res && !res.ok && /このURLでは、操作できません/.test(res.error || "")); }
+  function inboxErr(status) {                                                            // 受け箱に書けなかった：閉じた部屋（体験会は、操作がないまま5分で閉じる）なら、そう伝える
+    if (status === 401 || status === 403 || status === 404) return S && S.expo ? "この部屋は、操作がないまま5分たったので、閉じました。Discordで、もう一度、部屋を作ってください。" : "このBAN/PICKのページは、もう閉じています（終わったか、やり直されました）。";
+    return "送れませんでした（" + status + "）";
+  }
   function showAuthLost() {
     if ($("authlost")) return;
     var ov = el("div", "authlost"); ov.id = "authlost";
@@ -1366,7 +1373,7 @@
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     var body = { side: LETTER, uid: UID, tok: TOK, act: act }; for (var k in (extra || {})) body[k] = extra[k];
     return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: body } }) })
-      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 30); })
+      .then(function (r) { if (!r.ok) throw new Error(inboxErr(r.status)); return waitResult(nonce, 30); })
       .then(function (res) { if (isAuthLost(res)) showAuthLost(); return res; });
   }
   function shrinkImage(file, cb) {                                                       // スクショを、JPEGに縮める（幅1600px以内・約1.3MB以内）
@@ -1543,22 +1550,20 @@
       card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
     } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
+      var hinfo = OPENED.data && OPENED.data.hinfo;                                           // 敵ハンターの名前とID（正しい相手か、確かめるため。サバイバー側にだけ見える）
       var ol = el("ol");
-      ["カスタム戦【試合モード】でサバイバーBAN0 ハンターBAN0、スポーン選択オンに設定してください。※必ず試合モードにしてください！",
+      ["カスタム戦【試合モード】でサバイバーBANを0個、ハンターBANを0個にし、スポーン選択オンに設定してください。※必ず試合モードにしてください！",
        "マップを" + (mapName || "（選ばれたマップ）") + "に設定してください。",
        "自チーム選手を試合モードに呼んでください。",
        S.hunter_dummy ? "敵ハンターを招待するために「" + (S.room_name || "") + "」という名前で公開募集を行ってください。（今回はハンターが不在（ダミー）なので、募集せずそのまま進んでください）"
-                      : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。",
-       "準備が出来たらゲームの準備画面をスクショします。それをモデレーターが確認します。",
-       ["スクリーンショットを送ったあと、", "モデレーターが確認し、カウントダウンが始まるまではまだ試合を始めないでください。"]].forEach(function (x) {
-        var li = el("li", "");                                                                  // 強調したい部分は、カッコではなく、色つきの下線
-        if (Array.isArray(x)) { li.appendChild(document.createTextNode(x[0])); li.appendChild(el("span", "emph", x[1])); } else li.textContent = x;
-        ol.appendChild(li);
+                      : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。"
+                        + (hinfo ? "ハンター名：" + (hinfo.name || "") + "　ID：" + (hinfo.id || "") + "　※正しい相手か必ず確認してください。" : ""),
+       "全員揃ったらゲームの準備画面をスクショします。それをモデレーターが確認し、必要な場合はキャスターが観戦に入ります。"].forEach(function (x) {
+        ol.appendChild(el("li", "", x));
       });
       card.appendChild(ol);
-      if (S.opener) { card.appendChild(el("div", "big", S.opener + "さん、試合モードを開いて")); card.appendChild(el("div", "big", "スクショを送ってください")); }
-      else card.appendChild(el("div", "big", "試合モードを開いて、スクショを送ってください"));
-      card.appendChild(el("div", "sub2", "モデレーターが確認すると次に進めます。"));
+      card.appendChild(el("div", "big", (S.opener ? S.opener + "さん、" : "") + "準備をしてスクショを送ってください"));
+      card.appendChild(el("div", "big", "カウントダウンが始まるまでは試合を始めないでください"));                    // 大きな文字
       holdNote(card);
       if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
@@ -1931,7 +1936,7 @@
     BUSY = true; render(); msg("", "データ送信中…");
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: { side: SIDE, uid: UID, tok: TOK, ids: SEL, slots: SEL.map(function (id) { return PSLOT[id] != null ? PSLOT[id] : -1; }) } } }) })
-      .then(function (r) { if (!r.ok) throw new Error("送れませんでした（" + r.status + "）"); return waitResult(nonce, 25); })
+      .then(function (r) { if (!r.ok) throw new Error(inboxErr(r.status)); return waitResult(nonce, 25); })
       .then(function (res) {
         BUSY = false;
         if (isAuthLost(res)) showAuthLost();
