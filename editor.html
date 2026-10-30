@@ -86,6 +86,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
     </div>
     <div id="tab-time" hidden>
+      <div class="row" id="shareRow"><button id="share" type="button" class="primary">📣 時間の設定を共有</button><span class="note">いまの設定を保存して、下の「全体の流れ」を、キャスターとモデレーターに、Discordで知らせます（「💾 保存」とは、別のボタンです）。</span></div>
       <h2>時間の設定（この大会だけ）</h2>
       <div class="card" id="timeform"></div>
       <h2>全体の流れ（開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで。自動で計算します）</h2>
@@ -312,6 +313,8 @@
   }
   // ───────── ⏱ 時間管理（大会ごとに別。トーナメント表の時間は、ここでは変わらない）
   function pad(n) { return (n < 10 ? "0" : "") + n; }
+  var TLEV = [];
+  function ymdhm(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + hhmm(d); }
   function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function hhmmss(d) { return hhmm(d) + ":" + pad(d.getSeconds()); }
   function dayLabel(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
@@ -389,9 +392,10 @@
     var last = null;
     (TM.matches || []).forEach(function (m) {
       var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.casters || 2;
-      var it = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), itStart = play ? addSec(play, -it) : null;
+      var it = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), itStart = prep ? addSec(prep, TM.margin_sec) : null, itEnd = itStart ? addSec(itStart, it - TM.margin_sec) : null;      // 紹介は、BAN/PICKの開始の10秒あとに始まる
       add(prep, m.label + "：BAN/PICKの開始", "試合担当のキャスターを、キャスター用ボイスへ移動");
-      if (itStart) add(itStart, m.label + "：キャスター自己紹介 → チーム紹介 → 選手紹介", "キャスター" + n + "人×" + TM.caster_sec + "秒 ＋ チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it), (prep && itStart < prep) ? "bad" : "");
+      if (itStart) add(itStart, m.label + "：キャスター自己紹介 → チーム紹介 → 選手紹介", "キャスター" + n + "人×" + TM.caster_sec + "秒 ＋ チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it - TM.margin_sec) + "（" + hhmm(itEnd) + " ごろまで）", (play && itEnd > play) ? "bad" : "");
+      if (itEnd && play && itEnd < play) add(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）");
       add(play, m.label + "：試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
       if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です"); last = end; }
     });
@@ -404,6 +408,7 @@
       add(t5, "配信終了（予定）", "インタビューは、優勝チーム1人・MVP1人で計算しています");
     }
     ev.sort(function (a, b) { return a.d - b.d; });
+    TLEV = ev.map(function (e) { return { t: ymdhm(e.d), main: e.main, sub: e.sub || "" }; });         // 「共有」で送る、全体の流れ
     ev.forEach(function (e) { li(e.d, base, e.main, e.sub, e.cls); });
     if (!last) $("timenote").textContent = "試合の終了予定が出せないため、配信終了の時刻は、出ていません（トーナメント表に、1試合ぶんの所要時間を入れてください）。";
   }
@@ -428,7 +433,7 @@
     adopt(data); render();
   }
 
-  function save() {
+  function save(share) {
     var ops = [], bad = "";
     DELETED.forEach(function (id) { ops.push({ op: "delete_pattern", id: id }); });
     P.forEach(function (p) {
@@ -455,21 +460,29 @@
       if (any && TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、保存してください。";
       if (any) { tf.op = "set_times"; ops.push(tf); }
     }
+    if (share === true) {                                                             // 「📣 共有」：保存と同時に、全体の流れを、キャスターとモデレーターへ
+      if (!TM || TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、共有してください。";
+      else { renderTimeline(); if (!TLEV.length) bad = bad || "共有する「全体の流れ」がありません（上の「配信開始」を入れてください）。"; }
+      if (!bad && !confirm("保存して、全体の流れを、キャスターとモデレーターに共有します。よろしいですか？")) return;
+      if (!bad) ops.push({ op: "share_times", events: TLEV });
+    }
     if (bad) { setResult("ng", "⚠ " + bad); return; }
     if (!ops.length) { setResult("ok", "変更はありません。"); return; }
     var n = (data.n || 0) + 1;
-    $("save").disabled = true; setResult("", "保存しています…");
+    $("save").disabled = true; $("share").disabled = true; setResult("", share === true ? "保存して、共有しています…" : "保存しています…");
     hmac(AUTH, n + "|" + canon(ops)).then(function (mac) {
       return sendInbox({ type: "edit", n: n, ops: ops, mac: mac });
     }).then(waitResult).then(function (r) {
+      $("share").disabled = false;
       if (!r) { setResult("ng", "BOTからの返事がありません。しばらくして「最新を読み込む」を押して、確かめてください。"); refreshDirty(); return; }
       if (r.ok) { setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); return load().then(function (d) { adopt(d); render(); }); }
       setResult("ng", "⚠ " + (r.error || "保存できませんでした。")); refreshDirty();
-    }).catch(function (e) { setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
+    }).catch(function (e) { $("share").disabled = false; setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
   }
   function setResult(cls, text) { var r = $("result"); r.className = cls; r.textContent = text; }
 
-  $("save").addEventListener("click", save);
+  $("save").addEventListener("click", function () { save(false); });
+  $("share").addEventListener("click", function () { save(true); });
   $("tabbp").addEventListener("click", function () { showTab("bp"); });
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("reload").addEventListener("click", function () {
