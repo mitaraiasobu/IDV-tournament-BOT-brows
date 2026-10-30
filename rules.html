@@ -2548,7 +2548,7 @@
       clearTimeout(musicTimer);
       if (data.state === "black") scene = null;                                     // 真っ黒：音楽は止める（優勝画面などの音楽より、先に決める）
       else if (data.state === "open") scene = "open";                               // 配信開始の音楽：開会の演出が全部終わるまで、途中で切らない（挨拶・ルール紹介・キャスター交代まで）
-      else if (data.state === "close" && Date.now() / 1000 >= data.close.t0) scene = "close";       // 配信終了の音楽：「大会終了」の画面（優勝・インタビューの音楽からは、ここで切り替わる。閉会のごあいさつの間は、そのまま）
+      else if (data.state === "close") scene = "close";                             // 配信終了の音楽：閉会のごあいさつから「大会終了」の画面まで、同じ音楽（優勝・インタビューの音楽からは、閉会のごあいさつの始まりで切り替わる）
       else if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
       else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
       else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
