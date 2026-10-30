@@ -342,6 +342,9 @@
     f.appendChild(numRow("閉会のごあいさつ", "インタビュー・MVPのあとの、ごあいさつの時間", "close_greet_sec", "秒", lim.greet[0], lim.greet[1]));
     f.appendChild(numRow("インタビューの時間", "優勝チーム・MVPのインタビューで、1人に使う時間", "interview_minutes", "分（1人あたり）", lim.interview[0], lim.interview[1]));
     if (TM.dev && TM.step_sec != null) f.appendChild(numRow("BAN/PICKの1手ごとの間隔", "自動進行（この開発者用大会だけ）で、1手ずつ進める間隔", "step_sec", "秒", lim.step[0], lim.step[1]));
+    var rm = el("div", "trow"); rm.appendChild(el("label", "", "ラウンドの進行方法（BOTの設定）"));
+    var rmv = el("div"); (TM.round_modes || []).forEach(function (m) { rmv.appendChild(el("div", "", m.name + "：" + (m.concurrent ? "同時進行（実況・解説なし。配信しません）" : "順番に（実況・解説あり。配信します）"))); });
+    rm.appendChild(rmv); rm.appendChild(el("div", "hint", "配信開始は、「順番に」の最初のラウンドが、もとになります。変えるときは、Discordの管理者メニューで。")); f.appendChild(rm);
     var fx = el("div", "trow"); fx.appendChild(el("label", "", "準備時間（BAN/PICKから試合まで）"));
     fx.appendChild(el("div", "", TM.prep_minutes + "分（BOTで固定）"));
     fx.appendChild(el("div", "hint", "トーナメント表の時間は、ここでは、変わりません。")); f.appendChild(fx);
