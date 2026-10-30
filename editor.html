@@ -391,10 +391,10 @@
     add(open, "配信開始", "開会の演出 → 開会のごあいさつ（" + msec(TM.open_greet_sec || 0) + "）→ ルール紹介 → キャスター交代（" + hhmm(openEnd) + " ごろまで）");
     var last = null;
     (TM.matches || []).forEach(function (m) {
-      var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.casters || 2;
+      var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.first === false ? 0 : (m.casters || 2);
       var it = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), itStart = prep ? addSec(prep, TM.margin_sec) : null, itEnd = itStart ? addSec(itStart, it - TM.margin_sec) : null;      // 紹介は、BAN/PICKの開始の10秒あとに始まる
       add(prep, m.label + "：BAN/PICKの開始", "試合担当のキャスターを、キャスター用ボイスへ移動");
-      if (itStart) add(itStart, m.label + "：キャスター自己紹介 → チーム紹介 → 選手紹介", "キャスター" + n + "人×" + TM.caster_sec + "秒 ＋ チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it - TM.margin_sec) + "（" + hhmm(itEnd) + " ごろまで）", (play && itEnd > play) ? "bad" : "");
+      if (itStart) add(itStart, m.label + (n ? "：キャスター自己紹介 → チーム紹介 → 選手紹介" : "：チーム紹介 → 選手紹介"), (n ? "キャスター" + n + "人×" + TM.caster_sec + "秒（ラウンド全員まとめて） ＋ " : "") + "チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it - TM.margin_sec) + "（" + hhmm(itEnd) + " ごろまで）", (play && itEnd > play) ? "bad" : "");
       if (itEnd && play && itEnd < play) add(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）");
       add(play, m.label + "：試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
       if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です"); last = end; }
