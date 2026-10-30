@@ -320,7 +320,16 @@
   function parseLocal(s) { if (!s) return null; var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
   function msec(s) { return Math.floor(s / 60) + "分" + (s % 60 ? s % 60 + "秒" : ""); }
   function introTotal(n, c, p) { return n * c + TM.team_sec + 4 * p + TM.team_sec + p + TM.margin_sec; }     // キャスター → チーム → サバイバー4人 → チーム → ハンター1人 → 試合開始まで
-  function introBudget() { var n = TM.max_casters, tot = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), lim = TM.prep_minutes * 60; return { n: n, total: tot, limit: lim, ok: tot <= lim }; }
+  function introBudget() {                                                          // 紹介は、その試合の準備時間の中で行う：試合ごとのキャスターの人数で見る（別の試合の人数は、足さない）。いちばん長い試合で確かめる
+    var worst = null, lim = TM.prep_minutes * 60;
+    (TM.round_casters || []).forEach(function (r) {
+      var n = r.casters || TM.max_casters, tot = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0);
+      if (!worst || tot > worst.total) worst = { n: n, total: tot, name: r.name };
+    });
+    if (!worst) { var n0 = TM.max_casters; worst = { n: n0, total: introTotal(n0, TM.caster_sec || 0, TM.player_sec || 0), name: "" }; }
+    worst.limit = lim; worst.ok = worst.total <= lim;
+    return worst;
+  }
   function leadNeed() { return Math.ceil(((TM.open_other_sec || 0) + (TM.open_greet_sec || 0)) / 60) + 1; }
   function numRow(label, hint, key, unit, lo, hi) {
     var r = el("div", "trow"), l = el("label", "", label), box = el("div"), inp = el("input"); inp.type = "number"; inp.min = lo; inp.max = hi; inp.step = 1; inp.value = TM[key] == null ? "" : TM[key];
@@ -363,9 +372,10 @@
     if (lead != null && lead !== "" && lead < needL) { lc += "　⚠ 開会の演出に、約" + (needL - 1) + "分かかります（" + needL + "分前より、前にしてください）"; TMOK = false; }
     calc("lead_min", lc, !TMOK);
     var bu = introBudget();
-    var bc = "→ 紹介の場面：キャスター" + bu.n + "人＋チーム紹介＋選手5人 ＝ " + msec(bu.total) + "（準備時間 " + (bu.limit / 60) + "分の中）";
-    if (!bu.ok) { bc = "⚠ 紹介の場面が " + msec(bu.total) + " になり、準備時間（" + (bu.limit / 60) + "分）に収まりません。短くしてください"; TMOK = false; }
-    calc("caster_sec", bu.ok ? "→ キャスター" + bu.n + "人で " + msec(bu.n * (TM.caster_sec || 0)) : "", false); calc("player_sec", bc, !bu.ok);
+    var bc = "→ 紹介の場面（いちばん長い試合" + (bu.name ? "：" + bu.name : "") + "）：キャスター" + bu.n + "人＋チーム紹介＋選手5人 ＝ " + msec(bu.total) + "（準備時間 " + (bu.limit / 60) + "分の中）";
+    if (!bu.ok) { bc = "⚠ 紹介の場面（" + (bu.name ? bu.name + "・" : "") + "キャスター" + bu.n + "人）が " + msec(bu.total) + " になり、準備時間（" + (bu.limit / 60) + "分）に収まりません。短くしてください"; TMOK = false; }
+    var rc = (TM.round_casters || []).map(function (r) { return r.name + "：" + (r.casters ? r.casters + "人で " + msec(r.casters * (TM.caster_sec || 0)) : "キャスター未定"); }).join("　／　");
+    calc("caster_sec", rc ? "→ " + rc : "→ キャスター" + bu.n + "人（仮）で " + msec(bu.n * (TM.caster_sec || 0)), false); calc("player_sec", bc, !bu.ok);
     calc("open_greet_sec", TM.open_greet_sec != null ? "→ " + msec(TM.open_greet_sec) : ""); calc("close_greet_sec", TM.close_greet_sec != null ? "→ " + msec(TM.close_greet_sec) : "");
     function li(d, ref, main, sub, cls) { var x = el("li", cls || ""); x.appendChild(el("span", "tm", d ? hhmm(d) + (ref ? dayLabel(d, ref) : "") : "--:--")); var b = el("div"); b.appendChild(el("div", "", main)); if (sub) b.appendChild(el("div", "sub", sub)); x.appendChild(b); ol.appendChild(x); }
     $("timenote").textContent = "";
