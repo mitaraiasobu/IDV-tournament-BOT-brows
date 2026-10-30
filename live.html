@@ -1113,7 +1113,11 @@
   .in-av .pic { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: var(--ta); border: 8px solid rgba(0,0,0,.55); box-sizing: border-box;
                 display: flex; align-items: center; justify-content: center; font-family: var(--disp); font-size: 160px; color: #fff; }
   .in-av .pic img { width: 100%; height: 100%; object-fit: cover; }
-  .in-av .deco { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; object-fit: contain; pointer-events: none; }
+  .in-av .deco { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; object-fit: contain; pointer-events: none; z-index: 1; }
+  .in-info { position: relative; z-index: 3; }                                                   /* 名前などの文字は、装飾より上 */
+  .sw-avw { position: relative; display: inline-block; }
+  .sw-deco { position: absolute; left: -14%; top: -14%; width: 128%; height: 128%; object-fit: contain; pointer-events: none; z-index: 1; }
+  .sw-nm { position: relative; z-index: 3; }
   .in-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
   .in-nm { font-family: var(--cond); font-weight: 800; font-size: 132px; line-height: 1.05; overflow-wrap: anywhere; text-shadow: 0 0 14px rgba(0,0,0,.85), 5px 6px 0 rgba(0,0,0,.45); }
   .in-rd { font-family: var(--cond); font-size: 46px; color: var(--sub); letter-spacing: .12em; margin-top: -8px; }
@@ -1146,11 +1150,11 @@
   .in-half .hd { display: flex; align-items: center; justify-content: center; gap: 18px; max-width: 640px; }
   .in-half .fin-logo { width: 96px; height: 96px; font-size: 40px; border-width: 5px; flex: none; }
   .in-half .tnm { font-family: var(--cond); font-weight: 800; font-size: 46px; line-height: 1.05; text-shadow: 0 0 14px rgba(0,0,0,.85), 4px 5px 0 rgba(0,0,0,.45); overflow-wrap: anywhere; }
-  .in-half .pls { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 34px; margin-top: 8px; width: 520px; animation: inPushR .8s ease-in-out .9s infinite; }
+  .in-half .pls { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 34px; margin-top: 8px; width: 520px; animation: inPushR 3.2s ease-in-out .9s infinite; }
   .in-half.hn .pls { width: 560px; animation-name: inPushL; }
   .in-half .pl { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 240px; }
   .in-half .pl .ic { width: 230px; height: 230px; border-radius: 50%; overflow: hidden; border: 8px solid var(--ic); background: var(--ta); display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: 90px;
-                      box-shadow: 0 0 36px color-mix(in srgb, var(--ic) 70%, transparent); animation: inFlash 1.1s ease-in-out infinite; }
+                      box-shadow: 0 0 36px color-mix(in srgb, var(--ic) 70%, transparent); animation: inFlash 3.4s ease-in-out infinite; }
   .in-half .pl .ic img { width: 100%; height: 100%; object-fit: cover; }
   .in-half .pl .pn { font-family: var(--cond); font-weight: 700; font-size: 38px; max-width: 240px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 0 10px rgba(0,0,0,.85), 3px 4px 0 rgba(0,0,0,.45); }
   .in-half.hn .pl { width: 470px; } .in-half.hn .pl .ic { width: 440px; height: 440px; border-width: 10px; font-size: 170px; } .in-half.hn .pl .pn { font-size: 52px; max-width: 470px; }
@@ -1159,13 +1163,9 @@
   html[data-design="gothic"] .in-half.sv .pl { position: absolute; }
   html[data-design="gothic"] .in-half.sv .pl:nth-child(1) { left: 70px; top: 0; } html[data-design="gothic"] .in-half.sv .pl:nth-child(2) { left: 310px; top: 105px; }
   html[data-design="gothic"] .in-half.sv .pl:nth-child(3) { left: 10px; top: 265px; } html[data-design="gothic"] .in-half.sv .pl:nth-child(4) { left: 250px; top: 375px; }
-  @keyframes inPushR { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(16px); } }
-  @keyframes inPushL { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-16px); } }
+  @keyframes inPushR { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+  @keyframes inPushL { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
   @keyframes inFlash { 0%, 100% { box-shadow: 0 0 22px color-mix(in srgb, var(--ic) 55%, transparent); } 50% { box-shadow: 0 0 58px color-mix(in srgb, var(--ic) 95%, #fff); } }
-  .in-sp { position: absolute; z-index: 3; width: 200px; height: 200px; margin: -100px 0 0 -100px; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; opacity: 0;
-           background: radial-gradient(circle, #fff 0, rgba(255,236,150,.95) 14%, rgba(255,150,60,.5) 34%, transparent 66%); animation: inSpark .42s steps(1, end) infinite; }
-  .in-sp.a { left: 54.2%; top: 25%; animation-delay: .1s; } .in-sp.b { left: 50.5%; top: 50%; animation-delay: .27s; } .in-sp.c { left: 46.8%; top: 75%; animation-delay: .05s; }
-  @keyframes inSpark { 0% { opacity: 0; transform: scale(.4) rotate(0deg); } 20% { opacity: 1; transform: scale(1.15) rotate(30deg); } 45% { opacity: .35; transform: scale(.7) rotate(70deg); } 70% { opacity: .9; transform: scale(1.3) rotate(110deg); } 100% { opacity: 0; transform: scale(.4); } }
   /* BAN/PICKの表示が始まる前の、10秒のカウントダウン：サバイバーVSハンターの構図の、上から被せる（点滅はしない。数字が切り替わるときに、ふわっと出るだけ） */
   .in-cd { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .in-cd[data-n] { background: rgba(0, 0, 0, .38); }
@@ -1216,33 +1216,30 @@
       repeating-linear-gradient(-60deg, transparent 0 88px, color-mix(in srgb, var(--gold) 34%, transparent) 88px 90px); animation: inDia 9s linear infinite; }
   @keyframes inDia { from { transform: translateX(0); } to { transform: translateX(207.85px); } }       /* ひし形2つぶん（90px÷cos30°×2）：つなぎ目なし */
   /* ゴシック：止まった画面を、なくす（光の粒が舞い、アイコン・顔は、ゆっくり浮かび、切れ込みを光が走る。ほかのデザインは、いまのまま） */
-  .gt-dust, .in-sweep { display: none; }
+  .gt-dust { display: none; }
   html[data-design="gothic"] .gt-dust { display: block; position: absolute; bottom: -30px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; z-index: 1; pointer-events: none; opacity: 0;
       background: radial-gradient(circle, rgba(255, 232, 170, .95), rgba(255, 200, 100, 0) 70%); animation: gtRise var(--t) linear var(--d) infinite; }
   @keyframes gtRise { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: .85; } 80% { opacity: .55; } 100% { transform: translate(var(--dx, 30px), -1180px); opacity: 0; } }
   @keyframes gtBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -14px; } }
   @keyframes gtBreath { 0%, 100% { scale: 1; } 50% { scale: 1.035; } }
   @keyframes gtShine { 0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 220, 140, 0)); } 50% { filter: drop-shadow(0 0 20px rgba(255, 220, 140, .75)); } }
-  @keyframes gtSweep { from { background-position: 0 -70%; } to { background-position: 0 170%; } }
   @keyframes gtDrift { from { background-position: 0 0, 60px 90px; } to { background-position: 0 -520px, 60px -450px; } }
   html[data-design="gothic"] body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .55;
       background-image: radial-gradient(circle, rgba(255, 226, 150, .55) 0 1.5px, transparent 2.5px), radial-gradient(circle, rgba(255, 226, 150, .35) 0 1px, transparent 2px);
       background-size: 220px 260px, 140px 180px; animation: gtDrift 42s linear infinite; }
   html[data-design="gothic"].black body::after { opacity: 0; }
-  html[data-design="gothic"] .in-sweep { display: block; position: absolute; inset: 0; z-index: 3; pointer-events: none; mix-blend-mode: screen; clip-path: polygon(56.6% 0, 59.2% 0, 44.2% 100%, 41.6% 100%);
-      background: linear-gradient(180deg, transparent 0, rgba(255, 238, 180, .95) 50%, transparent 100%) 0 -70% / 100% 55% no-repeat; animation: gtSweep 2.8s ease-in-out infinite; }
   html[data-design="gothic"] .in-half .pl { animation: gtBob 5s ease-in-out infinite; }
   html[data-design="gothic"] .in-half .pl:nth-child(2) { animation-delay: -1.3s; } html[data-design="gothic"] .in-half .pl:nth-child(3) { animation-delay: -2.6s; } html[data-design="gothic"] .in-half .pl:nth-child(4) { animation-delay: -3.9s; }
   html[data-design="gothic"] .in-half.hn .pl { animation-duration: 6.5s; }
-  html[data-design="gothic"] .in-half .pl .ic { animation: inFlash 1.1s ease-in-out infinite, gtBreath 4.5s ease-in-out infinite; }
+  html[data-design="gothic"] .in-half .pl .ic { animation: inFlash 3.4s ease-in-out infinite, gtBreath 5.5s ease-in-out infinite; }
   html[data-design="gothic"] .in-half .tnm, html[data-design="gothic"] .in-half .side { animation: gtShine 5s ease-in-out infinite; }
   html[data-design="gothic"] .intro.enter .in-av { animation: inInSoft .9s ease-out both, gtBob 6s ease-in-out .9s infinite; }
   html[data-design="gothic"] .intro.enter .in-team > :first-child { animation: inInUp .7s cubic-bezier(.2, .9, .2, 1) both, gtBob 6s ease-in-out 1.5s infinite; }
   html[data-design="gothic"] .intro.enter.t-hero .in-team > :first-child { animation-delay: 2.4s; }
   html[data-design="gothic"] .rl-face { animation: gtBob 5s ease-in-out infinite; }
   html[data-design="gothic"] .rl-chip:nth-child(2n) .rl-face { animation-delay: -2s; } html[data-design="gothic"] .rl-chip:nth-child(3n) .rl-face { animation-delay: -3.3s; }
-  html[data-design="gothic"] .sw-av { animation: gtBob 5.5s ease-in-out infinite; }
-  html[data-design="gothic"] .sw-p.to:nth-child(2) .sw-av { animation-delay: -2s; }
+  html[data-design="gothic"] .sw-avw { animation: gtBob 5.5s ease-in-out infinite; }
+  html[data-design="gothic"] .sw-p.to:nth-child(2) .sw-avw { animation-delay: -2s; }
   /* 配信の開始・終了の演出（開始前と終了後は、真っ黒）。デザインごとに、動きを変える */
   html.black, html.black body { background: #000 !important; }
   html.black #bg, html.black #bgmedia, html.black #media, html.black #screen, html.black #msg { display: none; }
@@ -2586,7 +2583,8 @@
         var left = BANPICK_TAIL_MS - (Date.now() - ended);
         if (left > 0) { scene = "banpick"; musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
         else scene = "wait";
-      } else scene = pre ? "pre" : "wait";
+      } else if (data.state === "intro") scene = lastScene === "pre" || lastScene === "wait" ? lastScene : (pre ? "pre" : "wait");       // 紹介の場面：途中で、音楽を変えない（大会開始の時刻を過ぎても、紹介が終わるまで、そのまま）
+      else scene = pre ? "pre" : "wait";
       if (data.state !== "result") resultSeenAt = 0;
       src = scene ? (m.scenes || {})[scene] : null;
       if (scene === "banpick" && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
@@ -2623,7 +2621,7 @@
       var segs = [{ kind: "team", side: "survivor", team: sv, dur: T }];
       arr(sv.players).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });
       segs.push({ kind: "team", side: "hunter", team: hn, dur: T });
-      arr(hn.players).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });
+      arr(hn.players).slice(0, 1).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });          // ハンター側は、出席するハンター1人だけ
       var at = iv.team_start;
       for (var k = 0; k < segs.length; k++) {
         if (nowS >= at && nowS < at + segs[k].dur) return { kind: segs[k].kind, side: segs[k].side, team: segs[k].team, p: segs[k].p, idx: k, start: at, dur: segs[k].dur };
@@ -2757,8 +2755,6 @@
       half.appendChild(bx);
       w.appendChild(half);
     });
-    ["a", "b", "c"].forEach(function (k) { w.appendChild(el("i", "in-sp " + k)); });       // 真ん中の切れ込みに、火花（バチバチ）
-    w.appendChild(el("i", "in-sweep"));                                                    // ゴシック：切れ込みに沿って、光が走り続ける
     ambient(w);
     w.appendChild(el("div", "in-slash"));
     w.appendChild(el("div", "in-cd"));                                  // 10秒前から、大きなカウントダウンを、上から被せる
@@ -2875,10 +2871,12 @@
     cam.appendChild(box); w.appendChild(cam);
     return w;
   }
-  function personBox(p, cls) {
-    var b = el("div", "sw-p " + cls), av = el("div", "sw-av");
+  function personBox(p, cls) {                                                          // キャスターのアイコン（装飾つき）と名前。名前の文字は、装飾より上
+    var b = el("div", "sw-p " + cls), wrap = el("div", "sw-avw"), av = el("div", "sw-av");
     if (p.avatar) { var im = new Image(); im.alt = ""; im.src = p.avatar; av.appendChild(im); } else av.textContent = (p.name || "?").slice(0, 2);
-    b.appendChild(av); b.appendChild(el("div", "sw-nm", p.name || ""));
+    wrap.appendChild(av);
+    if (p.deco) { var d = new Image(); d.className = "sw-deco"; d.alt = ""; d.src = p.deco; wrap.appendChild(d); }
+    b.appendChild(wrap); b.appendChild(el("div", "sw-nm", p.name || ""));
     return b;
   }
   function greetScene(en, label, title, greeters) {                                    // 開会・閉会のごあいさつ：担当のキャスターのアイコンと名前を、画面の中央に（キャスター表示は、この間、透明）
@@ -3029,10 +3027,14 @@
       });
     }
     if (!b.shown && t >= 400 + b.maxLv * 1000 + 100) {
-      b.shown = true;
+      b.shown = true; b.shownAt = t;
       b.troph.classList.add("on");
       var s2 = 1.15;
-      b.box.style.transform = "translate(" + (960 - b.tx * s2) + "px," + (540 - b.ty * s2) + "px) scale(" + s2 + ")";
+      b.box.style.transform = "translate(" + (960 - b.tx * s2) + "px," + (540 - b.ty * s2) + "px) scale(" + s2 + ")";          // 優勝のマークへ寄って、2秒輝く
+    }
+    if (b.shown && !b.pulled && t >= b.shownAt + 2000) {                              // そのあと、表の全体が見えるように、引く
+      b.pulled = true;
+      b.box.style.transform = "translate(" + ((1920 - b.W * b.fitS) / 2) + "px," + ((1080 - b.H * b.fitS) / 2 + 40) + "px) scale(" + b.fitS + ")";
     }
   }
   function renderOpen(data) {
