@@ -3116,6 +3116,8 @@
       var left = ph.kind === "split" ? iv.play_at - nowS : ph.start + ph.dur - nowS;
       var cnt = sc.querySelector(".iv-count");
       if (cnt) cnt.textContent = fmtCount(left);
+      var tbox = sc.querySelector(".iv-timer");
+      if (tbox && ph.kind === "split") { tbox.style.display = (iv.no_schedule && !iv.confirmed) ? "none" : ""; var who = tbox.querySelector(".iv-who"); if (who) who.textContent = iv.confirmed ? "試合開始まで" : "試合予定時刻まで"; }          // 後半戦など、予定の時刻が無いときは、確認が済むまで、カウントダウンを出さない
       var cd = ph.kind === "split" && iv.confirmed ? sc.querySelector(".in-cd") : null;        // 大きなカウントダウンは、モデレーターの確認のあとだけ（選手側の10秒カウントダウンと同じ時刻）
       if (cd) {                                                           // BAN/PICKの表示が始まる10秒前から：10・9・…・1
         var n = Math.ceil(left);
