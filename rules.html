@@ -1237,6 +1237,50 @@
   html[data-design="fantasy"] .op-sub, html[data-design="gothic"] .op-sub { color: var(--gold); }
   html[data-design="fantasy"] .op-title, html[data-design="gothic"] .op-title, html[data-design="fantasy"] .op-nm, html[data-design="gothic"] .op-nm,
   html[data-design="fantasy"] .op-tag .op-t, html[data-design="gothic"] .op-tag .op-t { font-family: var(--fa); font-weight: 400; color: var(--cream); }
+  .op-top { justify-content: flex-start; padding-top: 150px; }
+  .op-t2 { font-size: 120px; }
+  .op-small { font-size: 56px; opacity: .9; }
+  .op-sub2 { letter-spacing: .2em; font-size: 38px; color: var(--sub); margin-top: 18px; }
+  .op-lines { position: absolute; left: 0; top: 0; overflow: visible; }
+  .op-ln { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 70%, transparent)); stroke-dasharray: 9999; stroke-dashoffset: 9999; }
+  .op-node { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); opacity: 0; transform: scale(0); }
+  .op-troph { position: absolute; width: 300px; height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; opacity: 0; transform: scale(.4); transition: opacity 1s ease, transform 1.3s cubic-bezier(.2, 1.4, .3, 1); }
+  .op-troph.on { opacity: 1; transform: none; }
+  .op-troph .rays { position: absolute; left: 50%; top: 120px; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; opacity: .9;
+                    background: repeating-conic-gradient(from 0deg, rgba(255, 210, 63, .30) 0 7deg, transparent 7deg 22deg); -webkit-mask: radial-gradient(circle, #000 0 28%, transparent 70%); mask: radial-gradient(circle, #000 0 28%, transparent 70%); animation: opSpin 16s linear infinite; }
+  .op-troph .cup { position: relative; font-size: 190px; line-height: 1; filter: drop-shadow(0 0 34px rgba(255, 210, 63, .95)); animation: opGlow 1.7s ease-in-out infinite; }
+  .op-troph .lbl { position: relative; font-family: var(--cond); font-weight: 800; font-size: 40px; letter-spacing: .4em; color: #ffd23f; text-shadow: 0 0 18px rgba(255, 210, 63, .8); margin-top: 8px; }
+  @keyframes opSpin { to { transform: rotate(360deg); } }
+  @keyframes opGlow { 0%, 100% { filter: drop-shadow(0 0 22px rgba(255, 210, 63, .7)) brightness(1); transform: scale(1); } 50% { filter: drop-shadow(0 0 52px rgba(255, 230, 120, 1)) brightness(1.25); transform: scale(1.06); } }
+  /* ルール紹介（キャラに関することだけ） */
+  .rl-cam { position: absolute; inset: 0; z-index: 2; animation: rlCam 12s ease-in-out both; transform-origin: 50% 45%; }
+  @keyframes rlCam { 0% { transform: scale(1) translateY(0); } 100% { transform: scale(1.1) translateY(-26px); } }
+  .rl-box { position: absolute; left: 120px; right: 120px; top: 150px; bottom: 120px; display: flex; flex-direction: column; justify-content: center; gap: 46px; }
+  .rl-row { display: flex; align-items: center; gap: 44px; opacity: 0; animation: rlIn .9s cubic-bezier(.2, .9, .2, 1) both; }
+  .rl-lab { flex: none; width: 360px; padding: 18px 26px; font-family: var(--cond); font-weight: 800; font-size: 44px; line-height: 1.25; background: rgba(0, 0, 0, .55); border-left: 12px solid var(--accent); text-shadow: 3px 4px 0 rgba(0, 0, 0, .45); }
+  .rl-row.k-allow .rl-lab { border-left-color: #3ecf8e; } .rl-row.k-ban .rl-lab { border-left-color: #ff4b5e; } .rl-row.k-required .rl-lab { border-left-color: #ffd23f; } .rl-row.k-combo .rl-lab { border-left-color: #b080ff; }
+  .rl-chips { display: flex; flex-wrap: wrap; gap: 34px; align-items: center; }
+  .rl-chip { display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: 0; animation: rlPop .8s cubic-bezier(.2, 1.3, .3, 1) both; }
+  .rl-face { width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 6px solid var(--accent); box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 50%, transparent); display: flex; align-items: center; justify-content: center; font-size: 62px; }
+  .rl-face img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 14%; }
+  .rl-nm { font-family: var(--cond); font-weight: 700; font-size: 32px; text-shadow: 0 0 10px rgba(0, 0, 0, .8); }
+  .rl-pair { display: flex; align-items: center; gap: 18px; padding: 10px 22px; background: rgba(0, 0, 0, .4); border-radius: 80px; }
+  .rl-plus { font-size: 54px; font-weight: 800; color: #b080ff; }
+  @keyframes rlIn { from { opacity: 0; transform: translateX(-90px); } to { opacity: 1; transform: none; } }
+  @keyframes rlPop { from { opacity: 0; transform: scale(.3) translateY(40px); } to { opacity: 1; transform: none; } }
+  /* キャスター交代 */
+  .sw-row { display: flex; align-items: center; justify-content: center; gap: 90px; margin-top: 34px; }
+  .sw-grp { display: flex; gap: 46px; }
+  .sw-grp.from { animation: swIn .9s cubic-bezier(.2, .9, .2, 1) .5s both; } .sw-grp.to { animation: swIn .9s cubic-bezier(.2, .9, .2, 1) 2.2s both; }
+  .sw-p { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .sw-av { width: 250px; height: 250px; border-radius: 50%; overflow: hidden; border: 9px solid var(--accent); background: var(--panel2); box-shadow: 0 0 44px color-mix(in srgb, var(--accent) 55%, transparent); display: flex; align-items: center; justify-content: center; font-size: 80px; }
+  .sw-av img { width: 100%; height: 100%; object-fit: cover; }
+  .sw-nm { font-family: var(--cond); font-weight: 800; font-size: 48px; text-shadow: 0 0 12px rgba(0, 0, 0, .8); max-width: 360px; text-align: center; overflow-wrap: anywhere; }
+  .sw-p.fr .sw-av { opacity: .8; filter: grayscale(.4); }
+  .sw-arrow { font-size: 76px; letter-spacing: -.1em; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: swArrow 1.4s ease-in-out 1.4s infinite both; opacity: 0; }
+  @keyframes swIn { from { opacity: 0; transform: translateX(-70px) scale(.9); } to { opacity: 1; transform: none; } }
+  .sw-grp.to { animation-name: swInR; } @keyframes swInR { from { opacity: 0; transform: translateX(70px) scale(.9); } to { opacity: 1; transform: none; } }
+  @keyframes swArrow { 0% { opacity: 0; transform: translateX(-30px); } 40%, 100% { opacity: 1; transform: none; } }
   /* トーナメント表：1カードずつ、ふわっと出る。カメラが、出たカードを追いかけて、最後に、全体へ引く */
   .op-br { position: absolute; left: 0; top: 0; transform-origin: 0 0; transition: transform 1.2s cubic-bezier(.45,0,.2,1); z-index: 2; will-change: transform; }
   .op-card { position: absolute; width: 440px; height: 150px; box-sizing: border-box; padding: 8px 18px 10px; background: rgba(0,0,0,.6); border-left: 10px solid var(--accent);
@@ -2470,7 +2514,7 @@
       var scene;
       clearTimeout(musicTimer);
       if (data.state === "black") scene = null;                                     // 真っ黒：音楽は止める（優勝画面などの音楽より、先に決める）
-      else if (data.state === "open") scene = Date.now() / 1000 < data.open.t0 + data.open.visual_sec ? "open" : null;     // 配信開始の音楽：演出の間だけ（開会の挨拶は、静かに）
+      else if (data.state === "open") scene = "open";                               // 配信開始の音楽：開会の演出が全部終わるまで、途中で切らない（挨拶・ルール紹介・キャスター交代まで）
       else if (data.state === "close") scene = "close";                             // 配信終了の音楽：「大会終了」の画面（優勝・インタビューの音楽からは、ここで切り替わる）
       else if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
       else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
@@ -2649,11 +2693,14 @@
     arr(op.teams).forEach(function (tm, i) { segs.push({ kind: "team", i: i, dur: S.team }); });
     segs.push({ kind: "bracket", dur: S.lead + arr(op.cards).length * S.card + S.tail });
     segs.push({ kind: "tagline", dur: S.tagline });
+    if (S.greet > 0) segs.push({ kind: "greet", dur: S.greet });                  // 挨拶のキャスター（キャスター表示のアイコンが、ここで初めて出る）
+    if (S.rules > 0) segs.push({ kind: "rules", dur: S.rules });                  // ルール紹介（キャラに関することだけ）
+    if (S.swap > 0) segs.push({ kind: "swap", dur: S.swap });                     // キャスター交代（挨拶のキャスター → 試合担当のキャスター）
     for (var k = 0; k < segs.length; k++) {
       if (nowS < at + segs[k].dur) return { kind: segs[k].kind, idx: k, i: segs[k].i, start: at, dur: segs[k].dur };
       at += segs[k].dur;
     }
-    return { kind: "greet", idx: segs.length, start: at, dur: S.greet };
+    return { kind: "end", idx: segs.length, start: at, dur: 0 };                   // 全部終わった：次のデータが来るまで、最後の画面のまま
   }
   function opBase(extra) {
     var w = el("div", "op" + (extra ? " " + extra : ""));
@@ -2692,55 +2739,159 @@
       c.appendChild(tx);
       w.appendChild(c); return w;
     }
+    if (ph.kind === "greet") {
+      w = opBase("op-greet"); c = el("div", "op-c op-top");
+      c.appendChild(el("div", "op-sub", "OPENING"));
+      c.appendChild(el("div", "op-title op-t2", "開会のご挨拶"));
+      c.appendChild(el("div", "op-line"));
+      c.appendChild(el("div", "op-nm op-small", op.title || ""));
+      var gn = arr(op.greeters).map(function (g) { return g.name; }).filter(Boolean);
+      if (gn.length) c.appendChild(el("div", "op-sub op-sub2", "ご挨拶：" + gn.join("・")));
+      w.appendChild(c); return w;
+    }
+    if (ph.kind === "rules") return rulesScene(op, ph);
+    if (ph.kind === "swap") return swapScene(op);
     return bracketScene(op);
   }
+  function faceBox(item, cls) {                                                         // キャラの顔（丸）
+    var b = el("div", "rl-face" + (cls ? " " + cls : ""));
+    if (item.img) { var im = new Image(); im.alt = item.name || ""; im.src = imgUrl(item.img); im.onerror = function () { im.remove(); b.textContent = item.emoji || (item.name || "?").slice(0, 1); }; b.appendChild(im); }
+    else b.textContent = item.emoji || (item.name || "?").slice(0, 1);
+    return b;
+  }
+  function rulesScene(op, ph) {                                                         // ルール紹介：キャラに関することだけ（ローカル許可・ローカルBAN・ローカル必須・同時に使用できないキャラ）。顔が、順に出て、カメラが、ゆっくり寄る
+    var w = opBase("op-rules");
+    w.appendChild(introTag("ルール紹介"));
+    var cam = el("div", "rl-cam"); cam.style.animationDuration = (ph.dur + 1) + "s";
+    var box = el("div", "rl-box");
+    var step = Math.max(2.2, (ph.dur - 3) / Math.max(1, arr(op.rules).length));
+    arr(op.rules).forEach(function (g, gi) {
+      var row = el("div", "rl-row k-" + g.kind); row.style.animationDelay = (0.5 + gi * step) + "s";
+      row.appendChild(el("div", "rl-lab", g.title));
+      var chips = el("div", "rl-chips"), n = 0;
+      if (g.kind === "combo") {
+        arr(g.pairs).forEach(function (pr) {
+          var pair = el("div", "rl-pair");
+          arr(pr).forEach(function (it, i) {
+            if (i) pair.appendChild(el("div", "rl-plus", "＋"));
+            var ch = el("div", "rl-chip"); ch.appendChild(faceBox(it)); ch.appendChild(el("div", "rl-nm", it.name || ""));
+            ch.style.animationDelay = (0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; pair.appendChild(ch);
+          });
+          chips.appendChild(pair);
+        });
+      } else {
+        arr(g.items).forEach(function (it) {
+          var ch = el("div", "rl-chip"); ch.appendChild(faceBox(it)); ch.appendChild(el("div", "rl-nm", it.name || ""));
+          ch.style.animationDelay = (0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; chips.appendChild(ch);
+        });
+      }
+      row.appendChild(chips); box.appendChild(row);
+    });
+    cam.appendChild(box); w.appendChild(cam);
+    return w;
+  }
+  function personBox(p, cls) {
+    var b = el("div", "sw-p " + cls), av = el("div", "sw-av");
+    if (p.avatar) { var im = new Image(); im.alt = ""; im.src = p.avatar; av.appendChild(im); } else av.textContent = (p.name || "?").slice(0, 2);
+    b.appendChild(av); b.appendChild(el("div", "sw-nm", p.name || ""));
+    return b;
+  }
+  function swapScene(op) {                                                              // 「キャスターを交代します」：挨拶のキャスターのアイコン → 試合担当のキャスターのアイコンと名前
+    var w = opBase("op-swap"), c = el("div", "op-c");
+    c.appendChild(el("div", "op-sub", "CASTER CHANGE"));
+    c.appendChild(el("div", "op-title op-t2", "キャスターを交代します"));
+    var row = el("div", "sw-row"), sw = op.swap || {};
+    var from = el("div", "sw-grp from"), to = el("div", "sw-grp to");
+    arr(sw.from).forEach(function (p) { from.appendChild(personBox(p, "fr")); });
+    arr(sw.to).forEach(function (p) { to.appendChild(personBox(p, "to")); });
+    row.appendChild(from); row.appendChild(el("div", "sw-arrow", "▶▶▶")); row.appendChild(to);
+    c.appendChild(row); w.appendChild(c);
+    return w;
+  }
   var brInfo = null;
-  function bracketScene(op) {
+  function bracketScene(op) {                                                           // ラウンド1のカードだけ、1枚ずつ映す。そのあと、線が決勝まで伸びて、優勝のマークが輝く
     var w = opBase("op-bracket");
     w.appendChild(introTag("トーナメント表"));
-    var CW = 440, CH = 150, GX = 130, GY = 40, rounds = arr(op.rounds), cards = arr(op.cards);
-    var byRound = rounds.map(function () { return []; });
-    cards.forEach(function (cd, idx) { var r = Math.max(0, rounds.indexOf(cd.round)); cd.idx = idx; byRound[r].push(cd); });
-    var maxM = Math.max.apply(null, byRound.map(function (a) { return a.length; }).concat([1]));
-    var H = maxM * (CH + GY) + 60, W = rounds.length * (CW + GX) - GX;
-    var box = el("div", "op-br");
-    box.style.width = W + "px"; box.style.height = H + "px";
-    var els = [];
-    byRound.forEach(function (list, r) {
-      var rh = el("div", "op-rh", rounds[r] || ""); rh.style.left = r * (CW + GX) + "px"; rh.style.top = "0px"; box.appendChild(rh);
-      list.forEach(function (cd, j) {
-        var x = r * (CW + GX), y = 60 + (j + 0.5) * (H - 60) / list.length - CH / 2;
-        var d = el("div", "op-card"); d.style.left = x + "px"; d.style.top = y + "px";
-        d.appendChild(el("div", "rn", cd.round || ""));
-        ["a", "b"].forEach(function (s) {
-          var t2 = cd[s], row = el("div", "tr" + (t2 ? "" : " tbd"));
-          if (t2 && !t2.bye && t2.id != null) row.appendChild(finLogo(t2));
-          row.appendChild(el("span", "", t2 ? (t2.bye ? "シード" : t2.name) : "未定"));
-          d.appendChild(row);
-        });
-        box.appendChild(d); els[cd.idx] = { el: d, cx: x + CW / 2, cy: y + CH / 2 };
+    var CW = 440, CH = 150, GY = 40, STEP = 170, rounds = arr(op.rounds);
+    var r1 = arr(op.cards).filter(function (cd) { return !rounds.length || cd.round === rounds[0]; });
+    var n = Math.max(1, r1.length), H = n * (CH + GY) - GY + 20;
+    var box = el("div", "op-br"), NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"), els = [], paths = [], nodes = [];
+    svg.setAttribute("class", "op-lines");
+    r1.forEach(function (cd, i) {
+      var y = i * (CH + GY), d = el("div", "op-card"); d.style.left = "0px"; d.style.top = y + "px";
+      d.appendChild(el("div", "rn", cd.round || ""));
+      ["a", "b"].forEach(function (s) {
+        var t2 = cd[s], row = el("div", "tr" + (t2 ? "" : " tbd"));
+        if (t2 && !t2.bye && t2.id != null) row.appendChild(finLogo(t2));
+        row.appendChild(el("span", "", t2 ? (t2.bye ? "シード" : t2.name) : "未定"));
+        d.appendChild(row);
       });
+      box.appendChild(d); els[i] = { el: d, cx: CW / 2, cy: y + CH / 2 };
     });
-    var fitS = Math.min(1700 / Math.max(1, W), 860 / Math.max(1, H), 1);
-    brInfo = { box: box, els: els, W: W, H: H, fitS: fitS, n: -1 };
+    var cur = els.map(function (e2) { return { x: CW, y: e2.cy }; }), x = CW, lv = 0;
+    while (cur.length > 1) {                                                              // 勝ち上がりの線（ペアごとに、次の節へ）
+      lv++;
+      var nx = x + STEP, next = [];
+      for (var i = 0; i < cur.length; i += 2) {
+        var a2 = cur[i], b2 = cur[i + 1], ny = b2 ? (a2.y + b2.y) / 2 : a2.y;
+        [a2, b2].forEach(function (pt) { if (pt) paths.push({ d: "M " + pt.x + " " + pt.y + " H " + (x + STEP / 2) + " V " + ny + " H " + nx, lv: lv }); });
+        next.push({ x: nx, y: ny }); nodes.push({ x: nx, y: ny, lv: lv });
+      }
+      cur = next; x = nx;
+    }
+    lv++;
+    var tx = x + STEP, ty = cur[0].y;                                                      // 決勝の先：優勝のマーク
+    paths.push({ d: "M " + x + " " + ty + " H " + (tx - 90), lv: lv });
+    var W = tx + 260;
+    svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var pEls = paths.map(function (p) { var pe = document.createElementNS(NS, "path"); pe.setAttribute("d", p.d); pe.setAttribute("class", "op-ln"); svg.appendChild(pe); return { el: pe, lv: p.lv }; });
+    box.insertBefore(svg, box.firstChild);
+    var nEls = nodes.map(function (nd) { var ne = el("div", "op-node"); ne.style.left = (nd.x - 13) + "px"; ne.style.top = (nd.y - 13) + "px"; box.appendChild(ne); return { el: ne, lv: nd.lv }; });
+    var tr = el("div", "op-troph"); tr.style.left = (tx - 150) + "px"; tr.style.top = (ty - 190) + "px";
+    tr.appendChild(el("div", "rays")); tr.appendChild(el("div", "cup", "🏆")); tr.appendChild(el("div", "lbl", "CHAMPION"));
+    box.appendChild(tr);
+    box.style.width = W + "px"; box.style.height = H + "px";
+    var fitS = Math.min(1760 / Math.max(1, W), 860 / Math.max(1, H), 1);
+    brInfo = { box: box, els: els, W: W, H: H, fitS: fitS, n: -1, paths: pEls, nodes: nEls, troph: tr, tx: tx, ty: ty, maxLv: lv, started: false, shown: false };
     box.style.transition = "none";
     box.style.transform = "translate(" + ((1920 - W * fitS) / 2) + "px," + ((1080 - H * fitS) / 2 + 40) + "px) scale(" + fitS + ")";
     void box.offsetWidth; box.style.transition = "";
     w.appendChild(box);
     return w;
   }
-  function bracketTick(op, ph, nowS) {                                      // 1カードずつ出す。カメラは、出たカードを追って、最後に全体へ引く
+  function bracketTick(op, ph, nowS) {                                                  // ラウンド1：カメラが、出たカードを追う → 線が伸びて、全体が見える → 優勝のマークへ寄って、輝く
     var b = brInfo, S = op.sec; if (!b) return;
-    var n = Math.floor((nowS - ph.start - S.lead) / S.card) + 1;
-    n = Math.max(0, Math.min(n, b.els.length + 1));
-    if (n === b.n) return;
-    b.n = n;
-    b.els.forEach(function (e, i) { if (e) e.el.classList.toggle("on", i < n); });
-    if (n >= 1 && n <= b.els.length) {
-      var e = b.els[n - 1], s = 1.45;
-      b.box.style.transform = "translate(" + (960 - e.cx * s) + "px," + (540 - e.cy * s) + "px) scale(" + s + ")";
-    } else {
+    var N = b.els.length, el0 = nowS - ph.start - S.lead;
+    if (el0 < N * S.card) {
+      var k = Math.max(0, Math.min(Math.floor(el0 / S.card) + 1, N));
+      if (k === b.n) return;
+      b.n = k;
+      b.els.forEach(function (e2, i) { if (e2) e2.el.classList.toggle("on", i < k); });
+      if (k >= 1) {
+        var e1 = b.els[k - 1], s = 1.45;
+        b.box.style.transform = "translate(" + (960 - e1.cx * s) + "px," + (540 - e1.cy * s) + "px) scale(" + s + ")";
+      }
+      return;
+    }
+    var t = (el0 - N * S.card) * 1000;                                                    // 線が始まってからの時間（ミリ秒）
+    if (!b.started) {
+      b.started = true;
+      b.els.forEach(function (e2) { if (e2) e2.el.classList.add("on"); });
       b.box.style.transform = "translate(" + ((1920 - b.W * b.fitS) / 2) + "px," + ((1080 - b.H * b.fitS) / 2 + 40) + "px) scale(" + b.fitS + ")";
+      b.paths.forEach(function (p) {
+        var len = p.el.getTotalLength();
+        p.el.style.strokeDasharray = len; p.el.style.strokeDashoffset = len;
+        p.el.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 1000, delay: 400 + (p.lv - 1) * 1000, fill: "forwards", easing: "ease-in-out" });
+      });
+      b.nodes.forEach(function (nd) {
+        nd.el.animate([{ transform: "scale(0)", opacity: 0 }, { transform: "scale(1.5)", opacity: 1 }, { transform: "scale(1)", opacity: 1 }], { duration: 500, delay: 400 + (nd.lv - 1) * 1000 + 900, fill: "forwards" });
+      });
+    }
+    if (!b.shown && t >= 400 + b.maxLv * 1000 + 100) {
+      b.shown = true;
+      b.troph.classList.add("on");
+      var s2 = 1.15;
+      b.box.style.transform = "translate(" + (960 - b.tx * s2) + "px," + (540 - b.ty * s2) + "px) scale(" + s2 + ")";
     }
   }
   function renderOpen(data) {
@@ -2750,18 +2901,16 @@
       var key = ph.kind + ":" + ph.idx;
       if (key !== openKey) {
         openKey = key;
-        if (ph.kind === "greet") {                                         // 開会の挨拶：いつもの待機の画面（キャスターは、キャスター表示に出る）
-          root.className = "flow"; kind = "flow"; renderRules(data.rules || {}); setMedia([]); return;
-        }
+        if (ph.kind === "end") return;                                       // 全部終わった：次のデータが来るまで、最後の画面のまま
         root.className = "stage"; kind = "stage";
         screenEl.replaceChildren(openScene(ph, op));
         fit();
       }
-      if (ph.kind === "greet") return;
+      if (ph.kind === "end") return;
       var sc = screenEl.firstChild;
       if (!sc || !sc.classList || !sc.classList.contains("op")) return;
       if (ph.kind === "bracket") bracketTick(op, ph, nowS);
-      else if (ph.kind !== "team" && ph.start + ph.dur - nowS <= 0.8 && !sc.classList.contains("leave")) sc.classList.add("leave");
+      else if (ph.kind !== "team" && ph.kind !== "swap" && ph.start + ph.dur - nowS <= 0.8 && !sc.classList.contains("leave")) sc.classList.add("leave");
     }
     tick();
     openTimer = setInterval(tick, 150);
