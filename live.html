@@ -2245,7 +2245,7 @@
   var championSeen = { key: null, at: 0 }, championTimer = null;
   function finaleMode(data) {
     var f = data && data.finale;
-    if (!f || data.state === "play" || data.state === "hold") return null;
+    if (!f || data.state === "play" || data.state === "hold" || data.state === "open" || data.state === "close" || data.state === "black") return null;        // 配信の開始・終了の場面では、優勝画面は出さない
     var iv = f.interview || {}, st = f.stage || "", mv = f.mvp || {};
     var mvAwards = arr(mv.awards), mvIv = mv.interview || {};
     if (st === "bracket" && f.bracket) return "bracket";                                  // 最後のトーナメント表
@@ -2469,10 +2469,10 @@
     else {
       var scene;
       clearTimeout(musicTimer);
-      if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
-      else if (data.state === "black") scene = null;                                // 真っ黒：音楽は止める
+      if (data.state === "black") scene = null;                                     // 真っ黒：音楽は止める（優勝画面などの音楽より、先に決める）
       else if (data.state === "open") scene = Date.now() / 1000 < data.open.t0 + data.open.visual_sec ? "open" : null;     // 配信開始の音楽：演出の間だけ（開会の挨拶は、静かに）
-      else if (data.state === "close") scene = "close";                             // 配信終了の音楽：「大会終了」の画面
+      else if (data.state === "close") scene = "close";                             // 配信終了の音楽：「大会終了」の画面（優勝・インタビューの音楽からは、ここで切り替わる）
+      else if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
       else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
       else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
       else if (data.state === "result") {                                           // 試合終了から30秒は、BAN/PICKの音楽のまま → そのあと、試合の間の音楽にフェードで切り替える
