@@ -575,6 +575,7 @@
   .sp .sub2 { text-align: center; color: var(--text); font-size: 20px; line-height: 1.5; margin: 4px 0 10px; }
   .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 19px; line-height: 1.55; }
   .sp li { counter-increment: s; margin: 6px 0; padding: 8px 12px 8px 48px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
+  .syncq { color: var(--gold); text-shadow: 0 0 18px color-mix(in srgb, var(--gold) 55%, transparent); }
   .sp .bptip strong, .sp li strong { font-weight: 900; background: linear-gradient(transparent 58%, rgba(255, 210, 63, .5) 58%); }
   .sp li::before { content: counter(s); position: absolute; left: 10px; top: 9px; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 16px; }
   .sp .warn { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); font-size: 17px; }
@@ -1638,9 +1639,13 @@
     }).catch(function (e) { BUSY = false; msg("ng", "⚠ " + (e.message || "つながりませんでした。")); });
   }
   // ───── 共感覚モードの確認（出場するサバイバー全員が、オフにして、OKを押す） ─────
+  var SYNC_T0 = 0, SYNC_TM = 0;
   function renderSync() {
     var sy = S.sync, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, roster = (sd && sd.roster) || [];
-    var players = arr0(sy.players), inRoster = !!me && roster.indexOf(me) >= 0, mine = players.filter(function (p) { return p.k === me; })[0];
+    var players = arr0(sy.players), inRoster = !!me && roster.indexOf(me) >= 0, isRep = !!me && !!sd && sd.rep === me;
+    if (!SYNC_T0) SYNC_T0 = Date.now();                                                   // 全員に、「本当にオフにしましたか？」を、ボタン無しで3秒見せる。そのあと、サバイバー代表に「OK」を押してもらう
+    var wait3 = SYNC_T0 + 3000 - Date.now();
+    if (wait3 > 0 && !SYNC_TM) SYNC_TM = setTimeout(function () { SYNC_TM = 0; render(); }, wait3 + 60);
     document.querySelector("main").classList.add("view");
     var nt = $("notice"); nt.textContent = "";
     nt.appendChild(el("div", "bar info", "👻 共感覚モードの確認"));
@@ -1652,25 +1657,19 @@
     } else {
       col.appendChild(el("h3", "", "🔵 サバイバー側"));
       col.appendChild(el("div", "selhint selbig", "共感覚モード（脱落後の幽霊モード）をオフにしてください。"));
-      col.appendChild(el("div", "selhint selmid", "オフにしたら「OK」ボタンを押してください。（" + (sy.done || 0) + "/" + (sy.total || 0) + "）"));
-      col.appendChild(el("div", "selhint", "全員のOKがそろうと、「確定」が光ります。光ったら、誰か1人が押せば進みます。"));
+      col.appendChild(el("div", "selhint selbig syncq", "本当にオフにしましたか？共感覚モード"));
+      col.appendChild(el("div", "selhint selmid", wait3 > 0 ? "（もう一度、確かめてください）" : isRep ? "オフにしたことを確かめたら、「OK」ボタンを押してください。" : "サバイバー代表が「OK」を押すのを待っています。"));
       col.appendChild(el("div", "selcount", "確認するメンバー（この枠に出場するサバイバー）"));
       var tiles = el("div", "seltiles");
-      players.forEach(function (p) { tiles.appendChild(selTile(p, { on: !!p.ok, badge: p.ok ? "✅" : "⬜", me: p.k === me, dim: !p.ok && p.k !== me })); });
+      players.forEach(function (p) { tiles.appendChild(selTile(p, { me: p.k === me })); });
       col.appendChild(tiles);
       if (!inRoster) col.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
     }
     wrap.appendChild(col); work.appendChild(wrap);
-    if (MY !== "h" && inRoster && mine && !mine.ok) {
-      var go = el("button", "btn go", BUSY ? "データ送信中…" : "OK"); go.type = "button"; go.disabled = BUSY;
-      go.addEventListener("click", function () { selAct("sync_ok", null, function () { var q = S && S.sync && arr0(S.sync.players).filter(function (p2) { return p2.k === me; })[0]; return !S.sync || (q && q.ok); }); });
+    if (MY !== "h" && isRep && wait3 <= 0) {                                              // 3秒たったら、サバイバー代表にだけ、「OK」
+      var go = el("button", "btn go ready", BUSY ? "データ送信中…" : "OK"); go.type = "button"; go.disabled = BUSY;
+      go.addEventListener("click", function () { selAct("sync_ok", null, function () { return !S.sync; }); });
       $("bar").appendChild(go);
-    }
-    if (MY !== "h" && inRoster) {                                                         // 全員のOKがそろうと光る「確定」（誰か1人が押せば進む）
-      var allOk = !!sy.total && (sy.done || 0) >= sy.total;
-      var fin = el("button", "btn go" + (allOk ? " ready" : ""), BUSY ? "データ送信中…" : "確定"); fin.type = "button"; fin.disabled = BUSY || !allOk;
-      fin.addEventListener("click", function () { selAct("sync_confirm", null, function () { return !S.sync; }); });
-      $("bar").appendChild(fin);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
     refreshSealed();
@@ -1763,6 +1762,7 @@
     $("ttl").textContent = "🎯 BAN/PICK｜" + (S.round || "") + "｜" + (S.slot || "");
     $("sub").textContent = S.title || "";
     if (S.select) { renderSelect(); return; }                                              // 選手選びの段階
+    if (!S.sync) SYNC_T0 = 0;
     if (S.sync) { renderSync(); return; }                                                  // 共感覚モードの確認
     document.querySelector("main").classList.toggle("view", !SIDE);
     var nt = $("notice"); nt.textContent = "";
