@@ -469,7 +469,7 @@
   .shutmsg.plain { animation-delay: 0s; animation-duration: .01s; }
   .shutmsg { position: absolute; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; opacity: 0; animation: bp-msgin 1s ease-out 1s forwards; }
   .shutmsg .t1 { font-size: 40px; font-weight: 800; color: var(--ac); letter-spacing: .08em; }
-  .shutmsg .t2 { font-size: 20px; color: var(--fg0); line-height: 1.7; }
+  .shutmsg .t2 { font-size: 20px; color: var(--fg0); line-height: 1.7; white-space: pre-line; }
   html.rot .shutmsg .t1 { font-size: 34px; } html.rot .shutmsg .t2 { font-size: 18px; }
   @keyframes bp-msgin { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
   /* 名札を入れたときの演出（体験会では出さない）：弾む・光が走る・「○○ PICK！」の吹き出し */
@@ -568,7 +568,7 @@
   .sppick .pknote { margin-top: 10px; padding: 8px 10px; border-left: 4px solid var(--ac); background: color-mix(in srgb, var(--ac) 12%, transparent); font-size: 14px; line-height: 1.55; color: var(--text); }
   html.rot .sppick .pknote { font-size: 12px; margin-top: 6px; padding: 4px 8px; }
   .sp .emph { font-weight: 800; text-decoration: underline; text-decoration-color: var(--ac); text-decoration-thickness: 3px; text-underline-offset: 5px; }
-  .sp .big { font-size: 34px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
+  .sp .big { white-space: pre-line; font-size: 34px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
   .sp .plain { text-align: center; color: var(--text); font-size: 15px; line-height: 1.6; margin: 2px 0 8px; }
   .sp .rainbowtx { background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
                    -webkit-text-fill-color: transparent; color: transparent; animation: sc-rainbow 3.2s linear infinite; filter: drop-shadow(0 0 6px rgba(255,255,255,.35)); }       /* 虹色に光る */
@@ -1057,7 +1057,7 @@
   function personaMenu(side, id) {
     var ov = el("div", "ask pmod"), card = el("div", "card"), ch = CH[id];
     card.appendChild(el("div", "pt", (ch ? ch.n : "") + " の人格"));
-    card.appendChild(el("div", "pn", "人格設定は相談用に表示しているだけであり、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
+    card.appendChild(el("div", "pn", "キャラの名札を押すと人格を設定できます。ただの相談用なので、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
     var grid = el("div", "pgrid");
     function paint() {
       grid.textContent = "";
@@ -1126,42 +1126,14 @@
     }, 5000);
     document.body.classList.add("scaryon");                                                // 画面の全体を、真っ黒に（音量のバーなども、隠す）
   }
-  function buildGate() {
-    var old = $("gate");
-    if (!S || !S.gate) { if (old) old.remove(); return; }
-    var hostNow = HOST && UID ? "1" : "0";
-    if (old && old.getAttribute("data-host") === hostNow) return;                           // 同じ状態では、作り直さない（長押しの途中で、消えないように）
-    if (old) old.remove();                                                                 // 部屋を立てる人と分かったら、ボタンつきに作り直す
-    var ov = el("div", "ask gatebox"), card = el("div", "card"); ov.id = "gate"; ov.setAttribute("data-host", hostNow);
-    if (HOST && UID) {
-      card.appendChild(el("div", "gt1", (S.gate_name || "") + "がカスタム戦を開いてください。"));
-      card.appendChild(el("div", "gt2", "選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
-      card.appendChild(el("div", "gt3", "理解した場合は、OKボタンを長押ししてください。"));
-      var b = el("button", "holdbtn"), bar = el("span", "holdbar"), lab = el("span", "holdlab", "OK"), note = el("div", "note", "");
-      b.type = "button"; b.appendChild(bar); b.appendChild(lab);
-      var timer = null, t0 = 0, fired = false;
-      function reset() { clearTimeout(timer); timer = null; bar.style.transition = "none"; bar.style.width = "0%"; }
-      b.addEventListener("pointerdown", function (e) {
-        e.preventDefault(); fired = false; t0 = Date.now(); bar.style.transition = "none"; bar.style.width = "0%"; void bar.offsetWidth;
-        bar.style.transition = "width 2s linear"; bar.style.width = "100%";
-        timer = setTimeout(function () {
-          fired = true; reset(); lab.textContent = "データ送信中…";
-          sendAct("roomok").then(function (res) {
-            if (res && res.ok) { lab.textContent = "OK"; return refresh(); }
-            lab.textContent = "OK"; note.className = "note ng"; note.textContent = "⚠ " + ((res && res.error) || "BOTからの返事がありません。");
-          }).catch(function (e2) { lab.textContent = "OK"; note.className = "note ng"; note.textContent = "⚠ " + (e2.message || "つながりませんでした。"); });
-        }, 2000);
-      });
-      function release() { if (fired || !timer) return; var short = Date.now() - t0 < 2000; reset(); if (short) scary(); }
-      ["pointerup", "pointerleave", "pointercancel"].forEach(function (n) { b.addEventListener(n, release); });
-      b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-      var row = el("div", "row"); row.appendChild(b); card.appendChild(note);
-      setTimeout(function () { if (ov.parentNode) card.insertBefore(row, note); }, 5000);          // OKボタンは、5秒間は、出さない（先に、よく読んでもらう）
-    } else {
-      card.appendChild(el("div", "gt1", (S.gate_name || "部屋を立てる人") + "がカスタム戦を開いてください。"));
-      card.appendChild(el("div", "gt2", "選手を呼び、モードを設定して、試合が始められる状態にしてください。"));
+  var GATE_AUTO = false;
+  function buildGate() {                                                                     // 「カスタム戦を開いてください」の確認の枠は、やめた。BANPICK完了の演出のあと、部屋を開く人のブラウザが、自動でOKを送る
+    var old = $("gate"); if (old) old.remove();
+    if (!S || !S.gate) { GATE_AUTO = false; return; }
+    if (HOST && UID && !GATE_AUTO && PANEL_READY) {                                         // 「BANPICK完了」の演出が終わってから
+      GATE_AUTO = true;
+      sendAct("roomok").then(function () { return refresh(); }).catch(function () { GATE_AUTO = false; });
     }
-    ov.appendChild(card); $("stage").appendChild(ov);
   }
   // ───── 試合中：試合終了（サバイバー側・ハンター側の両方が押す。試合開始の3分後から）→結果の入力（両側が入力して、一致したら登録） ─────
   var RES = { h: null, img: "", noimg: false, miss: 0 };
@@ -1301,8 +1273,8 @@
     $("stage").appendChild(m);
     setTimeout(function () {                                                                // 画面が戻って、スクショの画面
       m.remove(); $("shell").classList.remove("off");
-      PANEL_READY = true; PANEL_TIMER = 0; buildPanel();
-    }, fx() ? 2600 : 1500);
+      PANEL_READY = true; PANEL_TIMER = 0; buildPanel(); buildGate();
+    }, 2000);                                                                                // 「BANPICK完了」は、2秒見せてから、次の案内（試合モードを開いてください）
   }
   // ───── 体験会：試合のあと（本番と同じ流れ）。省略の選択・結果の入力（ハンター）はここ。試合終了・確認はDiscord。報告が終わったら、ここに出して、6秒後にシャットダウン ─────
   var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, img: "", noimg: false };
@@ -1342,7 +1314,7 @@
     var top = pc ? pc.scrollTop : 0; if (pc) pc.remove();
     pc = el("div", "sppick"); pc.id = "sppick"; pc.setAttribute("data-sig", sig);
     pc.appendChild(picksBlock(true, true));
-    pc.appendChild(el("div", "pknote", "人格設定は相談用に表示しているだけであり、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
+    pc.appendChild(el("div", "pknote", "キャラの名札を押すと人格を設定できます。ただの相談用なので、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
     $("stage").appendChild(pc); pc.scrollTop = top;
     return pc;
   }
@@ -1358,7 +1330,12 @@
       ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
       if (!SHUT) {                                                                          // 6秒見せてから、シャットダウン（このページは、ここで終わり）
         SHUT = true;
-        setTimeout(function () { $("shell").classList.add("off"); var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", "BANPICK体験会")); m.appendChild(el("div", "t2", "ご参加ありがとうございました")); $("stage").appendChild(m); }, 6000);
+        setTimeout(function () {
+          $("shell").classList.add("off");
+          var oldsp = $("sp"); if (oldsp) oldsp.remove();                                  // 「正常に報告されました」の枠は、消してから（重ねない）
+          Array.prototype.forEach.call(document.querySelectorAll(".shutmsg"), function (x) { x.remove(); });
+          var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", "BANPICK体験会")); m.appendChild(el("div", "t2", "ご参加ありがとうございました" + "\n" + "ブラウザを閉じて次の試合に進みます。")); $("stage").appendChild(m);
+        }, 6000);
       }
       return;
     }
@@ -1445,7 +1422,7 @@
     ensurePickCol();
     var ov = el("div", "ask sp split"), card = el("div", "card");
     ov.id = "sp";
-    card.appendChild(el("div", "big", stg === "shot" ? (S.expo && MY === "h" ? "⏳ サバイバーが、部屋を開いています" : "🚪 部屋を開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
+    card.appendChild(el("div", "big", stg === "shot" ? (S.expo && MY === "h" ? "⏳ サバイバーが、部屋を開いています" : "🚪 試合モードを開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
       hunterRoomNote(card); holdNote(card);
@@ -1464,9 +1441,9 @@
         ol.appendChild(el("li", "", x));
       });
       card.appendChild(ol);
-      card.appendChild(el("div", "big", (S.opener ? S.opener + "さん、" : "") + "準備をしてスクショを送ってください"));
+      card.appendChild(el("div", "big", (S.opener ? S.opener + "さん、" : "") + "準備をして" + "\n" + "スクショを送ってください"));
       card.appendChild(el("div", "plain", "※やり方が分からない場合は別のサバイバーが代わりにやっても良いです。"));         // 普通の文字の大きさ
-      card.appendChild(el("div", "big rainbowtx", "カウントダウンが始まるまでは試合を始めないでください"));                    // 大きな文字
+      card.appendChild(el("div", "big rainbowtx", "カウントダウンが始まるまでは" + "\n" + "試合を始めないでください"));                    // 大きな文字
       holdNote(card);
       if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
@@ -1585,6 +1562,7 @@
   function shutdown() {
     removePickCol();
     if (fx()) $("shell").classList.add("off");
+    Array.prototype.forEach.call(document.querySelectorAll(".shutmsg"), function (x) { x.remove(); });        // 終了のメッセージは、1つだけ
     var m = el("div", "shutmsg" + (fx() ? "" : " plain"));
     m.appendChild(el("div", "t1", S && S.expo ? "BANPICK体験会" : "BANPICK完了"));
     if (S && S.expo && S.end_text) m.appendChild(el("div", "t2", S.end_text));
