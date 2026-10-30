@@ -1336,6 +1336,7 @@
   .sw-av img { width: 100%; height: 100%; object-fit: cover; }
   .sw-nm { font-family: var(--cond); font-weight: 800; font-size: 48px; text-shadow: 0 0 12px rgba(0, 0, 0, .8); max-width: 360px; text-align: center; overflow-wrap: anywhere; }
   .sw-p.fr .sw-av { opacity: .8; filter: grayscale(.4); }
+  .sw-bye { font-family: var(--cond); font-weight: 800; font-size: 30px; color: var(--accent); text-shadow: 0 0 12px rgba(0, 0, 0, .8); text-align: center; animation: swArrow 1.2s ease-out 3.4s both; }
   .sw-arrow { font-size: 76px; letter-spacing: -.1em; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: swArrow 1.4s ease-in-out 1.4s infinite both; opacity: 0; }
   @keyframes swIn { from { opacity: 0; transform: translateX(-70px) scale(.9); } to { opacity: 1; transform: none; } }
   .sw-grp.to { animation-name: swInR; } @keyframes swInR { from { opacity: 0; transform: translateX(70px) scale(.9); } to { opacity: 1; transform: none; } }
@@ -2614,6 +2615,7 @@
   function stopIntroTimer() { if (introTimer) { clearInterval(introTimer); introTimer = null; } introKey = null; stopOpenTimer(); }
   function introPhase(iv, nowS) {
     var C = iv.caster_sec || 20, T = iv.team_sec || 20, P = iv.player_sec || 25;
+    if (iv.swap && nowS >= iv.swap_start && nowS < iv.swap_start + iv.swap_sec) return { kind: "rswap", idx: 0, start: iv.swap_start, dur: iv.swap_sec };          // ラウンドの切り替え：キャスター交代（10秒）
     var cs = arr(iv.casters), t0 = iv.caster_start;
     var i = Math.floor((nowS - t0) / C);
     if (nowS >= t0 && i >= 0 && i < cs.length) return { kind: "caster", idx: i, p: cs[i], start: t0 + i * C, dur: C };
@@ -2678,8 +2680,24 @@
     r.appendChild(el("div", "v", v));
     return r;
   }
+  function rswapScene(sw) {                                                             // ラウンドの切り替え：前のキャスター → 次のキャスター。このラウンドで抜ける人は、お別れを言う
+    var w = opBase("op-swap"), c = el("div", "op-c");
+    c.appendChild(el("div", "op-sub", "CASTER CHANGE"));
+    c.appendChild(el("div", "op-title op-t2", "キャスターを交代します"));
+    var row = el("div", "sw-row"), from = el("div", "sw-grp from"), to = el("div", "sw-grp to");
+    arr(sw.from).forEach(function (p) {
+      var b = personBox(p, "fr");
+      if (p.leaving) b.appendChild(el("div", "sw-bye", "ありがとうございました！"));
+      from.appendChild(b);
+    });
+    arr(sw.to).forEach(function (p) { to.appendChild(personBox(p, "to")); });
+    row.appendChild(from); row.appendChild(el("div", "sw-arrow", "▶▶▶")); row.appendChild(to);
+    c.appendChild(row); w.appendChild(c);
+    return w;
+  }
   function introScene(ph, iv) {
     var w, row;
+    if (ph.kind === "rswap") return rswapScene(iv.swap || {});
     if (ph.kind === "caster") {
       w = introBase("");
       w.appendChild(introTag("キャスター自己紹介"));
