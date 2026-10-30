@@ -1231,11 +1231,27 @@
     ov.appendChild(el("div", "al1", "認証が切れたのでDiscordに戻って再度「ブラウザで開く」ボタンを押して新しいURLを発行してください。"));
     $("stage").appendChild(ov);
   }
-  function sendAct(act, extra) {                                                         // スクショの送信・試合開始：署名つきの依頼を、受け箱へ
+  function sendActRetry(act, extra, isDone) {                                           // 受け箱は部屋に1つだけ：ほぼ同時に押すと、ほかの人の依頼と重なって、返事が来ないことがある。同じ操作は、何度送っても同じなので、返事が無ければ、少しずらして送り直す
+    var n = 0;
+    function once() {
+      n++;
+      return sendAct(act, extra, 7).catch(function () { return null; }).then(function (res) {
+        if (res && (res.ok || /もう(終わって|決まって)/.test(res.error || ""))) return { ok: true };
+        if (res) return res;                                                              // BOTが、はっきり断った
+        return refresh().then(function () {
+          if (isDone && isDone()) return { ok: true };
+          if (n >= 4) return null;
+          return new Promise(function (ok) { setTimeout(ok, 300 + Math.random() * 1500); }).then(once);
+        });
+      });
+    }
+    return once();
+  }
+  function sendAct(act, extra, tries) {                                                  // スクショの送信・試合開始：署名つきの依頼を、受け箱へ
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     var body = { side: LETTER, uid: UID, tok: TOK, act: act }; for (var k in (extra || {})) body[k] = extra[k];
     return fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _bp: body } }) })
-      .then(function (r) { if (!r.ok) throw new Error(inboxErr(r.status)); return waitResult(nonce, 30); })
+      .then(function (r) { if (!r.ok) throw new Error(inboxErr(r.status)); return waitResult(nonce, tries || 30); })
       .then(function (res) { if (isAuthLost(res)) showAuthLost(); return res; });
   }
   function shrinkImage(file, cb) {                                                       // スクショを、JPEGに縮める（幅1600px以内・約1.3MB以内）
@@ -1611,10 +1627,11 @@
     return tl;
   }
   var SELP = {};                                                                           // 選びかけの内容（「確定」を押すまで、送らない）：att＝出場する／しない、vote＝代表にしたい人、hunter＝ハンターの選手
-  function selAct(act, k) {
+  function selAct(act, k, isDone, extra) {
     if (BUSY) return;
     BUSY = true; msg("", "データ送信中…（BOTが確認します。数秒かかります。そのままお待ちください）"); render();
-    sendAct(act, k ? { k: k } : {}).then(function (res) {
+    var body = k ? { k: k } : {}; for (var ek in (extra || {})) body[ek] = extra[ek];
+    sendActRetry(act, body, isDone).then(function (res) {
       BUSY = false;
       if (!(res && res.ok)) msg("ng", "⚠ " + ((res && res.error) || "BOTからの返事がありません。")); else { msg("", ""); SELP = {}; }
       return refresh().then(render);
@@ -1636,6 +1653,7 @@
       col.appendChild(el("h3", "", "🔵 サバイバー側"));
       col.appendChild(el("div", "selhint selbig", "共感覚モード（脱落後の幽霊モード）をオフにしてください。"));
       col.appendChild(el("div", "selhint selmid", "オフにしたら「OK」ボタンを押してください。（" + (sy.done || 0) + "/" + (sy.total || 0) + "）"));
+      col.appendChild(el("div", "selhint", "全員のOKがそろうと、「確定」が光ります。光ったら、誰か1人が押せば進みます。"));
       col.appendChild(el("div", "selcount", "確認するメンバー（この枠に出場するサバイバー）"));
       var tiles = el("div", "seltiles");
       players.forEach(function (p) { tiles.appendChild(selTile(p, { on: !!p.ok, badge: p.ok ? "✅" : "⬜", me: p.k === me, dim: !p.ok && p.k !== me })); });
@@ -1645,8 +1663,14 @@
     wrap.appendChild(col); work.appendChild(wrap);
     if (MY !== "h" && inRoster && mine && !mine.ok) {
       var go = el("button", "btn go", BUSY ? "データ送信中…" : "OK"); go.type = "button"; go.disabled = BUSY;
-      go.addEventListener("click", function () { selAct("sync_ok"); });
+      go.addEventListener("click", function () { selAct("sync_ok", null, function () { var q = S && S.sync && arr0(S.sync.players).filter(function (p2) { return p2.k === me; })[0]; return !S.sync || (q && q.ok); }); });
       $("bar").appendChild(go);
+    }
+    if (MY !== "h" && inRoster) {                                                         // 全員のOKがそろうと光る「確定」（誰か1人が押せば進む）
+      var allOk = !!sy.total && (sy.done || 0) >= sy.total;
+      var fin = el("button", "btn go" + (allOk ? " ready" : ""), BUSY ? "データ送信中…" : "確定"); fin.type = "button"; fin.disabled = BUSY || !allOk;
+      fin.addEventListener("click", function () { selAct("sync_confirm", null, function () { return !S.sync; }); });
+      $("bar").appendChild(fin);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
     refreshSealed();
@@ -1675,17 +1699,18 @@
           var isMe = p.k === me, on = isMe ? pendAtt : att.indexOf(p.k) >= 0;
           tiles.appendChild(selTile(p, { on: on, badge: on ? "✔" : "", me: isMe, click: isMe && !BUSY ? function () { SELP.att = !pendAtt; render(); } : null, dim: !isMe && !on }));
         });
-        if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend"); }];
+        if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend", null, null, { on: !!pendAtt }); }];
       } else {
-        cs.appendChild(el("div", sd.rep ? "selhint" : "selhint selbig", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。" : "出場する全員が同じ人を選ぶと、代表が決まります。"));
+        cs.appendChild(el("div", sd.rep ? "selhint" : "selhint selbig", sd.rep ? "代表が決まりました。ハンター側の選択を待っています。" : "代表にしたい人のアイコンを押して、チェックを付けてください。"));
+        if (!sd.rep) cs.appendChild(el("div", "selhint selmid", "出場する全員が同じ人を選ぶと、「代表を確定」が光ります。光ったら、誰か1人が押せば決まります。"));
         var counts = {}; Object.keys(votes).forEach(function (v) { counts[votes[v]] = (counts[votes[v]] || 0) + 1; });
-        var myVote = me ? votes[me] : null, pendVote = SELP.vote || myVote;
-        if (SELP.vote && SELP.vote === myVote) SELP.vote = null;
+        var myVote = me ? votes[me] : null;
+        var agreed = roster.length > 0 && roster.every(function (r) { return votes[r] && votes[r] === votes[roster[0]]; });
         SPL.filter(function (p) { return roster.indexOf(p.k) >= 0; }).forEach(function (p) {
-          tiles.appendChild(selTile(p, { on: sd.rep === p.k || pendVote === p.k, badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
-            click: inRoster && !sd.rep && !BUSY ? function () { SELP.vote = p.k; render(); } : null }));
+          tiles.appendChild(selTile(p, { on: sd.rep === p.k || myVote === p.k, badge: sd.rep === p.k ? "代表" : (counts[p.k] ? "✔" + counts[p.k] : ""), me: p.k === me,
+            click: inRoster && !sd.rep && !BUSY ? function () { if (myVote !== p.k) selAct("sel_vote", p.k, function () { var v2 = OPENED.data && OPENED.data.sel && OPENED.data.sel.votes; return !!(v2 && v2[me] === p.k); }); } : null }));
         });
-        if (inRoster && !sd.rep && SELP.vote && SELP.vote !== myVote) confirmBtn = ["代表を確定", function () { selAct("sel_vote", SELP.vote); }];
+        if (inRoster && !sd.rep) confirmBtn = ["代表を確定", function () { selAct("sel_rep_confirm", null, function () { var s2 = OPENED.data && OPENED.data.sel; return !!(s2 && s2.rep); }); }, agreed, !agreed];
         if (!inRoster) cs.appendChild(el("div", "selspec", "👀 観戦モード（出場しない人は、見るだけです）"));
       }
     } else {
@@ -1711,7 +1736,7 @@
     ch.appendChild(t2); if (side !== "s") wrap.appendChild(ch);
     work.appendChild(wrap);
     if (confirmBtn) {
-      var go = el("button", "btn go", BUSY ? "データ送信中…" : confirmBtn[0]); go.type = "button"; go.disabled = BUSY;
+      var go = el("button", "btn go" + (confirmBtn[2] ? " ready" : ""), BUSY ? "データ送信中…" : confirmBtn[0]); go.type = "button"; go.disabled = BUSY || !!confirmBtn[3];
       go.addEventListener("click", confirmBtn[1]); $("bar").appendChild(go);
     }
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
