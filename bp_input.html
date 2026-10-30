@@ -575,7 +575,7 @@
   .sp .sub2 { text-align: center; color: var(--text); font-size: 20px; line-height: 1.5; margin: 4px 0 10px; }
   .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 19px; line-height: 1.55; }
   .sp li { counter-increment: s; margin: 6px 0; padding: 8px 12px 8px 48px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
-  .sp li strong { font-weight: 900; background: linear-gradient(transparent 58%, rgba(255, 210, 63, .5) 58%); }
+  .sp .bptip strong, .sp li strong { font-weight: 900; background: linear-gradient(transparent 58%, rgba(255, 210, 63, .5) 58%); }
   .sp li::before { content: counter(s); position: absolute; left: 10px; top: 9px; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; background: var(--ac); color: var(--ac-on); font-weight: 800; font-size: 16px; }
   .sp .warn { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--gold); font-size: 17px; }
   .sp .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
@@ -1279,6 +1279,12 @@
   }
   // ───── 体験会：試合のあと（本番と同じ流れ）。省略の選択・結果の入力（ハンター）はここ。試合終了・確認はDiscord。報告が終わったら、ここに出して、6秒後にシャットダウン ─────
   var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, img: "", noimg: false };
+  function gameBpTip() {                                                                     // ゲーム内のBANPICKの注意（「自チーム選手を試合モードに呼んでください」の次）
+    return MY === "h"
+      ? { pre: "ゲーム内のBANPICKでは", em: "キャラを選んだら必ず確定ボタンを押してください。", post: "確定ボタンが押されないと幸運児や弁護士がBANされ、復讐者がPICKされてしまいます。" }
+      : { pre: "ゲーム内でサバイバーの一番上に並んでいる人がBANPICKを行います。BANPICK時間がかなり短いため、操作が得意な人が担当してください。", em: "キャラを選んだら必ず確定ボタンを押してください。", post: "時間が過ぎたり確定ボタンが押せないと幸運児や弁護士が自動で選ばれてしまい場合によっては不戦敗となります。" };
+  }
+  function tipInto(node, x) { node.appendChild(document.createTextNode(x.pre)); node.appendChild(el("strong", "", x.em)); node.appendChild(document.createTextNode(x.post)); }
   function holdNote(card) {                                                                 // ハンター側：部屋に入っても、合図があるまで始めない（強調）
     if (MY !== "h") return;
     card.appendChild(el("div", "hrnwarn", "⚠ 部屋に入っても、合図（カウントダウンが00:00になる）があるまで、まだ試合を始めないでください。"));
@@ -1427,6 +1433,7 @@
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
       hunterRoomNote(card); holdNote(card);
+      var tipBox = el("div", "sub2 bptip"); tipInto(tipBox, gameBpTip()); card.appendChild(tipBox);       // 体験会のハンター側も、同じタイミングで
       card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
     } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
@@ -1435,14 +1442,14 @@
       ["カスタム戦【試合モード】でサバイバーBANを0個、ハンターBANを0個にし、スポーン選択オンに設定してください。※必ず試合モードにしてください！",
        "マップを" + (mapName || "（選ばれたマップ）") + "に設定してください。",
        "自チーム選手を試合モードに呼んでください。",
-       MY === "h" ? null : { pre: "ゲーム内でサバイバーの一番上に並んでいる人がBANPICKを行います。BANPICK時間がかなり短いため、操作が得意な人が担当してください。", em: "キャラを選んだら必ず確定ボタンを押してください。", post: "時間が過ぎたり確定ボタンが押せないと幸運児や弁護士が自動で選ばれてしまい場合によっては不戦敗となります。" },        // サバイバー側の全員（見るだけの人も）に、出す
+       gameBpTip(),                                                                          // サバイバー側の全員（見るだけの人も）・ハンター側の全員に、それぞれの注意を出す
        S.hunter_dummy ? "敵ハンターを招待するために「" + (S.room_name || "") + "」という名前で公開募集を行ってください。（今回はハンターが不在（ダミー）なので、募集せずそのまま進んでください）"
                       : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。"
                         + (hinfo ? "ハンター名：" + (hinfo.name || "") + "　ID：" + (hinfo.id || "") + "　※正しい相手か必ず確認してください。" : ""),
        "全員揃ったらゲームの準備画面をスクショします。それをモデレーターが確認し、必要な場合はキャスターが観戦に入ります。"].forEach(function (x) {
         if (x == null) return;
         var li = el("li", "", typeof x === "string" ? x : "");
-        if (typeof x !== "string") { li.appendChild(document.createTextNode(x.pre)); li.appendChild(el("strong", "", x.em)); li.appendChild(document.createTextNode(x.post)); }
+        if (typeof x !== "string") tipInto(li, x);
         ol.appendChild(li);
       });
       card.appendChild(ol);
