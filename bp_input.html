@@ -994,7 +994,7 @@
     var st = $("status"), lt = $("late");
     if (!S || S.status !== "active" || !S.since) { st.textContent = ""; st.className = ""; lt.hidden = true; return; }
     var e = Math.max(0, Math.floor(Date.now() / 1000 - S.since)), lim = S.limit || 90, over = e >= lim;
-    st.textContent = "⏱ このステップ " + mmss(e) + " / " + lim + "秒" + (over ? "（超えています）" : "");
+    st.textContent = "⏱ このステップ " + e + "/" + lim + "秒" + (over ? "（超えています）" : "");                // 「1:25/90秒」ではなく、秒だけ（85/90秒）
     st.className = over ? "ng" : e >= lim - 20 ? "warn" : "ok";
     if (over) { lt.textContent = "⏰ " + (S.slow_text || "入力に90秒以上かかっています。") + (S.side ? "（いま：" + SIDE_NAME[S.side] + "側の入力待ち）" : ""); }
     lt.hidden = !over;
