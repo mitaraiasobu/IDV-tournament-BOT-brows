@@ -91,8 +91,8 @@
   var EDIT = /^[A-Za-z0-9]{12}$/.test(EDIT_KEY);
   var RELAY = params.get("relay") || "ws://127.0.0.1:8778";
   var POLL_MS = 3000;
-  var LABELS = { hidden: "非表示（配信の開始前・開会の演出・終了後）", open_greet: "開会の挨拶", close_greet: "閉会の挨拶", wait: "試合待機", intro_caster: "キャスター紹介", intro_player: "選手紹介", banpick: "BAN/PICK", play: "試合中", result: "戦績画面", champion: "優勝発表" };
-  var SCENES = ["wait", "open_greet", "intro_caster", "intro_player", "banpick", "play", "result", "champion", "close_greet"];
+  var LABELS = { hidden: "非表示（配信の開始前・開会の演出・終了後）", wait: "試合待機", intro_caster: "キャスター紹介", intro_player: "選手紹介", banpick: "BAN/PICK", play: "試合中", result: "戦績画面", champion: "優勝発表" };
+  var SCENES = ["wait", "intro_caster", "intro_player", "banpick", "play", "result", "champion"];
   function nowScene() {                                                  // BOTのデータの「場面の切り替わり」を、このブラウザの時計で数える（時刻で進む場面（紹介・BAN/PICKの表示）は、データが変わらなくても切り替わる）
     var plan = data && data.plan, now = Date.now() / 1000, sc = (data && data.scene) || "wait";
     if (plan && plan.length) { sc = "wait"; plan.forEach(function (p) { if (p[0] <= now) sc = p[1]; }); }
