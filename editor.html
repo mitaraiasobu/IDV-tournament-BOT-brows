@@ -49,6 +49,15 @@
   .rounds { width: 100%; border-collapse: collapse; } .rounds td { padding: 6px 8px; border-top: 1px solid var(--line); } .rounds td:first-child { white-space: nowrap; }
   #result { margin: 12px 0; } #result.ok { color: var(--ok); } #result.ng { color: var(--bad); }
   .note { color: var(--sub); font-size: 13px; }
+  .tabs { display: flex; gap: 6px; margin-top: 4px; border-bottom: 1px solid var(--line); } .tabs button { border-radius: 8px 8px 0 0; border-bottom: 0; padding: 8px 18px; }
+  .tabs button.on { background: var(--ac); border-color: var(--ac); color: #1a1200; font-weight: 700; }
+  .trow { display: grid; grid-template-columns: 1fr 190px 1.2fr; gap: 10px; align-items: center; padding: 10px 4px; border-top: 1px solid var(--line); } .trow:first-child { border-top: 0; }
+  @media (max-width: 760px) { .trow { grid-template-columns: 1fr; } }
+  .trow label { font-weight: 700; } .trow .hint { color: var(--sub); font-size: 13px; } .trow .calc { color: var(--ac); font-size: 14px; }
+  .trow input[type=number], .trow input[type=datetime-local] { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; color-scheme: dark; }
+  .unit { color: var(--sub); font-size: 13px; }
+  .tl { list-style: none; margin: 0; padding: 0; } .tl li { display: grid; grid-template-columns: 84px 1fr; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--line); } .tl li:first-child { border-top: 0; }
+  .tl .tm { color: var(--ac); font-weight: 700; font-variant-numeric: tabular-nums; } .tl .sub { color: var(--sub); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -65,6 +74,8 @@
   </header>
   <main>
     <div id="result"></div>
+    <div class="tabs" id="tabs"><button type="button" id="tabbp" class="on">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button></div>
+    <div id="tab-bp">
     <h2>BAN/PICKの手順</h2>
     <div class="cols">
       <div class="card"><div class="plist" id="plist"></div><div class="row"><button id="newp" type="button">＋ 新しい手順（白紙）</button></div></div>
@@ -72,6 +83,13 @@
     </div>
     <h2>ラウンドごとの手順</h2>
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
+    </div>
+    <div id="tab-time" hidden>
+      <h2>時間の設定</h2>
+      <div class="card" id="timeform"></div>
+      <h2>全体の流れ（自動で計算します）</h2>
+      <div class="card"><ol class="tl" id="timeline"></ol><div class="note" style="margin-top:8px" id="timenote"></div></div>
+    </div>
   </main>
 </div>
 <script>
@@ -83,7 +101,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var enc = new TextEncoder();
   var data = null, AUTH = null;                         // data＝BOTが書いたデータ／AUTH＝パスワードから作った鍵（16進。このページの中だけ）
-  var P = [], ROUNDS = [], SEL = null, DELETED = [];    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号
+  var P = [], ROUNDS = [], SEL = null, DELETED = [], TM = null, TM0 = null;    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号・時間の設定
   var BASEJSON = "";                                    // 最後に読み込んだ・保存した内容（変更の有無の判定用）
   var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
   var SIDE = { survivor: "サバイバー側", hunter: "ハンター側" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
@@ -203,7 +221,7 @@
   }
 
   // ───────── 画面
-  function dirty() { return JSON.stringify([P, ROUNDS, DELETED]) !== BASEJSON; }
+  function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM]) !== BASEJSON; }
   function refreshDirty() {
     var d = dirty(), e = $("dirty");
     e.textContent = d ? "● 保存していない変更があります" : "変更はありません"; e.className = d ? "" : "clean";
@@ -291,13 +309,71 @@
       b.appendChild(sel); tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
     });
   }
-  function render() { renderList(); renderEdit(); renderRounds(); refreshDirty(); }
+  // ───────── ⏱ 時間管理
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function dayLabel(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
+  function addMin(d, m) { return new Date(d.getTime() + m * 60000); }
+  function addSec(d, s) { return new Date(d.getTime() + s * 1000); }
+  function parseLocal(s) { if (!s) return null; var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
+  function numRow(label, hint, key, unit, lo, hi) {
+    var r = el("div", "trow"), l = el("label", "", label), box = el("div"), inp = el("input"); inp.type = "number"; inp.min = lo; inp.max = hi; inp.step = 1; inp.value = TM[key] == null ? "" : TM[key];
+    l.appendChild(el("div", "hint", hint));
+    var u = el("span", "unit", " " + unit);
+    inp.addEventListener("input", function () { TM[key] = inp.value === "" ? null : Math.round(Number(inp.value)); renderTimeline(); refreshDirty(); });
+    box.appendChild(inp); box.appendChild(u);
+    var calc = el("div", "calc"); calc.setAttribute("data-calc", key);
+    r.appendChild(l); r.appendChild(box); r.appendChild(calc);
+    return r;
+  }
+  function renderTimes() {
+    var f = $("timeform"); f.textContent = "";
+    if (!TM) return;
+    var lim = TM.limits;
+    var r0 = el("div", "trow"), l0 = el("label", "", "配信開始の日時"), b0 = el("div"), i0 = el("input"); i0.type = "datetime-local"; i0.value = TM.open_at || "";
+    l0.appendChild(el("div", "hint", "ライブブラウザで、開会の演出が始まる時刻"));
+    i0.addEventListener("input", function () { TM.open_at = i0.value || null; renderTimeline(); refreshDirty(); });
+    b0.appendChild(i0); r0.appendChild(l0); r0.appendChild(b0); r0.appendChild(el("div", "calc")); f.appendChild(r0);
+    f.appendChild(numRow("配信開始 → ラウンド1の開始", "配信開始の何分後に、ラウンド1が始まる（BAN/PICKが始まる）か。例：10分なら、配信開始が00:00のとき、ラウンド1は00:10", "lead_min", "分後", lim.lead[0], lim.lead[1]));
+    f.appendChild(numRow("準備時間（BAN/PICKから試合まで）", "BAN/PICKが始まってから、ゲームの試合を始めるまで", "prep_minutes", "分", lim.prep[0], lim.prep[1]));
+    f.appendChild(numRow("開会のごあいさつ", "担当のキャスターのアイコンが、画面の中央に出ている時間（右下に、のこり時間が出ます）", "open_greet_sec", "秒", lim.greet[0], lim.greet[1]));
+    f.appendChild(numRow("閉会のごあいさつ", "インタビュー・MVPのあとの、ごあいさつの時間", "close_greet_sec", "秒", lim.greet[0], lim.greet[1]));
+    f.appendChild(numRow("BAN/PICKの1手ごとの間隔", "開発者用大会の自動進行で、1手ずつ進める間隔（ふつうの大会では、使いません）", "step_sec", "秒", lim.step[0], lim.step[1]));
+    f.appendChild(numRow("インタビューの時間（1人あたり）", "優勝チーム・MVPのインタビューで、1人に使う時間", "interview_minutes", "分", lim.interview[0], lim.interview[1]));
+    renderTimeline();
+  }
+  function renderTimeline() {
+    var ol = $("timeline"); if (!ol || !TM) return; ol.textContent = "";
+    function calc(key, text) { var e = document.querySelector('[data-calc="' + key + '"]'); if (e) e.textContent = text || ""; }
+    var open = parseLocal(TM.open_at), lead = TM.lead_min, prep = TM.prep_minutes;
+    var first = open && lead != null ? addMin(open, lead) : null, play = first && prep != null ? addMin(first, prep) : null;
+    calc("lead_min", first ? "→ ラウンド1の開始：" + hhmm(first) + dayLabel(first, open) : (open ? "" : "← 先に、配信開始の日時を入れてください"));
+    calc("prep_minutes", play ? "→ 試合開始（予定）：" + hhmm(play) + dayLabel(play, open) : "");
+    calc("open_greet_sec", TM.open_greet_sec != null ? "→ " + Math.floor(TM.open_greet_sec / 60) + "分" + (TM.open_greet_sec % 60) + "秒" : "");
+    calc("close_greet_sec", TM.close_greet_sec != null ? "→ " + Math.floor(TM.close_greet_sec / 60) + "分" + (TM.close_greet_sec % 60) + "秒" : "");
+    function li(t, main, sub) { var x = el("li"); x.appendChild(el("span", "tm", t)); var d = el("div"); d.appendChild(el("div", "", main)); if (sub) d.appendChild(el("div", "sub", sub)); x.appendChild(d); ol.appendChild(x); }
+    if (!open) { li("--:--", "配信開始の日時を入れると、ここに、全体の流れが出ます", ""); $("timenote").textContent = ""; return; }
+    var call = addMin(open, -TM.caster_call_min);
+    li(hhmm(call) + dayLabel(call, open), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "配信開始の" + TM.caster_call_min + "分前");
+    li(hhmm(open), "配信開始", "開会の演出 → 開会のごあいさつ（" + (TM.open_greet_sec || 0) + "秒）→ ルール紹介 → キャスター交代");
+    if (first) li(hhmm(first) + dayLabel(first, open), "ラウンド1の開始（BAN/PICKの開始）", "試合担当のキャスターを、キャスター用ボイスへ移動。紹介の場面が始まる");
+    if (play) li(hhmm(play) + dayLabel(play, open), "試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
+    $("timenote").textContent = "BAN/PICKの1手ごとの間隔 " + (TM.step_sec || "") + "秒（自動進行のとき）／インタビュー 1人 " + (TM.interview_minutes || "") + "分／閉会のごあいさつ " + (TM.close_greet_sec || "") + "秒。";
+  }
+  function showTab(name) {
+    $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time";
+    $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : "";
+    if (name === "time") renderTimes();
+  }
+  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); refreshDirty(); }
 
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d;
-    P = clone(d.patterns); ROUNDS = clone(d.rounds); DELETED = [];
+    P = clone(d.patterns); ROUNDS = clone(d.rounds); DELETED = []; TM = d.times ? clone(d.times) : null;
+    if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（配信開始の10分後）を入れておく
+    TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、これと比べる
     if (SEL == null || SEL >= P.length) SEL = 0;
-    BASEJSON = JSON.stringify([P, ROUNDS, DELETED]);
+    BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM]);
     $("title").textContent = (d.title || "大会") + "の設定";
   }
   function init() {
@@ -321,6 +397,18 @@
       if (orig && orig.pattern === r.pattern && r.pname == null) return;
       var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
     });
+    if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
+      var to = TM0, tf = {}, any = false;
+      ["open_greet_sec", "close_greet_sec", "prep_minutes", "step_sec", "interview_minutes"].forEach(function (k) {
+        if (TM[k] == null || TM[k] === "") { bad = bad || "時間の設定に、空の欄があります。"; return; }
+        if (TM[k] !== to[k]) { tf[k] = TM[k]; any = true; }
+      });
+      if (TM.open_at !== to.open_at || TM.lead_min !== to.lead_min) {
+        if (TM.open_at && (TM.lead_min == null || TM.lead_min === "")) bad = bad || "「配信開始 → ラウンド1の開始」の分数を入れてください。";
+        else { tf.open_at = TM.open_at || null; if (TM.open_at) tf.lead_min = TM.lead_min; any = true; }
+      }
+      if (any) { tf.op = "set_times"; ops.push(tf); }
+    }
     if (bad) { setResult("ng", "⚠ " + bad); return; }
     if (!ops.length) { setResult("ok", "変更はありません。"); return; }
     var n = (data.n || 0) + 1;
@@ -336,6 +424,8 @@
   function setResult(cls, text) { var r = $("result"); r.className = cls; r.textContent = text; }
 
   $("save").addEventListener("click", save);
+  $("tabbp").addEventListener("click", function () { showTab("bp"); });
+  $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("reload").addEventListener("click", function () {
     if (dirty() && !confirm("保存していない変更は、消えます。最新を読み込みますか？")) return;
     load().then(function (d) { adopt(d); render(); setResult("", ""); });
