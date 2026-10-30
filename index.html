@@ -505,7 +505,8 @@
     row.appendChild(nm);
     if (t && t.dq) row.appendChild(el("span", "dqtag", "失格"));
     var showScore = t && !t.bye && m.team_a && m.team_b && !m.bye;
-    row.appendChild(el("span", "score", showScore ? String(m.set_wins[side]) : ""));
+    var notYet = m.status === "ready" || m.status === "pending";                       // まだ行っていない試合：「0」ではなく、「-」だけ
+    row.appendChild(el("span", "score", showScore ? (notYet ? "-" : String(m.set_wins[side])) : ""));
     return row;
   }
 
