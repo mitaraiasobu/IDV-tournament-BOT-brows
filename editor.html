@@ -58,6 +58,7 @@
   .unit { color: var(--sub); font-size: 13px; }
   .tl { list-style: none; margin: 0; padding: 0; } .tl li { display: grid; grid-template-columns: 84px 1fr; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--line); } .tl li:first-child { border-top: 0; }
   .tl .tm { color: var(--ac); font-weight: 700; font-variant-numeric: tabular-nums; } .tl .sub { color: var(--sub); font-size: 13px; }
+  .tl li.bad .tm, .tl li.bad .sub { color: var(--bad); } .trow .calc.bad { color: var(--bad); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -85,9 +86,9 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
     </div>
     <div id="tab-time" hidden>
-      <h2>時間の設定</h2>
+      <h2>時間の設定（この大会だけ）</h2>
       <div class="card" id="timeform"></div>
-      <h2>全体の流れ（自動で計算します）</h2>
+      <h2>全体の流れ（開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで。自動で計算します）</h2>
       <div class="card"><ol class="tl" id="timeline"></ol><div class="note" style="margin-top:8px" id="timenote"></div></div>
     </div>
   </main>
@@ -101,7 +102,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var enc = new TextEncoder();
   var data = null, AUTH = null;                         // data＝BOTが書いたデータ／AUTH＝パスワードから作った鍵（16進。このページの中だけ）
-  var P = [], ROUNDS = [], SEL = null, DELETED = [], TM = null, TM0 = null;    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号・時間の設定
+  var P = [], ROUNDS = [], SEL = null, DELETED = [], TM = null, TM0 = null, TMOK = true;    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号・時間の設定
   var BASEJSON = "";                                    // 最後に読み込んだ・保存した内容（変更の有無の判定用）
   var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
   var SIDE = { survivor: "サバイバー側", hunter: "ハンター側" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
@@ -309,19 +310,23 @@
       b.appendChild(sel); tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
     });
   }
-  // ───────── ⏱ 時間管理
+  // ───────── ⏱ 時間管理（大会ごとに別。トーナメント表の時間は、ここでは変わらない）
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function hhmmss(d) { return hhmm(d) + ":" + pad(d.getSeconds()); }
   function dayLabel(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
   function addMin(d, m) { return new Date(d.getTime() + m * 60000); }
   function addSec(d, s) { return new Date(d.getTime() + s * 1000); }
   function parseLocal(s) { if (!s) return null; var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
+  function msec(s) { return Math.floor(s / 60) + "分" + (s % 60 ? s % 60 + "秒" : ""); }
+  function introTotal(n, c, p) { return n * c + TM.team_sec + 4 * p + TM.team_sec + p + TM.margin_sec; }     // キャスター → チーム → サバイバー4人 → チーム → ハンター1人 → 試合開始まで
+  function introBudget() { var n = TM.max_casters, tot = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), lim = TM.prep_minutes * 60; return { n: n, total: tot, limit: lim, ok: tot <= lim }; }
+  function leadNeed() { return Math.ceil(((TM.open_other_sec || 0) + (TM.open_greet_sec || 0)) / 60) + 1; }
   function numRow(label, hint, key, unit, lo, hi) {
     var r = el("div", "trow"), l = el("label", "", label), box = el("div"), inp = el("input"); inp.type = "number"; inp.min = lo; inp.max = hi; inp.step = 1; inp.value = TM[key] == null ? "" : TM[key];
     l.appendChild(el("div", "hint", hint));
-    var u = el("span", "unit", " " + unit);
     inp.addEventListener("input", function () { TM[key] = inp.value === "" ? null : Math.round(Number(inp.value)); renderTimeline(); refreshDirty(); });
-    box.appendChild(inp); box.appendChild(u);
+    box.appendChild(inp); box.appendChild(el("span", "unit", " " + unit));
     var calc = el("div", "calc"); calc.setAttribute("data-calc", key);
     r.appendChild(l); r.appendChild(box); r.appendChild(calc);
     return r;
@@ -330,35 +335,64 @@
     var f = $("timeform"); f.textContent = "";
     if (!TM) return;
     var lim = TM.limits;
-    var r0 = el("div", "trow"), l0 = el("label", "", "配信開始の日時"), b0 = el("div"), i0 = el("input"); i0.type = "datetime-local"; i0.value = TM.open_at || "";
-    l0.appendChild(el("div", "hint", "ライブブラウザで、開会の演出が始まる時刻"));
-    i0.addEventListener("input", function () { TM.open_at = i0.value || null; renderTimeline(); refreshDirty(); });
-    b0.appendChild(i0); r0.appendChild(l0); r0.appendChild(b0); r0.appendChild(el("div", "calc")); f.appendChild(r0);
-    f.appendChild(numRow("配信開始 → ラウンド1の開始", "配信開始の何分後に、ラウンド1が始まる（BAN/PICKが始まる）か。例：10分なら、配信開始が00:00のとき、ラウンド1は00:10", "lead_min", "分後", lim.lead[0], lim.lead[1]));
-    f.appendChild(numRow("準備時間（BAN/PICKから試合まで）", "BAN/PICKが始まってから、ゲームの試合を始めるまで", "prep_minutes", "分", lim.prep[0], lim.prep[1]));
+    f.appendChild(numRow("配信開始", TM.stream_round_name ? "実況・解説がつく最初のラウンド（" + TM.stream_round_name + "）の開始から逆算して、何分前に、配信を始めますか？　20〜30分前に配信を始めると、余裕を持って進行できるので、おすすめです。（同時進行のラウンドは、配信しません。ラウンドの開始時刻は、トーナメント表で決まっています）" : "実況・解説がつくラウンド（順番に進めるラウンド）が、まだ決まっていません。", "lead_min", "分前", lim.lead[0], lim.lead[1]));
+    f.appendChild(numRow("キャスター自己紹介", "1人あたりの時間。試合ごとの準備時間（BOTで固定）の中で、必ず終わるようにします", "caster_sec", "秒（1人あたり）", lim.intro[0], lim.intro[1]));
+    f.appendChild(numRow("選手紹介", "1人あたりの時間（サバイバー4人・ハンター1人）。キャスター自己紹介と合わせて、準備時間の中に収めます", "player_sec", "秒（1人あたり）", lim.intro[0], lim.intro[1]));
     f.appendChild(numRow("開会のごあいさつ", "担当のキャスターのアイコンが、画面の中央に出ている時間（右下に、のこり時間が出ます）", "open_greet_sec", "秒", lim.greet[0], lim.greet[1]));
     f.appendChild(numRow("閉会のごあいさつ", "インタビュー・MVPのあとの、ごあいさつの時間", "close_greet_sec", "秒", lim.greet[0], lim.greet[1]));
-    f.appendChild(numRow("BAN/PICKの1手ごとの間隔", "開発者用大会の自動進行で、1手ずつ進める間隔（ふつうの大会では、使いません）", "step_sec", "秒", lim.step[0], lim.step[1]));
-    f.appendChild(numRow("インタビューの時間（1人あたり）", "優勝チーム・MVPのインタビューで、1人に使う時間", "interview_minutes", "分", lim.interview[0], lim.interview[1]));
+    f.appendChild(numRow("インタビューの時間", "優勝チーム・MVPのインタビューで、1人に使う時間", "interview_minutes", "分（1人あたり）", lim.interview[0], lim.interview[1]));
+    if (TM.dev && TM.step_sec != null) f.appendChild(numRow("BAN/PICKの1手ごとの間隔", "自動進行（この開発者用大会だけ）で、1手ずつ進める間隔", "step_sec", "秒", lim.step[0], lim.step[1]));
+    var fx = el("div", "trow"); fx.appendChild(el("label", "", "準備時間（BAN/PICKから試合まで）"));
+    fx.appendChild(el("div", "", TM.prep_minutes + "分（BOTで固定）"));
+    fx.appendChild(el("div", "hint", "トーナメント表の時間は、ここでは、変わりません。")); f.appendChild(fx);
     renderTimeline();
   }
   function renderTimeline() {
     var ol = $("timeline"); if (!ol || !TM) return; ol.textContent = "";
-    function calc(key, text) { var e = document.querySelector('[data-calc="' + key + '"]'); if (e) e.textContent = text || ""; }
-    var open = parseLocal(TM.open_at), lead = TM.lead_min, prep = TM.prep_minutes;
-    var first = open && lead != null ? addMin(open, lead) : null, play = first && prep != null ? addMin(first, prep) : null;
-    calc("lead_min", first ? "→ ラウンド1の開始：" + hhmm(first) + dayLabel(first, open) : (open ? "" : "← 先に、配信開始の日時を入れてください"));
-    calc("prep_minutes", play ? "→ 試合開始（予定）：" + hhmm(play) + dayLabel(play, open) : "");
-    calc("open_greet_sec", TM.open_greet_sec != null ? "→ " + Math.floor(TM.open_greet_sec / 60) + "分" + (TM.open_greet_sec % 60) + "秒" : "");
-    calc("close_greet_sec", TM.close_greet_sec != null ? "→ " + Math.floor(TM.close_greet_sec / 60) + "分" + (TM.close_greet_sec % 60) + "秒" : "");
-    function li(t, main, sub) { var x = el("li"); x.appendChild(el("span", "tm", t)); var d = el("div"); d.appendChild(el("div", "", main)); if (sub) d.appendChild(el("div", "sub", sub)); x.appendChild(d); ol.appendChild(x); }
-    if (!open) { li("--:--", "配信開始の日時を入れると、ここに、全体の流れが出ます", ""); $("timenote").textContent = ""; return; }
-    var call = addMin(open, -TM.caster_call_min);
-    li(hhmm(call) + dayLabel(call, open), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "配信開始の" + TM.caster_call_min + "分前");
-    li(hhmm(open), "配信開始", "開会の演出 → 開会のごあいさつ（" + (TM.open_greet_sec || 0) + "秒）→ ルール紹介 → キャスター交代");
-    if (first) li(hhmm(first) + dayLabel(first, open), "ラウンド1の開始（BAN/PICKの開始）", "試合担当のキャスターを、キャスター用ボイスへ移動。紹介の場面が始まる");
-    if (play) li(hhmm(play) + dayLabel(play, open), "試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
-    $("timenote").textContent = "BAN/PICKの1手ごとの間隔 " + (TM.step_sec || "") + "秒（自動進行のとき）／インタビュー 1人 " + (TM.interview_minutes || "") + "分／閉会のごあいさつ " + (TM.close_greet_sec || "") + "秒。";
+    function calc(key, text, bad) { var e = document.querySelector('[data-calc="' + key + '"]'); if (e) { e.textContent = text || ""; e.className = "calc" + (bad ? " bad" : ""); } }
+    var base = parseLocal(TM.round_start), lead = TM.lead_min, open = base && lead != null && lead !== "" ? addMin(base, -lead) : null;
+    TMOK = true;                                                                    // 保存してよい内容か（赤い警告が出ていないか）
+    var lc = "";
+    if (!TM.stream_round_name) lc = "← 先に、「実況・解説がつくラウンド」を決めてください（Discordの、ラウンドの進行方法）";
+    else if (!base) lc = "← トーナメント表に、" + TM.stream_round_name + "の開始時刻が入っていません";
+    else if (open) lc = "→ " + TM.stream_round_name + "の開始 " + hhmm(base) + " の" + lead + "分前 ＝ 配信開始 " + hhmm(open) + dayLabel(open, base);
+    var needL = leadNeed();
+    if (lead != null && lead !== "" && lead < needL) { lc += "　⚠ 開会の演出に、約" + (needL - 1) + "分かかります（" + needL + "分前より、前にしてください）"; TMOK = false; }
+    calc("lead_min", lc, !TMOK);
+    var bu = introBudget();
+    var bc = "→ 紹介の場面：キャスター" + bu.n + "人＋チーム紹介＋選手5人 ＝ " + msec(bu.total) + "（準備時間 " + (bu.limit / 60) + "分の中）";
+    if (!bu.ok) { bc = "⚠ 紹介の場面が " + msec(bu.total) + " になり、準備時間（" + (bu.limit / 60) + "分）に収まりません。短くしてください"; TMOK = false; }
+    calc("caster_sec", bu.ok ? "→ キャスター" + bu.n + "人で " + msec(bu.n * (TM.caster_sec || 0)) : "", false); calc("player_sec", bc, !bu.ok);
+    calc("open_greet_sec", TM.open_greet_sec != null ? "→ " + msec(TM.open_greet_sec) : ""); calc("close_greet_sec", TM.close_greet_sec != null ? "→ " + msec(TM.close_greet_sec) : "");
+    function li(d, ref, main, sub, cls) { var x = el("li", cls || ""); x.appendChild(el("span", "tm", d ? hhmm(d) + (ref ? dayLabel(d, ref) : "") : "--:--")); var b = el("div"); b.appendChild(el("div", "", main)); if (sub) b.appendChild(el("div", "sub", sub)); x.appendChild(b); ol.appendChild(x); }
+    $("timenote").textContent = "";
+    if (!open) { li(null, null, "上の「配信開始」を入れると、ここに、全体の流れが出ます", ""); return; }
+    // 全体の流れ：開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで
+    var ev = [];
+    function add(d, main, sub, cls) { if (d) ev.push({ d: d, main: main, sub: sub, cls: cls }); }
+    add(addMin(open, -TM.caster_call_min), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "配信開始の" + TM.caster_call_min + "分前");
+    var openEnd = addSec(open, (TM.open_other_sec || 0) + (TM.open_greet_sec || 0));
+    add(open, "配信開始", "開会の演出 → 開会のごあいさつ（" + msec(TM.open_greet_sec || 0) + "）→ ルール紹介 → キャスター交代（" + hhmm(openEnd) + " ごろまで）");
+    var last = null;
+    (TM.matches || []).forEach(function (m) {
+      var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.casters || 2;
+      var it = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), itStart = play ? addSec(play, -it) : null;
+      add(prep, m.label + "：BAN/PICKの開始", "試合担当のキャスターを、キャスター用ボイスへ移動");
+      if (itStart) add(itStart, m.label + "：キャスター自己紹介 → チーム紹介 → 選手紹介", "キャスター" + n + "人×" + TM.caster_sec + "秒 ＋ チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it), (prep && itStart < prep) ? "bad" : "");
+      add(play, m.label + "：試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
+      if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です"); last = end; }
+    });
+    if (last) {
+      var t1 = addSec(last, TM.finale_sec), t2 = addMin(t1, TM.interview_minutes || 0), t3 = addMin(t2, TM.interview_minutes || 0), t4 = addSec(t3, TM.close_greet_sec || 0), t5 = addSec(t4, TM.end_screen_sec);
+      add(t1, "成績・優勝発表 → 優勝チームのインタビュー", "インタビュー 1人 " + (TM.interview_minutes || 0) + "分で計算");
+      add(t2, "MVP発表 → MVPのインタビュー", "インタビュー 1人 " + (TM.interview_minutes || 0) + "分で計算");
+      add(t3, "閉会のごあいさつ", msec(TM.close_greet_sec || 0));
+      add(t4, "「大会終了」の画面", msec(TM.end_screen_sec));
+      add(t5, "配信終了（予定）", "インタビューは、優勝チーム1人・MVP1人で計算しています");
+    }
+    ev.sort(function (a, b) { return a.d - b.d; });
+    ev.forEach(function (e) { li(e.d, base, e.main, e.sub, e.cls); });
+    if (!last) $("timenote").textContent = "試合の終了予定が出せないため、配信終了の時刻は、出ていません（トーナメント表に、1試合ぶんの所要時間を入れてください）。";
   }
   function showTab(name) {
     $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time";
@@ -398,15 +432,14 @@
       var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
     });
     if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
-      var to = TM0, tf = {}, any = false;
-      ["open_greet_sec", "close_greet_sec", "prep_minutes", "step_sec", "interview_minutes"].forEach(function (k) {
+      var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_minutes"];
+      if (TM.dev && TM.step_sec != null) keys.push("step_sec");
+      keys.forEach(function (k) {
         if (TM[k] == null || TM[k] === "") { bad = bad || "時間の設定に、空の欄があります。"; return; }
         if (TM[k] !== to[k]) { tf[k] = TM[k]; any = true; }
       });
-      if (TM.open_at !== to.open_at || TM.lead_min !== to.lead_min) {
-        if (TM.open_at && (TM.lead_min == null || TM.lead_min === "")) bad = bad || "「配信開始 → ラウンド1の開始」の分数を入れてください。";
-        else { tf.open_at = TM.open_at || null; if (TM.open_at) tf.lead_min = TM.lead_min; any = true; }
-      }
+      renderTimeline();
+      if (any && TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、保存してください。";
       if (any) { tf.op = "set_times"; ops.push(tf); }
     }
     if (bad) { setResult("ng", "⚠ " + bad); return; }
