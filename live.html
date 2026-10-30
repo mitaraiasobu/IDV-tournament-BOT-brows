@@ -1293,6 +1293,7 @@
   .gt-row .sw-p { animation: swIn .9s cubic-bezier(.2, .9, .2, 1) .5s both; }
   .gt-row .sw-av { width: 280px; height: 280px; }
   .op-greet .op-c { gap: 22px; }
+  .op .iv-timer { z-index: 5; }
   .op-t2 { font-size: 120px; }
   .op-small { font-size: 56px; opacity: .9; }
   .op-sub2 { letter-spacing: .2em; font-size: 38px; color: var(--sub); margin-top: 18px; }
@@ -2889,6 +2890,7 @@
     if (row.firstChild) c.appendChild(row);
     c.appendChild(lineEl("op-nm op-small", title || "", 56));
     w.appendChild(c);
+    w.appendChild(introTimerBox(""));                                                   // 右下に、ごあいさつののこり時間（カウントダウン）
     return w;
   }
   // 長い名前は、違和感のないところ（単語・かっこ・空白の切れ目）で、行の長さがそろうように改行する。fs＝文字の大きさ（px）
@@ -3052,6 +3054,7 @@
       if (ph.kind === "end") return;
       var sc = screenEl.firstChild;
       if (!sc || !sc.classList || !sc.classList.contains("op")) return;
+      if (ph.kind === "greet") { var gc = sc.querySelector(".iv-count"); if (gc) gc.textContent = fmtCount(ph.start + ph.dur - nowS); }
       if (ph.kind === "bracket") bracketTick(op, ph, nowS);
       else if (ph.kind !== "team" && ph.kind !== "swap" && ph.start + ph.dur - nowS <= 0.8 && !sc.classList.contains("leave")) sc.classList.add("leave");
     }
@@ -3070,6 +3073,7 @@
           screenEl.replaceChildren(greetScene("CLOSING", "閉会のごあいさつ", cl.title, cl.greeters));
           fit();
         }
+        var cc = screenEl.querySelector(".iv-count"); if (cc) cc.textContent = fmtCount(cl.t0 - nowS);          // 右下：ごあいさつののこり時間
         return;
       }
       if (!started) {
