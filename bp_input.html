@@ -404,8 +404,6 @@
   .bgrid > .side.none { visibility: hidden; }
   .bgrid > .side { flex: none; }
   .blk.hasnums { position: relative; } .blk .bnums { position: absolute; top: 2px; right: 6px; color: var(--gold); font-weight: 800; font-size: 14px; letter-spacing: 1px; }
-  .labbar { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--sub); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; margin-bottom: 6px; }
-  .labbar[hidden] { display: none; } .labbar .labbtn { font-size: 12px; padding: 4px 10px; }
   .pkhint { font-size: 14px; font-weight: 700; color: var(--text) !important; color: var(--sub); margin: 0 0 6px; line-height: 1.5; }
   .frame.tslot { border-color: var(--gold); border-style: solid; color: var(--gold); font-weight: 800; box-shadow: 0 0 12px 3px rgba(255, 210, 63, .7); }
   .pgrid { display: flex; gap: 8px; flex-wrap: nowrap; } .pcol { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 70px; flex: none; }
@@ -566,6 +564,9 @@
   html.rot .sppick .pknote { font-size: 12px; margin-top: 6px; padding: 4px 8px; }
   .sp .emph { font-weight: 800; text-decoration: underline; text-decoration-color: var(--ac); text-decoration-thickness: 3px; text-underline-offset: 5px; }
   .sp .big { font-size: 34px; font-weight: 800; color: var(--ac); letter-spacing: .06em; text-align: center; }
+  .sp .plain { text-align: center; color: var(--text); font-size: 15px; line-height: 1.6; margin: 2px 0 8px; }
+  .sp .rainbowtx { background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+                   -webkit-text-fill-color: transparent; color: transparent; animation: sc-rainbow 3.2s linear infinite; filter: drop-shadow(0 0 6px rgba(255,255,255,.35)); }       /* 虹色に光る */
   .sp .sub2 { text-align: center; color: var(--text); font-size: 20px; line-height: 1.5; margin: 4px 0 10px; }
   .sp ol { margin: 8px 0 12px; padding: 0; list-style: none; counter-reset: s; font-size: 19px; line-height: 1.55; }
   .sp li { counter-increment: s; margin: 6px 0; padding: 8px 12px 8px 48px; position: relative; border: 1px solid var(--line); border-radius: 8px; }
@@ -781,130 +782,12 @@
   function cur() { return S && S.cur != null ? S.steps[S.cur] : null; }
   function myTurn() { return !!(S && S.status === "active" && SIDE && S.side === SIDE); }
   var NEWSTEP = true;
-  // ───── LABの常用キャラ（LABの中身は、チームのパスワードで暗号化されている。BOTは読めないので、このブラウザの中で、鍵かパスワードで、直接読む） ─────
-  var LABTHEME = null;                                                                       // LABのデザイン：{bg, fg, ac, st}
-  var LABFAV = null, LABST = { s: "", note: "" };                                            // LABFAV：{選手ID: {キャラID: 日時}}／LABST.s："" 未連携・"load" 読み込み中・"ok" 連携済み・"ng" 失敗
-  var labEnc = new TextEncoder(), labDec = new TextDecoder();
-  function labUnb64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < a.length; i++) a[i] = bin.charCodeAt(i); return a; }
-  function labDerive(pw, saltB64, iter) {
-    return crypto.subtle.importKey("raw", labEnc.encode(pw), "PBKDF2", false, ["deriveKey"]).then(function (base) {
-      return crypto.subtle.deriveKey({ name: "PBKDF2", salt: labUnb64(saltB64), iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-    });
-  }
-  function labUnseal(c, key, id) {                                                           // 復号：パスワードが違う・他人が書いたゴミは、null
-    try {
-      var all = labUnb64(c);
-      return crypto.subtle.decrypt({ name: "AES-GCM", iv: all.slice(0, 12), additionalData: labEnc.encode(id) }, key, all.slice(12)).then(function (pt) { return JSON.parse(labDec.decode(pt)); }, function () { return null; });
-    } catch (e) { return Promise.resolve(null); }
-  }
-  function labSet(root, path, val) {
-    var segs = path.split("/").filter(Boolean);
-    if (!segs.length || segs.some(function (s) { return s === "__proto__" || s === "constructor" || s === "prototype"; })) return root;
-    if (root === null || typeof root !== "object") root = {};
-    var node = root;
-    for (var i = 0; i < segs.length - 1; i++) { if (node[segs[i]] === null || typeof node[segs[i]] !== "object") node[segs[i]] = {}; node = node[segs[i]]; }
-    var last = segs[segs.length - 1];
-    if (val === null) delete node[last]; else node[last] = val;
-    return root;
-  }
-  function labGet(url) { return fetch(url + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }); }
-  function labFetchFav(db, id, key) {                                                        // LABの記録を、全部、読んで、順番に重ねて、常用キャラ（fav）を取り出す（LABと同じ作り）
-    var base = db.replace(/\/+$/, "") + "/lab/" + id;
-    return labGet(base + "/log.json").then(function (log) {
-      log = log || {};
-      var keys = Object.keys(log).sort(), evs = [], chain = Promise.resolve();
-      keys.forEach(function (k) { chain = chain.then(function () { return labUnseal(log[k] && log[k].c, key, id); }).then(function (ev) { evs.push(ev && ev.i ? ev : null); }); });
-      return chain.then(function () {
-        var state = {}, seen = {};
-        evs.forEach(function (ev) {
-          if (!ev || seen[ev.i]) return; seen[ev.i] = 1;
-          if (ev.k === "wipe") { state = {}; return; }
-          if (ev.k === "e" && ev.o && typeof ev.o === "object") Object.keys(ev.o).forEach(function (p) { state = labSet(state, p, ev.o[p]); });
-        });
-        return state || {};                                                              // fav（常用キャラ）と theme（デザイン：色3つ・スタイル）
-      });
-    });
-  }
-  function labConnect(info, passOrNull, keep) {                                                // 鍵（このサイトに保存されたもの）か、パスワードで、LABを開く
-    LABST = { s: "load", note: "" }; fillPal();
-    var base = info.db.replace(/\/+$/, "") + "/lab/" + info.id, keyP;
-    return labGet(base + "/setup.json").then(function (setup) {
-      if (!setup || !setup.check) throw new Error("このLABは、まだ使われていません。");
-      if (passOrNull != null) keyP = labDerive(passOrNull, setup.salt, setup.iter);
-      else {
-        var raw = null; try { raw = localStorage.getItem("lab_key_" + info.id); } catch (e) { /* 無視 */ }
-        if (!raw) throw new Error("");
-        keyP = crypto.subtle.importKey("jwk", JSON.parse(raw), { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
-      }
-      return keyP.then(function (key) {
-        return labUnseal(setup.check, key, info.id).then(function (o) {
-          if (!o || o.chk !== "IDV-TEAM-LAB") throw new Error(passOrNull != null ? "パスワードが違います。" : "");
-          if (keep && passOrNull != null) crypto.subtle.exportKey("jwk", key).then(function (j) { try { localStorage.setItem("lab_key_" + info.id, JSON.stringify(j)); } catch (e) { /* 無視 */ } });
-          return labFetchFav(info.db, info.id, key);
-        });
-      });
-    }).then(function (st) {
-      LABFAV = (st && st.fav) || {};
-      LABTHEME = st && typeof st.theme === "object" && st.theme ? st.theme : null;
-      LABST = { s: "ok", note: "" };
-      applyLabTheme(); render();                                                         // LABのデザイン（色・スタイル）も、このページに反映する
-    })
-      .catch(function (e) { LABST = { s: e && e.message ? "ng" : "", note: (e && e.message) || "" }; fillPal(); });
-  }
-  function favOf(p) {                                                                        // 選手の常用キャラ：LABを連携していれば、LABのもの。まだなら、選手登録の得意キャラ
-    if (LABFAV) {
-      var m = (p.pid != null && LABFAV[p.pid]) || {};
-      return Object.keys(m).filter(function (k) { return m[k]; }).map(Number).filter(function (id) { return CH[id]; });
-    }
-    return p.fav || [];
-  }
-  function labInfo() {
-    var d = OPENED.data, l = d && d.lab;
-    if (!l && d && d.sel && d.sel.labs && UID && d.sel.who) l = d.sel.labs[d.sel.who[UID]];       // 体験会：自分の所属チームのLAB
-    return l && l.id && l.db ? l : null;
-  }
-  function applyLabTheme() {
-    var t = LABTHEME; if (!t) return;
-    var ok = function (v) { return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v); };
-    if (STYLES.indexOf(t.st) >= 0) { CUR_STYLE = ""; applyStyleRaw(t.st); }
-    var r = document.documentElement;
-    if (ok(t.bg)) { r.style.setProperty("--bg0", t.bg); r.setAttribute("data-tone", lum(t.bg) > .5 ? "light" : "dark"); }
-    if (ok(t.fg)) r.style.setProperty("--fg0", t.fg);
-    if (ok(t.ac)) { r.style.setProperty("--ac", t.ac); r.style.setProperty("--ac-on", lum(t.ac) > .5 ? "#05070b" : "#ffffff"); }
-  }
-  var LAB_TRIED = false;
-  function labAuto() {                                                                       // 開いたとき：このサイトに、LABの鍵が保存されていれば、自動でつなぐ
-    var info = labInfo(); if (!info || LAB_TRIED || !window.crypto || !crypto.subtle) return;
-    LAB_TRIED = true;
-    labConnect(info, null, false).then(function () { if (LABST.s === "") labAsk(); });            // 鍵が無ければ、開いたときに、パスワードを入れてもらう
-  }
-  if (window.BP_DEMO) window.__labHook = { connect: labConnect, favOf: favOf, get: function () { return { fav: LABFAV, st: LABST }; }, setLab: function (l, lu) { OPENED.data = OPENED.data || {}; OPENED.data.lab = l; if (lu) OPENED.data.lu = lu; LAB_TRIED = true; render(); } };      // 確認用のHTMLだけ
-  function labAsk() {                                                                        // パスワードを入れる（パスワードは、このブラウザの中だけで使う。BOTには、送らない）
-    var info = labInfo(); if (!info) return;
-    var ov = el("div", "ask"), card = el("div", "card");
-    card.appendChild(el("div", "q", "LABのパスワードを入れてください。常用キャラを、LABから読み込みます（パスワードは、このブラウザの中だけで使います。BOTには、送りません）。"));
-    var pw = el("input"); pw.type = "password"; pw.autocomplete = "off"; pw.style.cssText = "width:80%;font-size:18px;padding:8px;margin:10px 0;";
-    var lab = el("label", "pmsel"), cb = el("input"); cb.type = "checkbox"; lab.appendChild(cb); lab.appendChild(document.createTextNode("この端末に、LABの鍵を保存する（次から、入れなくてよくなります）"));
-    var row = el("div", "row"), no = el("button", "btn", "やめる"), yes = el("button", "btn go", "読み込む"); no.type = yes.type = "button";
-    no.addEventListener("click", function () { ov.remove(); });
-    yes.addEventListener("click", function () { var v = pw.value; if (!v) return; ov.remove(); labConnect(info, v, cb.checked); });
-    pw.addEventListener("keydown", function (e) { if (e.key === "Enter") yes.click(); });
-    row.appendChild(no); row.appendChild(yes); card.appendChild(pw); card.appendChild(lab); card.appendChild(row); ov.appendChild(card); $("stage").appendChild(ov); pw.focus();
-  }
-  function paintLab() {                                                                      // 名札置き場の上：常用キャラの出どころ
-    var bar = $("labbar"); if (!bar) return;
-    var info = labInfo(); bar.textContent = ""; bar.hidden = !info;
-    if (!info) return;
-    var txt = LABST.s === "ok" ? "✅ LABの常用キャラを表示中" : LABST.s === "load" ? "LABを読み込んでいます…" : LABST.s === "ng" ? ("⚠ " + (LABST.note || "LABを読み込めませんでした。")) : "選手登録の「得意キャラ」を表示中（LABの常用キャラとは、別です）";
-    bar.appendChild(el("span", "labtxt", txt));
-    if (LABST.s !== "load") { var bt = el("button", "btn labbtn", LABST.s === "ok" ? "LABを読み込み直す" : "LABの常用キャラを読み込む"); bt.type = "button"; bt.addEventListener("click", labAsk); bar.appendChild(bt); }
-  }
+  function favOf(p) { return p.fav || []; }                                                  // 選手の常用キャラ：選手登録の得意キャラ
   function buildPal() {
     var pal = $("pal"); pal.textContent = "";
     pal.appendChild(el("h3", "", "")); pal.firstChild.id = "palTitle";
     pal.appendChild(el("div", "hint", "名札をタップして選び、下の「確定」を押します（もう一度タップすると外れます）。")); pal.lastChild.id = "palHint";
     var box = el("div", "palbox"), grid = el("div", "grid"); grid.id = "palGrid"; box.id = "palBox"; box.appendChild(grid); pal.appendChild(box);
-    var lb = el("div", "labbar"); lb.id = "labbar"; lb.hidden = true; pal.insertBefore(lb, box);                 // 名札置き場の上：常用キャラの出どころ（LAB）
   }
   function fillPal() {                                                                     // 名札は、いまの手順で選ぶものだけ（選べるものだけ）を並べる
     if (!SIDE) return;
@@ -912,9 +795,7 @@
     var box = $("palBox"); box.className = "palbox " + (turn ? c.t : "");
     $("palTitle").textContent = turn ? TGT[c.t] + "（選べるもの）" : "名札";
     $("palHint").style.display = turn ? "" : "none";
-    paintLab();
     if (!turn) { grid.appendChild(el("div", "hint", S.status === "active" ? "いまは、あなたの番ではありません。相手の入力が終わると、ここに、選べる名札が出ます。" : "BAN/PICKは、完了しました。")); return; }
-    paintLab();
     var avail = {}; (S.avail || []).forEach(function (id) { avail[id] = true; });
     var list = c.t === "h" ? (S.chars.h || []) : c.t === "s" ? (S.chars.s || []) : (S.maps || []);
     var fv = ownPickTurn(c) ? favMap() : {}, hlp = ownPickTurn(c) && HL != null ? lineupOf()[HL] : null, hl = {};
@@ -1073,7 +954,7 @@
   function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   // デザイン（LABと同じ5種類）。体験会では、標準の見た目だけ（演出もなし）
   var STYLES = ["cyber", "cute", "gothic", "rock", "simple"], STYLE_DEF = { cute: { bg: "#fff5f9", fg: "#6b3550" } }, CUR_STYLE = "";
-  function applyStyle(st) { if (LABTHEME) return; applyStyleRaw(st); }                  // LABにつないでいるときは、LABのデザインを使う
+  function applyStyle(st) { applyStyleRaw(st); }
   function applyStyleRaw(st) {
     if (STYLES.indexOf(st) < 0) st = "cyber";
     if (CUR_STYLE === st) return;
@@ -1091,7 +972,6 @@
     tag.appendChild(el("span", "pop", (ch.f === "m" ? "マップ" : ch.n) + " " + ACT[s.a] + "！"));
   }
   function applyColor(side) {
-    if (LABTHEME && /^#[0-9a-fA-F]{6}$/.test(LABTHEME.ac || "")) return;                  // LABの色（アクセント）を使う                                                              // 自陣営の色が、サブカラー（サバイバー＝青／ハンター＝赤。LABと同じ色）
     var hex = getComputedStyle(document.documentElement).getPropertyValue(side === "h" ? "--h" : "--s").trim();
     if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
     var r = document.documentElement.style; r.setProperty("--ac", hex); r.setProperty("--ac-on", lum(hex) > .5 ? "#05070b" : "#ffffff");
@@ -1144,7 +1024,7 @@
     var blob = S.sealed[MY];
     if (blob === OPENED.blob || OPENED.busy) return;
     OPENED.busy = true;
-    openSealed(KEY, blob).then(function (d) { OPENED = { blob: blob, data: d, busy: false }; upgradeRole(); render(); labAuto(); })
+    openSealed(KEY, blob).then(function (d) { OPENED = { blob: blob, data: d, busy: false }; upgradeRole(); render(); })
       .catch(function () { OPENED = { blob: blob, data: null, busy: false }; });
   }
   function ownPers() {                                                                    // 自分の側の、人格（つけたばかりのものも含む）
@@ -1277,7 +1157,7 @@
     ov.appendChild(card); $("stage").appendChild(ov);
   }
   // ───── 試合中：試合終了（サバイバー側・ハンター側の両方が押す。試合開始の3分後から）→結果の入力（両側が入力して、一致したら登録） ─────
-  var RES = { h: null, c: null, miss: 0 };
+  var RES = { h: null, img: "", noimg: false, miss: 0 };
   function hasResultFlow() { return !!(S && (S.expo || S.end_ok_at != null) && S.ended); }
   function buildPlayPanel() {
     removePickCol();
@@ -1294,7 +1174,7 @@
     var note = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); note.id = "spnote";
     if (S.res_done) {
       var fin = S.res_final || {}, hc = CH[fin.hunter];
-      card.appendChild(el("div", "cdtxt", "ハンター：" + (hc ? hc.n : "?") + "｜" + fin.hangs + "吊り／" + (4 - fin.hangs) + "逃げ"));
+      card.appendChild(el("div", "cdtxt", "ハンター：" + (hc ? hc.n : "?") + "｜" + fin.hangs + "吊 / " + (4 - fin.hangs) + "逃げ"));
       if (S.expo && S.end_text) card.appendChild(el("div", "cdtxt", S.end_text));
     } else {
       var chips = el("div", "chips");
@@ -1317,27 +1197,31 @@
       } else {
         var form = el("div", "resform");
         card.appendChild(el("div", "cdtxt", "結果を入力してください。サバイバー側・ハンター側の**両方**が入力して、内容が一致したら、登録されます。".replace(/\*\*/g, "")));
-        if (S.res_mismatch) { if (RES.miss !== S.res_mismatch) { RES = { h: null, c: null, miss: S.res_mismatch }; } card.appendChild(el("div", "warn", "入力が一致しませんでした（" + S.res_mismatch + "回目）。お互いに確かめて、もう一度入力してください。")); }
+        if (S.res_mismatch) { if (RES.miss !== S.res_mismatch) { RES = { h: null, img: "", noimg: false, miss: S.res_mismatch }; } card.appendChild(el("div", "warn", "入力が一致しませんでした（" + S.res_mismatch + "回目）。お互いに確かめて、もう一度入力してください。")); }
         if (rep && !S.res_in[mySide]) {
-          if (RES.c == null && S.hunter_pick != null) RES.c = S.hunter_pick;                                  // 初期は、BAN/PICKでPICKしたハンター
-          form.appendChild(el("h5", "", "吊り数（逃げ数）"));
+          form.appendChild(el("h5", "", "吊り・逃げの数"));
           var br = el("div", "btnrow");
           for (var n = 0; n <= 4; n++) (function (n) {
-            var b = el("button", "btn" + (RES.h === n ? " go" : ""), n + "吊り／" + (4 - n) + "逃げ"); b.type = "button";
+            var b = el("button", "btn" + (RES.h === n ? " go" : ""), n + "吊 / " + (4 - n) + "逃げ"); b.type = "button";
             b.addEventListener("click", function () { RES.h = n; buildPanel(); }); br.appendChild(b);
           })(n);
           form.appendChild(br);
-          form.appendChild(el("h5", "", "ハンターが実際に使用したハンター"));
-          var hg = el("div", "hgrid");
-          ((S.chars && S.chars.h) || []).forEach(function (x) {
-            var ch = CH[x.id]; if (!ch) return;
-            var tg = makeTag(ch, RES.c === ch.id ? "" : "gray"); tg.addEventListener("click", function () { RES.c = ch.id; buildPanel(); }); hg.appendChild(tg);
+          form.appendChild(el("h5", "", "戦績の画像（ゲームの戦績画面のスクショ）"));
+          var rin = el("input"); rin.type = "file"; rin.accept = "image/*"; rin.style.display = "none";
+          var rpick = el("button", "btn", RES.img ? "📷 選び直す" : "📷 戦績の画像を選ぶ"); rpick.type = "button";
+          rpick.addEventListener("click", function () { rin.click(); });
+          rin.addEventListener("change", function () {
+            var f = rin.files && rin.files[0]; if (!f) return;
+            shrinkImage(f, function (d2) { if (!d2) { spNote("ng", "⚠ この画像は、使えません（大きすぎるか、画像ではありません）。"); return; } RES.img = d2; RES.noimg = false; SP_NOTE = { cls: "", text: "" }; buildPanel(); });
           });
-          form.appendChild(hg);
-          var sb = el("button", "btn go", "📨 この内容で入力する"); sb.type = "button"; sb.disabled = RES.h == null || RES.c == null;
+          var rskip = el("button", "btn" + (RES.noimg ? " go" : ""), "画像を送らずに進む"); rskip.type = "button";
+          rskip.addEventListener("click", function () { RES.noimg = !RES.noimg; if (RES.noimg) RES.img = ""; buildPanel(); });
+          var rrow = el("div", "row"); rrow.appendChild(rin); rrow.appendChild(rpick); rrow.appendChild(rskip); form.appendChild(rrow);
+          if (RES.img) { var rim = el("img", "prev"); rim.src = RES.img; form.appendChild(rim); }
+          var sb = el("button", "btn go", "📨 この内容で入力する"); sb.type = "button"; sb.disabled = RES.h == null || !(RES.img || RES.noimg);
           sb.addEventListener("click", function () {
             sb.disabled = true; spNote("", "データ送信中…");
-            sendAct("result", { hangs: RES.h, hunter: RES.c }).then(function (res) {
+            sendAct("result", { hangs: RES.h, img: RES.img || null }).then(function (res) {
               if (res && res.ok) SP_NOTE = { cls: "ok", text: res.status === "wait" ? "✅ 入力しました。相手側の入力を待っています。" : "" }; else SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") };
               return refresh().then(buildPanel);
             }).catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; buildPanel(); });
@@ -1349,8 +1233,6 @@
       }
     }
     card.appendChild(note);
-    var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
-    mn.addEventListener("click", function () { PANEL_MIN = true; buildPanel(); }); rowm.appendChild(mn); card.appendChild(rowm);
     ov.appendChild(card); $("stage").appendChild(ov);
     tick();
   }
@@ -1416,7 +1298,7 @@
     }, fx() ? 2600 : 1500);
   }
   // ───── 体験会：試合のあと（本番と同じ流れ）。省略の選択・結果の入力（ハンター）はここ。試合終了・確認はDiscord。報告が終わったら、ここに出して、6秒後にシャットダウン ─────
-  var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, e: null, c: null };
+  var PM_PEND = null, PM_BUSY = false, PM_FORM = { h: null, img: "", noimg: false };
   function holdNote(card) {                                                                 // ハンター側：部屋に入っても、合図があるまで始めない（強調）
     if (MY !== "h") return;
     card.appendChild(el("div", "hrnwarn", "⚠ 部屋に入っても、合図（カウントダウンが00:00になる）があるまで、まだ試合を始めないでください。"));
@@ -1496,16 +1378,25 @@
     } else if (pm.phase === "result") {
       if (pm.skip) card.appendChild(el("div", "sub2", "試合を省略して結果入力に移ります。好きな結果を入力してください。"));
       if (entryMine && UID) {
-        var hunters = ((S.chars && S.chars.h) || []).map(function (c) { return [c.id, c.n]; }), N4 = [0, 1, 2, 3, 4].map(function (n) { return [n, String(n)]; });
+        var PAIRS = [0, 1, 2, 3, 4].map(function (n) { return [n, n + "吊 / " + (4 - n) + "逃げ"]; });
         card.appendChild(el("div", "sub2", "試合結果を入力してください。"));
-        card.appendChild(pmSelect("吊り数", N4, PM_FORM.h, function (v) { PM_FORM.h = v; }));
-        card.appendChild(pmSelect("逃げ数", N4, PM_FORM.e, function (v) { PM_FORM.e = v; }));
-        card.appendChild(pmSelect("実際に使用したハンター", hunters, PM_FORM.c, function (v) { PM_FORM.c = v; }));
+        card.appendChild(pmSelect("吊り・逃げの数", PAIRS, PM_FORM.h, function (v) { PM_FORM.h = v; }));
+        card.appendChild(el("div", "sub2", "戦績の画像（ゲームの戦績画面のスクショ）を送ってください。"));
+        var pin = el("input"); pin.type = "file"; pin.accept = "image/*"; pin.style.display = "none";
+        var ppick = el("button", "btn", PM_FORM.img ? "📷 選び直す" : "📷 戦績の画像を選ぶ"); ppick.type = "button";
+        ppick.addEventListener("click", function () { pin.click(); });
+        pin.addEventListener("change", function () {
+          var f = pin.files && pin.files[0]; if (!f) return;
+          shrinkImage(f, function (d2) { if (!d2) { spNote("ng", "⚠ この画像は、使えません（大きすぎるか、画像ではありません）。"); return; } PM_FORM.img = d2; PM_FORM.noimg = false; SP_NOTE = { cls: "", text: "" }; buildPmPanel(); });
+        });
+        var pskip = el("button", "btn" + (PM_FORM.noimg ? " go" : ""), "画像を送らずに進む"); pskip.type = "button";
+        pskip.addEventListener("click", function () { PM_FORM.noimg = !PM_FORM.noimg; if (PM_FORM.noimg) PM_FORM.img = ""; buildPmPanel(); });
+        var prow = el("div", "row"); prow.appendChild(pin); prow.appendChild(ppick); prow.appendChild(pskip); card.appendChild(prow);
+        if (PM_FORM.img) { var pim = el("img", "prev"); pim.src = PM_FORM.img; card.appendChild(pim); }
         var snd = el("button", "btn go", PM_BUSY ? "データ送信中…" : "送信"); snd.type = "button";
-        snd.disabled = PM_BUSY || PM_FORM.h === null || PM_FORM.e === null || PM_FORM.c === null;
-        snd.addEventListener("click", function () { pmSend("pm_submit", { hangs: PM_FORM.h, escapes: PM_FORM.e, hunter: PM_FORM.c }, function () { PM_FORM = { h: null, e: null, c: null }; }); });
+        snd.disabled = PM_BUSY || PM_FORM.h === null || !(PM_FORM.img || PM_FORM.noimg);
+        snd.addEventListener("click", function () { pmSend("pm_submit", { hangs: PM_FORM.h, escapes: 4 - PM_FORM.h, img: PM_FORM.img || null }, function () { PM_FORM = { h: null, img: "", noimg: false }; }); });
         var rs = el("div", "row"); rs.appendChild(snd); card.appendChild(rs);
-        card.appendChild(el("div", "sub2", "吊り数と逃げ数の合計は、4人です。"));
       } else card.appendChild(el("div", "sub2", "結果の入力を待っています…（" + (pm.entry === "hunter" ? "ハンター選手" : "サバイバー代表") + "が、入力します）"));
     } else {
       card.appendChild(el("div", "sub2", "サバイバー代表が、Discordで、結果を確認しています…"));
@@ -1525,6 +1416,10 @@
       buildPlayPanel(); return;
     }
     if (stg === "play" && PLAY_AT) return;                                               // 試合中の案内は、出したままにする
+    if (stg === "play" && S.start_at && !GO_AT && $("cd") && Date.now() / 1000 < S.start_at + 1) {            // BOTが、先に試合開始にした：0 を見せる1秒が終わるまで、カウントダウンを出したままにする
+      setTimeout(function () { cdTick(); buildPanel(); }, (S.start_at + 1) * 1000 - Date.now() + 60);
+      return;
+    }
     if (stg === "play" && GO_AT && Date.now() - GO_AT < 4000) {                          // 「試合開始！」を、4秒は見せてから、次の案内へ
       setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50);
       return;
@@ -1563,7 +1458,8 @@
       });
       card.appendChild(ol);
       card.appendChild(el("div", "big", (S.opener ? S.opener + "さん、" : "") + "準備をしてスクショを送ってください"));
-      card.appendChild(el("div", "big", "カウントダウンが始まるまでは試合を始めないでください"));                    // 大きな文字
+      card.appendChild(el("div", "plain", "※やり方が分からない場合は別のサバイバーが代わりにやっても良いです。"));         // 普通の文字の大きさ
+      card.appendChild(el("div", "big rainbowtx", "カウントダウンが始まるまでは試合を始めないでください"));                    // 大きな文字
       holdNote(card);
       if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
@@ -1599,7 +1495,6 @@
           row.appendChild(sk);
         }
         card.appendChild(row);
-        if (!SHOT_IMG && !SP_NOTE.text) card.appendChild(el("div", "note", "先に「📷 スクショを選ぶ」で画像を選ぶと、「送信する」が押せるようになります。"));
       } else if (can) {
         card.appendChild(el("div", "warn", "スクショは、" + S.opener + " さんが送ります。しばらくお待ちください。"));
       } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
@@ -1614,8 +1509,6 @@
       var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
     }
     var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
-    var rowm = el("div", "row"); var mn = el("button", "btn", "📋 BAN/PICKを見る"); mn.type = "button";
-    mn.addEventListener("click", function () { PANEL_MIN = true; buildPanel(); }); rowm.appendChild(mn); card.appendChild(rowm);
     ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
     CD_LAST = ""; GO_SHOWN = false; cdTick();
   }
@@ -1644,6 +1537,16 @@
         var tx2 = el("div", "cdtxt"); cdWrap(tx2, ["00:00になった瞬間に、", "ゲーム内でチェックボタンを押して", "始めてください。"], "b"); box.appendChild(tx2);
         CD_LAST = mode;
         if (fx() && CUR_STYLE === "rock") shake();
+      }
+      return;
+    }
+    if (S.start_at && Date.now() / 1000 - S.start_at < 1) {                              // 0 を、1秒間、見せてから、「試合開始！」を出す（0になる前に出てしまわないように）
+      if (CD_LAST !== "n0") {
+        box.textContent = "";
+        box.appendChild(el("div", "cdhead", "試合開始まで"));
+        box.appendChild(el("div", "cdnum" + f, "0"));
+        var tx0 = el("div", "cdtxt"); cdWrap(tx0, ["00:00になった瞬間に、", "ゲーム内でチェックボタンを押して", "始めてください。"], "b"); box.appendChild(tx0);
+        CD_LAST = "n0";
       }
       return;
     }
