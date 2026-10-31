@@ -1123,7 +1123,11 @@
   .in-streak.s2 { width: 80px; animation-delay: 1.5s; } .in-streak.s3 { width: 250px; animation-delay: 3s; }
   @keyframes inStreak { 0% { left: -20%; opacity: 0; } 12% { opacity: .85; } 88% { opacity: .85; } 100% { left: 112%; opacity: 0; } }
   .in-tag { z-index: 3; }
-  .intro .iv-tag.hero { animation: inSideTag 5s cubic-bezier(.3, .8, .2, 1) both; }
+  .intro .iv-tag.hero, .op .iv-tag.hero { animation: inSideTag 5s cubic-bezier(.3, .8, .2, 1) both; }
+  /* 場面の名前（キャスター自己紹介・選手紹介・VS・ルール紹介・トーナメント表）：切り替わりに、中央にどーんと出して（約1.2秒）、左上へ移る（約1.7秒で到着）。場面の中身は、その少しあとに出る */
+  .intro .iv-tag.hero.fast, .op .iv-tag.hero.fast { animation-duration: 2.8s; }
+  .intro.t-hero2 .in-row { animation: heroFade .5s ease 1.4s both; }
+  @keyframes heroFade { from { opacity: 0; } to { opacity: 1; } }
   .intro .iv-tag.hero.sv .tx { color: #6db2ff; text-shadow: 0 0 26px rgba(80, 150, 255, .85), 4px 5px 0 rgba(0, 0, 0, .5); }
   .intro .iv-tag.hero.hn .tx { color: #ff6b7a; text-shadow: 0 0 26px rgba(255, 70, 90, .85), 4px 5px 0 rgba(0, 0, 0, .5); }
   @keyframes inSideTag {
@@ -2721,7 +2725,7 @@
       arr(hn.players).slice(0, 1).forEach(function (p) { segs.push({ kind: "player", p: p, dur: P }); });          // ハンター側は、出席するハンター1人だけ
       var at = iv.team_start;
       for (var k = 0; k < segs.length; k++) {
-        if (nowS >= at && nowS < at + segs[k].dur) return { kind: segs[k].kind, side: segs[k].side, team: segs[k].team, p: segs[k].p, idx: k, start: at, dur: segs[k].dur };
+        if (nowS >= at && nowS < at + segs[k].dur) return { kind: segs[k].kind, side: segs[k].side, team: segs[k].team, p: segs[k].p, idx: k, start: at, dur: segs[k].dur, first: k > 0 && segs[k - 1].kind === "team" };
         at += segs[k].dur;
       }
       if (nowS >= at) return { kind: "split", start: at, dur: 0 };
@@ -2729,8 +2733,8 @@
     return { kind: "wait" };
   }
   function okColor(c) { return typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : ""; }
-  function introTag(text) {
-    var tag = el("div", "iv-tag in-tag");
+  function introTag(text, hero) {                                                     // hero＝場面が変わった最初の1回だけ、中央にどーんと出してから、左上へ移す
+    var tag = el("div", "iv-tag in-tag" + (hero ? " hero fast" : ""));
     tag.appendChild(el("span", "dot"));
     tag.appendChild(el("span", "tx", text));
     return tag;
@@ -2794,7 +2798,8 @@
     if (ph.kind === "rswap") return rswapScene(iv.swap || {});
     if (ph.kind === "caster") {
       w = introBase("");
-      w.appendChild(introTag("キャスター自己紹介"));
+      if (ph.idx === 0) w.classList.add("t-hero2");
+      w.appendChild(introTag("キャスター自己紹介", ph.idx === 0));
       row = el("div", "in-row");
       row.appendChild(introAvatar(ph.p, true));
       var info = el("div", "in-info");
@@ -2822,7 +2827,8 @@
     if (ph.kind === "player") {
       var p = ph.p;
       w = introBase(p.color);
-      w.appendChild(introTag("選手紹介"));
+      if (ph.first) w.classList.add("t-hero2");
+      w.appendChild(introTag("選手紹介", ph.first));
       row = el("div", "in-row");
       row.appendChild(introAvatar(p, false));
       var inf = el("div", "in-info");
@@ -2846,7 +2852,7 @@
     var s = iv.survivor || {}, h = iv.hunter || {};
     if (okColor(s.color)) w.style.setProperty("--sc", s.color);
     if (okColor(h.color)) w.style.setProperty("--hc", h.color);
-    w.appendChild(introTag("VS"));
+    w.appendChild(introTag("VS", true));
     [["sv", s, "SURVIVOR"], ["hn", h, "HUNTER"]].forEach(function (x) {                // 選手のアイコンは、真ん中寄りに（サバイバー4人・ハンター1人は、大きめ）
       var half = el("div", "in-half " + x[0]);
       half.appendChild(el("div", "bgc"));
@@ -2955,12 +2961,13 @@
   }
   function rulesScene(op, ph) {                                                         // ルール紹介：キャラに関することだけ（ローカル許可・ローカルBAN・ローカル必須・同時に使用できないキャラ）。顔が、順に出て、カメラが、ゆっくり寄る
     var w = opBase("op-rules");
-    w.appendChild(introTag("ルール紹介"));
-    var cam = el("div", "rl-cam"); cam.style.animationDuration = (ph.dur + 1) + "s";
+    w.appendChild(introTag("ルール紹介", true));
+    var H0 = 1.4;                                                                       // 場面の名前が、中央から左上へ移るあいだ、中身は待つ
+    var cam = el("div", "rl-cam"); cam.style.animationDuration = (ph.dur + 1) + "s"; cam.style.animationDelay = "0s";
     var box = el("div", "rl-box n" + Math.min(4, arr(op.rules).length));
-    var step = Math.max(2.2, (ph.dur - 3) / Math.max(1, arr(op.rules).length));
+    var step = Math.max(2.2, (ph.dur - 3 - H0) / Math.max(1, arr(op.rules).length));
     arr(op.rules).forEach(function (g, gi) {
-      var row = el("div", "rl-row k-" + g.kind); row.style.animationDelay = (0.5 + gi * step) + "s";
+      var row = el("div", "rl-row k-" + g.kind); row.style.animationDelay = (H0 + 0.5 + gi * step) + "s";
       row.appendChild(el("div", "rl-lab", g.title));
       var chips = el("div", "rl-chips"), n = 0;
       if (g.kind === "combo") {
@@ -2969,14 +2976,14 @@
           arr(pr).forEach(function (it, i) {
             if (i) pair.appendChild(el("div", "rl-plus", "＋"));
             var ch = el("div", "rl-chip"); ch.appendChild(faceBox(it)); ch.appendChild(el("div", "rl-nm", it.name || ""));
-            ch.style.animationDelay = (0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; pair.appendChild(ch);
+            ch.style.animationDelay = (H0 + 0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; pair.appendChild(ch);
           });
           chips.appendChild(pair);
         });
       } else {
         arr(g.items).forEach(function (it) {
           var ch = el("div", "rl-chip"); ch.appendChild(faceBox(it)); ch.appendChild(el("div", "rl-nm", it.name || ""));
-          ch.style.animationDelay = (0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; chips.appendChild(ch);
+          ch.style.animationDelay = (H0 + 0.5 + gi * step + 0.5 + (n++) * 0.25) + "s"; chips.appendChild(ch);
         });
       }
       row.appendChild(chips); box.appendChild(row);
@@ -3064,7 +3071,7 @@
   var brInfo = null;
   function bracketScene(op) {                                                           // ラウンド1のカードだけ、1枚ずつ映す。そのあと、線が決勝まで伸びて、優勝のマークが輝く
     var w = opBase("op-bracket");
-    w.appendChild(introTag("トーナメント表"));
+    w.appendChild(introTag("トーナメント表", true));                                   // 最初のカードが出るまで（3秒）に、中央から左上へ移る
     var CW = 440, CH = 150, GY = 40, STEP = 170, rounds = arr(op.rounds);
     var r1 = arr(op.cards).filter(function (cd) { return !rounds.length || cd.round === rounds[0]; });
     var n = Math.max(1, r1.length), H = n * (CH + GY) - GY + 20;
