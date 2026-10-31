@@ -422,10 +422,10 @@
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d;
     P = clone(d.patterns); ROUNDS = clone(d.rounds); DELETED = []; TM = d.times ? clone(d.times) : null;
-    if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（配信開始の10分後）を入れておく
-    TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、これと比べる
+    TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、BOTに保存されている値と比べる
+    if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（25分前）を画面に入れておく。BOTには、まだ保存されていないので、そのまま保存すると、保存される
     if (SEL == null || SEL >= P.length) SEL = 0;
-    BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM]);
+    BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM0]);
     $("title").textContent = (d.title || "大会") + "の設定";
   }
   function init() {
