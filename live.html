@@ -1050,6 +1050,10 @@
   .fin.enter .fin-sub { animation: finIn .9s cubic-bezier(.2,.9,.2,1) .6s both; }
   @keyframes finIn { from { opacity: 0; transform: translateY(46px) scale(.96); } to { opacity: 1; transform: none; } }
   html[data-design="fantasy"] .fin-title, html[data-design="gothic"] .fin-title { font-family: var(--fa); font-weight: 400; letter-spacing: .24em; color: var(--gold); text-shadow: 0 0 30px color-mix(in srgb, var(--gold) 50%, transparent), 0 3px 8px rgba(0,0,0,.7); }
+  /* ゴシック：自動のロゴ（略称の文字）は、背景がチームカラー・文字はクリーム色。チームカラーが明るくても暗くても読めるように、暗い色のぼかしの縁取りをつける */
+  html[data-design="gothic"] .fin-logo.auto, html[data-design="gothic"].stage .rs-team .logo.auto, html[data-design="gothic"].stage .rs-team.b .logo.auto {
+    background: var(--lgbg, color-mix(in srgb, var(--ink) 85%, transparent)); color: var(--cream);
+    text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.75), 1px 2px 0 rgba(0,0,0,.55); }
   html[data-design="fantasy"] .fin-logo, html[data-design="gothic"] .fin-logo { font-family: var(--fa); font-weight: 600; letter-spacing: .04em; color: var(--cream); border-color: var(--gold); box-shadow: 0 0 0 8px color-mix(in srgb, var(--gold) 28%, transparent), 0 14px 34px rgba(0,0,0,.6); }
   html[data-design="fantasy"] .fin-name, html[data-design="gothic"] .fin-name, html[data-design="fantasy"] .fin-players .p, html[data-design="gothic"] .fin-players .p { font-family: var(--fa); font-weight: 400; color: var(--cream); letter-spacing: .08em; }
   html[data-design="fantasy"] .fin-sub, html[data-design="gothic"] .fin-sub { font-family: var(--fa); color: var(--gold); }
@@ -2229,7 +2233,7 @@
     var b = el("div", "logo");
     var src = logoSrc(t);
     if (src) { var im = new Image(); im.src = src; im.alt = ""; b.appendChild(im); }           // 登録したチームのロゴの画像
-    else b.textContent = (t && (t.abbr || t.name) || "").slice(0, 3);                          // 自動のロゴ（略称）
+    else { b.textContent = (t && (t.abbr || t.name) || "").slice(0, 3); autoLogo(b, t); }      // 自動のロゴ（略称）
     return b;
   }
   function teamPanel(t, cls) {
@@ -2444,8 +2448,13 @@
     var b = el("div", "fin-logo");
     var src = logoSrc(c);
     if (src) { var im = new Image(); im.src = src; im.alt = ""; b.appendChild(im); }
-    else b.textContent = (c && (c.abbr || c.name) || "").slice(0, 3);
+    else { b.textContent = (c && (c.abbr || c.name) || "").slice(0, 3); autoLogo(b, c); }
     return b;
+  }
+  function autoLogo(b, c) {                                                           // 画像が未登録のチームの、自動のロゴ（略称の文字）：背景は、登録したチームカラー（ゴシックのデザインで使う）
+    b.classList.add("auto");
+    var col = c && typeof c.color === "string" && /^#[0-9a-fA-F]{6}$/.test(c.color) ? c.color : "";
+    if (col) b.style.setProperty("--lgbg", col);
   }
   // MVP発表（MVP）：発表したMVPを、並べて出す（選手は、名前とチーム名・チームのロゴ。チームは、チーム名・ロゴ）。選出の理由があれば、その下に。
   // MVPインタビュー（MVP INTERVIEW）：選ばれた選手の名前（と、そのチーム）。
