@@ -3256,8 +3256,23 @@
     introTimer = setInterval(tick, 200);
   }
 
+  var RESULT_SHOW_MS = 60000, resultRuleSeen = 0, resultRuleTimer = null, lastRaw = null;
+  function expireResult(data) {                                           // 成績の画面が60秒たっても続いているときは、待機の画面（ルールなど）にする（最後のラウンドの成績は、除く）
+    clearTimeout(resultRuleTimer);
+    if (!data || data.state !== "result" || !data.rules || (data.result && data.result.final)) { if (!data || data.state !== "result") resultRuleSeen = 0; return data; }
+    if (resultRuleSeen === 0) resultRuleSeen = Date.now();                    // この画面で、成績を見せ始めた時刻（相手チームの確認を待つ間は、成績を出していないので、結果の入力の時刻からは数えない）
+    var ended = data.music && data.music.ended ? Date.parse(data.music.ended) : NaN;
+    var base = isNaN(ended) ? resultRuleSeen : Math.max(ended, resultRuleSeen);
+    var left = RESULT_SHOW_MS - (Date.now() - base);
+    if (left > 0) { resultRuleTimer = setTimeout(function () { if (lastRaw) render(lastRaw, true); }, left + 50); return data; }
+    var d = {}; for (var k in data) d[k] = data[k];
+    d.state = "rules"; d.result = null;
+    return d;
+  }
   function render(data, force) {
     if (!data) data = { state: "idle" };
+    lastRaw = data;
+    data = expireResult(data);
     initMusic();
     var musicData = data.music, changesData = data.changes;
     if (window.PAGE_KIND === "rules" && data.state !== "rules") data = { state: "idle", title: data.title, music: musicData, changes: changesData };
