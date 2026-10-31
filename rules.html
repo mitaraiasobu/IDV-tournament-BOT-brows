@@ -991,18 +991,18 @@
         animation: lanternDrop .75s calc(0s - var(--el, 0s)) cubic-bezier(.45, 0, .9, .6), lanternSwing 9.8s calc(.75s - var(--el, 0s)) ease-in-out,
                    lanternIdle var(--per, 7s) calc(10.55s - var(--el, 0s)) ease-in-out infinite; }
   html[data-design="gothic"].stage .card.empty { display: none; }
-  /* BANされたキャラ（ゴシック）：まず中央に、キャラの顔を大きく出す → 1秒後に斜線が引かれて、白黒になる → 画面の下の、BANの並びへ移る（全体で3.4秒。BANの手順は5秒） */
-  html[data-design="gothic"].stage .sq.pop.used { z-index: 40; animation: gtBanMove 3.4s cubic-bezier(.3,.7,.2,1) calc(var(--el, 0s) * -1) both; }
-  html[data-design="gothic"].stage .sq.pop.used img, html[data-design="gothic"].stage .sq.pop.used .emo { animation: gtBanGray 3.4s linear calc(var(--el, 0s) * -1) both; }
+  /* BANされたキャラ（ゴシック）：まず中央に、キャラの顔を大きく出す → 6秒後に斜線が引かれて、白黒になる → 画面の下の、BANの並びへ移る（全体で8.4秒。BANの手順は10秒） */
+  html[data-design="gothic"].stage .sq.pop.used { z-index: 40; animation: gtBanMove 8.4s cubic-bezier(.3,.7,.2,1) calc(var(--el, 0s) * -1) both; }
+  html[data-design="gothic"].stage .sq.pop.used img, html[data-design="gothic"].stage .sq.pop.used .emo { animation: gtBanGray 8.4s linear calc(var(--el, 0s) * -1) both; }
   html[data-design="gothic"].stage .sq.used::after { inset: auto; left: -4%; top: 100%; width: 150%; height: 4px; background: rgba(224,72,90,.95); box-shadow: 0 0 6px rgba(224,72,90,.7); transform-origin: 0 50%; transform: rotate(-45deg); }
-  html[data-design="gothic"].stage .sq.pop.used::after { transform: rotate(-45deg) scaleX(0); animation: gtBanSlash .45s ease-out calc(1.44s - var(--el, 0s)) both; }
+  html[data-design="gothic"].stage .sq.pop.used::after { transform: rotate(-45deg) scaleX(0); animation: gtBanSlash .45s ease-out calc(6.44s - var(--el, 0s)) both; }
   @keyframes gtBanMove {
     0% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(.3); opacity: 0; }
-    10% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(4.7); opacity: 1; }
-    13%, 66% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(4.4); opacity: 1; }
+    4.05% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(4.7); opacity: 1; }
+    5.24%, 86.19% { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(4.4); opacity: 1; }
     100% { transform: none; opacity: 1; }
   }
-  @keyframes gtBanGray { 0%, 41% { filter: none; } 44%, 100% { filter: grayscale(1) brightness(.7); } }
+  @keyframes gtBanGray { 0%, 76.12% { filter: none; } 77.33%, 100% { filter: grayscale(1) brightness(.7); } }
   @keyframes gtBanSlash { from { transform: rotate(-45deg) scaleX(0); } to { transform: rotate(-45deg) scaleX(1); } }
   html[data-design="gothic"].stage.leaving .card, html[data-design="gothic"].stage.leaving .card.pop { animation: lanternUp 1.1s ease-in both; }
   html[data-design="gothic"].stage.leaving .bpwrap .sq, html[data-design="gothic"].stage.leaving .bpwrap .hdr, html[data-design="gothic"].stage.leaving .bpwrap .center { animation: sinkOut 1.1s ease-in both; }
@@ -2312,12 +2312,12 @@
     }
   }
 
-  // ═══ 「試合開始」が押されたあと：BAN/PICKを1手順ずつ出して（BANは5秒・PICKは15秒。最後の手順は、BANでも10秒）、アニメーションで透明にする ═══
+  // ═══ 「試合開始」が押されたあと：BAN/PICKを1手順ずつ出して（BANは5秒（ゴシックは10秒）・PICKは20秒。最後の手順は、BANでも10秒）、アニメーションで透明にする ═══
   // 時間は、「試合開始」の時刻（play_started_at）から、このブラウザの時計で数える（BOTの操作に合わせてリアルタイムには出ない）。
-  var BAN_MS = 5000, PICK_MS = 15000, LAST_MS = 10000, EXIT_MS = 1200;
+  var BAN_MS = 5000, GOTHIC_BAN_MS = 10000, PICK_MS = 20000, LAST_MS = 10000, EXIT_MS = 1200;       // ゴシックは、BANされたキャラを中央に出している時間が5秒長いので、BANの手順も10秒
   var replay = null;
-  function stepMs(lv, k) {                                          // k手順目を出している時間（BANは5秒・PICKは15秒。最後の手順は、少なくとも10秒）
-    var d = arr(lv.step_kinds)[k] === "pick" ? PICK_MS : BAN_MS;
+  function stepMs(lv, k) {                                          // k手順目を出している時間（BANは5秒（ゴシックは10秒）・PICKは20秒。最後の手順は、少なくとも10秒）
+    var d = arr(lv.step_kinds)[k] === "pick" ? PICK_MS : (root.getAttribute("data-design") === "gothic" ? GOTHIC_BAN_MS : BAN_MS);
     return k >= (lv.n_steps || 1) - 1 ? Math.max(d, LAST_MS) : d;
   }
   function stepStart(lv, k) {                                        // k手順目が出はじめる、「試合開始」からの時間（ミリ秒）
