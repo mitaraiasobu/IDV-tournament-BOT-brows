@@ -2312,11 +2312,11 @@
     }
   }
 
-  // ═══ 「試合開始」が押されたあと：BAN/PICKを1手順ずつ出して（BANは5秒・PICKは10秒。最後の手順は、BANでも10秒）、アニメーションで透明にする ═══
+  // ═══ 「試合開始」が押されたあと：BAN/PICKを1手順ずつ出して（BANは5秒・PICKは15秒。最後の手順は、BANでも10秒）、アニメーションで透明にする ═══
   // 時間は、「試合開始」の時刻（play_started_at）から、このブラウザの時計で数える（BOTの操作に合わせてリアルタイムには出ない）。
-  var BAN_MS = 5000, PICK_MS = 10000, LAST_MS = 10000, EXIT_MS = 1200;
+  var BAN_MS = 5000, PICK_MS = 15000, LAST_MS = 10000, EXIT_MS = 1200;
   var replay = null;
-  function stepMs(lv, k) {                                          // k手順目を出している時間（BANは5秒・PICKは10秒。最後の手順は、少なくとも10秒）
+  function stepMs(lv, k) {                                          // k手順目を出している時間（BANは5秒・PICKは15秒。最後の手順は、少なくとも10秒）
     var d = arr(lv.step_kinds)[k] === "pick" ? PICK_MS : BAN_MS;
     return k >= (lv.n_steps || 1) - 1 ? Math.max(d, LAST_MS) : d;
   }
