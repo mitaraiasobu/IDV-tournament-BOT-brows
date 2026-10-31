@@ -1014,6 +1014,21 @@
   .fin-mvp .tm { font-family: var(--cond); font-weight: 700; font-size: 46px; color: var(--sub); letter-spacing: .1em; }
   .fin-mvp .why { font-family: var(--cond); font-size: 36px; color: var(--sub); margin-top: 6px; }
   html[data-design="fantasy"] .fin-mvp .nm, html[data-design="gothic"] .fin-mvp .nm { font-family: var(--fa); font-weight: 400; color: var(--cream); letter-spacing: .08em; }
+  .fin.prize .fin-title, .fin.mvp_prize .fin-title { font-size: 120px; }
+  .fin.prize { gap: 22px; } .fin.mvp_prize { gap: 22px; }
+  .pz-head { display: flex; align-items: center; gap: 36px; }
+  .pz-head .fin-logo { width: 190px; height: 190px; font-size: 76px; border-width: 6px; flex: none; }
+  .pz-who { text-align: left; }
+  .pz-who .nm { font-family: var(--cond); font-weight: 800; font-size: 90px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,.8), 4px 5px 0 rgba(0,0,0,.45); }
+  .pz-who .tm { font-family: var(--cond); font-weight: 700; font-size: 42px; color: var(--sub); letter-spacing: .1em; }
+  .pz-list { display: flex; flex-direction: column; gap: 18px; align-items: stretch; width: 1500px; max-width: 92%; margin-top: 8px; }
+  .pz-item { padding: 16px 34px; background: rgba(0,0,0,.55); border-left: 10px solid var(--accent); text-align: left; box-shadow: 0 10px 28px rgba(0,0,0,.45); }
+  .pz-item .lb { font-family: var(--cond); font-weight: 700; font-size: 34px; color: var(--sub); letter-spacing: .08em; }
+  .pz-item .tx { font-family: var(--cond); font-weight: 800; font-size: 64px; line-height: 1.15; overflow-wrap: anywhere; text-shadow: 0 0 10px rgba(0,0,0,.8); }
+  .pz-item .wh { font-family: var(--cond); font-weight: 700; font-size: 40px; color: var(--accent); margin-top: 4px; }
+  html[data-design="fantasy"] .pz-item, html[data-design="gothic"] .pz-item { border-left-color: var(--gold); }
+  html[data-design="fantasy"] .pz-who .nm, html[data-design="gothic"] .pz-who .nm, html[data-design="fantasy"] .pz-item .tx, html[data-design="gothic"] .pz-item .tx { font-family: var(--fa); font-weight: 400; color: var(--cream); }
+  .fin.enter .pz-head, .fin.enter .pz-list { animation: finIn .9s cubic-bezier(.2,.9,.2,1) .4s both; }
   .fin-players { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
   .fin-players .p { font-family: var(--cond); font-weight: 800; font-size: 96px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,.8), 4px 5px 0 rgba(0,0,0,.45); }
   .fin.enter .fin-title { animation: finIn .9s cubic-bezier(.2,.9,.2,1) both; }
@@ -2347,6 +2362,17 @@
   var finalSeen = { key: null, at: 0 }, finalTimer = null;
   var CHAMPION_MS = 40000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
   var championSeen = { key: null, at: 0 }, championTimer = null;
+  // 賞品の贈呈：優勝の発表（CHAMPION）を少し見せたあと、賞品のページを1ページずつ。MVPも同じ（MVPの発表のあと、MVPインタビューの前）。インタビューが始まれば、そちらを優先する。
+  var CHAMP_SHOW_MS = 12000, MVP_SHOW_MS = 12000, PRIZE_PAGE_MS = 12000;
+  var prizeIdx = 0, mvpPrizeIdx = 0, mvpSeen = { key: null, at: 0 };
+  function prizeStep(pages, age, showMs, setIdx) {             // 贈呈のページを出す時間なら、true（どのページかは setIdx で渡す）。次に描き直す時刻を決める
+    if (!pages.length) return false;
+    var dur = pages.length * PRIZE_PAGE_MS, wait = -1, on = false;
+    if (age < showMs) wait = showMs - age;
+    else if (age < showMs + dur) { var i = Math.floor((age - showMs) / PRIZE_PAGE_MS); setIdx(i); on = true; wait = showMs + (i + 1) * PRIZE_PAGE_MS - age; }
+    if (wait >= 0) { clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, wait + 60); }
+    return on;
+  }
   function finaleMode(data) {
     var f = data && data.finale;
     if (!f || data.state === "play" || data.state === "hold" || data.state === "open" || data.state === "close" || data.state === "black") return null;        // 配信の開始・終了の場面では、優勝画面は出さない
@@ -2354,7 +2380,12 @@
     var mvAwards = arr(mv.awards), mvIv = mv.interview || {};
     if (st === "bracket" && f.bracket) return "bracket";                                  // 最後のトーナメント表
     if (st === "mvp_interview" && mvIv.current) return "mvp_interview";                   // MVPインタビュー（いま話している人がいるとき）
-    if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) return "mvp";        // MVP発表
+    if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) {                    // MVP発表（賞品があれば、そのあと、贈呈のページ）
+      var mkey = JSON.stringify(mvAwards.map(function (a) { return a.name; }));
+      if (mvpSeen.key !== mkey) mvpSeen = { key: mkey, at: Date.now() };
+      if (prizeStep(arr((f.prizes || {}).mvp), Date.now() - mvpSeen.at, MVP_SHOW_MS, function (i) { mvpPrizeIdx = i; })) return "mvp_prize";
+      return "mvp";
+    }
     if (st === "interview" && iv.current) return "interview";                             // 優勝チームのインタビュー（いま話している人がいるとき）
     if (data.state === "result" && data.result && data.result.final) {
       var key = JSON.stringify([(data.result.a || {}).points, (data.result.b || {}).points, (data.result.a || {}).name, (data.result.b || {}).name]);
@@ -2366,10 +2397,12 @@
         return null;
       }
     }
-    if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面のあと、最後のトーナメント表
-      var ck = (f.champion || {}).name || "";
-      if (championSeen.key !== ck) championSeen = { key: ck, at: Date.now() };
-      var cleft = CHAMPION_MS - (Date.now() - championSeen.at);
+    var ck = (f.champion || {}).name || "";
+    if (championSeen.key !== ck) championSeen = { key: ck, at: Date.now() };
+    var pzC = arr((f.prizes || {}).champion), cage = Date.now() - championSeen.at;
+    if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; })) return "prize";          // 賞品の贈呈
+    if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面（と贈呈）のあと、最後のトーナメント表
+      var cleft = CHAMPION_MS + pzC.length * PRIZE_PAGE_MS - cage;
       if (cleft <= 0) return "bracket";
       clearTimeout(championTimer);
       championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, cleft + 60);
@@ -2537,6 +2570,31 @@
     inner.style.left = Math.max(0, (1920 - w * s) / 2) + "px";
   }
 
+  // 賞品の贈呈：上に「PRIZE」／受け取るチーム（選手）のロゴと名前／賞品の対象と内容（個人宛ては、選手の名前も）
+  function renderPrize(data, mode, wrap) {
+    var pz = (data.finale || {}).prizes || {}, pages = arr(mode === "mvp_prize" ? pz.mvp : pz.champion);
+    var pg = pages[Math.min(pages.length - 1, mode === "mvp_prize" ? mvpPrizeIdx : prizeIdx)] || {};
+    wrap.appendChild(el("div", "fin-title", "PRIZE"));
+    wrap.appendChild(el("div", "fin-sub", (pg.title || "") + "への賞品の贈呈"));
+    if (pg.name) {
+      var head = el("div", "pz-head");
+      head.appendChild(finLogo(pg));
+      var who = el("div", "pz-who");
+      who.appendChild(el("div", "nm", pg.name));
+      if (pg.sub) who.appendChild(el("div", "tm", pg.sub));
+      head.appendChild(who);
+      wrap.appendChild(head);
+    }
+    var list = el("div", "pz-list");
+    arr(pg.items).forEach(function (it) {
+      var row = el("div", "pz-item");
+      row.appendChild(el("div", "lb", it.label || ""));
+      row.appendChild(el("div", "tx", it.text || ""));
+      if (arr(it.who).length) row.appendChild(el("div", "wh", arr(it.who).join("　")));
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+  }
   function renderFinale(data, mode) {
     var f = data.finale, c = f.champion || {};
     var again = screenEl.firstChild && screenEl.firstChild.classList && screenEl.firstChild.classList.contains("fin") && screenEl.firstChild.getAttribute("data-mode") === mode;
@@ -2546,6 +2604,7 @@
     if (mode === "bracket") { renderBracket(data); return; }
     if (mode === "interview" || mode === "mvp_interview") { renderInterview(data, mode); return; }
     if (mode === "mvp") { renderMvp(data, mode, wrap); screenEl.replaceChildren(wrap); return; }
+    if (mode === "prize" || mode === "mvp_prize") { renderPrize(data, mode, wrap); screenEl.replaceChildren(wrap); return; }
     wrap.appendChild(el("div", "fin-title", mode === "interview" ? "INTERVIEW" : "CHAMPION"));
     wrap.appendChild(finLogo(c));
     wrap.appendChild(el("div", "fin-name", c.name || ""));
