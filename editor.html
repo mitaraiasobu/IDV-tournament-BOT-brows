@@ -56,6 +56,22 @@
   .trow label { font-weight: 700; } .trow .hint { color: var(--sub); font-size: 13px; } .trow .calc { color: var(--ac); font-size: 14px; }
   .trow input[type=number], .trow input[type=datetime-local] { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; color-scheme: dark; }
   .unit { color: var(--sub); font-size: 13px; }
+  .srow { display: grid; grid-template-columns: 1fr 1.1fr; gap: 10px 16px; align-items: start; padding: 11px 4px; border-top: 1px solid var(--line); } .srow:first-child { border-top: 0; }
+  @media (max-width: 760px) { .srow { grid-template-columns: 1fr; } }
+  .srow label { font-weight: 700; } .srow .hint { color: var(--sub); font-size: 13px; white-space: pre-wrap; } .srow .swarn { color: var(--bad); font-size: 13px; margin-top: 4px; white-space: pre-wrap; }
+  .srow textarea, .srow input[type=number], .srow input[type=datetime-local] { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; color: var(--text); font: inherit; color-scheme: dark; }
+  .srow textarea { min-height: 90px; } .srow.changed { background: rgba(255, 176, 32, .07); }
+  .flow { display: flex; gap: 10px; } .flow.h { flex-direction: row; overflow-x: auto; padding-bottom: 8px; } .flow.v { flex-direction: column; }
+  .fcard { flex: none; width: 230px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+  .flow.v .fcard { width: auto; } .fcard.bad { border-color: var(--bad); }
+  .fcard .ftm { color: var(--ac); font-weight: 800; font-variant-numeric: tabular-nums; } .fcard .fcat { font-size: 11px; color: var(--sub); }
+  .fcard .fmain { font-weight: 700; font-size: 14px; } .fcard .fsub { color: var(--sub); font-size: 12px; } .fcard .fdur { font-size: 13px; }
+  .who { display: flex; gap: 4px; flex-wrap: wrap; } .who span { font-size: 11px; padding: 0 7px; border-radius: 999px; color: #fff; }
+  .who .t { background: #2f6fd6; } .who .c { background: #8a4fd8; } .who .m { background: #1f9d6a; }
+  .fedit { border-top: 1px dashed var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .fedit label { font-size: 12px; color: var(--sub); } .fedit input { width: 90px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; color: var(--text); }
+  .fedit .seg button { padding: 3px 8px; font-size: 12px; }
+  .sgrid { display: grid; gap: 14px; }
   .tl { list-style: none; margin: 0; padding: 0; } .tl li { display: grid; grid-template-columns: 84px 1fr; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--line); } .tl li:first-child { border-top: 0; }
   .tl .tm { color: var(--ac); font-weight: 700; font-variant-numeric: tabular-nums; } .tl .sub { color: var(--sub); font-size: 13px; }
   .tl li.bad .tm, .tl li.bad .sub { color: var(--bad); } .trow .calc.bad { color: var(--bad); font-weight: 700; }
@@ -75,8 +91,12 @@
   </header>
   <main>
     <div id="result"></div>
-    <div class="tabs" id="tabs"><button type="button" id="tabbp" class="on">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button></div>
-    <div id="tab-bp">
+    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button></div>
+    <div id="tab-set">
+      <div class="note" style="margin-top:10px">大会の設定を、ここでまとめて変えられます（変えた項目は、色が付きます）。「💾 保存」で、BOTに反映します。Discordの設定画面で変えても、同じ内容になります。</div>
+      <div id="setform" class="sgrid"></div>
+    </div>
+    <div id="tab-bp" hidden>
     <h2>BAN/PICKの手順</h2>
     <div class="cols">
       <div class="card"><div class="plist" id="plist"></div><div class="row"><button id="newp" type="button">＋ 新しい手順（白紙）</button></div></div>
@@ -90,7 +110,9 @@
       <h2>時間の設定（この大会だけ）</h2>
       <div class="card" id="timeform"></div>
       <h2>全体の流れ（開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで。自動で計算します）</h2>
-      <div class="card"><ol class="tl" id="timeline"></ol><div class="note" style="margin-top:8px" id="timenote"></div></div>
+      <div class="row"><span class="note">表の向き：</span><span class="seg" id="flowdir"><button type="button" data-dir="h" class="on">左から右</button><button type="button" data-dir="v">上から下</button></span>
+        <span class="note">🟦チーム　🟪キャスター　🟩モデレーター（その時に出番がある人）。時間の欄は、その場で変えられます。</span></div>
+      <div class="card"><div id="flow" class="flow h"></div><ol class="tl" id="timeline" hidden></ol><div class="note" style="margin-top:8px" id="timenote"></div></div>
     </div>
   </main>
 </div>
@@ -105,6 +127,7 @@
   var data = null, AUTH = null;                         // data＝BOTが書いたデータ／AUTH＝パスワードから作った鍵（16進。このページの中だけ）
   var P = [], ROUNDS = [], SEL = null, DELETED = [], TM = null, TM0 = null, TMOK = true;    // 作業中の内容：手順のリスト・ラウンドの割り当て・選んでいる手順・削除する手順の番号・時間の設定
   var BASEJSON = "";                                    // 最後に読み込んだ・保存した内容（変更の有無の判定用）
+  var ST = {}, ST0 = {};                                 // 「⚙ 大会設定」：いまの値（作業中）と、BOTに保存されている値
   var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
   var SIDE = { survivor: "サバイバー側", hunter: "ハンター側" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
 
@@ -223,7 +246,7 @@
   }
 
   // ───────── 画面
-  function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM]) !== BASEJSON; }
+  function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM, ST]) !== BASEJSON; }
   function refreshDirty() {
     var d = dirty(), e = $("dirty");
     e.textContent = d ? "● 保存していない変更があります" : "変更はありません"; e.className = d ? "" : "clean";
@@ -386,42 +409,147 @@
     calc("open_greet_sec", TM.open_greet_sec != null ? "→ " + msec(TM.open_greet_sec) : ""); calc("close_greet_sec", TM.close_greet_sec != null ? "→ " + msec(TM.close_greet_sec) : "");
     function li(d, ref, main, sub, cls) { var x = el("li", cls || ""); x.appendChild(el("span", "tm", d ? hhmm(d) + (ref ? dayLabel(d, ref) : "") : "--:--")); var b = el("div"); b.appendChild(el("div", "", main)); if (sub) b.appendChild(el("div", "sub", sub)); x.appendChild(b); ol.appendChild(x); }
     $("timenote").textContent = "";
-    if (!open) { li(null, null, "上の「配信開始」を入れると、ここに、全体の流れが出ます", ""); return; }
+    if (!open) { $("flow").textContent = "上の「配信開始」を入れると、ここに、全体の流れが出ます"; return; }
     // 全体の流れ：開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで
     var ev = [];
-    function add(d, main, sub, cls) { if (d) ev.push({ d: d, main: main, sub: sub, cls: cls }); }
-    add(addMin(open, -TM.caster_call_min), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "配信開始の" + TM.caster_call_min + "分前");
+    // x：{cat（種類）, who（出番のある人：t＝チーム・c＝キャスター・m＝モデレーター）, dur（長さの説明）, edit：[{key, label, unit, mid}]（その場で変えられる時間）}
+    function add(d, main, sub, cls, x) { if (d) ev.push({ d: d, main: main, sub: sub, cls: cls, x: x || {} }); }
+    var OV = TM.intro_overrides || {};
+    function ovr(mid, k) { return (OV[mid] || {})[k] || TM[k] || 0; }
+    add(addMin(open, -TM.caster_call_min), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "配信開始の" + TM.caster_call_min + "分前", "", { cat: "準備", who: "c" });
     var openEnd = addSec(open, (TM.open_other_sec || 0) + (TM.open_greet_sec || 0));
-    add(open, "配信開始", "開会の演出 → 開会のごあいさつ（" + msec(TM.open_greet_sec || 0) + "）→ ルール紹介 → キャスター交代（" + hhmm(openEnd) + " ごろまで）");
+    add(open, "配信開始", "開会の演出 → 開会のごあいさつ → ルール紹介 → キャスター交代（" + hhmm(openEnd) + " ごろまで）", "",
+        { cat: "開会", who: "cm", dur: msec((TM.open_other_sec || 0) + (TM.open_greet_sec || 0)), edit: [{ key: "open_greet_sec", label: "開会のごあいさつ", unit: "秒" }] });
     var last = null;
     (TM.matches || []).forEach(function (m) {
       var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.first === false ? 0 : (m.casters || 2);
-      var it = introTotal(n, TM.caster_sec || 0, TM.player_sec || 0), itStart = prep ? addSec(prep, TM.margin_sec) : null, itEnd = itStart ? addSec(itStart, it - TM.margin_sec) : null;      // 紹介は、BAN/PICKの開始の10秒あとに始まる
-      add(prep, m.label + "：BAN/PICKの開始", "試合担当のキャスターを、キャスター用ボイスへ移動");
-      if (itStart) add(itStart, m.label + (n ? "：キャスター自己紹介 → チーム紹介 → 選手紹介" : "：チーム紹介 → 選手紹介"), (n ? "キャスター" + n + "人×" + TM.caster_sec + "秒（ラウンド全員まとめて） ＋ " : "") + "チーム紹介 ＋ 選手5人（" + TM.player_sec + "秒ずつ）＝ " + msec(it - TM.margin_sec) + "（" + hhmm(itEnd) + " ごろまで）", (play && itEnd > play) ? "bad" : "");
-      if (itEnd && play && itEnd < play) add(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）");
-      add(play, m.label + "：試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます");
-      if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です"); last = end; }
+      var cs = ovr(m.mid, "caster_sec"), ps = ovr(m.mid, "player_sec");
+      var it = introTotal(n, cs, ps), itStart = prep ? addSec(prep, TM.margin_sec) : null, itEnd = itStart ? addSec(itStart, it - TM.margin_sec) : null;      // 紹介は、BAN/PICKの開始の10秒あとに始まる
+      add(prep, m.label + "：BAN/PICKの開始", "試合担当のキャスターを、キャスター用ボイスへ移動（交代があるときは、交代の画面" + (TM.swap_sec || 20) + "秒のあと）", "", { cat: "BAN/PICK", who: "tcm" });
+      var ed = [{ key: "player_sec", label: "選手紹介（1人）", unit: "秒", mid: m.mid }];
+      if (n) ed.unshift({ key: "caster_sec", label: "キャスター自己紹介（1人）", unit: "秒", mid: m.mid });
+      if (itStart) add(itStart, m.label + (n ? "：キャスター自己紹介 → チーム紹介 → 選手紹介" : "：チーム紹介 → 選手紹介"),
+                       (n ? "キャスター" + n + "人×" + cs + "秒 ＋ " : "") + "チーム紹介 ＋ 選手5人×" + ps + "秒（" + hhmm(itEnd) + " ごろまで）", (play && itEnd > play) ? "bad" : "",
+                       { cat: "紹介", who: "c", dur: msec(it - TM.margin_sec), edit: ed });
+      if (itEnd && play && itEnd < play) add(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）", "", { cat: "雑談", who: "c", dur: msec((play - itEnd) / 1000) });
+      add(play, m.label + "：試合開始（予定）", "BAN/PICKのあと、00:00でゲームを始めます", "", { cat: "試合", who: "tcm" });
+      if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "試合", who: "tm", dur: play ? msec((end - play) / 1000) : "" }); last = end; }
     });
     if (last) {
-      var t1 = addSec(last, TM.finale_sec), t2 = addMin(t1, TM.interview_minutes || 0), t3 = addMin(t2, TM.interview_minutes || 0), t4 = addSec(t3, TM.close_greet_sec || 0), t5 = addSec(t4, TM.end_screen_sec);
-      add(t1, "成績・優勝発表 → 優勝チームのインタビュー", "インタビュー 1人 " + (TM.interview_minutes || 0) + "分で計算");
-      add(t2, "MVP発表 → MVPのインタビュー", "インタビュー 1人 " + (TM.interview_minutes || 0) + "分で計算");
-      add(t3, "閉会のごあいさつ", msec(TM.close_greet_sec || 0));
-      add(t4, "「大会終了」の画面", msec(TM.end_screen_sec));
-      add(t5, "配信終了（予定）", "インタビューは、優勝チーム1人・MVP1人で計算しています");
+      var fc = TM.finale_champ_sec || 0, fp = TM.finale_prize_sec || 0, fm = TM.finale_mvp_sec || 0, iv = (TM.interview_minutes || 0) * 60, ent = TM.enter_sec || 20;
+      var t0 = addSec(last, TM.final_result_sec || 12), t1 = addSec(t0, fc), t2 = addSec(t1, fp), t3 = addSec(t2, ent + iv), t4 = addSec(t3, fm), t5 = addSec(t4, fp), t6 = addSec(t5, ent + iv), t7 = addSec(t6, TM.close_greet_sec || 0), t8 = addSec(t7, TM.end_screen_sec);
+      add(last, "成績の画面（FINAL RESULT）", "", "", { cat: "優勝", who: "", dur: msec(TM.final_result_sec || 12) });
+      add(t0, "優勝の発表", "", "", { cat: "優勝", who: "tc", dur: msec(fc), edit: [{ key: "finale_champ_sec", label: "優勝の発表", unit: "秒" }] });
+      add(t1, "賞品の贈呈（優勝）", "1ページの時間（賞品の数ぶん）", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ", edit: [{ key: "finale_prize_sec", label: "賞品の贈呈（1ページ）", unit: "秒" }] });
+      add(t2, "優勝チームのインタビュー", "入室のお知らせ" + ent + "秒のあと、1人" + (TM.interview_minutes || 0) + "分（1人で計算）", "", { cat: "インタビュー", who: "tcm", dur: msec(ent + iv), edit: [{ key: "interview_minutes", label: "インタビュー（1人）", unit: "分" }] });
+      add(t3, "MVPの発表", "", "", { cat: "MVP", who: "c", dur: msec(fm), edit: [{ key: "finale_mvp_sec", label: "MVPの発表", unit: "秒" }] });
+      add(t4, "賞品の贈呈（MVP）", "", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ" });
+      add(t5, "MVPのインタビュー", "入室のお知らせ" + ent + "秒のあと、1人" + (TM.interview_minutes || 0) + "分（1人で計算）", "", { cat: "インタビュー", who: "tcm", dur: msec(ent + iv) });
+      add(t6, "閉会のごあいさつ", "", "", { cat: "閉会", who: "c", dur: msec(TM.close_greet_sec || 0), edit: [{ key: "close_greet_sec", label: "閉会のごあいさつ", unit: "秒" }] });
+      add(t7, "「大会終了」の画面", "", "", { cat: "閉会", who: "", dur: msec(TM.end_screen_sec) });
+      add(t8, "配信終了（予定）", "", "", { cat: "閉会", who: "" });
     }
     ev.sort(function (a, b) { return a.d - b.d; });
     TLEV = ev.map(function (e) { return { t: ymdhm(e.d), main: e.main, sub: e.sub || "" }; });         // 「共有」で送る、全体の流れ
-    ev.forEach(function (e) { li(e.d, base, e.main, e.sub, e.cls); });
+    renderFlow(ev, base);
     if (!last) $("timenote").textContent = "試合の終了予定が出せないため、配信終了の時刻は、出ていません（トーナメント表に、1試合ぶんの所要時間を入れてください）。";
   }
-  function showTab(name) {
-    $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time";
-    $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : "";
-    if (name === "time") renderTimes();
+  var FLOWDIR = "h", EMODE = {};                          // 表の向き／試合ごとの紹介の秒数を「まとめて」変えるか「この試合だけ」変えるか
+  function renderFlow(ev, base) {
+    var f = $("flow"); if (!f) return; f.textContent = ""; f.className = "flow " + FLOWDIR;
+    ev.forEach(function (e) {
+      var c = el("div", "fcard" + (e.cls === "bad" ? " bad" : ""));
+      c.appendChild(el("div", "ftm", hhmm(e.d) + dayLabel(e.d, base)));
+      if (e.x.cat) c.appendChild(el("div", "fcat", e.x.cat));
+      c.appendChild(el("div", "fmain", e.main));
+      if (e.sub) c.appendChild(el("div", "fsub", e.sub));
+      if (e.x.dur) c.appendChild(el("div", "fdur", "⏱ " + e.x.dur));
+      var w = el("div", "who");
+      (e.x.who || "").split("").forEach(function (k) { w.appendChild(el("span", k, { t: "チーム", c: "キャスター", m: "モデレーター" }[k])); });
+      if (w.childNodes.length) c.appendChild(w);
+      (e.x.edit || []).forEach(function (ed) {
+        var box = el("div", "fedit");
+        box.appendChild(el("label", "", ed.label + "（" + ed.unit + "）"));
+        var ek = ed.key + "|" + (ed.mid || ""), mode = ed.mid ? (EMODE[ek] || ((OVR()[ed.mid] || {})[ed.key] ? "one" : "all")) : "all";
+        var cur = mode === "one" ? ((OVR()[ed.mid] || {})[ed.key] || TM[ed.key]) : TM[ed.key];
+        var inp = el("input"); inp.type = "number"; inp.value = cur == null ? "" : cur;
+        inp.addEventListener("change", function () {
+          var v = inp.value === "" ? null : Math.round(Number(inp.value));
+          if (mode === "one") { TM.intro_overrides = TM.intro_overrides || {}; var o = TM.intro_overrides[ed.mid] = Object.assign({}, TM.intro_overrides[ed.mid] || {}); if (v == null) delete o[ed.key]; else o[ed.key] = v; if (!Object.keys(o).length) delete TM.intro_overrides[ed.mid]; }
+          else TM[ed.key] = v;
+          renderTimes(); refreshDirty();
+        });
+        box.appendChild(inp);
+        if (ed.mid) {                                                                         // 同じ種類（全試合の紹介）をまとめて変えるか、この試合だけ変えるか
+          box.appendChild(seg([["all", "同じ種類をまとめて"], ["one", "この試合だけ"]], mode, function (m2) {
+            EMODE[ek] = m2;
+            if (m2 === "all" && TM.intro_overrides && TM.intro_overrides[ed.mid]) { var o2 = Object.assign({}, TM.intro_overrides[ed.mid]); delete o2[ed.key]; if (Object.keys(o2).length) TM.intro_overrides[ed.mid] = o2; else delete TM.intro_overrides[ed.mid]; }
+            renderTimes(); refreshDirty();
+          }));
+        }
+        c.appendChild(box);
+      });
+      f.appendChild(c);
+    });
   }
-  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); refreshDirty(); }
+  function OVR() { return TM.intro_overrides || {}; }
+  function showTab(name) {
+    $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time";
+    $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : "";
+    if (name === "time") renderTimes();
+    if (name === "set") renderSettings();
+  }
+  // ───── ⚙ 大会設定：設定の一覧（BOTが渡す）から、まとまりごとに入力欄を組み立てる ─────
+  function seg(opts, cur, onPick) {
+    var g = el("div", "seg");
+    opts.forEach(function (o) {
+      var b = el("button", String(cur) === String(o[0]) ? "on" : "", o[1]); b.type = "button";
+      b.addEventListener("click", function () { onPick(o[0]); });
+      g.appendChild(b);
+    });
+    return g;
+  }
+  function renderSettings() {
+    var f = $("setform"); if (!f) return; f.textContent = "";
+    var set = (data && data.settings) || { groups: [], items: [] };
+    set.groups.forEach(function (g) {
+      var items = set.items.filter(function (it) { return it.group === g[0]; });
+      if (!items.length) return;
+      f.appendChild(el("h2", "", g[1]));
+      var card = el("div", "card");
+      items.forEach(function (it) {
+        var row = el("div", "srow" + (JSON.stringify(ST[it.key]) !== JSON.stringify(ST0[it.key]) ? " changed" : ""));
+        var left = el("div"); left.appendChild(el("label", "", it.label));
+        if (it.help) left.appendChild(el("div", "hint", it.help));
+        var right = el("div"), v = ST[it.key];
+        function put(val) { ST[it.key] = val; renderSettings(); refreshDirty(); }
+        if (it.type === "bool") right.appendChild(seg([[true, "オン"], [false, "オフ"]], !!v, put));
+        else if (it.type === "tri") right.appendChild(seg([["", "未設定"], ["on", "オン"], ["off", "オフ"]], v || "", put));
+        else if (it.type === "choice") {
+          var sel = el("select");
+          it.choices.forEach(function (c) { var o = el("option", "", c[1]); o.value = c[0]; if (String(v) === String(c[0])) o.selected = true; sel.appendChild(o); });
+          sel.addEventListener("change", function () { put(sel.value); });
+          right.appendChild(sel);
+        } else if (it.type === "textarea") {
+          var ta = el("textarea"); ta.value = v || ""; if (it.max) ta.maxLength = it.max;
+          ta.addEventListener("change", function () { put(ta.value); });
+          right.appendChild(ta);
+        } else {
+          var inp = el("input"); inp.type = it.type === "int" ? "number" : it.type === "datetime" ? "datetime-local" : "text";
+          if (it.type === "int") { if (it.min != null) inp.min = it.min; if (it.max != null) inp.max = it.max; }
+          else if (it.max) inp.maxLength = it.max;
+          inp.value = v == null ? "" : v;
+          inp.addEventListener("change", function () { put(it.type === "int" && inp.value !== "" ? Number(inp.value) : inp.value); });
+          right.appendChild(inp);
+        }
+        var on = it.type === "bool" ? !!v : it.type === "tri" ? true : it.type === "choice" ? String(v) === "live" : false;     // 警告：オン（非推奨）のとき・未設定を選ばせる設定・非推奨の選択肢
+        if (it.warn && (on || it.type === "tri")) right.appendChild(el("div", "swarn", "⚠ " + it.warn.replace(/^⚠\s*/, "")));
+        row.appendChild(left); row.appendChild(right); card.appendChild(row);
+      });
+      f.appendChild(card);
+    });
+  }
+  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); refreshDirty(); }
 
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d;
@@ -429,7 +557,9 @@
     TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、BOTに保存されている値と比べる
     if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（25分前）を画面に入れておく。BOTには、まだ保存されていないので、そのまま保存すると、保存される
     if (SEL == null || SEL >= P.length) SEL = 0;
-    BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM0]);
+    ST = {}; ST0 = {};
+    ((d.settings || {}).items || []).forEach(function (it) { ST[it.key] = it.value; ST0[it.key] = it.value; });
+    BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM0, ST0]);
     $("title").textContent = (d.title || "大会") + "の設定";
   }
   function init() {
@@ -455,6 +585,7 @@
     });
     if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
       var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_minutes", "finale_champ_sec", "finale_prize_sec", "finale_mvp_sec"];
+      if (JSON.stringify(TM.intro_overrides || {}) !== JSON.stringify(to.intro_overrides || {})) { tf.intro_overrides = TM.intro_overrides || {}; any = true; }    // 「この試合だけ」の秒数
       if (TM.dev && TM.step_sec != null) keys.push("step_sec");
       keys.forEach(function (k) {
         if (TM[k] == null || TM[k] === "") { bad = bad || "時間の設定に、空の欄があります。"; return; }
@@ -464,6 +595,9 @@
       if (any && TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、保存してください。";
       if (any) { tf.op = "set_times"; ops.push(tf); }
     }
+    var sv = {}, sany = false;                                                        // 「⚙ 大会設定」：変えた項目だけを送る
+    Object.keys(ST).forEach(function (k) { if (JSON.stringify(ST[k]) !== JSON.stringify(ST0[k])) { sv[k] = ST[k]; sany = true; } });
+    if (sany) ops.push({ op: "set_settings", values: sv });
     if (share === true) {                                                             // 「📣 共有」：保存と同時に、全体の流れを、キャスターとモデレーターへ
       if (!TM || TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、共有してください。";
       else { renderTimeline(); if (!TLEV.length) bad = bad || "共有する「全体の流れ」がありません（上の「配信開始」を入れてください）。"; }
@@ -487,6 +621,14 @@
 
   $("save").addEventListener("click", function () { save(false); });
   $("share").addEventListener("click", function () { save(true); });
+  $("tabset").addEventListener("click", function () { showTab("set"); });
+  Array.prototype.forEach.call(document.querySelectorAll("#flowdir button"), function (b) {      // 表の向き：左から右／上から下
+    b.addEventListener("click", function () {
+      FLOWDIR = b.getAttribute("data-dir");
+      Array.prototype.forEach.call(document.querySelectorAll("#flowdir button"), function (x) { x.className = x === b ? "on" : ""; });
+      renderTimes();
+    });
+  });
   $("tabbp").addEventListener("click", function () { showTab("bp"); });
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("reload").addEventListener("click", function () {
