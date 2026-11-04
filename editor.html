@@ -227,12 +227,15 @@
 
   // ───────── 手順の検査（BOTと同じ決まり）
   function stepText(s) { return SIDE[s.side] + "が " + TGT[s.target] + "を " + ACT[s.action] + " ×" + s.count; }
+  function tgtOK(side, action, target) { return target === "map" || (action === "ban" ? target !== side : target === side); }   // BANは相手の陣営／PICKは自分の陣営（BOTと同じ決まり）
+  function fixTgt(s) { if (!tgtOK(s.side, s.action, s.target)) s.target = s.action === "pick" ? s.side : (s.side === "survivor" ? "hunter" : "survivor"); if (s.target === "map" && s.action === "pick") s.count = 1; }
   function check(steps, lim) {
     if (!steps.length) return "手順が1つもありません。";
     if (steps.length > lim.max_steps) return "手順は" + lim.max_steps + "個までです。";
     for (var i = 0; i < steps.length; i++) {
       var s = steps[i];
       if (s.action === "ban" && s.side === s.target) return (i + 1) + "番：自分の側と同じものを、BANすることはできません。";
+      if (!tgtOK(s.side, s.action, s.target)) return (i + 1) + "番：相手の陣営のキャラクターを、PICKすることはできません。";
       if (s.count < 1 || s.count > lim.max_count) return (i + 1) + "番：人数は、1〜" + lim.max_count + "です。";
     }
     var pk = { survivor: 0, hunter: 0, map: 0 }, hasMap = false;                       // 必ず守るルール（BOTでも、同じ検査をする）
@@ -296,9 +299,9 @@
       var row = el("div", "step");
       row.appendChild(el("div", "num", CIRC.charAt(i)));
       var mid = el("div");
-      mid.appendChild(seg([["survivor", "サバイバー側"], ["hunter", "ハンター側"]], s.side, { survivor: "s", hunter: "h" }, function (v) { s.side = v; if (s.action === "ban" && s.target === v) s.target = v === "survivor" ? "hunter" : "survivor"; render(); }, ro));
-      mid.appendChild(seg([["ban", "BAN"], ["pick", "PICK"]], s.action, null, function (v) { s.action = v; if (v === "ban" && s.target === s.side) s.target = s.side === "survivor" ? "hunter" : "survivor"; if (s.target === "map" && v === "pick") s.count = 1; render(); }, ro));
-      mid.appendChild(seg([["survivor", "サバイバーを"], ["hunter", "ハンターを"], ["map", "マップを"]].filter(function (o) { return !(s.action === "ban" && o[0] === s.side); }), s.target, { survivor: "s", hunter: "h" }, function (v) { s.target = v; if (v === "map" && s.action === "pick") s.count = 1; render(); }, ro));
+      mid.appendChild(seg([["survivor", "サバイバー側"], ["hunter", "ハンター側"]], s.side, { survivor: "s", hunter: "h" }, function (v) { s.side = v; fixTgt(s); render(); }, ro));
+      mid.appendChild(seg([["ban", "BAN"], ["pick", "PICK"]], s.action, null, function (v) { s.action = v; fixTgt(s); render(); }, ro));
+      mid.appendChild(seg([["survivor", "サバイバーを"], ["hunter", "ハンターを"], ["map", "マップを"]].filter(function (o) { return tgtOK(s.side, s.action, o[0]); }), s.target, { survivor: "s", hunter: "h" }, function (v) { s.target = v; if (v === "map" && s.action === "pick") s.count = 1; render(); }, ro));
       var c = el("span", "cnt"), mn = el("button", "", "−"), pl = el("button", "", "＋");
       mn.type = pl.type = "button"; mn.disabled = ro || s.count <= 1; pl.disabled = ro || s.count >= data.limits.max_count || (s.target === "map" && s.action === "pick");
       mn.addEventListener("click", function () { s.count--; render(); }); pl.addEventListener("click", function () { s.count++; render(); });
