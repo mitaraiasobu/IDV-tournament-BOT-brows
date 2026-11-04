@@ -441,6 +441,7 @@
   .selwrap { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 4px 20px; } .selcol { flex: 0 1 640px; min-width: 280px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
   .selcol.s { border-color: var(--s); } .selcol.h { border-color: var(--h); } .selcol h3 { margin: 0 0 6px; font-size: 16px; } .selcol .selhint { font-size: 17px; color: var(--text); line-height: 1.6; margin: 0 0 10px; }
   .seltiles { display: flex; flex-wrap: wrap; gap: 12px; }
+  .selsubh { flex-basis: 100%; margin: 6px 0 -4px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 13px; font-weight: 800; color: var(--sub); }   /* 本来の選手の下：緊急時の代打選手 */
   .seltile { position: relative; width: 92px; text-align: center; padding: 8px 4px 6px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel2); user-select: none; }
   .seltile.click { cursor: pointer; } .seltile.click:hover { border-color: var(--gold); } .seltile.dim { opacity: .55; }
   .seltile.on { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 14px 2px rgba(255, 210, 63, .6); }
@@ -1674,6 +1675,14 @@
     if (o.click) tl.addEventListener("click", o.click);
     return tl;
   }
+  function subOrder(list) { return list.filter(function (p) { return !p.sub; }).concat(list.filter(function (p) { return p.sub; })); }   // 本来の選手 → 緊急時の代打選手の順
+  function addTiles(box, list, make) {                                                    // 並べる：本来の選手のあとに、見出し「🆘 緊急時の代打選手」と代打の選手
+    var subHead = false;
+    subOrder(list).forEach(function (p) {
+      if (p.sub && !subHead) { box.appendChild(el("div", "selsubh", "🆘 緊急時の代打選手（本来の選手が出場できないときだけ）")); subHead = true; }
+      box.appendChild(make(p));
+    });
+  }
   var SELP = {};                                                                           // 選びかけの内容（「確定」を押すまで、送らない）：att＝出場する／しない、vote＝代表にしたい人、hunter＝ハンターの選手
   function selAct(act, k, isDone, extra) {
     if (BUSY) return;
@@ -1741,9 +1750,9 @@
         cs.appendChild(el("div", "selhint selmid", "この試合に出場する選手のアイコンを押してください。"));
         cs.appendChild(el("div", "selhint selmid", "押したら、「出場を確定」を押してください。出場する選手が" + need + "人そろうまで、次には進みません。"));
         cs.appendChild(el("div", "selcount", "出場が確定した人：" + att.length + "/" + need + "人" + (srvAtt ? "（あなたは、確定済みです。あと" + Math.max(0, need - att.length) + "人を、待っています）" : "")));
-        SPL.forEach(function (p) {
+        addTiles(tiles, SPL, function (p) {
           var isMe = p.k === me, on = isMe ? pendAtt : att.indexOf(p.k) >= 0;
-          tiles.appendChild(selTile(p, { on: on, badge: on ? "✔" : "", me: isMe, click: isMe && !BUSY ? function () { SELP.att = !pendAtt; render(); } : null, dim: !isMe && !on }));
+          return selTile(p, { on: on, badge: on ? "✔" : "", me: isMe, click: isMe && !BUSY ? function () { SELP.att = !pendAtt; render(); } : null, dim: !isMe && !on });
         });
         if (pendAtt !== srvAtt) confirmBtn = [pendAtt ? "出場を確定" : "出場を取り消す", function () { selAct("sel_attend", null, null, { on: !!pendAtt }); }];
       } else {
@@ -1761,7 +1770,7 @@
       }
     } else {
       cs.appendChild(el("div", "selhint", !SPL.length ? "サバイバー側に人がいません（ダミーが自動で入ります）。" : side === "s" ? "読み込んでいます…" : "サバイバー側が、選んでいます。"));
-      SPL.forEach(function (p) { tiles.appendChild(selTile(p, { dim: true })); });
+      addTiles(tiles, SPL, function (p) { return selTile(p, { dim: true }); });
     }
     cs.appendChild(tiles); if (side !== "h") wrap.appendChild(cs);                          // 自分の陣営だけ見せる（相手の陣営は、出さない）
     // ハンター側
@@ -1772,12 +1781,12 @@
       var hp = sd.hp;
       ch.appendChild(el("div", "selhint selmid", hp ? "ハンターをプレイする選手が決まりました。サバイバー側の選択を待っています。" : "ハンターをプレイする選手のアイコンを押して、「確定」を押してください。"));
       var pendH = hp || SELP.hunter;
-      HPL.filter(function (p) { return !hp || p.k === hp; }).forEach(function (p) { t2.appendChild(selTile(p, { on: pendH === p.k, badge: pendH === p.k ? "✔" : "", me: p.k === me, click: !hp && !BUSY ? function () { SELP.hunter = p.k; render(); } : null })); });
+      addTiles(t2, HPL.filter(function (p) { return !hp || p.k === hp; }), function (p) { return selTile(p, { on: pendH === p.k, badge: pendH === p.k ? "✔" : "", me: p.k === me, click: !hp && !BUSY ? function () { SELP.hunter = p.k; render(); } : null }); });
       if (!hp && SELP.hunter) { var hk = SELP.hunter; confirmBtn = ["確定", function () { ask("この選手で確定します。確定すると、取り消せません。よろしいですか？", function () { selAct("sel_hunter", hk); }); }]; }
       if (hp && me !== hp) ch.appendChild(el("div", "selspec", "👀 観戦モード（選ばれなかった人は、見るだけです）"));
     } else {
       ch.appendChild(el("div", "selhint", side === "h" ? "読み込んでいます…" : "ハンター側が、選んでいます（プレイする選手は、サバイバー側が決まるまで、非公開です）。"));
-      HPL.forEach(function (p) { t2.appendChild(selTile(p, { dim: true })); });
+      addTiles(t2, HPL, function (p) { return selTile(p, { dim: true }); });
     }
     ch.appendChild(t2); if (side !== "s") wrap.appendChild(ch);
     work.appendChild(wrap);
