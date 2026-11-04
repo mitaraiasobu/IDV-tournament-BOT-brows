@@ -1406,7 +1406,7 @@
           $("shell").classList.add("off");
           var oldsp = $("sp"); if (oldsp) oldsp.remove();                                  // 「正常に報告されました」の枠は、消してから（重ねない）
           Array.prototype.forEach.call(document.querySelectorAll(".shutmsg"), function (x) { x.remove(); });
-          var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", "BANPICK体験会")); m.appendChild(el("div", "t2", "ご参加ありがとうございました" + "\n" + "ブラウザを閉じて次の試合に進みます。")); $("stage").appendChild(m);
+          var m = el("div", "shutmsg"); m.appendChild(el("div", "t1", S.expo ? "BANPICK体験会" : "BANPICK完了")); m.appendChild(el("div", "t2", (S.expo ? "ご参加ありがとうございました" : "対戦ありがとうございました") + "\n" + "ブラウザを閉じて次の試合に進みます。")); $("stage").appendChild(m);
         }, 6000);
       }
       return;
@@ -1437,6 +1437,12 @@
         var PAIRS = [0, 1, 2, 3, 4].map(function (n) { return [n, n + "吊 / " + (4 - n) + "逃げ"]; });
         card.appendChild(el("div", "sub2", "試合結果を入力してください。"));
         card.appendChild(pmSelect("吊り・逃げの数", PAIRS, PM_FORM.h, function (v) { PM_FORM.h = v; }));
+        if (pm.need_time) {                                                                 // 延長戦：試合時間も
+          card.appendChild(el("div", "sub2", "試合時間（例：4:35）"));
+          var tin = el("input"); tin.type = "text"; tin.inputMode = "numeric"; tin.placeholder = "4:35"; tin.value = PM_FORM.t || ""; tin.className = "tin";
+          tin.addEventListener("input", function () { PM_FORM.t = tin.value; var b0 = $("pmsend"); if (b0) b0.disabled = PM_BUSY || PM_FORM.h === null || !(PM_FORM.img || (S.expo && PM_FORM.noimg)) || !/^\s*\d{1,2}\s*[:：]\s*\d{2}\s*$/.test(PM_FORM.t || ""); });
+          card.appendChild(tin);
+        }
         card.appendChild(el("div", "sub2", "戦績の画像（ゲームの戦績画面のスクショ）を送ってください。"));
         var pin = el("input"); pin.type = "file"; pin.accept = "image/*"; pin.style.display = "none";
         var ppick = el("button", "btn", PM_FORM.img ? "📷 選び直す" : "📷 戦績の画像を選ぶ"); ppick.type = "button";
@@ -1447,15 +1453,15 @@
         });
         var pskip = el("button", "btn" + (PM_FORM.noimg ? " go" : ""), "画像を送らずに進む"); pskip.type = "button";
         pskip.addEventListener("click", function () { PM_FORM.noimg = !PM_FORM.noimg; if (PM_FORM.noimg) PM_FORM.img = ""; buildPmPanel(); });
-        var prow = el("div", "row"); prow.appendChild(pin); prow.appendChild(ppick); prow.appendChild(pskip); card.appendChild(prow);
+        var prow = el("div", "row"); prow.appendChild(pin); prow.appendChild(ppick); if (S.expo) prow.appendChild(pskip); card.appendChild(prow);     // 本番は、戦績のスクショが必須（送らずには進めない）
         if (PM_FORM.img) { var pim = el("img", "prev"); pim.src = PM_FORM.img; card.appendChild(pim); }
-        var snd = el("button", "btn go", PM_BUSY ? "データ送信中…" : "送信"); snd.type = "button";
-        snd.disabled = PM_BUSY || PM_FORM.h === null || !(PM_FORM.img || PM_FORM.noimg);
-        snd.addEventListener("click", function () { pmSend("pm_submit", { hangs: PM_FORM.h, escapes: 4 - PM_FORM.h, img: PM_FORM.img || null }, function () { PM_FORM = { h: null, img: "", noimg: false }; }); });
+        var snd = el("button", "btn go", PM_BUSY ? "データ送信中…" : "送信"); snd.type = "button"; snd.id = "pmsend";
+        snd.disabled = PM_BUSY || PM_FORM.h === null || !(PM_FORM.img || (S.expo && PM_FORM.noimg)) || (pm.need_time && !/^\s*\d{1,2}\s*[:：]\s*\d{2}\s*$/.test(PM_FORM.t || ""));
+        snd.addEventListener("click", function () { pmSend("pm_submit", { hangs: PM_FORM.h, escapes: 4 - PM_FORM.h, img: PM_FORM.img || null, time: PM_FORM.t || null }, function () { PM_FORM = { h: null, img: "", noimg: false, t: "" }; }); });
         var rs = el("div", "row"); rs.appendChild(snd); card.appendChild(rs);
       } else card.appendChild(el("div", "sub2", "結果の入力を待っています…（" + (pm.entry === "hunter" ? "ハンター選手" : "サバイバー代表") + "が、入力します）"));
     } else {
-      card.appendChild(el("div", "sub2", "サバイバー代表が、Discordで、結果を確認しています…"));
+      card.appendChild(el("div", "sub2", S.expo ? "サバイバー代表が、Discordで、結果を確認しています…" : "相手チーム（サバイバー側）が、Discordで、結果を確認しています…"));
     }
     if (SP_NOTE.text) card.appendChild(el("div", "note " + SP_NOTE.cls, SP_NOTE.text));
     ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
@@ -1463,7 +1469,7 @@
   function buildPanel() {
     var stg = stageNow();
     if (stg && !panelGate()) return;
-    if (stg === "play" && S.expo && S.pm) {                                              // 体験会：試合のあと
+    if (stg === "play" && S.pm) {                                                        // 試合のあと（体験会・本番）：ハンター選手が、ブラウザで結果を入力する
       if (GO_AT && Date.now() - GO_AT < 4000) { setTimeout(buildPanel, 4000 - (Date.now() - GO_AT) + 50); return; }       // 「試合開始！」を、4秒は見せてから
       buildPmPanel(); return;
     }
