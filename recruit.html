@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>メンバー募集</title>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https:; base-uri 'none'; form-action 'none'">
+<!--
+  メンバー募集のページ（どの大会にも共通の1枚）。
+  ・URLの ?t=（募集用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いた、募集中のチーム）を読む。
+  ・Discordの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」で出る本人用のURLは、# のあとに「ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位」が入る。
+    自分に合う（段位・閲歴の制限に入る）チームを上に、合わないチームを下に並べる。応募（メッセージつき）は、受け箱へ送る（BOTが、リーダーの承認待ちの選手にする）。
+-->
+<style>
+  :root { --bg: #f6f7fb; --panel: #ffffff; --text: #1d2130; --sub: #5e6478; --line: #dde1ec; --accent: #3b6ee8; --ok: #1f9d55; --ng: #d64545; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #12141b; --panel: #1b1e28; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; } }
+  :root[data-theme="dark"] { --bg: #12141b; --panel: #1b1e28; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Noto Sans JP", system-ui, sans-serif; }
+  header { padding: 18px 16px 8px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lead { color: var(--sub); font-size: 13px; line-height: 1.6; }
+  main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .card:hover { border-color: var(--accent); }
+  .card.nofit { opacity: .55; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .team { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count { flex: none; font-weight: 800; color: var(--accent); }
+  .title { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
+  .wanted { font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+  .sum { font-size: 13px; color: var(--sub); white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .lim { font-size: 12px; color: var(--sub); }
+  .tag { font-size: 12px; font-weight: 800; }
+  .tag.ok { color: var(--ok); } .tag.ng { color: var(--ng); }
+  .empty { color: var(--sub); padding: 30px 0; text-align: center; }
+  .ov { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .dlg { background: var(--panel); color: var(--text); border-radius: 14px; max-width: 560px; width: 100%; max-height: 90vh; overflow: auto; padding: 18px; border: 1px solid var(--line); }
+  .dlg h2 { margin: 0 0 6px; font-size: 19px; overflow-wrap: anywhere; }
+  .dlg .full { white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin: 8px 0; overflow-wrap: anywhere; }
+  textarea { width: 100%; min-height: 90px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  button { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+  button.go { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 800; }
+  button:disabled { opacity: .5; cursor: default; }
+  .msg { font-size: 13px; margin-top: 8px; }
+  .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "recruit";</script>
+<header>
+  <h1 id="ttl">メンバー募集</h1>
+  <div class="lead" id="lead">募集中のチームです。カードを押すと、くわしい内容が見られます。</div>
+</header>
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>いま、メンバーを募集しているチームはありません。</div>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var key = params.get("t") || "";
+  var frag = (location.hash || "").replace(/^#/, "") || params.get("f") || "";
+  var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位
+  if (frag) {
+    var p = frag.split(".");
+    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null };
+  }
+  var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
+  var D = null, OPEN = null, BUSY = false, WAIT = null;
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fits(t) {                                                                   // 自分に合うか（段位は、出場する陣営の段位で）
+    if (!me) return true;
+    var lv = t.lv || [], rk = t.rk || [];
+    if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
+    if (lv[0] != null && me.lv < lv[0]) return false;
+    if (lv[1] != null && me.lv > lv[1]) return false;
+    var mine = [];
+    if (me.f === "survivor" || me.f === "both") mine.push(me.s);
+    if (me.f === "hunter" || me.f === "both") mine.push(me.h);
+    if (rk[0] != null || rk[1] != null) {
+      if (!mine.length) return false;
+      for (var i = 0; i < mine.length; i++) {
+        if (mine[i] == null) return false;
+        if (rk[0] != null && mine[i] < rk[0]) return false;
+        if (rk[1] != null && mine[i] > rk[1]) return false;
+      }
+    }
+    return true;
+  }
+  function render() {
+    var grid = document.getElementById("grid"); grid.textContent = "";
+    if (!D) return;
+    document.getElementById("ttl").textContent = "メンバー募集｜" + (D.title || "");
+    document.getElementById("lead").textContent = me ? "あなたの段位・閲歴に合うチームを、上に並べています。カードを押して、内容を見てから応募してください。"
+                                                     : "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」から開いてください。";
+    var teams = (D.teams || []).slice();
+    teams.forEach(function (t) { t._fit = fits(t); });
+    teams.sort(function (a, b) { return (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
+    document.getElementById("empty").hidden = teams.length > 0;
+    teams.forEach(function (t) {
+      var c = el("div", "card" + (t._fit ? "" : " nofit"));
+      var top = el("div", "top"); top.appendChild(el("div", "team", t.name)); top.appendChild(el("div", "count", t.n + "/" + (t.cap || "—")));
+      c.appendChild(top);
+      c.appendChild(el("div", "title", t.title));
+      c.appendChild(el("div", "wanted", "求めている人材：" + t.wanted));
+      if (t.summary) c.appendChild(el("div", "sum", t.summary));
+      if (t.limits) c.appendChild(el("div", "lim", t.limits));
+      if (me) c.appendChild(el("div", "tag " + (t._fit ? "ok" : "ng"), t._fit ? "✔ あなたに合うチーム" : "制限に合いません"));
+      c.addEventListener("click", function () { OPEN = t.id; dialog(); });
+      grid.appendChild(c);
+    });
+    if (OPEN != null) dialog();
+  }
+  function dialog() {
+    var old = document.getElementById("ov"); if (old) old.remove();
+    var t = (D.teams || []).filter(function (x) { return x.id === OPEN; })[0];
+    if (!t) { OPEN = null; return; }
+    var ov = el("div", "ov"); ov.id = "ov";
+    ov.addEventListener("click", function (e) { if (e.target === ov) { OPEN = null; ov.remove(); } });
+    var d = el("div", "dlg");
+    d.appendChild(el("div", "count", t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
+    d.appendChild(el("h2", "", t.title));
+    d.appendChild(el("div", "wanted", "求めている人材：" + t.wanted));
+    d.appendChild(el("div", "full", t.summary || "（概要はありません）"));
+    if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
+    var msg = el("div", "msg");
+    if (me) {
+      d.appendChild(el("div", "lead", "応募のメッセージ（リーダーとチームのメンバーに届きます。500字まで）"));
+      var ta = el("textarea"); ta.maxLength = 500; ta.id = "amsg"; d.appendChild(ta);
+      var row = el("div", "row");
+      var go = el("button", "go", BUSY ? "送信中…" : "このチームに応募する"); go.type = "button"; go.disabled = BUSY || !t._fit;
+      go.addEventListener("click", function () { apply(t.id, ta.value); });
+      row.appendChild(go);
+      var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { OPEN = null; ov.remove(); });
+      row.appendChild(cl); d.appendChild(row);
+      if (!t._fit) msg.textContent = "このチームの制限（段位・閲歴）に合わないため、応募できません。", msg.className = "msg ng";
+    } else {
+      d.appendChild(el("div", "lead", "応募は、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」で出る、あなた用のURLから行います。"));
+    }
+    msg.id = "amsgres"; d.appendChild(msg);
+    ov.appendChild(d); document.body.appendChild(ov);
+  }
+  function setMsg(cls, text) { var m = document.getElementById("amsgres"); if (m) { m.className = "msg " + cls; m.textContent = text; } }
+  function apply(team, message) {
+    if (BUSY || !me) return;
+    BUSY = true; dialog(); setMsg("", "送信中…（BOTが確認します。数秒かかります）");
+    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    WAIT = nonce;
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: { uid: me.uid, act: "apply", team: team, message: message } } }) })
+      .catch(function () { BUSY = false; WAIT = null; dialog(); setMsg("ng", "⚠ 送れませんでした。もう一度お試しください。"); });
+  }
+  function load() {
+    fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d) return;
+      D = d;
+      var r = d.result;
+      if (WAIT && r && r.nonce === WAIT) {
+        BUSY = false; WAIT = null; render();
+        setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "応募しました。") : "⚠ " + (r.error || "応募できませんでした。"));
+        return;
+      }
+      if (!document.getElementById("ov")) render();
+    }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });          // まだデータが無い：募集しているチームが無い
+  }
+  if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
+  load(); setInterval(load, 4000);
+})();
+</script>
+</body>
+</html>
