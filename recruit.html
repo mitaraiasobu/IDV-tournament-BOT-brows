@@ -72,7 +72,8 @@
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function fits(t) {                                                                   // 自分に合うか（段位は、出場する陣営の段位で）
+  function fits(t) {                                                                   // 自分に合うか（段位は、出場する陣営の段位で）。募集を締め切ったチームは、合わない扱い
+    if (t.closed) return false;
     if (!me) return true;
     var lv = t.lv || [], rk = t.rk || [];
     if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
@@ -97,9 +98,9 @@
     document.getElementById("ttl").textContent = "メンバー募集｜" + (D.title || "");
     document.getElementById("lead").textContent = me ? "あなたの段位・閲歴に合うチームを、上に並べています。カードを押して、内容を見てから応募してください。"
                                                      : "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」から開いてください。";
-    var teams = (D.teams || []).slice();
+    var teams = (D.teams || []).slice();                                                // 締め切ったチームは、いちばん下
     teams.forEach(function (t) { t._fit = fits(t); });
-    teams.sort(function (a, b) { return (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
+    teams.sort(function (a, b) { return ((a.closed ? 1 : 0) - (b.closed ? 1 : 0)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
     document.getElementById("empty").hidden = teams.length > 0;
     teams.forEach(function (t) {
       var c = el("div", "card" + (t._fit ? "" : " nofit"));
@@ -109,7 +110,9 @@
       c.appendChild(el("div", "wanted", "求めている人材：" + t.wanted));
       if (t.summary) c.appendChild(el("div", "sum", t.summary));
       if (t.limits) c.appendChild(el("div", "lim", t.limits));
-      if (me) c.appendChild(el("div", "tag " + (t._fit ? "ok" : "ng"), t._fit ? "✔ あなたに合うチーム" : "制限に合いません"));
+      if (t.closed) c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
+      else if (me) c.appendChild(el("div", "tag " + (t._fit ? "ok" : "ng"), t._fit ? "✔ あなたに合うチーム" : "制限に合いません"));
+      if (t.entered) c.appendChild(el("div", "lim", "エントリー済みのチーム（追加のメンバーを募集）"));
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
     });
@@ -137,7 +140,8 @@
       row.appendChild(go);
       var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { OPEN = null; ov.remove(); });
       row.appendChild(cl); d.appendChild(row);
-      if (!t._fit) msg.textContent = "このチームの制限（段位・閲歴）に合わないため、応募できません。", msg.className = "msg ng";
+      if (t.closed) msg.textContent = "このチームは、募集を締め切りました。", msg.className = "msg ng";
+      else if (!t._fit) msg.textContent = "このチームの制限（段位・閲歴）に合わないため、応募できません。", msg.className = "msg ng";
     } else {
       d.appendChild(el("div", "lead", "応募は、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」で出る、あなた用のURLから行います。"));
     }
