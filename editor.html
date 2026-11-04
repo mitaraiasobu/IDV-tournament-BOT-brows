@@ -353,6 +353,10 @@
     f.appendChild(numRow("開会のごあいさつ", "担当のキャスターのアイコンが、画面の中央に出ている時間（右下に、のこり時間が出ます）", "open_greet_sec", "秒", lim.greet[0], lim.greet[1]));
     f.appendChild(numRow("閉会のごあいさつ", "インタビュー・MVPのあとの、ごあいさつの時間", "close_greet_sec", "秒", lim.greet[0], lim.greet[1]));
     f.appendChild(numRow("インタビューの時間", "優勝チーム・MVPのインタビューで、1人に使う時間", "interview_minutes", "分（1人あたり）", lim.interview[0], lim.interview[1]));
+    var lf = lim.finale || [3, 600];
+    f.appendChild(numRow("優勝の発表", "成績の画面のあと、優勝チームを見せる時間。そのあとに、賞品の贈呈 → インタビュー（インタビューは、贈呈が終わってから始まります）", "finale_champ_sec", "秒", lf[0], lf[1]));
+    f.appendChild(numRow("賞品の贈呈", "賞品のページ1つを見せる時間（優勝・MVPの両方）", "finale_prize_sec", "秒（1ページ）", lf[0], lf[1]));
+    f.appendChild(numRow("MVPの発表", "MVPを見せる時間。そのあとに、MVPの賞品の贈呈 → MVPインタビュー", "finale_mvp_sec", "秒", lf[0], lf[1]));
     if (TM.dev && TM.step_sec != null) f.appendChild(numRow("BAN/PICKの1手ごとの間隔", "自動進行（この開発者用大会だけ）で、1手ずつ進める間隔", "step_sec", "秒", lim.step[0], lim.step[1]));
     var rm = el("div", "trow"); rm.appendChild(el("label", "", "ラウンドの進行方法（BOTの設定）"));
     var rmv = el("div"); (TM.round_modes || []).forEach(function (m) { rmv.appendChild(el("div", "", m.name + "：" + (m.concurrent ? "同時進行（実況・解説なし。配信しません）" : "順番に（実況・解説あり。配信します）"))); });
@@ -450,7 +454,7 @@
       var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
     });
     if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
-      var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_minutes"];
+      var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_minutes", "finale_champ_sec", "finale_prize_sec", "finale_mvp_sec"];
       if (TM.dev && TM.step_sec != null) keys.push("step_sec");
       keys.forEach(function (k) {
         if (TM[k] == null || TM[k] === "") { bad = bad || "時間の設定に、空の欄があります。"; return; }
