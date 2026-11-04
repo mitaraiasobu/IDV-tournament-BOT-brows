@@ -481,7 +481,7 @@
         });
         box.appendChild(inp);
         if (ed.mid) {                                                                         // 同じ種類（全試合の紹介）をまとめて変えるか、この試合だけ変えるか
-          box.appendChild(seg([["all", "同じ種類をまとめて"], ["one", "この試合だけ"]], mode, function (m2) {
+          box.appendChild(sseg([["all", "同じ種類をまとめて"], ["one", "この試合だけ"]], mode, function (m2) {
             EMODE[ek] = m2;
             if (m2 === "all" && TM.intro_overrides && TM.intro_overrides[ed.mid]) { var o2 = Object.assign({}, TM.intro_overrides[ed.mid]); delete o2[ed.key]; if (Object.keys(o2).length) TM.intro_overrides[ed.mid] = o2; else delete TM.intro_overrides[ed.mid]; }
             renderTimes(); refreshDirty();
@@ -500,7 +500,7 @@
     if (name === "set") renderSettings();
   }
   // ───── ⚙ 大会設定：設定の一覧（BOTが渡す）から、まとまりごとに入力欄を組み立てる ─────
-  function seg(opts, cur, onPick) {
+  function sseg(opts, cur, onPick) {                       // 「⚙ 大会設定」・全体の流れ用の、選ぶボタン（手順の編集の seg とは別）
     var g = el("div", "seg");
     opts.forEach(function (o) {
       var b = el("button", String(cur) === String(o[0]) ? "on" : "", o[1]); b.type = "button";
@@ -523,8 +523,8 @@
         if (it.help) left.appendChild(el("div", "hint", it.help));
         var right = el("div"), v = ST[it.key];
         function put(val) { ST[it.key] = val; renderSettings(); refreshDirty(); }
-        if (it.type === "bool") right.appendChild(seg([[true, "オン"], [false, "オフ"]], !!v, put));
-        else if (it.type === "tri") right.appendChild(seg([["", "未設定"], ["on", "オン"], ["off", "オフ"]], v || "", put));
+        if (it.type === "bool") right.appendChild(sseg([[true, "オン"], [false, "オフ"]], !!v, put));
+        else if (it.type === "tri") right.appendChild(sseg([["", "未設定"], ["on", "オン"], ["off", "オフ"]], v || "", put));
         else if (it.type === "choice") {
           var sel = el("select");
           it.choices.forEach(function (c) { var o = el("option", "", c[1]); o.value = c[0]; if (String(v) === String(c[0])) o.selected = true; sel.appendChild(o); });
