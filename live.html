@@ -2436,7 +2436,20 @@
     if (!f || data.state === "play" || data.state === "hold" || data.state === "open" || data.state === "close" || data.state === "black") return null;        // 配信の開始・終了の場面では、優勝画面は出さない
     var iv = f.interview || {}, st = f.stage || "", mv = f.mvp || {};
     var mvAwards = arr(mv.awards), mvIv = mv.interview || {};
+    var tm = f.timing;                                                                    // 流れの時間：BOTが決めた起点から数える（開き直しても、ずれない）。秒数は、管理者が決める
+    if (tm) {
+      FINAL_RESULT_MS = tm.final_ms || FINAL_RESULT_MS; CHAMP_SHOW_MS = tm.champ_ms || CHAMP_SHOW_MS; PRIZE_PAGE_MS = tm.prize_ms || PRIZE_PAGE_MS; MVP_SHOW_MS = tm.mvp_ms || MVP_SHOW_MS;
+      var ckey0 = (f.champion || {}).name || "";
+      finalSeen = { key: finalSeen.key, at: tm.t0 * 1000 };
+      championSeen = { key: ckey0, at: tm.t0 * 1000 + FINAL_RESULT_MS };
+      if (tm.mvp_at) mvpSeen = { key: JSON.stringify(mvAwards.map(function (a) { return a.name; })), at: tm.mvp_at * 1000 };
+    }
     if (st === "bracket" && f.bracket) return "bracket";                                  // 最後のトーナメント表
+    var en = f.entering;                                                                  // インタビュー選手の「入室のお知らせ」（20秒。そのあとに、BOTが入室させる）
+    if (en && Date.now() < en.until * 1000 + 3000) {
+      clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, Math.max(250, en.until * 1000 + 3000 - Date.now() + 60));
+      return "enter";
+    }
     if (st === "mvp_interview" && (mvIv.current || mvIv.active)) return "mvp_interview";   // MVPインタビュー（いま話している人がいるとき。次の人を待つ合間も、この画面のまま）
     if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) {                    // MVP発表（賞品があれば、そのあと、贈呈のページ）
       var mkey = JSON.stringify(mvAwards.map(function (a) { return a.name; }));
@@ -2447,7 +2460,7 @@
     if (st === "interview" && (iv.current || iv.active)) return "interview";              // 優勝チームのインタビュー（いま話している人がいるとき。次の人を待つ合間も、この画面のまま：優勝画面・優勝の音楽に、一瞬戻らない）
     if (data.state === "result" && data.result && data.result.final) {
       var key = JSON.stringify([(data.result.a || {}).points, (data.result.b || {}).points, (data.result.a || {}).name, (data.result.b || {}).name]);
-      if (finalSeen.key !== key) finalSeen = { key: key, at: Date.now() };
+      if (finalSeen.key !== key) finalSeen = { key: key, at: tm ? tm.t0 * 1000 : Date.now() };
       var left = FINAL_RESULT_MS - (Date.now() - finalSeen.at);
       if (left > 0) {                                                       // まだ、成績の画面を見せる時間：時間がきたら、描き直す
         clearTimeout(finalTimer);
@@ -2456,7 +2469,7 @@
       }
     }
     var ck = (f.champion || {}).name || "";
-    if (championSeen.key !== ck) championSeen = { key: ck, at: Date.now() };
+    if (championSeen.key !== ck) championSeen = { key: ck, at: tm ? tm.t0 * 1000 + FINAL_RESULT_MS : Date.now() };
     var pzC = arr((f.prizes || {}).champion), cage = Date.now() - championSeen.at;
     if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; })) return "prize";          // 賞品の贈呈
     if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面（と贈呈）のあと、最後のトーナメント表
@@ -2558,6 +2571,41 @@
       var left = total - (Date.now() - startMs) / 1000;
       count.textContent = fmtCount(left);
       box.classList.toggle("over", left <= 0);
+    }
+    tick();
+    ivTimer = setInterval(tick, 250);
+  }
+
+  // ── インタビュー選手の「入室のお知らせ」（20秒）：右上に「Interview」／真ん中に、まもなく入室する人の名前・チーム／右下に、入室までの秒数 ──
+  // この間に、キャスターが紹介する。0秒になったら、BOTが、その人をキャスター用のボイスチャンネルに入れる（そのあと、インタビューの画面になる）。
+  function renderEnter(data) {
+    stopIvTimer();
+    var en = data.finale.entering || {}, mvp = en.kind === "mvp";
+    var again = screenEl.firstChild && screenEl.firstChild.classList && screenEl.firstChild.classList.contains("iv") && screenEl.firstChild.getAttribute("data-enter") === (en.name || "");
+    var wrap = el("div", "iv " + (mvp ? "mvp_interview" : "interview") + (again ? "" : " enter"));
+    wrap.setAttribute("data-enter", en.name || "");
+    wrap.appendChild(el("div", "iv-glow"));
+    var tag = el("div", "iv-tag");
+    tag.appendChild(el("span", "dot"));
+    tag.appendChild(el("span", "tx", mvp ? "MVP Interview" : "Interview"));
+    wrap.appendChild(tag);
+    var mid = el("div", "iv-mid");
+    mid.appendChild(el("div", "iv-who", "まもなく入室します"));
+    mid.appendChild(el("div", "iv-name", en.name || ""));
+    var team = el("div", "iv-team");
+    team.appendChild(finLogo(en));
+    team.appendChild(el("span", "tn2", en.team || ""));
+    mid.appendChild(team);
+    wrap.appendChild(mid);
+    var box = el("div", "iv-timer");
+    var count = el("div", "iv-count", "");
+    box.appendChild(count);
+    box.appendChild(el("div", "iv-who", "入室まで"));
+    wrap.appendChild(box);
+    screenEl.replaceChildren(wrap);
+    function tick() {
+      var left = Math.max(0, Math.ceil(en.until - Date.now() / 1000));
+      count.textContent = fmtCount(left);
     }
     tick();
     ivTimer = setInterval(tick, 250);
@@ -2675,6 +2723,7 @@
     stopIvTimer();
     if (mode === "bracket") { renderBracket(data); return; }
     if (mode === "interview" || mode === "mvp_interview") { renderInterview(data, mode); return; }
+    if (mode === "enter") { renderEnter(data); return; }
     if (mode === "mvp") { renderMvp(data, mode, wrap); screenEl.replaceChildren(wrap); return; }
     if (mode === "prize" || mode === "mvp_prize") { renderPrize(data, mode, wrap); screenEl.replaceChildren(wrap); return; }
     wrap.appendChild(el("div", "fin-title", mode === "interview" ? "INTERVIEW" : "CHAMPION"));
@@ -2707,7 +2756,7 @@
       if (data.state === "black") scene = null;                                     // 真っ黒：音楽は止める（優勝画面などの音楽より、先に決める）
       else if (data.state === "open") scene = "open";                               // 配信開始の音楽：開会の演出が全部終わるまで、途中で切らない（挨拶・ルール紹介・キャスター交代まで）
       else if (data.state === "close") scene = "close";                             // 配信終了の音楽：閉会のごあいさつから「大会終了」の画面まで、同じ音楽（優勝・インタビューの音楽からは、閉会のごあいさつの始まりで切り替わる）
-      else if (fm) scene = fm === "interview" || fm === "mvp_interview" ? "interview" : "champion";
+      else if (fm) scene = fm === "interview" || fm === "mvp_interview" || fm === "enter" ? "interview" : "champion";
       else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
       else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
       else if (data.state === "result") {                                           // 試合終了から30秒は、BAN/PICKの音楽のまま → そのあと、試合の間の音楽にフェードで切り替える
