@@ -1461,7 +1461,8 @@
         var rs = el("div", "row"); rs.appendChild(snd); card.appendChild(rs);
       } else card.appendChild(el("div", "sub2", "結果の入力を待っています…（" + (pm.entry === "hunter" ? "ハンター選手" : "サバイバー代表") + "が、入力します）"));
     } else {
-      card.appendChild(el("div", "sub2", S.expo ? "サバイバー代表が、Discordで、結果を確認しています…" : "相手チーム（サバイバー側）が、Discordで、結果を確認しています…"));
+      card.appendChild(el("div", "sub2", pm.phase === "hold" ? "結果を預かりました。延長戦の前半戦の結果が登録されたら、自動で登録します。"
+        : S.expo ? "サバイバー代表が、Discordで、結果を確認しています…" : "相手チーム（サバイバー側）が、Discordで、結果を確認しています…"));
     }
     if (SP_NOTE.text) card.appendChild(el("div", "note " + SP_NOTE.cls, SP_NOTE.text));
     ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
