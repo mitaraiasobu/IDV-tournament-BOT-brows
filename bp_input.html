@@ -1320,7 +1320,7 @@
     card.appendChild(el("div", "hrnwarn", "⚠ 部屋に入っても、合図（カウントダウンが00:00になる）があるまで、まだ試合を始めないでください。"));
   }
   function hunterRoomNote(card) {                                                           // ハンター側：入る部屋の名前（部屋を開くのは、サバイバー）
-    if (!(S.expo && MY === "h" && S.room_name)) return;
+    if (!(MY === "h" && S.room_name)) return;
     var box = el("div", "hrn");
     box.appendChild(el("div", "sub2", "サバイバーがゲーム内で公開募集を開いているので、"));
     box.appendChild(el("div", "big", "「" + S.room_name + "」"));
@@ -1494,9 +1494,9 @@
     ensurePickCol();
     var ov = el("div", "ask sp split"), card = el("div", "card");
     ov.id = "sp";
-    card.appendChild(el("div", "big", stg === "shot" ? (S.expo && MY === "h" ? "⏳ サバイバーが、部屋を開いています" : "🚪 試合モードを開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
+    card.appendChild(el("div", "big", stg === "shot" ? (MY === "h" ? "⏳ サバイバーが、部屋を開いています" : "🚪 試合モードを開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
-    if (stg === "shot" && S.expo && MY === "h") {                                             // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
+    if (stg === "shot" && MY === "h") {                                                       // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
       hunterRoomNote(card); holdNote(card);
       var tipBox = el("div", "sub2 bptip"); tipInto(tipBox, gameBpTip()); card.appendChild(tipBox);       // 体験会のハンター側も、同じタイミングで
       card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
