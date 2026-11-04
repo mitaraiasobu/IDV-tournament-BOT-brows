@@ -110,6 +110,7 @@
   .center .sc small { display: block; font-size: 22px; font-weight: 800; letter-spacing: .06em; margin-top: 2px; }
   .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
   .center .map b { color: var(--text); }
+  .center .map s, .cp .map s { opacity: .75; }
 
   /* キャラに対応する画像・動画：他の要素よりも**下の層**に、画面の背景として出す。縦横の比率は変えずに、画面を埋めるまで拡大する
      （長いほうの辺に合わせて拡大。はみ出した分は切る）。カードなどの表示は、この上に重なる */
@@ -947,7 +948,7 @@
   html[data-design="gothic"].stage .center { position: absolute; left: 790px; top: 888px; right: auto; bottom: auto; width: 340px; height: 280px; flex: none; align-self: auto; justify-content: flex-start; padding: 14px 24px; box-sizing: border-box;
         border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: linear-gradient(180deg, #151521, #0a0a12); box-shadow: 0 10px 28px rgba(0,0,0,.6); }
   html[data-design="gothic"].stage .center .ttl, html[data-design="gothic"].stage .center .st, html[data-design="gothic"].stage .center .role { display: none; }
-  html[data-design="gothic"].stage .center .map { display: block; margin-top: 6px; text-align: center; font-size: 24px; letter-spacing: .08em; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 点数の下に、マップの名前 */
+  html[data-design="gothic"].stage .center .map { display: block; margin: 0 0 6px; text-align: center; font-size: 22px; letter-spacing: .06em; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* 点数の上に、マップのBAN/PICK */
   html[data-design="gothic"].stage .center .map b { color: var(--gold); }
   html[data-design="gothic"].stage .center .vs { font-size: 34px; margin-bottom: 4px; }
   html[data-design="gothic"].stage .center .vs .mid { font-size: 28px; }
@@ -1026,6 +1027,14 @@
   .fin-mvp .nm { font-family: var(--cond); font-weight: 800; font-size: 100px; line-height: 1.1; text-shadow: 0 0 10px rgba(0,0,0,.8), 4px 5px 0 rgba(0,0,0,.45); }
   .fin-mvp .tm { font-family: var(--cond); font-weight: 700; font-size: 46px; color: var(--sub); letter-spacing: .1em; }
   .fin-mvp .why { font-family: var(--cond); font-size: 36px; color: var(--sub); margin-top: 6px; }
+  .fin-av { width: 190px; height: 190px; flex: none; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--panel, #222);
+        border: 6px solid var(--accent); font-family: var(--cond); font-weight: 800; font-size: 70px; color: var(--text); box-shadow: 0 14px 34px rgba(0,0,0,.6); }
+  .fin-av img { width: 100%; height: 100%; object-fit: cover; }
+  .fin-mvp .fin-av + .fin-logo { width: 110px; height: 110px; font-size: 44px; margin-left: -70px; align-self: flex-end; }   /* 選手のアイコンの右下に、チームのロゴを重ねる */
+  html.flow .fin-av { width: 4em; height: 4em; font-size: 1.6em; }
+  html.flow .fin-mvp .fin-av + .fin-logo { width: 2.2em; height: 2.2em; font-size: .9em; margin-left: -1.6em; }
+  .iv-why { max-width: 1500px; margin-top: 18px; font-family: var(--cond); font-size: 40px; line-height: 1.35; color: var(--sub); text-align: center; overflow-wrap: anywhere; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  html.flow .iv-why { font-size: .95em; }
   html[data-design="fantasy"] .fin-mvp .nm, html[data-design="gothic"] .fin-mvp .nm { font-family: var(--fa); font-weight: 400; color: var(--cream); letter-spacing: .08em; }
   .fin.prize .fin-title, .fin.mvp_prize .fin-title { font-size: 120px; }
   .fin.prize { gap: 22px; } .fin.mvp_prize { gap: 22px; }
@@ -1874,6 +1883,7 @@
     var role = el("div", "role");
     role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
     c.appendChild(role);
+    var mi = mapInfo(lv, k); if (mi) c.appendChild(mi);                                  // マップのBAN/PICK：点数の枠の中、点数の上に
     var sc = el("div", "sc");
     [lv.survivor, lv.hunter].forEach(function (t) {
       var d = el("div", null, String((t && t.points) || 0));
@@ -1881,7 +1891,6 @@
       sc.appendChild(d);
     });
     c.appendChild(sc);
-    if (lv.map && lv.map.s <= k) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); c.appendChild(mp); }
     bar.appendChild(c);
     var hunt = el("div", "hunt");
     var hp = slots(lv.hunter_pick, k);
@@ -1890,6 +1899,23 @@
     wrap.appendChild(bar);
     screenEl.replaceChildren(wrap);
     if (root.getAttribute("data-design") === "gothic") banPopLayout(wrap);        // 位置が決まってから（画面に入れたあと）、中央との距離を測る
+  }
+
+  // マップのBAN/PICK（決まったものから出す）：「MAP BAN：A・B」「MAP：C」。どちらもまだなら、出さない
+  function mapInfo(lv, k) {
+    var bans = arr(lv.map_bans).filter(function (m) { return m && m.s <= k; });
+    var pick = lv.map && lv.map.s <= k ? lv.map : null;
+    if (!bans.length && !pick) return null;
+    var mp = el("div", "map");
+    if (bans.length) {
+      mp.appendChild(document.createTextNode("MAP BAN："));
+      bans.forEach(function (m, i) { if (i) mp.appendChild(document.createTextNode("・")); mp.appendChild(el("s", null, m.name)); });
+    }
+    if (pick) {
+      if (bans.length) mp.appendChild(document.createTextNode("　"));
+      mp.appendChild(document.createTextNode("MAP：")); mp.appendChild(el("b", null, pick.name));
+    }
+    return mp;
   }
 
   // ═══ flow：スマホなど狭い画面のBAN/PICKの画面 ═══
@@ -1916,6 +1942,7 @@
     var role = el("div", "role");
     role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
     head.appendChild(role);
+    var mi = mapInfo(lv, k); if (mi) head.appendChild(mi);
     var sc = el("div", "sc");
     [lv.survivor, lv.hunter].forEach(function (t) {
       var d = el("div", null, String((t && t.points) || 0));
@@ -1923,7 +1950,6 @@
       sc.appendChild(d);
     });
     head.appendChild(sc);
-    if (lv.map && lv.map.s <= k) { var mp = el("div", "map", "MAP："); mp.appendChild(el("b", null, lv.map.name)); head.appendChild(mp); }
     wrap.appendChild(head);
     var sp = el("div", "box");
     sp.appendChild(el("h3", null, "サバイバー BAN / PICK"));
@@ -2467,6 +2493,11 @@
     var box = el("div", "fin-mvps");
     arr(mv.awards).forEach(function (a) {
       var row = el("div", "fin-mvp");
+      if (a.kind === "player") {                                                   // 選手：Discordのアイコン（まだ無ければ、名前の頭文字）＋チームのロゴ
+        var av = el("div", "fin-av");
+        if (a.avatar) { var im = new Image(); im.src = a.avatar; im.alt = ""; av.appendChild(im); } else av.textContent = (a.name || "").slice(0, 2);
+        row.appendChild(av);
+      }
       row.appendChild(finLogo(a));
       var txt = el("div", "who");
       txt.appendChild(el("div", "nm", a.name || ""));
@@ -2511,6 +2542,7 @@
     team.appendChild(finLogo(cur));
     team.appendChild(el("span", "tn2", cur.team || ""));
     mid.appendChild(team);
+    if (mode === "mvp_interview" && cur.reason) mid.appendChild(el("div", "iv-why", cur.reason));     // MVPに選ばれた理由（チーム名の下）
     wrap.appendChild(mid);
     var box = el("div", "iv-timer");
     var count = el("div", "iv-count", fmtCount((src.minutes || 3) * 60));
