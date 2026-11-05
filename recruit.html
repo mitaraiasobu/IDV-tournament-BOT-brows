@@ -67,6 +67,8 @@
   #menupanel button { text-align: left; font-size: 16px; padding: 12px 14px; } #menupanel button.on { border-color: var(--accent); background: var(--panel2); font-weight: 800; }
   #menushade { position: fixed; inset: 0; z-index: 69; background: rgba(0,0,0,.4); }
   .pagehead { font-size: 13px; color: var(--sub); margin: 4px 0 10px; }
+  .board { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); max-height: 260px; overflow: auto; font-size: 13px; }
+  .board b { display: block; margin-bottom: 6px; } .bmsg { padding: 3px 0; overflow-wrap: anywhere; } .bmsg .bn { font-weight: 800; color: var(--accent); margin-right: .6em; } .bmsg .bt { white-space: pre-wrap; }
   .wants { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
   .title { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
   .wanted { font-size: 13px; overflow-wrap: anywhere; }
@@ -110,6 +112,7 @@
   .logos { display: flex; gap: 16px; flex-wrap: wrap; } .logos figure { margin: 0; text-align: center; font-size: 12px; color: var(--sub); } .logos img { width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--line); display: block; margin-bottom: 4px; }
   #busy { position: fixed; left: 0; right: 0; top: 14px; margin: 0 auto; z-index: 60; width: min(560px, calc(100% - 32px)); padding: 12px 18px; border-radius: 12px;
           background: var(--panel); border: 3px solid var(--accent); color: var(--text); font-weight: 800; font-size: 16px; line-height: 1.5; box-shadow: 0 6px 24px rgba(0,0,0,.35); display: flex; gap: 12px; align-items: center; }
+  #busy[hidden] { display: none !important; }
   #busy.ok { border-color: var(--ok); color: var(--ok); } #busy.ng { border-color: var(--ng); color: var(--ng); }
   #busy .spin { width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -393,26 +396,36 @@
     return 31 + Number(c[1] || 0) / 10;
   }
   function rankOk(v) { var c = rankCode(v); if (!c[0]) return !v; if (c[0] === "P") { var n = Number(c[1]); return /^\d{2,3}$/.test(c[1]) && n >= 25; } return true; }
-  function rankPick(v, put, required) {
-    var c = rankCode(v), box = el("div", "row"), a = el("select");
-    box.style.marginTop = "0";
-    RANKS.forEach(function (r) { var o = el("option", "", r[0] ? r[1] : (required ? "選んでください" : r[1])); o.value = r[0]; if (r[0] === c[0]) o.selected = true; a.appendChild(o); });
-    box.appendChild(a);
-    var b;
-    if (/^[1-6]$/.test(c[0])) {
-      b = el("select"); [["5", "Ⅴ"], ["4", "Ⅳ"], ["3", "Ⅲ"], ["2", "Ⅱ"], ["1", "Ⅰ"]].forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (x[0] === c[1]) o.selected = true; b.appendChild(o); });
-      b.addEventListener("change", function () { put(c[0] + "-" + b.value); });
-    } else if (c[0] === "7") {
-      b = el("select"); for (var i = 0; i <= 24; i++) { var o = el("option", "", "★" + i); o.value = String(i); if (String(i) === c[1]) o.selected = true; b.appendChild(o); }
-      b.addEventListener("change", function () { put("7*" + b.value); });
-    } else if (c[0] === "P") {                                                          // 最高峰：星の数は、書いて入れる（25以上の2〜3桁）
-      b = el("input"); b.type = "text"; b.inputMode = "numeric"; b.maxLength = 3; b.value = c[1]; b.placeholder = "★の数（25以上）"; b.style.width = "9em";
-      b.addEventListener("input", function () { var d = b.value.replace(/[^0-9]/g, ""); if (d !== b.value) b.value = d; });
-      b.addEventListener("change", function () { put("P*" + b.value); });
-      if (!rankOk(v)) b.className = "bad";
+  function rankPick(v, put, required) {                                             // 段位と小段位（小段位は、いつも右に並べて出す。段位を選んだら、その場で小段位の欄が変わる）
+    var box = el("div", "row"), a = el("select"), sub = el("span");
+    box.style.marginTop = "0"; box.style.flexWrap = "nowrap"; sub.style.display = "inline-flex";
+    var c = rankCode(v);
+    RANKS.forEach(function (r) { var o = el("option", "", r[0] ? r[1] : (required ? "段位を選ぶ" : r[1])); o.value = r[0]; if (r[0] === c[0]) o.selected = true; a.appendChild(o); });
+    function drawSub(code) {
+      sub.textContent = "";
+      var b;
+      if (/^[1-6]$/.test(code[0])) {
+        b = el("select"); [["5", "Ⅴ"], ["4", "Ⅳ"], ["3", "Ⅲ"], ["2", "Ⅱ"], ["1", "Ⅰ"]].forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (x[0] === code[1]) o.selected = true; b.appendChild(o); });
+        b.addEventListener("change", function () { put(code[0] + "-" + b.value); });
+      } else if (code[0] === "7") {
+        b = el("select"); for (var i = 0; i <= 24; i++) { var o = el("option", "", "★" + i); o.value = String(i); if (String(i) === code[1]) o.selected = true; b.appendChild(o); }
+        b.addEventListener("change", function () { put("7*" + b.value); });
+      } else if (code[0] === "P") {                                                     // 最高峰：星の数は、書いて入れる（25以上の2〜3桁）
+        b = el("input"); b.type = "text"; b.inputMode = "numeric"; b.maxLength = 3; b.value = code[1]; b.placeholder = "★の数"; b.style.width = "5.5em"; b.style.flex = "none";
+        b.addEventListener("input", function () { var d = b.value.replace(/[^0-9]/g, ""); if (d !== b.value) b.value = d; b.className = /^\d{2,3}$/.test(d) && Number(d) >= 25 ? "" : "bad"; put("P*" + d); });
+        if (!rankOk("P*" + code[1])) b.className = "bad";
+        sub.appendChild(b); sub.appendChild(el("span", "", " ★（25以上）")); return;
+      } else {
+        b = el("select"); var o0 = el("option", "", "小段位"); o0.value = ""; b.appendChild(o0); b.disabled = true;          // 段位を選ぶまでは、小段位は選べない（欄は、いつも出しておく）
+      }
+      sub.appendChild(b);
     }
-    a.addEventListener("change", function () { var d = a.value; put(!d ? "" : /^[1-6]$/.test(d) ? d + "-5" : d === "7" ? "7*0" : "P*25"); });
-    if (b) box.appendChild(b);
+    a.addEventListener("change", function () {
+      var d = a.value, nv = !d ? "" : /^[1-6]$/.test(d) ? d + "-5" : d === "7" ? "7*0" : "P*25";
+      drawSub(rankCode(nv)); put(nv);                                                   // 描き直しを待たずに、その場で小段位の欄を出す
+    });
+    drawSub(c);
+    box.appendChild(a); box.appendChild(sub);
     return box;
   }
   function leaderView(box, teamId) {
@@ -434,7 +447,7 @@
       var b2 = el("button", "go", "📣 新しく友達を募集する"); b2.type = "button"; b2.appendChild(el("small", "", "求める人材・方針・制限などを書いて、だれでも応募できるように募集します。"));
       b2.addEventListener("click", function () { FORM.mode = "open"; render(); });
       md.appendChild(b1); md.appendChild(b2); c.appendChild(md);
-      box.appendChild(fold(c, "form")); return;
+      box.appendChild(c); return;
     }
     if (FORM.mode === "friends") {                                                       // 友達だけ：パスワードだけ
       c.appendChild(el("h2", "", "👫 友達だけを呼ぶ"));
@@ -460,7 +473,7 @@
       frow.appendChild(sw);
       if (!cur.first) { var fcl = el("button", cur.closed ? "" : "danger", cur.closed ? "▶ 募集を再開する" : "⏸ 募集を締め切る"); fcl.type = "button"; fcl.addEventListener("click", function () { send({ act: cur.closed ? "reopen" : "close", team: teamId }); }); frow.appendChild(fcl); }
       c.appendChild(frow); c.appendChild(liveMsg());
-      box.appendChild(fold(c, "form")); return;
+      box.appendChild(c); return;
     }
     c.appendChild(el("h2", "", "📝 募集投稿"));
     var sw2 = el("button", "", "👫 友達だけを呼ぶ に切り替える"); sw2.type = "button";
@@ -556,11 +569,11 @@
       row.appendChild(cl);
     }
     c.appendChild(row); c.appendChild(liveMsg());
-    box.appendChild(fold(c, "form"));
+    box.appendChild(c);
   }
 
   // ───── あなたの選手情報（応募に要る、すべての情報と、プロフィール画像） ─────
-  var PF = null, PEND = null, IMG = null, CAU_OPEN = false, IMG_FAIL = false;
+  var PF = null, PEND = null, IMG = null, CAU_OPEN = false, IMG_FAIL = false, IMG_AUTO = false;
   function imgExpired(u) { var m = /[?&]ex=([0-9a-f]+)/.exec(u || ""); return !!m && parseInt(m[1], 16) * 1000 < Date.now(); }   // DiscordのURLは期限つき
   function curImage(box, small) {                                                     // 登録済みのプロフィール画像（見られないときは、見られる場所を教える）
     var u = (me.prof && me.prof.iu) || "";
@@ -570,10 +583,11 @@
       im.addEventListener("error", function () { IMG_FAIL = true; render(); });
       box.appendChild(im);
     } else {
-      box.appendChild(el("div", "lead", "登録済みの画像は、Discordのエントリーパネルの「🪪 選手基本情報」で見られます。"));
-      var rb = el("button", "", "🔄 ここに画像を表示する"); rb.type = "button"; rb.disabled = BUSY;
-      rb.addEventListener("click", function () { IMG_FAIL = false; send({ act: "profile_image_refresh" }, "画像を読み込んでいます…"); });
-      var rr = el("div", "row"); rr.appendChild(rb); box.appendChild(rr);
+      if (!IMG_AUTO && !BUSY) {                                                       // 期限が切れた・表示できない：自動で、新しいURLをもらう（1回だけ）
+        IMG_AUTO = true; IMG_FAIL = false;
+        setTimeout(function () { if (!BUSY) send({ act: "profile_image_refresh" }, "画像を読み込んでいます…"); }, 0);
+        box.appendChild(el("div", "lead", "⏳ 画像を読み込んでいます…"));
+      } else box.appendChild(el("div", "lead", IMG_AUTO && BUSY ? "⏳ 画像を読み込んでいます…" : "画像は、Discordのエントリーパネルの「🪪 選手基本情報」で見られます。"));
     }
   }
   function profForm(box, inline) {
@@ -618,7 +632,7 @@
     if (window.LEVEL_GUIDE) { f.appendChild(el("div", "")); var gi = el("img", "prev"); gi.src = window.LEVEL_GUIDE; gi.alt = "閲歴の場所"; gi.style.maxWidth = "100%"; gi.style.maxHeight = "none"; f.appendChild(gi); }
     lvi.addEventListener("change", function () { render(); });
     lab("初心者"); var bgr = el("div", "row"); bgr.style.marginTop = "0"; var bgc = el("input"); bgc.type = "checkbox"; bgc.checked = PF.st.beg; bgc.addEventListener("change", function () { PF.st.beg = bgc.checked; });
-    bgr.appendChild(bgc); bgr.appendChild(el("span", "", "自分は初心者だと思う（「🔰 初心者歓迎」のチームと「条件一致」になります）")); f.appendChild(bgr);
+    bgr.appendChild(bgc); bgr.appendChild(el("span", "", "私は初心者だと思う")); f.appendChild(bgr);
     if (PF.lv && Number(PF.lv) >= (D.level_warn || 1000)) f.appendChild(el("div", "hint", "⚠ 閲歴が4桁（" + PF.lv + "）になっています。入力を間違えていないか、確かめてください（このまま登録もできます）。"));
     lab("得意キャラ（任意・" + (D.fav_max || 3) + "キャラまで）"); var fr = el("div", "row"); fr.style.marginTop = "0";      // Discordと同じ一覧から、プルダウンで（サバイバー・ハンターに分けて）
     for (var fi2 = 0; fi2 < (D.fav_max || 3); fi2++) (function (k) {
@@ -731,6 +745,12 @@
       ["profile", "🪪 あなたの選手情報", true],
     ];
   }
+  function needsAttention(u, key) {                                                  // メニューの赤い❗：チーム情報に未登録のものがある／返事待ちの応募が届いている
+    if (!u) return false;
+    if (key === "team") return !!(u.leader && ((D.logo_on && u.logo === "no") || !u.color));
+    if (key === "apps") return !!(u.leader && arr(u.apps).some(function (a) { return a.status === "pending"; }));
+    return false;
+  }
   function drawMenu(u) {
     var old = document.getElementById("menupanel"), sh = document.getElementById("menushade");
     if (old) old.remove(); if (sh) sh.remove();
@@ -743,6 +763,7 @@
     mx.addEventListener("click", function () { MENU_OPEN = false; drawMenu(u); }); mh.appendChild(mx); pn.appendChild(mh);
     pages(u).forEach(function (pg) {
       var b = el("button", PAGE === pg[0] ? "on" : "", pg[1]); b.type = "button";
+      if (pg[2] && needsAttention(u, pg[0])) { var bang = el("span", "", " ❗"); bang.style.color = "var(--ng)"; b.appendChild(bang); b.style.borderColor = "var(--ng)"; b.style.boxShadow = "0 0 0 1px var(--ng)"; }
       if (!pg[2]) { b.disabled = true; b.style.opacity = ".4"; b.title = pg[3] || ""; b.appendChild(el("div", "", pg[3] || "")); b.lastChild.style.cssText = "font-size:11px;font-weight:400;margin-top:2px"; }
       b.addEventListener("click", function () {
         MENU_OPEN = false;
@@ -756,7 +777,7 @@
     tb.style.marginTop = "8px"; pn.appendChild(tb);
     document.body.appendChild(pn);
   }
-  var KIND = "";
+  var KIND = "", APPLY_MSG = "";
   function mgrForm(box) {                                                             // マネージャー：名前だけ
     var u = U() || {};
     var c = el("div", "card");
@@ -935,6 +956,7 @@
       var miss = missingCustom(D.team_fields, T.custom);
       if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
       if ((r1 && !T.agree.ok) || (r2 && !T.pagree.ok)) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
+      PEND = { kind: "created" };
       send({ act: "create_team", form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
     });
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
@@ -1027,7 +1049,7 @@
     ds.addEventListener("click", function () { if (confirm("チーム「" + teamName(u.leader) + "」を解散します。メンバーの登録も消え、応募も取り消されます。取り消せません。本当に解散しますか？")) send({ act: "dissolve", team: u.leader }, "解散しています…"); });
     row.appendChild(ds); c.appendChild(row);
     c.appendChild(liveMsg());
-    box.appendChild(fold(c, "team"));
+    box.appendChild(c);
   }
   function appsView(box, u) {                                                         // このチームへの応募（承認・否認）
     var c = el("div", "card");
@@ -1046,7 +1068,7 @@
       c.appendChild(r);
     });
     c.appendChild(liveMsg());
-    box.appendChild(fold(c, "apps"));
+    box.appendChild(c);
   }
   var LOGO = null;
   function shrinkTo(file, max, type, done) {                                         // ロゴ：長い辺を max までに（送る量を小さく。正方形に整えるのはBOT）
@@ -1186,7 +1208,8 @@
       mr.appendChild(mx); mc.appendChild(mr); mc.appendChild(liveMsg()); mine.appendChild(mc);
     }
     var mb = document.getElementById("menubtn");                                      // ☰ メニュー（本人用のページだけ）
-    if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); }; }
+    if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); };
+      mb.textContent = "☰ メニュー" + (needsAttention(u, "team") || needsAttention(u, "apps") ? " ❗" : ""); mb.style.color = needsAttention(u, "team") || needsAttention(u, "apps") ? "var(--ng)" : ""; }
     drawMenu(u);
     document.getElementById("lead").textContent = !me && INV ? "募集中のチームを見られます（このページでは、応募・チーム作りはできません）。"
       : !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「📝 エントリー」から開いてください。"
@@ -1340,6 +1363,8 @@
       d.appendChild(el("div", "ask", "この情報でよろしいですか？必ず最新の情報にしてください！"));
       profileSummary(d);
       var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
+      d.appendChild(el("div", "lead", "💬 応募のメッセージ（任意）：リーダーとチームのメンバーに届きます。"));
+      var am = el("input"); am.type = "text"; am.maxLength = 200; am.placeholder = "例：よろしくお願いします。"; am.value = APPLY_MSG; am.addEventListener("input", function () { APPLY_MSG = am.value; }); d.appendChild(am);
       var pw = null;
       if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、応募パスワードつきの募集です。リーダーから聞いた応募パスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
       var order = act.map(function (w) { return w.team; }).concat([t.id]);
@@ -1363,7 +1388,7 @@
         if (!q.img) { setMsg("ng", "⚠ プロフィール画像が登録されていません。「✏ 編集する」から登録してください。"); return; }
         var miss = missingCustom(D.player_fields, tc).concat(missingEntry(te));
         if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります（「✏ 編集する」から入れてください）：" + miss.join("、")); return; }
-        ORDER = null; send({ act: "wish", team: t.id, message: te.message || "", order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
+        ORDER = null; send({ act: "wish", team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
       });
       var ed = el("button", "", "✏ 編集する"); ed.type = "button";
       ed.addEventListener("click", function () { BACK_TO = t.id; OPEN = null; DSTEP = null; ov.remove(); PROFOPEN = true; PF = null; openProfile(); });
@@ -1378,6 +1403,11 @@
     if ((t.wants || {}).beg) d.appendChild(el("div", "tag ok", "🔰 初心者歓迎"));
     var mt2 = matches(t); if (mt2.length) d.appendChild(el("div", "tag warn", "⭐ 条件一致：" + mt2.join("・")));
     if (!t.friends) d.appendChild(el("div", "full", t.summary || "（概要はありません）"));
+    if (arr(t.board).length) {                                                         // 掲示板：このチームの募集用チャンネルの会話（どんな人が集まっているか）
+      var bd = el("div", "board"); bd.appendChild(el("b", "", "💬 募集チャンネルの会話"));
+      arr(t.board).forEach(function (m) { var r = el("div", "bmsg"); r.appendChild(el("span", "bn", "@" + m.n)); r.appendChild(el("span", "bt", m.t)); bd.appendChild(r); });
+      d.appendChild(bd);
+    }
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
@@ -1424,6 +1454,7 @@
             if (BACK_TO != null) { OPEN = BACK_TO; var bt = arr(D.teams).filter(function (x) { return x.id === BACK_TO; })[0]; DSTEP = DSTEP === "fpick" && bt && bt.state === "extra" ? "extra" : "confirm"; BACK_TO = null; PROFOPEN = false; var po = document.getElementById("ov"); if (po) po.remove(); } me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv), te: q._te || {}, tc: q._tc || {}, st: q.st || (me.prof || {}).st || {} });
             me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
           else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; IMG_FAIL = false; }
+          else if (PEND.kind === "created") { PAGE = "team"; window.scrollTo(0, 0); }
           else if (PEND.kind === "mgr") { var um = U(); if (um) { um.kind = "manager"; um.pf_ok = true; } PROFOPEN = false; MGRN = null; var pm = document.getElementById("ov"); if (pm) pm.remove(); }
           else if (PEND.kind === "imgdel") me.prof.img = 0;
           else if (PEND.kind === "delete") me.prof = null;
