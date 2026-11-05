@@ -572,6 +572,7 @@
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「🙋 メンバー応募」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
     } else if (me && !me.prof && !(u && (u.leader || u.team))) {                      // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
+      mine.appendChild(el("div", "lead", "※ Discordで選手登録したことがある方は、入力し直さなくて大丈夫です。エントリーパネルの「🙋 メンバー応募」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります（URLは、押したときの内容で作られます）。"));
       if (!PROFOPEN) profForm(mine, true);
     }
     if (u && u.leader) { leaderView(mine, u.leader); leaderExtra(mine, u); }
