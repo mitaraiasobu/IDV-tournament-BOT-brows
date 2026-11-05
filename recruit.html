@@ -82,7 +82,7 @@
   var frag = (location.hash || "").replace(/^#/, "") || params.get("f") || "";
   function decodeProf(t) {                                                           // URLに入れた、いまの選手情報（URLの # のあとは、サーバーに送られない）
     if (!t) return null;
-    try { var b = atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)); var o = JSON.parse(decodeURIComponent(escape(b))); return o && o.n ? o : null; } catch (e) { return null; }
+    try { var b = atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)); var o = JSON.parse(decodeURIComponent(escape(b))); return o && Object.keys(o).length ? o : null; } catch (e) { return null; }       // 名前が空でも、登録済みとして扱う
   }
   var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印.選手情報
   if (frag) {
@@ -300,18 +300,18 @@
     var ic = el("div", "card"); ic.style.marginTop = "10px";
     ic.appendChild(el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"));
     ic.appendChild(el("div", "lead", (cur.img ? "登録済みです。" : "まだ登録していません。") + "サブアカウントで出場するときは、過去最高段位のアカウントの画面にしてください。BOTからのDMに、控えが届きます。"));
-    if (me.prof) {
-      var fi = el("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp";
-      fi.addEventListener("change", function () { if (fi.files && fi.files[0]) shrink(fi.files[0], function (u) { IMG = u; render(); }); });
-      ic.appendChild(fi);
-      if (IMG) { var im = el("img", "prev"); im.src = IMG; im.alt = ""; ic.appendChild(im); }
-      var ir = el("div", "row");
-      var up = el("button", "go", "この画像を登録"); up.type = "button"; up.disabled = !IMG || BUSY;
-      up.addEventListener("click", function () { PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を送っています…"); });
-      ir.appendChild(up);
-      if (cur.img) { var di = el("button", "danger", "画像を消す"); di.type = "button"; di.addEventListener("click", function () { if (confirm("プロフィール画像を消します。よろしいですか？")) { PEND = { kind: "imgdel" }; send({ act: "profile_image_delete" }, "消しています…"); } }); ir.appendChild(di); }
-      ic.appendChild(ir);
-    } else ic.appendChild(el("div", "lead", "先に、上の選手情報を保存してください。"));
+    var fi = el("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp"; fi.style.display = "none";       // 選ぶボタン（見やすい大きなボタン）から開く
+    fi.addEventListener("change", function () { if (fi.files && fi.files[0]) shrink(fi.files[0], function (u) { IMG = u; render(); }); });
+    var pick = el("button", "go", IMG ? "📷 別の画像を選ぶ" : "📷 画像を選ぶ"); pick.type = "button"; pick.disabled = !me.prof || BUSY;
+    pick.addEventListener("click", function () { fi.click(); });
+    var ir = el("div", "row"); ir.appendChild(fi); ir.appendChild(pick);
+    var up = el("button", "go", "⬆ この画像を登録"); up.type = "button"; up.disabled = !IMG || !me.prof || BUSY;
+    up.addEventListener("click", function () { PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を送っています…"); });
+    ir.appendChild(up);
+    if (cur.img) { var di = el("button", "danger", "画像を消す"); di.type = "button"; di.addEventListener("click", function () { if (confirm("プロフィール画像を消します。よろしいですか？")) { PEND = { kind: "imgdel" }; send({ act: "profile_image_delete" }, "消しています…"); } }); ir.appendChild(di); }
+    ic.appendChild(ir);
+    if (IMG) { var im = el("img", "prev"); im.src = IMG; im.alt = ""; ic.appendChild(im); ic.appendChild(el("div", "lead", "この画像でよければ「⬆ この画像を登録」を押してください。")); }
+    if (!me.prof) ic.appendChild(el("div", "badtxt", "先に、上の「💾 選手情報を保存」を押してください。保存すると、画像を選べるようになります。"));
     c.appendChild(ic);
     c.appendChild(liveMsg());
     box.appendChild(c);
