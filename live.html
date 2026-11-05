@@ -1472,6 +1472,7 @@
   html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   .chg { text-decoration: underline; text-decoration-color: #ff3b3b; text-decoration-thickness: 3px; text-underline-offset: 4px; text-shadow: 0 0 8px rgba(255, 59, 59, .75); }       /* 最近（3日以内）変わったところ：文字の色はそのまま、赤い下線 */
+  html.paused *, html.paused *::before, html.paused *::after { animation-play-state: paused !important; transition: none !important; }   /* 一時停止：演出の動きも止める */
 </style>
 </head>
 <body>
@@ -1492,6 +1493,20 @@
   if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
   var POLL_MS = 2000, MEDIA_MS = 10000;
   var root = document.documentElement;
+  var PAUSE = null, PAUSED_MEDIA = [];                                              // 一時停止：演出・進行の時計を、止めた時刻のまま（BOTのデータの pause）
+  function NOW() { return PAUSE != null ? PAUSE * 1000 : Date.now(); }
+  function applyPause(p) {                                                          // 止める：時計・アニメーション・音楽を止める／再開：続きから
+    var was = PAUSE != null;
+    PAUSE = p != null ? Number(p) : null;
+    root.classList.toggle("paused", PAUSE != null);
+    if (PAUSE != null && !was) {
+      PAUSED_MEDIA = Array.prototype.filter.call(document.querySelectorAll("audio,video"), function (m) { return !m.paused; });
+      PAUSED_MEDIA.forEach(function (m) { try { m.pause(); } catch (e) { /* そのまま */ } });
+    } else if (PAUSE == null && was) {
+      PAUSED_MEDIA.forEach(function (m) { try { var r = m.play(); if (r && r.catch) r.catch(function () {}); } catch (e) { /* そのまま */ } });
+      PAUSED_MEDIA = [];
+    }
+  }
   var stageEl = document.getElementById("stage");
   var screenEl = document.getElementById("screen");
   var mediaBox = document.getElementById("media");
@@ -1508,7 +1523,7 @@
   var lastData = null, kind = "flow";
   function wantKind(data) {
     var big = data && (data.state === "play" || data.state === "result" || data.state === "hold" || data.state === "intro" || data.state === "open" || data.state === "close" || data.state === "black" || (data.finale && data.finale.champion));      // BAN/PICKの画面・成績の画面・優勝画面・インタビュー画面
-    if (data && (data.state === "intro" || data.state === "close" || data.state === "black" || (data.state === "open" && !(data.open && Date.now() / 1000 >= data.open.t0 + data.open.visual_sec)))) return "stage";           // 紹介の場面は、画面の形に関係なく、1920x1080
+    if (data && (data.state === "intro" || data.state === "close" || data.state === "black" || (data.state === "open" && !(data.open && NOW() / 1000 >= data.open.t0 + data.open.visual_sec)))) return "stage";           // 紹介の場面は、画面の形に関係なく、1920x1080
     if (params.get("layout") === "stage" && big) return "stage";      // 確認用：URLに &layout=stage を付けると、画面の形に関係なく1920x1080の表示にする
     if (big && window.innerWidth / Math.max(1, window.innerHeight) >= 1.25) return "stage";
     return "flow";
@@ -1616,7 +1631,7 @@
     }
     function schedule() {                                                     // 見せたい、かつ、再生が始まっているなら、再生開始から約4秒たったときに見せる
       if (!wantReveal || !playingAt || timer || box.classList.contains("on")) return;
-      timer = setTimeout(doReveal, Math.max(0, playingAt + revealAfter - Date.now()));
+      timer = setTimeout(doReveal, Math.max(0, playingAt + revealAfter - NOW()));
     }
     function loopWatch() {
       if (watch) return;
@@ -1649,7 +1664,7 @@
               }
               return;
             }
-            if (e.data === 1) { if (!playingAt) playingAt = Date.now(); loopWatch(); schedule(); }     // 再生中
+            if (e.data === 1) { if (!playingAt) playingAt = NOW(); loopWatch(); schedule(); }     // 再生中
             else if (e.data === 3) { /* 読み込み中：見せているときは、そのまま。まだなら、隠したまま */ }
             else if (begun) {                                                  // 止まった・終わった・まだ始まっていない：見えなくして、すぐ再生しなおす
               hide();
@@ -1674,11 +1689,11 @@
         if (ready) {
           // 準備が済んでいる（指定の位置のあたりを再生し続けていて、YouTube自身のボタンはもう引っ込んでいる）なら、指定の位置に合わせて、すぐ見せられる。
           // 済んでいないときだけ、見えるまでの約4秒ぶん手前から再生する
-          if (wasWarmed) { revealAfter = 300; playingAt = Date.now(); }
+          if (wasWarmed) { revealAfter = 300; playingAt = NOW(); }
           try { player.seekTo(wasWarmed ? S : startPos(), true); player.playVideo(); } catch (e) { /* 無視 */ }
           if (wasWarmed) schedule();
           setTimeout(function () {                                                                   // すでに再生中で、状態の変化が来なかったときの保険
-            try { if (!dead && !playingAt && player.getPlayerState() === 1) { playingAt = Date.now(); schedule(); } } catch (e) { /* 無視 */ }
+            try { if (!dead && !playingAt && player.getPlayerState() === 1) { playingAt = NOW(); schedule(); } } catch (e) { /* 無視 */ }
           }, 1000);
         }
       },
@@ -1706,7 +1721,7 @@
   }
   function preloadYT(lv) {
     clearPreYT();
-    var now = replay ? stepAt(lv, Math.max(0, Date.now() - replay.start)) : 0;                          // いま何手順目か（途中から開いたとき、もう過ぎた手順の演出は準備しない）
+    var now = replay ? stepAt(lv, Math.max(0, NOW() - replay.start)) : 0;                          // いま何手順目か（途中から開いたとき、もう過ぎた手順の演出は準備しない）
     [].concat(arr((lv.survivor_picks || {}).items), arr((lv.hunter_pick || {}).items)).forEach(function (it) {
       var m = it && it.media;
       if (!m || !(it.s >= now)) return;
@@ -1823,7 +1838,7 @@
     c.style.setProperty("--ar", (0.75 + rand01(sd, 2) * 0.5).toFixed(2));
     c.style.setProperty("--per", per.toFixed(1) + "s");
     var el0 = 0;                                                                                                      // このPICKが出てからの経過（秒）：画面を描き直しても、降りる→揺れる→ゆらゆら が途切れずにつながる
-    if (item && item.s !== undefined && replay) el0 = Math.max(0, (Date.now() - replay.start - stepStart(replay.lv, item.s)) / 1000);
+    if (item && item.s !== undefined && replay) el0 = Math.max(0, (NOW() - replay.start - stepStart(replay.lv, item.s)) / 1000);
     c.style.setProperty("--el", el0.toFixed(2) + "s");
     var a = el("div", "art");
     if (item) art(item, a); else a.appendChild(el("div", "q", "？"));
@@ -1844,7 +1859,7 @@
   function sq(x, y, item, k, cls) {                                              // cls：デザインが、場所を決めるための目印（gs＝全体BAN・サバイバー／gh＝全体BAN・ハンター／bs＝サバイバーのBAN／bh＝ハンターのBAN と、i0〜＝何番目か）
     var b = el("div", "sq" + (cls ? " " + cls : "") + (item ? " used" : "") + (item && k !== undefined && item.s === k ? " pop" : ""));
     b.style.left = x + "px"; b.style.top = y + "px";
-    if (item && k !== undefined && item.s === k && replay) b.style.setProperty("--el", Math.max(0, (Date.now() - replay.start - stepStart(replay.lv, item.s)) / 1000).toFixed(2) + "s");      // このBANが出てからの経過：画面を描き直しても、演出が最初からやり直しにならない
+    if (item && k !== undefined && item.s === k && replay) b.style.setProperty("--el", Math.max(0, (NOW() - replay.start - stepStart(replay.lv, item.s)) / 1000).toFixed(2) + "s");      // このBANが出てからの経過：画面を描き直しても、演出が最初からやり直しにならない
     if (item) art(item, b); else b.appendChild(el("div", "lock", "🔒"));
     return b;
   }
@@ -2021,7 +2036,7 @@
       s.appendChild(body);
       return s;
     }
-    function recentIso(iso) { var t = Date.parse(iso || ""); return !isNaN(t) && Date.now() - t <= 3 * 24 * 60 * 60 * 1000; }
+    function recentIso(iso) { var t = Date.parse(iso || ""); return !isNaN(t) && NOW() - t <= 3 * 24 * 60 * 60 * 1000; }
     var CHG = (lastData && lastData.chg) || {};                                       // 最近（3日以内）変わったルールは、文字の色はそのままで、赤い下線をつける
     function rows(list, emptyText, changedIso) {
       list = arr(list);
@@ -2216,7 +2231,7 @@
     if (!lg || !lg.key || !window.TOURNAMENT_DATA_BASE) { if (logosVer !== null) { logoMap = {}; logosVer = null; } return; }
     if (lg.ver === logosVer || logosLoading) return;
     logosLoading = true;
-    fetch(window.TOURNAMENT_DATA_BASE + lg.key + ".json?t=" + Date.now(), { cache: "no-store" })
+    fetch(window.TOURNAMENT_DATA_BASE + lg.key + ".json?t=" + NOW(), { cache: "no-store" })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         logoMap = (d && d.logos) || {};
@@ -2382,7 +2397,7 @@
     var r = replay;
     if (!r) return;
     var n = r.lv.n_steps || 1, total = replayTotal(r.lv);
-    var elapsed = Math.max(0, Date.now() - r.start);
+    var elapsed = Math.max(0, NOW() - r.start);
     tickPreYT(r.lv, elapsed);
     if (elapsed >= total + EXIT_MS) {                          // 終わった：画面を透明にする（OBSなら、後ろのゲーム画面が見える）
       if (r.phase !== "clear") { r.phase = "clear"; setPhase("clear"); setMedia([]); screenEl.replaceChildren(); clearPreYT(); if (lastData) updateMusic(lastData, lastFm); }
@@ -2400,7 +2415,7 @@
   }
   function startReplay(lv) {
     var start = Date.parse(lv.play_started_at);
-    replay = { key: lv.key, start: isNaN(start) ? Date.now() : start, lv: lv, step: -2, phase: "" };
+    replay = { key: lv.key, start: isNaN(start) ? NOW() : start, lv: lv, step: -2, phase: "" };
     preloadYT(lv);                                                         // PICKの演出（YouTube）は、先に読み込んでおく
     if (!replay.timer) replay.timer = setInterval(tickReplay, 250);
     tickReplay();
@@ -2446,22 +2461,22 @@
     }
     if (st === "bracket" && f.bracket) return "bracket";                                  // 最後のトーナメント表
     var en = f.entering;                                                                  // インタビュー選手の「入室のお知らせ」（20秒。そのあとに、BOTが入室させる）
-    if (en && Date.now() < en.until * 1000 + 3000) {
-      clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, Math.max(250, en.until * 1000 + 3000 - Date.now() + 60));
+    if (en && NOW() < en.until * 1000 + 3000) {
+      clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, Math.max(250, en.until * 1000 + 3000 - NOW() + 60));
       return "enter";
     }
     if (st === "mvp_interview" && (mvIv.current || mvIv.active)) return "mvp_interview";   // MVPインタビュー（いま話している人がいるとき。次の人を待つ合間も、この画面のまま）
     if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) {                    // MVP発表（賞品があれば、そのあと、贈呈のページ）
       var mkey = JSON.stringify(mvAwards.map(function (a) { return a.name; }));
-      if (mvpSeen.key !== mkey) mvpSeen = { key: mkey, at: Date.now() };
-      if (prizeStep(arr((f.prizes || {}).mvp), Date.now() - mvpSeen.at, MVP_SHOW_MS, function (i) { mvpPrizeIdx = i; })) return "mvp_prize";
+      if (mvpSeen.key !== mkey) mvpSeen = { key: mkey, at: NOW() };
+      if (prizeStep(arr((f.prizes || {}).mvp), NOW() - mvpSeen.at, MVP_SHOW_MS, function (i) { mvpPrizeIdx = i; })) return "mvp_prize";
       return "mvp";
     }
     if (st === "interview" && (iv.current || iv.active)) return "interview";              // 優勝チームのインタビュー（いま話している人がいるとき。次の人を待つ合間も、この画面のまま：優勝画面・優勝の音楽に、一瞬戻らない）
     if (data.state === "result" && data.result && data.result.final) {
       var key = JSON.stringify([(data.result.a || {}).points, (data.result.b || {}).points, (data.result.a || {}).name, (data.result.b || {}).name]);
-      if (finalSeen.key !== key) finalSeen = { key: key, at: tm ? tm.t0 * 1000 : Date.now() };
-      var left = FINAL_RESULT_MS - (Date.now() - finalSeen.at);
+      if (finalSeen.key !== key) finalSeen = { key: key, at: tm ? tm.t0 * 1000 : NOW() };
+      var left = FINAL_RESULT_MS - (NOW() - finalSeen.at);
       if (left > 0) {                                                       // まだ、成績の画面を見せる時間：時間がきたら、描き直す
         clearTimeout(finalTimer);
         finalTimer = setTimeout(function () { if (lastData) render(lastData, true); }, left + 60);
@@ -2469,8 +2484,8 @@
       }
     }
     var ck = (f.champion || {}).name || "";
-    if (championSeen.key !== ck) championSeen = { key: ck, at: tm ? tm.t0 * 1000 + FINAL_RESULT_MS : Date.now() };
-    var pzC = arr((f.prizes || {}).champion), cage = Date.now() - championSeen.at;
+    if (championSeen.key !== ck) championSeen = { key: ck, at: tm ? tm.t0 * 1000 + FINAL_RESULT_MS : NOW() };
+    var pzC = arr((f.prizes || {}).champion), cage = NOW() - championSeen.at;
     if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; })) return "prize";          // 賞品の贈呈
     if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面（と贈呈）のあと、最後のトーナメント表
       var cleft = CHAMPION_MS + pzC.length * PRIZE_PAGE_MS - cage;
@@ -2565,10 +2580,10 @@
     wrap.appendChild(box);
     screenEl.replaceChildren(wrap);
     var startMs = Date.parse(src.started_at || "");
-    if (isNaN(startMs)) startMs = Date.now();
+    if (isNaN(startMs)) startMs = NOW();
     var total = src.seconds || (src.minutes || 3) * 60;
     function tick() {
-      var left = total - (Date.now() - startMs) / 1000;
+      var left = total - (NOW() - startMs) / 1000;
       count.textContent = fmtCount(left);
       box.classList.toggle("over", left <= 0);
     }
@@ -2604,7 +2619,7 @@
     wrap.appendChild(box);
     screenEl.replaceChildren(wrap);
     function tick() {
-      var left = Math.max(0, Math.ceil(en.until - Date.now() / 1000));
+      var left = Math.max(0, Math.ceil(en.until - NOW() / 1000));
       count.textContent = fmtCount(left);
     }
     tick();
@@ -2747,7 +2762,7 @@
     var m = data.music;
     if (!m) { MusicPlayer.set(null); return; }
     var until = m.until ? Date.parse(m.until) : NaN;
-    var pre = m.hint === "pre" && !(until && Date.now() > until);                  // 大会開始前：まだ試合開始が押されておらず、大会日時の前
+    var pre = m.hint === "pre" && !(until && NOW() > until);                  // 大会開始前：まだ試合開始が押されておらず、大会日時の前
     var src;
     if (window.PAGE_KIND === "rules") src = pre ? (m.scenes || {}).pre : null;      // ルールだけの公開ページは、大会開始前の音楽だけ
     else {
@@ -2761,8 +2776,8 @@
       else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
       else if (data.state === "result") {                                           // 試合終了から30秒は、BAN/PICKの音楽のまま → そのあと、試合の間の音楽にフェードで切り替える
         var ended = m.ended ? Date.parse(m.ended) : NaN;
-        if (isNaN(ended)) { if (resultSeenAt === 0) resultSeenAt = Date.now(); ended = resultSeenAt; }
-        var left = BANPICK_TAIL_MS - (Date.now() - ended);
+        if (isNaN(ended)) { if (resultSeenAt === 0) resultSeenAt = NOW(); ended = resultSeenAt; }
+        var left = BANPICK_TAIL_MS - (NOW() - ended);
         if (left > 0) { scene = "banpick"; musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
         else scene = "wait";
       } else if (data.state === "intro") scene = lastScene === "pre" || lastScene === "wait" ? lastScene : (pre ? "pre" : "wait");       // 紹介の場面：途中で、音楽を変えない（大会開始の時刻を過ぎても、紹介が終わるまで、そのまま）
@@ -2772,8 +2787,8 @@
       if (scene === "banpick" && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
       var fade = lastScene === "banpick" && scene === "wait" && data.state === "result" ? FADE_MS : 0;
       if (lastScene !== null && scene !== lastScene && scene !== "open" && scene !== "close" && scene !== null) {      // 場面の切り替わりの一瞬だけ別の場面になっても、音楽は変えない：新しい場面が続いて（1.2秒）から変える
-        if (heldScene !== scene) { heldScene = scene; heldAt = Date.now(); clearTimeout(holdTimer); holdTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, MUSIC_HOLD_MS + 60); return; }
-        if (Date.now() - heldAt < MUSIC_HOLD_MS) return;
+        if (heldScene !== scene) { heldScene = scene; heldAt = NOW(); clearTimeout(holdTimer); holdTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, MUSIC_HOLD_MS + 60); return; }
+        if (NOW() - heldAt < MUSIC_HOLD_MS) return;
       }
       heldScene = null; clearTimeout(holdTimer);
       lastScene = scene;
@@ -3248,7 +3263,7 @@
   function renderOpen(data) {
     var op = data.open;
     function tick() {
-      var nowS = Date.now() / 1000, ph = openPhase(op, nowS);
+      var nowS = NOW() / 1000, ph = openPhase(op, nowS);
       var key = ph.kind + ":" + ph.idx;
       if (key !== openKey) {
         openKey = key;
@@ -3270,7 +3285,7 @@
   function renderClose(data) {
     var cl = data.close, started = false, greeting = false;
     function tick() {
-      var nowS = Date.now() / 1000, left = cl.t0 + cl.sec - nowS;
+      var nowS = NOW() / 1000, left = cl.t0 + cl.sec - nowS;
       if (left <= 0) { root.className = "stage black"; screenEl.replaceChildren(); return; }
       if (nowS < cl.t0) {                                                                // 閉会のごあいさつ：担当のキャスターのアイコンを、画面の中央に
         if (!greeting) {
@@ -3302,7 +3317,7 @@
   function renderIntro(data) {
     var iv = data.intro;
     function tick() {
-      var nowS = Date.now() / 1000, ph = introPhase(iv, nowS);
+      var nowS = NOW() / 1000, ph = introPhase(iv, nowS);
       var key = ph.kind + ":" + (ph.idx == null ? "" : ph.idx);
       if (key !== introKey) {
         introKey = key;
@@ -3341,10 +3356,10 @@
   function expireResult(data) {                                           // 成績の画面が60秒たっても続いているときは、待機の画面（ルールなど）にする（最後のラウンドの成績は、除く）
     clearTimeout(resultRuleTimer);
     if (!data || data.state !== "result" || !data.rules || (data.result && data.result.final)) { if (!data || data.state !== "result") resultRuleSeen = 0; return data; }
-    if (resultRuleSeen === 0) resultRuleSeen = Date.now();                    // この画面で、成績を見せ始めた時刻（相手チームの確認を待つ間は、成績を出していないので、結果の入力の時刻からは数えない）
+    if (resultRuleSeen === 0) resultRuleSeen = NOW();                    // この画面で、成績を見せ始めた時刻（相手チームの確認を待つ間は、成績を出していないので、結果の入力の時刻からは数えない）
     var ended = data.music && data.music.ended ? Date.parse(data.music.ended) : NaN;
     var base = isNaN(ended) ? resultRuleSeen : Math.max(ended, resultRuleSeen);
-    var left = RESULT_SHOW_MS - (Date.now() - base);
+    var left = RESULT_SHOW_MS - (NOW() - base);
     if (left > 0) { resultRuleTimer = setTimeout(function () { if (lastRaw) render(lastRaw, true); }, left + 50); return data; }
     var d = {}; for (var k in data) d[k] = data[k];
     d.state = "rules"; d.result = null;
@@ -3352,6 +3367,7 @@
   }
   function render(data, force) {
     if (!data) data = { state: "idle" };
+    applyPause(data.pause);                                                          // 一時停止（BOTが、配信管理者の「一時停止」で、止めた時刻を送る）
     lastRaw = data;
     data = expireResult(data);
     initMusic();
@@ -3443,7 +3459,7 @@
     // 変わった瞬間に読み直す：Firebase の変更通知（ストリーム）が届いたら、すぐ読み直す（数秒おきの読み直しは、通知が使えないときの予備）
     try {
       var nudgeAt = 0;
-      var nudge = function () { var now = Date.now(); if (now - nudgeAt > 150) { nudgeAt = now; tick(); } };
+      var nudge = function () { var now = NOW(); if (now - nudgeAt > 150) { nudgeAt = now; tick(); } };
       var es = new EventSource(base + path);
       es.addEventListener("put", nudge);
       es.addEventListener("patch", nudge);
