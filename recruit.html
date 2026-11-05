@@ -69,6 +69,10 @@
   .pagehead { font-size: 13px; color: var(--sub); margin: 4px 0 10px; }
   .board { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); max-height: 260px; overflow: auto; font-size: 13px; }
   .board b { display: block; margin-bottom: 6px; } .bmsg { padding: 3px 0; overflow-wrap: anywhere; } .bmsg .bn { font-weight: 800; color: var(--accent); margin-right: .6em; } .bmsg .bt { white-space: pre-wrap; }
+  .md h3 { font-size: 17px; margin: 8px 0 4px; } .md h4 { font-size: 15px; margin: 6px 0 3px; } .md h5 { font-size: 14px; margin: 4px 0 2px; } .md .li { padding-left: .5em; } .md .bq { border-left: 3px solid var(--line); padding-left: 8px; color: var(--sub); }
+  .md { line-height: 1.6; font-size: 14px; overflow-wrap: anywhere; }
+  .rulebox { max-height: 45vh; overflow: auto; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); margin: 8px 0; }
+  button.rinfo { padding: 0 7px; margin-left: 6px; border-radius: 999px; font-size: 12px; line-height: 1.6; color: var(--accent); border-color: var(--accent); vertical-align: middle; }
   .wants { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
   .title { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
   .wanted { font-size: 13px; overflow-wrap: anywhere; }
@@ -348,6 +352,64 @@
     while (c.firstChild) d.appendChild(c.firstChild);
     d.addEventListener("toggle", function () { FOLD[key] = d.open; sm.firstChild.textContent = d.open ? "▼" : "▶"; });
     return d;
+  }
+  function mdRender(text) {                                                          // ルールの文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~）を、安全に（HTMLは使わない）
+    var box = document.createElement("div"); box.className = "md";
+    String(text || "").split("\n").forEach(function (line) {
+      var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
+      if (m) { node = document.createElement(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
+      else if (/^\s*[-・*]\s+/.test(line)) { node = document.createElement("div"); node.className = "li"; line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
+      else if (/^>\s?/.test(line)) { node = document.createElement("div"); node.className = "bq"; line = line.replace(/^>\s?/, ""); }
+      else { node = document.createElement("div"); if (!line.trim()) node.style.height = ".6em"; }
+      var re = /(\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*]+\*)/g, last = 0, mm;
+      while ((mm = re.exec(line))) {
+        if (mm.index > last) node.appendChild(document.createTextNode(line.slice(last, mm.index)));
+        var t = mm[0], el2 = document.createElement(t.indexOf("**") === 0 ? "b" : t.indexOf("__") === 0 ? "u" : t.indexOf("~~") === 0 ? "s" : "i");
+        el2.textContent = t.replace(/^(\*\*|__|~~|\*)/, "").replace(/(\*\*|__|~~|\*)$/, ""); node.appendChild(el2); last = re.lastIndex;
+      }
+      if (last < line.length) node.appendChild(document.createTextNode(line.slice(last)));
+      box.appendChild(node);
+    });
+    return box;
+  }
+  function ruleOf(key) { return (((D && D.rules) || {}).fields || {})[key] || ""; }
+  function ruleBtn(key, title) {                                                     // 項目の ⓘ：押すと、その項目のルール（管理者が書いたもの）
+    var t = ruleOf(key); if (!t) return null;
+    var b = el("button", "rinfo", "ⓘ ルール"); b.type = "button";
+    b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); rulePopup(title, t); });
+    return b;
+  }
+  function rulePopup(title, text) {
+    var old = document.getElementById("rulepop"); if (old) old.remove();
+    var w = el("div", "imgask"); w.id = "rulepop"; var b = el("div", "box"); b.style.textAlign = "left";
+    var hd = el("div", ""); hd.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px";
+    hd.appendChild(el("div", "q", "📖 " + title + "のルール")); var x = el("button", "", "✕"); x.type = "button"; x.addEventListener("click", function () { w.remove(); }); hd.appendChild(x);
+    b.appendChild(hd); var rb = el("div", "rulebox"); rb.appendChild(mdRender(text)); b.appendChild(rb);
+    w.addEventListener("click", function (e) { if (e.target === w) w.remove(); });
+    w.appendChild(b); document.body.appendChild(w);
+  }
+  var LABEL_RULES = [["名前の読み方", "player:player_name_reading"], ["名前", "player:player_name"], ["ゲーム内ID", "player:game_id"], ["出場する陣営", "player:faction"],
+                     ["サバイバーの過去最高段位", "player:survivor_rank"], ["ハンターの過去最高段位", "player:hunter_rank"], ["閲歴", "player:level"], ["得意キャラ", "player:favorites"],
+                     ["サブアカウント", "player:sub"], ["初心者", "player:beginner"], ["希望するチームの方針", "player:style"], ["　└ サバイバーの役割", "player:style"],
+                     ["一言メッセージ", "player:message"], ["チーム名の読み方", "team:team_name_reading"], ["チーム名", "team:team_name"], ["略称の読み方", "team:team_abbr_reading"],
+                     ["略称", "team:team_abbr"], ["🎨 チームカラー", "team:color"], ["🖼 チームロゴ", "team:logo"], ["マネージャー名", "player:player_name"]];
+  function decorateRules(box) {                                                      // フォームの見出し（label）に、ルールがあれば ⓘ を付ける
+    Array.prototype.forEach.call(box.querySelectorAll("label"), function (lb) {
+      if (lb.querySelector(".rinfo")) return;
+      var t = lb.textContent || "";
+      var hit = LABEL_RULES.filter(function (x) { return t.indexOf(x[0]) === 0; })[0];
+      if (!hit) return;
+      var b = ruleBtn(hit[1], t.replace(/（.*$/, "")); if (b) lb.appendChild(b);
+    });
+  }
+  function applyRulesBox(box, agreeObj) {                                            // 応募・チーム作成の前に読むルール（注意事項）と「同意します」
+    var t = ((D && D.rules) || {}).apply || "";
+    if (!t.trim()) { agreeObj.ok = true; return true; }
+    box.appendChild(el("h2", "", "📖 大会のルール（必ず読んでください）"));
+    var rb = el("div", "rulebox"); rb.appendChild(mdRender(t)); box.appendChild(rb);
+    var r = el("div", "row"), cb = el("input"); cb.type = "checkbox"; cb.checked = !!agreeObj.ok; cb.addEventListener("change", function () { agreeObj.ok = cb.checked; });
+    r.appendChild(cb); r.appendChild(el("span", "", "上の大会のルールを読んで、同意します")); box.appendChild(r);
+    return false;
   }
   function joinPrompt() {                                                            // 招待用のページで、応募・チーム作りをしようとしたとき
     var old = document.getElementById("joinask"); if (old) old.remove();
@@ -654,10 +716,11 @@
       lab("サブ垢のゲーム内ID（数字のみ）"); txt("sg", 20, "数字", true);
       f.appendChild(el("div", "hint", "⚠ サブアカウントを使う場合、プロフィール画像は、過去最高段位のアカウント（上のゲーム内ID）の画面にしてください。"));
     }
-    c.appendChild(f);
+    c.appendChild(f); decorateRules(f);
     if (!PF._te) { PF._te = JSON.parse(JSON.stringify((me.prof && me.prof.te) || {})); PF._tc = JSON.parse(JSON.stringify((me.prof && me.prof.tc) || {})); PF._ta = {}; }
     c.appendChild(el("h2", "", "📋 この大会の登録内容"));                               // Discordの選手登録と同じ項目（大会ごと）
     var tf = el("div", "frm"), hasTRule = false;
+    setTimeout(function () { decorateRules(tf); }, 0);
     if (D.locked) { tf.appendChild(el("div", "lead", "🔒 エントリー締切を過ぎたため、この大会の登録内容は変更できません。")); tf.style.display = "block"; }
     else { entryInputs(tf, PF._te); hasTRule = customInputs(tf, D.player_fields, PF._tc, PF._ta); }
     c.appendChild(tf);
@@ -684,7 +747,7 @@
     }
     // プロフィール画像：ブラウザで小さくしてから送る（BOTは、あなたとのDMに置くだけ。BOTのサーバーには保存しない）
     var ic = el("div", "card"); ic.style.marginTop = "10px";
-    ic.appendChild(el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"));
+    var ih2 = el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"); var irb = ruleBtn("player:image", "プロフィール画像"); if (irb) ih2.appendChild(irb); ic.appendChild(ih2);
     ic.appendChild(el("div", cur.img ? "lead" : "badtxt", cur.img ? "✅ 登録済みです（いまの画像）。" : "⚠ まだ登録していません。応募・チーム作りには、プロフィール画像が必要です。"));
     if (PF.sub) ic.appendChild(el("div", "subwarn", "⚠ サブアカではなく、過去最高段位が表示されている本アカのプロフィール画像を送信してください。"));
     curImage(ic, false);
@@ -785,7 +848,7 @@
     c.appendChild(el("div", "lead", "マネージャーは、応募パスワードのある募集にだけ応募できます（チームのリーダーから、応募パスワードを聞いてください）。試合には出ません。"));
     var f = el("div", "frm"); f.appendChild(el("label", "", "マネージャー名"));
     var ni = el("input"); ni.type = "text"; ni.maxLength = 20; ni.value = MGRN != null ? MGRN : (u.mgr || ""); ni.placeholder = "マネージャー名（選手名と同じ決まり）";
-    ni.addEventListener("input", function () { MGRN = ni.value; }); f.appendChild(ni); c.appendChild(f);
+    ni.addEventListener("input", function () { MGRN = ni.value; }); f.appendChild(ni); c.appendChild(f); decorateRules(f);
     var r = el("div", "row"), sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 マネージャーとして保存"); sv.type = "button"; sv.disabled = BUSY;
     sv.addEventListener("click", function () { var v = (MGRN != null ? MGRN : ni.value).trim(); if (!v) { setMsg("ng", "⚠ マネージャー名を入れてください。"); return; } PEND = { kind: "mgr" }; send({ act: "manager_profile", name: v }, "保存しています…"); });
     var sw = el("button", "", "🎮 選手として登録する に切り替える"); sw.type = "button"; sw.addEventListener("click", function () { KIND = "player"; PF = null; openProfile(); });
@@ -947,6 +1010,8 @@
     var r1 = customInputs(f, D.team_fields, T.custom, T.agree);                         // 大会ごとの追加項目（チーム）
     var r2 = false;                                                                     // リーダー自身の選手の項目（一言メッセージなど）は、選手情報の「この大会の登録内容」から
     c.appendChild(f);
+    T.ra = T.ra || {}; applyRulesBox(c, T.ra);                                         // 大会のルール（必ず読んで、同意）
+    decorateRules(c);
     var row = el("div", "row"), b = el("button", "go", BUSY ? "⏳ 作っています…" : "OK（このチーム名・略称で作る）"); b.type = "button"; b.disabled = BUSY;
     b.addEventListener("click", function () {
       if (!T.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
@@ -956,8 +1021,9 @@
       var miss = missingCustom(D.team_fields, T.custom);
       if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
       if ((r1 && !T.agree.ok) || (r2 && !T.pagree.ok)) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
+      if (!T.ra.ok) { setMsg("ng", "⚠ 大会のルールを読んで、「同意します」にチェックを入れてください。"); return; }
       PEND = { kind: "created" };
-      send({ act: "create_team", form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
+      send({ act: "create_team", agree: true, form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
     });
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
@@ -1001,7 +1067,7 @@
       lbox.appendChild(el("div", "lim", "正方形（縦と横が同じ長さ）の画像にしてください。送ったロゴは、管理者が承認してから使われます。"));
       f.appendChild(lbox);
     }
-    c.appendChild(f);
+    c.appendChild(f); decorateRules(f);
     var srow = el("div", "row"), sb = el("button", "go", "💾 チーム情報を保存"); sb.type = "button"; sb.disabled = BUSY;
     sb.addEventListener("click", function () {
       if (!TN.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
@@ -1363,6 +1429,7 @@
       d.appendChild(el("div", "ask", "この情報でよろしいですか？必ず最新の情報にしてください！"));
       profileSummary(d);
       var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
+      var RA = dialog.ra = dialog.ra || {}; applyRulesBox(d, RA);                    // 大会のルール（必ず読んで、同意）
       d.appendChild(el("div", "lead", "💬 応募のメッセージ（任意）：リーダーとチームのメンバーに届きます。"));
       var am = el("input"); am.type = "text"; am.maxLength = 200; am.placeholder = "例：よろしくお願いします。"; am.value = APPLY_MSG; am.addEventListener("input", function () { APPLY_MSG = am.value; }); d.appendChild(am);
       var pw = null;
@@ -1386,9 +1453,10 @@
       var ok = el("button", "go", BUSY ? "送信中…" : "✅ OK（この内容で応募する）"); ok.type = "button"; ok.disabled = BUSY;
       ok.addEventListener("click", function () {
         if (!q.img) { setMsg("ng", "⚠ プロフィール画像が登録されていません。「✏ 編集する」から登録してください。"); return; }
+        if (!RA.ok) { setMsg("ng", "⚠ 大会のルールを読んで、「同意します」にチェックを入れてください。"); return; }
         var miss = missingCustom(D.player_fields, tc).concat(missingEntry(te));
         if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります（「✏ 編集する」から入れてください）：" + miss.join("、")); return; }
-        ORDER = null; send({ act: "wish", team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
+        ORDER = null; send({ act: "wish", agree: true, team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
       });
       var ed = el("button", "", "✏ 編集する"); ed.type = "button";
       ed.addEventListener("click", function () { BACK_TO = t.id; OPEN = null; DSTEP = null; ov.remove(); PROFOPEN = true; PF = null; openProfile(); });

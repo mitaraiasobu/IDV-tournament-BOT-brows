@@ -147,7 +147,7 @@
   </header>
   <main>
     <div id="result"></div>
-    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 チームとメンバー募集</button></div>
+    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 チームとメンバー募集</button><button type="button" id="tabrl">📋 ルール・登録項目</button></div>
     <div id="tab-set">
       <div class="note" style="margin-top:10px">大会の設定を、ここでまとめて変えられます（変えた項目は、色が付きます）。「💾 保存」で、BOTに反映します。Discordの設定画面で変えても、同じ内容になります。</div>
       <div id="setform" class="sgrid"></div>
@@ -162,6 +162,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
+    <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
       <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別。保存のときに、公開するかを聞きます）。</div>
@@ -721,6 +722,67 @@
     bt("やめる", "", function () {});
     box.appendChild(row);
   }
+  function mdRender(text) {                                                          // ルールの文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~）を、安全に（HTMLは使わない）
+    var box = document.createElement("div"); box.className = "md";
+    String(text || "").split("\n").forEach(function (line) {
+      var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
+      if (m) { node = document.createElement(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
+      else if (/^\s*[-・*]\s+/.test(line)) { node = document.createElement("div"); node.className = "li"; line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
+      else if (/^>\s?/.test(line)) { node = document.createElement("div"); node.className = "bq"; line = line.replace(/^>\s?/, ""); }
+      else { node = document.createElement("div"); if (!line.trim()) node.style.height = ".6em"; }
+      var re = /(\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*]+\*)/g, last = 0, mm;
+      while ((mm = re.exec(line))) {
+        if (mm.index > last) node.appendChild(document.createTextNode(line.slice(last, mm.index)));
+        var t = mm[0], el2 = document.createElement(t.indexOf("**") === 0 ? "b" : t.indexOf("__") === 0 ? "u" : t.indexOf("~~") === 0 ? "s" : "i");
+        el2.textContent = t.replace(/^(\*\*|__|~~|\*)/, "").replace(/(\*\*|__|~~|\*)$/, ""); node.appendChild(el2); last = re.lastIndex;
+      }
+      if (last < line.length) node.appendChild(document.createTextNode(line.slice(last)));
+      box.appendChild(node);
+    });
+    return box;
+  }
+  // ───── 📋 ルール・登録項目 ─────
+  var RL = {}, RLADD = { kind: "player", type: "text" };
+  function renderRules2() {
+    var box = $("rllist"); if (!box) return; box.textContent = "";
+    var F = (data && data.forms) || {};
+    function ta(key, val, rows) { var t = document.createElement("textarea"); t.rows = rows || 3; t.style.width = "100%"; t.value = RL[key] != null ? RL[key] : (val || ""); t.addEventListener("input", function () { RL[key] = t.value; prev(); }); var pv = el("div", "note"); function prev() { pv.textContent = ""; if ((t.value || "").trim()) { pv.appendChild(el("div", "", "▼ 表示の見本")); pv.appendChild(mdRender(t.value)); } } prev(); return [t, pv]; }
+    var c0 = el("div", "card"); c0.style.marginTop = "10px";
+    var h0 = el("div", ""); h0.style.fontWeight = "800"; h0.textContent = "📖 応募・チーム作成の前に読んでもらうルール（読んで「同意します」にチェックしないと、応募もチーム作成もできません）"; c0.appendChild(h0);
+    var a0 = ta("apply", F.apply, 8); c0.appendChild(a0[0]); c0.appendChild(a0[1]);
+    var r0 = el("div", "row"), s0 = el("button", "primary", "このルールを保存"); s0.type = "button";
+    s0.addEventListener("click", function () { brSend([{ op: "rules_apply", text: RL.apply != null ? RL.apply : (F.apply || "") }], "ルールを保存しています…"); delete RL.apply; });
+    r0.appendChild(s0); c0.appendChild(r0); box.appendChild(c0);
+    [["team", "🏷 チームの項目"], ["player", "🪪 選手の項目"]].forEach(function (kd) {
+      var c = el("div", "card"); c.style.marginTop = "10px";
+      var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = kd[1]; c.appendChild(h);
+      (F[kd[0]] || []).forEach(function (f) {
+        var k = kd[0] + ":" + f.key, det = document.createElement("details"); det.style.margin = "6px 0";
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = f.title + (f.custom ? "（追加した項目・" + (f.type === "choice_custom" ? "選択肢：" + f.choices.join("／") : "自由記述") + (f.required ? "・必須" : "") + "）" : "") + (f.rule ? "　📖 ルールあり" : "　（ルールなし）");
+        det.appendChild(sm); det.open = !!RL["open_" + k]; det.addEventListener("toggle", function () { RL["open_" + k] = det.open; });
+        var x = ta(k, f.rule, 4); det.appendChild(x[0]); det.appendChild(x[1]);
+        var rr = el("div", "row"), sv = el("button", "primary", "ルールを保存"); sv.type = "button";
+        sv.addEventListener("click", function () { brSend([{ op: "rules_field", kind: kd[0], key: f.key, extra: !!f.extra, rule: RL[k] != null ? RL[k] : (f.rule || "") }], "ルールを保存しています…"); delete RL[k]; });
+        rr.appendChild(sv);
+        if (f.custom && f.removable) { var dl = el("button", "", "🗑 この項目を消す"); dl.type = "button"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("項目「" + f.title + "」を消します。よろしいですか？")) brSend([{ op: "rules_remove", kind: kd[0], key: f.fkey }], "項目を消しています…"); }); rr.appendChild(dl); }
+        det.appendChild(rr); c.appendChild(det);
+      });
+      box.appendChild(c);
+    });
+    var ca = el("div", "card"); ca.style.marginTop = "10px";
+    var ha = el("div", ""); ha.style.fontWeight = "800"; ha.textContent = "➕ 項目を増やす"; ca.appendChild(ha);
+    function radio(name, opts) { var r = el("div", "row"); opts.forEach(function (o) { var b = el("button", RLADD[name] === o[0] ? "primary" : "", o[1]); b.type = "button"; b.addEventListener("click", function () { RLADD[name] = o[0]; renderRules2(); }); r.appendChild(b); }); return r; }
+    ca.appendChild(radio("kind", [["player", "選手の項目"], ["team", "チームの項目"]]));
+    ca.appendChild(radio("type", [["text", "自由記述"], ["choice", "選択肢"]]));
+    function inp(key, ph) { var i = document.createElement("input"); i.type = "text"; i.placeholder = ph; i.style.width = "100%"; i.value = RLADD[key] || ""; i.addEventListener("input", function () { RLADD[key] = i.value; }); ca.appendChild(i); }
+    inp("title", "項目名（例：VCで話せますか）");
+    if (RLADD.type === "choice") inp("choices", "選択肢（「、」で区切る。例：はい、いいえ）");
+    var rq = el("div", "row"), rc2 = document.createElement("input"); rc2.type = "checkbox"; rc2.checked = !!RLADD.required; rc2.addEventListener("change", function () { RLADD.required = rc2.checked; }); rq.appendChild(rc2); rq.appendChild(el("span", "", "必須にする")); ca.appendChild(rq);
+    var rt = document.createElement("textarea"); rt.rows = 3; rt.style.width = "100%"; rt.placeholder = "この項目のルール（任意）"; rt.value = RLADD.rule || ""; rt.addEventListener("input", function () { RLADD.rule = rt.value; }); ca.appendChild(rt);
+    var ar = el("div", "row"), ab = el("button", "primary", "この項目を足す"); ab.type = "button";
+    ab.addEventListener("click", function () { if (!(RLADD.title || "").trim()) { setResult("ng", "⚠ 項目名を入れてください。"); return; } brSend([{ op: "rules_add", kind: RLADD.kind, field: { title: RLADD.title, type: RLADD.type, choices: RLADD.choices || "", required: !!RLADD.required, rule: RLADD.rule || "" } }], "項目を足しています…"); RLADD = { kind: RLADD.kind, type: "text" }; });
+    ar.appendChild(ab); ca.appendChild(ar); box.appendChild(ca);
+  }
   // ───── 📣 メンバー募集：招待リンク・投稿の募集停止（再開）・削除 ─────
   var RCINV = null;
   function renderRecruit() {
@@ -961,9 +1023,10 @@
     if (Math.abs(window.scrollY - keepPage) > 2) window.scrollTo(0, keepPage);
   }
   function showTab(name) {
-    $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br"; $("tab-rc").hidden = name !== "rc";
-    $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : ""; $("tabrc").className = name === "rc" ? "on" : "";
+    $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br"; $("tab-rc").hidden = name !== "rc"; $("tab-rl").hidden = name !== "rl";
+    $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : ""; $("tabrc").className = name === "rc" ? "on" : ""; $("tabrl").className = name === "rl" ? "on" : "";
     if (name === "rc") renderRecruit();
+    if (name === "rl") renderRules2();
     if (name === "br") renderBracket();
     if (name === "time") renderTimes();
     if (name === "set") renderSettings();
@@ -1105,7 +1168,7 @@
       f.appendChild(card);
     });
   }
-  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); refreshDirty(); }
+  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); if (!$("tab-rl").hidden) renderRules2(); refreshDirty(); }
 
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d;
@@ -1123,7 +1186,7 @@
     $("gate").hidden = true; $("app").hidden = false;
     adopt(data); render();
     var wantTab = new URLSearchParams(location.search).get("tab");                         // エントリーパネルの「🛠 募集の管理」から開いたとき：「📣 チームとメンバー募集」タブ
-    if (wantTab && { set: 1, bp: 1, time: 1, br: 1, rc: 1 }[wantTab]) showTab(wantTab);
+    if (wantTab && { set: 1, bp: 1, time: 1, br: 1, rc: 1, rl: 1 }[wantTab]) showTab(wantTab);
     var bk = null; try { bk = JSON.parse(localStorage.getItem(backupKey()) || "null"); } catch (e) { bk = null; }
     if (bk && bk.work && confirm("保存できなかった入力のバックアップがあります（" + new Date(bk.at).toLocaleString() + "）。戻しますか？\n（戻さないときは、バックアップを消します）")) {
       P = bk.work[0]; ROUNDS = bk.work[1]; DELETED = bk.work[2]; TM = bk.work[3]; ST = bk.work[4]; render();
@@ -1211,6 +1274,7 @@
   });
   $("tabbp").addEventListener("click", function () { showTab("bp"); });
   $("tabrc").addEventListener("click", function () { showTab("rc"); });
+  $("tabrl").addEventListener("click", function () { showTab("rl"); });
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("tabbr").addEventListener("click", function () { showTab("br"); });
   $("reload").addEventListener("click", function () {
