@@ -714,16 +714,20 @@
   }
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
   var PAGE = "home", MENU_OPEN = false;
-  function pages(u) {                                                                // ☰ メニューのページ（応募・募集・チーム・スタッフは、別のページ）
-    var out = [["home", "🏠 チームへ応募"]];
-    if (u && u.leader) { out.push(["team", "🏷 チーム情報"]); out.push(["recruit", "📝 応募情報（募集の内容）"]); out.push(["apps", "📨 届いた応募" + (arr(u.apps).filter(function (a) { return a.status === "pending"; }).length ? "（" + arr(u.apps).filter(function (a) { return a.status === "pending"; }).length + "）" : "")]); }
-    else if (u && u.team) out.push(["team", "🏷 あなたのチーム"]);
-    else if (me && me.prof && u && u.pf_ok && !isMgr()) out.push(["create", "🆕 チーム作成"]);
-    if (u && arr(u.wishes).length) out.push(["wishes", "📨 あなたの応募"]);
-    if (!(u && (u.leader || u.team))) out.push(["manager", "🧑‍💼 マネージャー登録"]);       // マネージャー登録：リーダー・選手には出さない
-    if (D && D.staff && (D.staff.caster || D.staff.moderator)) out.push(["staff", "🎙 キャスター・🛡 モデレーター"]);
-    out.push(["profile", "🪪 あなたの選手情報"]);
-    return out;
+  function pages(u) {                                                                // ☰ メニュー：だれにも同じ項目。いま使えないページは、暗くして押せない（4つ目＝使えない理由）
+    var lead = !!(u && u.leader), member = !!(u && u.team), mgr = !!(u && u.mteam), ok = !!(me && me.prof && u && u.pf_ok);
+    var pend = u && u.leader ? arr(u.apps).filter(function (a) { return a.status === "pending"; }).length : 0;
+    return [
+      ["home", "🏠 チームへ応募", true],
+      ["create", "🆕 チーム作成", ok && !lead && !member && !mgr && !isMgr(), lead || member ? "もうチームに入っています" : "先に「🪪 あなたの選手情報」を登録してください"],
+      ["team", lead ? "🏷 チーム情報" : "🏷 あなたのチーム", lead || member, "チームに入ると使えます"],
+      ["recruit", "📝 応募情報（募集の内容）", lead, "チームのリーダーだけが使えます"],
+      ["apps", "📨 届いた応募" + (pend ? "（" + pend + "）" : ""), lead, "チームのリーダーだけが使えます"],
+      ["wishes", "📨 あなたの応募", !!(u && arr(u.wishes).length), "まだ、どのチームにも応募していません"],
+      ["manager", "🧑‍💼 マネージャー登録", !lead && !member, "チームのリーダー・選手は、マネージャーになれません"],
+      ["staff", "🎙 キャスター・🛡 モデレーター", !!(D && D.staff && (D.staff.caster || D.staff.moderator)), "この大会では、いま募集していません"],
+      ["profile", "🪪 あなたの選手情報", true],
+    ];
   }
   function drawMenu(u) {
     var old = document.getElementById("menupanel"), sh = document.getElementById("menushade");
@@ -734,6 +738,7 @@
     pn.appendChild(el("h2", "", "☰ メニュー"));
     pages(u).forEach(function (pg) {
       var b = el("button", PAGE === pg[0] ? "on" : "", pg[1]); b.type = "button";
+      if (!pg[2]) { b.disabled = true; b.style.opacity = ".4"; b.title = pg[3] || ""; b.appendChild(el("div", "", pg[3] || "")); b.lastChild.style.cssText = "font-size:11px;font-weight:400;margin-top:2px"; }
       b.addEventListener("click", function () {
         MENU_OPEN = false;
         if (pg[0] === "profile") { drawMenu(u); endGuide(); PROFOPEN = true; PF = null; openProfile(); return; }
@@ -1134,7 +1139,7 @@
       var lm = Math.ceil((u.cool * 1000 - Date.now()) / 60000);
       mine.appendChild(el("div", "subwarn", "⚠ 短い間に加入・脱退をくり返したため、クールタイム中です（あと約" + Math.floor(lm / 60) + "時間" + (lm % 60) + "分）。そのあいだは、応募・チーム作りはできません。"));
     }
-    if (me && pages(u).every(function (pg) { return pg[0] !== PAGE; })) PAGE = "home";        // そのページが無くなった（チームを抜けた など）：最初のページへ
+    if (me && !pages(u).some(function (pg) { return pg[0] === PAGE && pg[2]; })) PAGE = "home";        // そのページが無くなった（チームを抜けた など）：最初のページへ
     var PG = me ? PAGE : "home";
     var pgName = (pages(u).filter(function (pg) { return pg[0] === PG; })[0] || [])[1];
     if (me && PG !== "home" && pgName) mine.appendChild(el("div", "pagehead", pgName + "（右上の「☰ メニュー」で、ほかのページへ）"));
