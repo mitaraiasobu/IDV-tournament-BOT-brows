@@ -173,17 +173,18 @@
     }
     return true;
   }
+  function redraw() { try { render(); } catch (e) { /* そのまま */ } }
   function send(body, busyText) {                                                      // 受け箱へ（BOTが処理して、結果を書き戻す）
     if (BUSY || !me) return;
-    BUSY = true; setMsg("", busyText || "送信中…（BOTが確認します。数秒かかります）");
+    BUSY = true; setMsg("", busyText || "送信中…（BOTが確認します。数秒かかります）"); redraw();
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     WAIT = nonce; body.uid = me.uid;
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: body } }) })
       .then(function (r) {
-        if (!r.ok) { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした（" + r.status + "）。" + (body.image ? "画像が大きすぎる可能性があります。別の画像か、小さい画像でお試しください。" : "もう一度お試しください。")); return; }
-        setTimeout(function () { if (WAIT === nonce) { BUSY = false; WAIT = null; setMsg("ng", "⚠ BOTからの返事がありません。しばらくしてから、ページを開き直して確かめてください。"); } }, 60000);
+        if (!r.ok) { BUSY = false; WAIT = null; redraw(); setMsg("ng", "⚠ 送れませんでした（" + r.status + "）。" + (body.image ? "画像が大きすぎる可能性があります。別の画像か、小さい画像でお試しください。" : "もう一度お試しください。")); return; }
+        setTimeout(function () { if (WAIT === nonce) { BUSY = false; WAIT = null; redraw(); setMsg("ng", "⚠ BOTからの返事がありません。しばらくしてから、ページを開き直して確かめてください。"); } }, 60000);
       })
-      .catch(function () { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした。通信を確かめて、もう一度お試しください。"); });
+      .catch(function () { BUSY = false; WAIT = null; redraw(); setMsg("ng", "⚠ 送れませんでした。通信を確かめて、もう一度お試しください。"); });
   }
   var BUSY_T = null;
   function banner(cls, text) {                                                       // 画面の上に大きく：処理中（くるくる）・結果
@@ -373,7 +374,7 @@
     if (!rankOk(PF.sr) || !rankOk(PF.hr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
     var row = el("div", "row");
-    var sv = el("button", "go", "💾 選手情報を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
+    var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 選手情報を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
     sv.addEventListener("click", function () {
       if (!PF.n.trim() || !PF.g || !PF.f || PF.lv === "") { setMsg("ng", "⚠ 名前・ゲーム内ID・陣営・閲歴を入れてください。"); return; }
       if (!PF.sr || !PF.hr) { setMsg("ng", "⚠ サバイバー・ハンターの両方の過去最高段位を入れてください（出場しない陣営も）。"); return; }
@@ -390,7 +391,6 @@
       dl.addEventListener("click", function () { if (confirm("あなたの選手情報を消します（プロフィール画像も）。よろしいですか？")) { PEND = { kind: "delete" }; send({ act: "profile_delete" }, "消しています…"); } });
       row.appendChild(dl);
     }
-    c.appendChild(row);
     // プロフィール画像：ブラウザで小さくしてから送る（BOTは、あなたとのDMに置くだけ。BOTのサーバーには保存しない）
     var ic = el("div", "card"); ic.style.marginTop = "10px";
     ic.appendChild(el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"));
@@ -406,6 +406,7 @@
     ic.appendChild(ir);
     if (!me.prof) ic.appendChild(el("div", "badtxt", "先に、上の「💾 選手情報を保存」を押してください。保存すると、画像を選べるようになります。"));
     c.appendChild(ic);
+    c.appendChild(row);                                                               // 保存ボタンは、いちばん下（プロフィール画像の下）に
     c.appendChild(liveMsg());
     box.appendChild(c);
   }
@@ -441,10 +442,10 @@
     var st = keepScroll();
     var old = document.getElementById("ov"); if (old) old.remove();
     var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
-    ov.addEventListener("click", function (e) { if (e.target === ov) { ov.remove(); PROFOPEN = false; BACK_TO = null; } });
+    ov.addEventListener("click", function (e) { if (e.target === ov && !BUSY) { ov.remove(); PROFOPEN = false; BACK_TO = null; } });
     if (BACK_TO != null) d.appendChild(el("div", "ask", "直したら「💾 選手情報を保存」を押してください。保存すると、応募の確認の画面に戻ります。"));
     profForm(d, false);
-    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { ov.remove(); PROFOPEN = false; BACK_TO = null; }); d.appendChild(cl);
+    var cl = el("button", "", BUSY ? "処理中は閉じられません" : "閉じる"); cl.type = "button"; cl.disabled = BUSY; cl.addEventListener("click", function () { if (BUSY) return; ov.remove(); PROFOPEN = false; BACK_TO = null; }); d.appendChild(cl);
     ov.appendChild(d); document.body.appendChild(ov); d.scrollTop = st;
   }
   var PROFOPEN = false, CT_OPEN = false, BACK_TO = null, DSTEP = null;
