@@ -54,6 +54,7 @@
   .frm { display: grid; grid-template-columns: 180px 1fr; gap: 10px 14px; align-items: center; }
   .frm label { font-weight: 700; font-size: 14px; } .frm .hint { grid-column: 2; font-size: 12px; color: var(--sub); margin-top: -6px; }
   .bad { border-color: var(--ng) !important; color: var(--ng); }
+  .mine-note { margin: 6px 0; padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--warn); color: var(--warn); font-weight: 800; font-size: 13px; }
   .hdr { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .notice { background: var(--panel); border: 2px solid var(--accent); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-weight: 800; font-size: 17px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; } .chips label { font-weight: 400; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
@@ -66,6 +67,7 @@
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "recruit";</script>
 <header>
   <div class="hdr"><h1 id="ttl">メンバー募集</h1><button type="button" id="profbtn" hidden>🪪 あなたの選手情報</button></div>
+  <div class="mine-note" id="minenote" hidden>🔒 このページはあなた専用です。URLを誰かに共有したりしないでください。</div>
   <div class="lead" id="lead">募集中のチームです。カードを押すと、くわしい内容が見られます。</div>
 </header>
 <main>
@@ -85,7 +87,7 @@
   var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印.選手情報
   if (frag) {
     var p = frag.split(".");
-    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", prof: decodeProf(p[6] || "") };
+    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", prof: decodeProf(p[6] || ""), old: p.length < 7 };
   }
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
@@ -129,7 +131,11 @@
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     WAIT = nonce; body.uid = me.uid;
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: body } }) })
-      .catch(function () { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした。もう一度お試しください。"); });
+      .then(function (r) {
+        if (!r.ok) { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした（" + r.status + "）。" + (body.image ? "画像が大きすぎる可能性があります。別の画像か、小さい画像でお試しください。" : "もう一度お試しください。")); return; }
+        setTimeout(function () { if (WAIT === nonce) { BUSY = false; WAIT = null; setMsg("ng", "⚠ BOTからの返事がありません。しばらくしてから、ページを開き直して確かめてください。"); } }, 60000);
+      })
+      .catch(function () { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした。通信を確かめて、もう一度お試しください。"); });
   }
   function setMsg(cls, text) { var ms = document.querySelectorAll(".msg.live"); for (var i = 0; i < ms.length; i++) { ms[i].className = "msg live " + cls; ms[i].textContent = text; } }
   function liveMsg() { return el("div", "msg live"); }
@@ -253,17 +259,23 @@
     fs.addEventListener("change", function () { PF.f = fs.value; render(); }); f.appendChild(fs);
     if (PF.f === "survivor" || PF.f === "both") { lab("サバイバーの過去最高段位"); f.appendChild(rankPick(PF.sr, function (v) { PF.sr = v; render(); }, true)); }
     if (PF.f === "hunter" || PF.f === "both") { lab("ハンターの過去最高段位"); f.appendChild(rankPick(PF.hr, function (v) { PF.hr = v; render(); }, true)); }
-    lab("閲歴"); txt("lv", 4, "数字", true);
-    lab("得意キャラ（" + (D.fav_max || 10) + "人まで）"); var ch = el("div", "chips");
+    lab("閲歴"); var lvi = txt("lv", 5, "数字（プロフィール画面で確かめられます）", true);
+    lvi.addEventListener("change", function () { render(); });
+    if (PF.lv && Number(PF.lv) >= (D.level_warn || 1000)) f.appendChild(el("div", "hint", "⚠ 閲歴が4桁（" + PF.lv + "）になっています。入力を間違えていないか、確かめてください（このまま登録もできます）。"));
+    lab("得意キャラ（任意・" + (D.fav_max || 3) + "キャラまで）"); var ch = el("div", "chips");
     arr(D.chars).filter(function (x) { return PF.f === "both" || !PF.f || x[2] === PF.f; }).forEach(function (x) {
       var on = PF.fav.indexOf(x[0]) >= 0, l = el("label", on ? "on" : "", x[1]);
-      l.addEventListener("click", function () { var k = PF.fav.indexOf(x[0]); if (k >= 0) PF.fav.splice(k, 1); else if (PF.fav.length < (D.fav_max || 10)) PF.fav.push(x[0]); render(); });
+      l.addEventListener("click", function () { var k = PF.fav.indexOf(x[0]); if (k >= 0) PF.fav.splice(k, 1); else if (PF.fav.length < (D.fav_max || 3)) PF.fav.push(x[0]); render(); });
       ch.appendChild(l);
     });
     f.appendChild(ch);
     lab("サブアカウント"); var sr = el("div", "row"); sr.style.marginTop = "0"; var sc = el("input"); sc.type = "checkbox"; sc.checked = PF.sub; sc.addEventListener("change", function () { PF.sub = sc.checked; render(); });
     sr.appendChild(sc); sr.appendChild(el("span", "", "サブアカウントで出場する")); f.appendChild(sr);
-    if (PF.sub) { lab("サブアカウントを使う理由"); txt("why", 200, ""); lab("サブアカウントのゲーム内ID"); txt("sg", 12, "数字", true); }
+    if (PF.sub) {
+      lab("サブアカウントを使う理由"); var wy = el("textarea"); wy.maxLength = 300; wy.value = PF.why; wy.addEventListener("input", function () { PF.why = wy.value; }); f.appendChild(wy);
+      lab("サブ垢のゲーム内ID（数字のみ）"); txt("sg", 20, "数字", true);
+      f.appendChild(el("div", "hint", "⚠ サブアカウントを使う場合、プロフィール画像は、過去最高段位のアカウント（上のゲーム内ID）の画面にしてください。"));
+    }
     c.appendChild(f);
     var bad = [];
     if ((PF.f === "survivor" || PF.f === "both") && !rankOk(PF.sr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
@@ -273,6 +285,7 @@
     var sv = el("button", "go", "💾 選手情報を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
     sv.addEventListener("click", function () {
       if (!PF.n.trim() || !PF.g || !PF.f || PF.lv === "") { setMsg("ng", "⚠ 名前・ゲーム内ID・陣営・閲歴を入れてください。"); return; }
+      if (PF.sub && (!PF.why.trim() || !PF.sg)) { setMsg("ng", "⚠ サブアカウントを使う理由と、サブ垢のゲーム内IDを入れてください。"); return; }
       PEND = { kind: "prof", data: JSON.parse(JSON.stringify(PF)) };
       send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.f === "hunter" ? "" : PF.sr, hr: PF.f === "survivor" ? "" : PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg } }, "保存しています…");
     });
@@ -303,15 +316,15 @@
     c.appendChild(liveMsg());
     box.appendChild(c);
   }
-  function shrink(file, done) {                                                       // 長い辺を1200pxまでに小さくして、JPEGに（送る量を小さく）
+  function shrink(file, done) {                                                       // 長い辺を900pxまでに小さくして、JPEGに（送る量を小さく）
     var rd = new FileReader();
     rd.onload = function () {
       var img = new Image();
       img.onload = function () {
-        var k = Math.min(1, 1200 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+        var k = Math.min(1, 900 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
         cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
         cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
-        done(cv.toDataURL("image/jpeg", 0.82));
+        done(cv.toDataURL("image/jpeg", 0.72));
       };
       img.src = rd.result;
     };
@@ -326,6 +339,60 @@
     ov.appendChild(d); document.body.appendChild(ov);
   }
   var PROFOPEN = false;
+  function customInputs(box, spec, vals, agree) {                                     // 大会ごとの追加項目（と、項目のルールへの同意）
+    spec = spec || {}; var fs = arr(spec.fields);
+    if (spec.rule) { box.appendChild(el("div", "full", "📖 " + spec.rule)); }
+    fs.forEach(function (f) {
+      box.appendChild(el("label", "", f.title + (f.required ? "" : "（任意）")));
+      if (f.rule) box.appendChild(el("div", "lim", "📖 " + f.rule));
+      var i;
+      if (f.type === "choice_custom" || f.type === "choice_chars") {
+        i = el("select"); var o0 = el("option", "", "選んでください"); o0.value = ""; i.appendChild(o0);
+        arr(f.choices).forEach(function (c) { var o = el("option", "", c); o.value = c; if (vals[f.key] === c) o.selected = true; i.appendChild(o); });
+        i.addEventListener("change", function () { vals[f.key] = i.value; });
+      } else {
+        i = el("input"); i.type = "text"; i.maxLength = f.type === "number" ? 20 : (f.max || 100); i.value = vals[f.key] || ""; if (f.type === "number") i.inputMode = "numeric";
+        i.addEventListener("input", function () { if (f.type === "number") { var d = i.value.replace(/[^0-9]/g, ""); if (d !== i.value) i.value = d; } vals[f.key] = i.value; });
+      }
+      box.appendChild(i);
+    });
+    var hasRule = !!spec.rule || fs.some(function (f) { return !!f.rule; });
+    if (hasRule) {
+      var r = el("div", "row"); var cb = el("input"); cb.type = "checkbox"; cb.checked = !!agree.ok; cb.addEventListener("change", function () { agree.ok = cb.checked; });
+      r.appendChild(cb); r.appendChild(el("span", "", "上のルールを読んで、同意します")); box.appendChild(r);
+    }
+    return hasRule;
+  }
+  function entryInputs(box, E) {                                                     // この大会の選手登録の項目（Discordの選手登録と同じ）
+    var v = D.entry || {};
+    box.appendChild(el("label", "", "一言メッセージ（任意）"));
+    box.appendChild(el("div", "hint", "⚠ 一言メッセージは、キャスターが読み上げる可能性があります。"));
+    var ta = el("textarea"); ta.maxLength = v.msg_max || 200; ta.value = E.message || ""; ta.addEventListener("input", function () { E.message = ta.value; }); box.appendChild(ta);
+    if (v.nw) {
+      [["nw_trigger", v.nw + "を使い始めたキッカケ（使う人だけ・任意）", 400], ["nw_history", v.nw + "のプレイ歴（例：2年・約500試合）", 200], ["nw_badges", v.nw + "のバッジ履歴（例：最高峰バッジ○個）", 200]].forEach(function (x) {
+        box.appendChild(el("label", "", x[1])); var i = el("input"); i.type = "text"; i.maxLength = x[2]; i.value = E[x[0]] || ""; i.addEventListener("input", function () { E[x[0]] = i.value; }); box.appendChild(i);
+      });
+    }
+    [["dates", "📅 参加できる日（すべて選んでください）"], ["times", "🕒 参加できる時間帯（すべて選んでください）"]].forEach(function (x) {
+      var cand = arr(v[x[0]]); if (!cand.length) return;
+      E[x[0]] = E[x[0]] || [];
+      box.appendChild(el("label", "", x[1]));
+      var ch = el("div", "chips");
+      cand.forEach(function (c) { var on = E[x[0]].indexOf(c) >= 0, l = el("label", on ? "on" : "", (on ? "✅ " : "⬜ ") + c);
+        l.addEventListener("click", function () { var k = E[x[0]].indexOf(c); if (k >= 0) E[x[0]].splice(k, 1); else E[x[0]].push(c); l.className = E[x[0]].indexOf(c) >= 0 ? "on" : ""; l.textContent = (l.className ? "✅ " : "⬜ ") + c; });
+        ch.appendChild(l); });
+      box.appendChild(ch);
+    });
+  }
+  function missingEntry(E) {
+    var v = D.entry || {}, out = [];
+    if (arr(v.dates).length && !arr(E.dates).length) out.push("参加できる日");
+    if (arr(v.times).length && !arr(E.times).length) out.push("参加できる時間帯");
+    return out;
+  }
+  function missingCustom(spec, vals) {
+    return arr((spec || {}).fields).filter(function (f) { return f.required && !String(vals[f.key] || "").trim(); }).map(function (f) { return f.title; });
+  }
   function createTeamView(box) {                                                      // チームを作って、メンバーを募集する
     var c = el("div", "card"); c.appendChild(el("h2", "", "🆕 チームを作って、メンバーを募集する"));
     c.appendChild(el("div", "lead", "あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります（チームのエントリーは、選手が" + (D.min || 1) + "人以上になってから）。"));
@@ -333,9 +400,20 @@
     function txt(lb, k, max, ph) { f.appendChild(el("label", "", lb)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = T[k]; i.placeholder = ph || ""; i.addEventListener("input", function () { T[k] = i.value; }); f.appendChild(i); }
     txt("チーム名（仮でよい）", "name", 30, "あとで変えられます"); txt("チーム名の読み方", "reading", 60, "ひらがな");
     if (D.abbr) { txt("略称", "abbr", 6, "英数字"); txt("略称の読み方", "abbr_reading", 30, "ひらがな"); }
+    T.custom = T.custom || {}; T.pcustom = T.pcustom || {}; T.agree = T.agree || {}; T.pagree = T.pagree || {};
+    var r1 = customInputs(f, D.team_fields, T.custom, T.agree);                         // 大会ごとの追加項目（チーム）
+    if (arr((D.player_fields || {}).fields).length || (D.player_fields || {}).rule) { f.appendChild(el("label", "", "あなた（リーダー）の選手としての追加項目")); f.appendChild(el("div", "")); }
+    T.entry = T.entry || {}; entryInputs(f, T.entry);                                   // リーダー自身の選手登録の項目（Discordと同じ）
+    var r2 = customInputs(f, D.player_fields, T.pcustom, T.pagree);                    // リーダー自身の選手の追加項目
     c.appendChild(f);
     var row = el("div", "row"), b = el("button", "go", "チームを作る"); b.type = "button"; b.disabled = BUSY;
-    b.addEventListener("click", function () { if (!T.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; } send({ act: "create_team", form: T }, "チームを作っています…"); });
+    b.addEventListener("click", function () {
+      if (!T.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
+      var miss = missingCustom(D.team_fields, T.custom).concat(missingCustom(D.player_fields, T.pcustom)).concat(missingEntry(T.entry));
+      if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
+      if ((r1 && !T.agree.ok) || (r2 && !T.pagree.ok)) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
+      send({ act: "create_team", form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: T.pcustom, entry: T.entry } }, "チームを作っています…");
+    });
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
   }
@@ -347,7 +425,7 @@
     apps.forEach(function (a) {
       var r = el("div", "wish");
       r.appendChild(el("b", "", a.name));
-      r.appendChild(el("span", "st", (FN[a.f] || "") + "｜" + (a.ranks || "段位なし") + "｜閲歴" + (a.lv == null ? "—" : a.lv) + "｜この人の第" + a.rank + "希望｜" + a.label + (a.msg ? "\n「" + a.msg + "」" : "")));
+      r.appendChild(el("span", "st", (FN[a.f] || "") + "｜" + (a.ranks || "段位なし") + "｜閲歴" + (a.lv == null ? "—" : a.lv) + "｜この人の第" + a.rank + "希望｜" + a.label + (a.msg ? "\n「" + a.msg + "」" : "") + arr(a.answers).map(function (x) { return "\n" + x[0] + "：" + x[1]; }).join("")));
       if (a.status === "pending") {
         var ok = el("button", "go", "✅ 承認"); ok.type = "button"; ok.addEventListener("click", function () { send({ act: "decide", wish: a.id, ok: true }); });
         var ng = el("button", "danger", "❌ 否認"); ng.type = "button"; ng.addEventListener("click", function () { if (confirm(a.name + " さんの応募を否認します。よろしいですか？")) send({ act: "decide", wish: a.id, ok: false }); });
@@ -418,12 +496,15 @@
     var grid = document.getElementById("grid"), mine = document.getElementById("mine");
     if (!D) return;
     var active = document.activeElement, focusTag = active && active.closest ? (active.closest("#mine") || active.closest("#ov")) : null;
-    if (focusTag && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;      // 書いている途中は、描き直さない
+    if (focusTag && ((active.tagName === "INPUT" && (active.type === "text" || active.type === "number" || active.type === "password")) || active.tagName === "TEXTAREA")) return;      // 文字を書いている途中だけ、描き直さない
     grid.textContent = ""; mine.textContent = "";
     document.getElementById("ttl").textContent = "メンバー募集｜" + (D.title || "");
     var u = U();
     document.getElementById("profbtn").hidden = !me;
-    if (me && !me.prof && !(u && (u.leader || u.team))) {                             // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
+    document.getElementById("minenote").hidden = !me;                               // 本人用のURL：共有しないように
+    if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
+      mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「🙋 メンバー応募」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
+    } else if (me && !me.prof && !(u && (u.leader || u.team))) {                      // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
       if (!PROFOPEN) profForm(mine, true);
     }
@@ -497,8 +578,9 @@
       } else if (act.length >= (D.max_wishes || 3)) {
         d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
       } else {
-        d.appendChild(el("div", "lead", "応募のメッセージ（リーダーとチームのメンバーに届きます。500字まで）"));
-        var ta = el("textarea"); ta.maxLength = 500; d.appendChild(ta);
+        var PC = dialog.pc = dialog.pc || {}, PA = dialog.pa = dialog.pa || {}, PE = dialog.pe = dialog.pe || {};
+        d.appendChild(el("div", "lead", "加入すると、この内容で選手登録されます（Discordの選手登録と同じ項目です）。メッセージは、リーダーとチームのメンバーにも届きます。"));
+        var cbox = el("div", "frm"); entryInputs(cbox, PE); var hasRule = customInputs(cbox, D.player_fields, PC, PA); d.appendChild(cbox);   // 登録の項目・大会ごとの追加項目（選手）
         var pw = null;
         if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、パスワードつきの募集です。リーダーから聞いたパスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
         var order = act.map(function (w) { return w.team; }).concat([t.id]);
@@ -517,7 +599,12 @@
           draw();
         }
         var go = el("button", "go", BUSY ? "送信中…" : "このチームに応募する"); go.type = "button"; go.disabled = BUSY;
-        go.addEventListener("click", function () { ORDER = null; send({ act: "wish", team: t.id, message: ta.value, order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra" }); });
+        go.addEventListener("click", function () {
+          var miss = missingCustom(D.player_fields, PC).concat(missingEntry(PE));
+          if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
+          if (hasRule && !PA.ok) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
+          ORDER = null; send({ act: "wish", team: t.id, message: PE.message || "", order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: PC, entry: PE });
+        });
         row.appendChild(go);
       }
     }
