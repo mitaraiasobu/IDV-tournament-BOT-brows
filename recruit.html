@@ -87,7 +87,7 @@
   var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印.選手情報
   if (frag) {
     var p = frag.split(".");
-    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", prof: decodeProf(p[6] || ""), old: p.length < 7 };
+    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", key: /^k[0-9a-f]{32}$/.test(p[6] || "") ? p[6].slice(1) : "", prof: /^k[0-9a-f]{32}$/.test(p[6] || "") ? null : decodeProf(p[6] || ""), old: p.length < 7, wait: /^k[0-9a-f]{32}$/.test(p[6] || "") };
   }
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
@@ -95,6 +95,28 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function arr(x) { return Array.isArray(x) ? x : []; }                                // 空のリストは、データ置き場（Firebase）で消えて届かない
   function U() { return me && D && D.users ? D.users[me.mark] || null : null; }
+  var PF_SEEN = "";
+  function hexb(h) { var a = new Uint8Array(h.length / 2); for (var i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16); return a; }
+  function unwrapProf() {                                                            // ページのデータの中の、本人の選手情報（本人用のURLの鍵で開く。いつも、いまの基本情報）
+    var u = U();
+    if (!me || !me.key) return Promise.resolve(false);
+    var blob = u && u.pf;
+    if (!blob) { if (me.wait) { me.wait = false; return Promise.resolve(true); } return Promise.resolve(false); }
+    if (blob === PF_SEEN) return Promise.resolve(false);
+    var raw = atob(blob), ct = new Uint8Array(raw.length), key = hexb(me.key), n = Math.ceil(ct.length / 32), jobs = [];
+    for (var i = 0; i < raw.length; i++) ct[i] = raw.charCodeAt(i);
+    for (var b = 0; b < n; b++) { var m = new Uint8Array(key.length + 4); m.set(key); m[key.length + 3] = b & 255; m[key.length + 2] = (b >> 8) & 255; jobs.push(crypto.subtle.digest("SHA-256", m)); }
+    return Promise.all(jobs).then(function (hs) {
+      var out = new Uint8Array(ct.length);
+      for (var i = 0; i < ct.length; i++) out[i] = ct[i] ^ new Uint8Array(hs[Math.floor(i / 32)])[i % 32];
+      var o = JSON.parse(new TextDecoder().decode(out));
+      PF_SEEN = blob; me.wait = false;
+      me.prof = o && Object.keys(o).length ? o : null;
+      if (me.prof) { me.f = me.prof.f || me.f; if (me.prof.lv != null) me.lv = Number(me.prof.lv); }
+      if (!PROFOPEN) PF = null;                                                       // 開いていなければ、いまの内容で入れ直す
+      return true;
+    }).catch(function () { me.wait = false; return true; });
+  }
   function teamName(id) { return ((D && D.team_names) || {})[String(id)] || ("チーム" + id); }
   function needText(t) {
     var n = arr(t.need), parts = [];
@@ -568,7 +590,8 @@
     var u = U();
     document.getElementById("profbtn").hidden = !me;
     document.getElementById("minenote").hidden = !me;                               // 本人用のURL：共有しないように
-    if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
+    if (me && me.wait) { mine.appendChild(el("div", "lead", "あなたの選手情報を読み込んでいます…")); }
+    else if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「🙋 メンバー応募」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
     } else if (me && !me.prof && !(u && (u.leader || u.team))) {                      // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
@@ -707,7 +730,7 @@
         setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         return;
       }
-      if (!document.getElementById("ov") && !BUSY) render();                         // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
+      unwrapProf().then(function (changed) { if ((changed || true) && !document.getElementById("ov") && !BUSY) render(); });   // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
     }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
