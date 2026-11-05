@@ -615,7 +615,14 @@
   }
   function renderFlow(ev, base) {                                                    // 横軸が時間・縦軸が役職の表（上から下にすると、縦軸が時間）
     var f = $("flow"); if (!f) return; f.textContent = ""; f.className = "flow grid " + FLOWDIR;
-    var cols = ev.map(function (e) { return { d: e.d, cards: e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e], together: !!e.lanes }; });
+    var cols = [], byTime = {};                                                       // 同じ日時のできごとは、同じ縦の列に（表として、時刻で並べる）
+    ev.forEach(function (e) {
+      var cards = e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e];
+      var k = e.d ? String(Math.floor(e.d.getTime() / 60000)) : "none";              // 分の単位で同じなら、同じ列
+      if (byTime[k]) { byTime[k].cards = byTime[k].cards.concat(cards); byTime[k].together = byTime[k].together || !!e.lanes || true; return; }
+      byTime[k] = { d: e.d, cards: cards, together: !!e.lanes };
+      cols.push(byTime[k]);
+    });
     var H = FLOWDIR === "h";
     f.style.gridTemplateColumns = H ? "110px repeat(" + cols.length + ", 230px)" : "70px repeat(" + LANES.length + ", minmax(200px, 1fr))";
     function placeAt(node, row, col) { node.style.gridRow = String(H ? row : col); node.style.gridColumn = String(H ? col : row); f.appendChild(node); }
@@ -799,9 +806,9 @@
       var nm = r.matches.filter(function (m) { return !m.bye; }).length || Math.max(1, r.matches.length);
       var half = B.half_minutes, prep = B.prep_minutes || 20;
       if (half) {                                                                     // このラウンドにかかる時間（延長戦まで見込む。順番なら試合の数ぶん、同時なら1試合ぶん。試合のあとの休憩も）
-        var est = half * ((fmt === "BO3" ? 3 : 1) + 1) * 2, brk = brks.filter(function (x) { return String(x.after).indexOf("R" + r.no + "-") === 0; }).reduce(function (a, x) { return a + (x.minutes || 0); }, 0);
+        var halves = ((fmt === "BO3" ? 3 : 1) + 1) * 2, gap = B.half_gap != null ? B.half_gap : 5, est = half * halves + gap * (halves - 1), brk = brks.filter(function (x) { return String(x.after).indexOf("R" + r.no + "-") === 0; }).reduce(function (a, x) { return a + (x.minutes || 0); }, 0);
         var tot = conc ? prep + est : (prep + est) * nm + brk;
-        col.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分" + (brk ? "・休憩" + brk + "分" : "") + "）"));
+        col.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分（半戦" + halves + "本と、その間の準備" + gap + "分×" + (halves - 1) + "）" + (brk ? "・休憩" + brk + "分" : "") + "）"));
       } else col.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
       col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"]], conc ? "1" : "0", function (x) {
         var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; renderBracket();
