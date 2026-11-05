@@ -599,19 +599,20 @@
     if (me && me.wait) { mine.appendChild(el("div", "lead", "あなたの選手情報を読み込んでいます…")); }
     else if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「🙋 メンバー応募」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
-    } else if (me && !me.prof && !(u && (u.leader || u.team))) {                      // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
+    } else if (me && !(me.prof && u && u.pf_ok) && !(u && (u.leader || u.team))) {   // 選手情報がまだ・自動で入っただけで確かめていない人：まず登録してもらう（自動で入っていても、同じ）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
-      mine.appendChild(el("div", "lead", "※ Discordで選手登録したことがある方は、入力し直さなくて大丈夫です。エントリーパネルの「🙋 メンバー応募」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります（URLは、押したときの内容で作られます）。"));
+      mine.appendChild(el("div", "lead", me.prof ? "これまでに登録した内容が入っています。内容を確かめて、直すところがあれば直してから、「💾 選手情報を保存」を押してください（保存するまで、応募・チーム作りはできません）。"
+                                                 : "※ Discordで選手登録したことがある方は、エントリーパネルの「🙋 メンバー応募」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります。"));
       if (!PROFOPEN) profForm(mine, true);
     }
     if (u && u.leader) { leaderView(mine, u.leader); leaderExtra(mine, u); }
     else if (u && u.team) memberView(mine, u);
-    if (me && me.prof && (!u || (!u.leader && !u.team))) {
+    if (me && me.prof && u && u.pf_ok && !u.leader && !u.team) {
       if (u) wishesView(mine, u);
       if (!(u && arr(u.wishes).some(function (w) { return w.status === "pending" || w.status === "approved"; }))) createTeamView(mine);
     }
     document.getElementById("lead").textContent = !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー応募」から開いてください。"
-      : !me.prof && !(u && (u.leader || u.team)) ? "応募やチーム作りの前に、あなたの選手情報を登録してください。"
+      : !(me.prof && u && u.pf_ok) && !(u && (u.leader || u.team)) ? "応募やチーム作りの前に、あなたの選手情報を確かめて、保存してください。"
       : u && u.leader ? "あなたはチームリーダーです。上で、募集の内容を書けます。下は、いま募集しているチームの一覧です。"
       : u && u.team ? "あなたは、もうチームに入っています。下は、いま募集しているチームの一覧です（応募するときは、先に脱退してください）。"
       : "あなたに合うチームを、上に並べています。カードを押して、内容を見てから応募してください（同時に" + (D.max_wishes || 3) + "チームまで）。";
@@ -667,7 +668,7 @@
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
-    if (me && u && !u.leader && !u.team && !already && t._fit) {
+    if (me && u && u.pf_ok && !u.leader && !u.team && !already && t._fit) {
       if (step !== "form" && t.state === "extra") {
         var go0 = el("button", "go", "このチームに応募する"); go0.type = "button"; go0.addEventListener("click", function () { dialog("extra"); });
         row.appendChild(go0);
@@ -708,6 +709,7 @@
     row.appendChild(cl); d.appendChild(row);
     if (!me) d.appendChild(el("div", "lead", "応募は、Discordのエントリーパネルの「🙋 メンバー応募」で出る、あなた用のURLから行います。"));
     else if (already) d.appendChild(el("div", "msg ok", "このチームには、もう応募しています（上の「あなたの応募」で、様子を見られます）。"));
+    else if (!u.pf_ok && !u.leader && !u.team) d.appendChild(el("div", "msg ng", "応募の前に、上の「🪪 あなたの選手情報」を確かめて、「💾 選手情報を保存」を押してください。"));
     else if (u.leader) d.appendChild(el("div", "msg ng", "チームリーダーは、ほかのチームに応募できません。"));
     else if (u.team) d.appendChild(el("div", "msg ng", "あなたは、もうチームに入っています。応募するときは、先に脱退してください。"));
     else if (!t._fit) d.appendChild(el("div", "msg ng", t.state === "closed" ? "このチームは、募集を締め切りました。" : t.state === "full" ? "このチームは満員です。" : t.state === "done" ? "このチームは、募集している人数がそろいました。" : "このチームの制限（段位・閲歴）か、求めている陣営に合わないため、応募できません。"));
@@ -722,7 +724,7 @@
       if (WAIT && r && r.nonce === WAIT) {
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
         if (r.ok && PEND) {
-          if (PEND.kind === "prof") { var q = PEND.data; me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv) });
+          if (PEND.kind === "prof") { var q = PEND.data; var uu = U(); if (uu) uu.pf_ok = true; me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv) });
             me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
           else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; }
           else if (PEND.kind === "imgdel") me.prof.img = 0;
