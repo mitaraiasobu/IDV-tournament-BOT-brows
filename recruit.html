@@ -68,7 +68,7 @@
 <header>
   <div class="hdr"><h1 id="ttl">メンバー募集</h1><button type="button" id="profbtn" hidden>🪪 あなたの選手情報</button></div>
   <div class="mine-note" id="minenote" hidden>🔒 このページはあなた専用です。URLを誰かに共有したりしないでください。</div>
-  <div class="lead" id="lead">募集中のチームです。カードを押すと、くわしい内容が見られます。</div>
+  <div class="lead" id="lead">読み込んでいます…</div>
 </header>
 <main>
   <div id="mine"></div>
@@ -676,7 +676,7 @@
   }
   function load() {
     fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d) return;
+      if (!d) { document.getElementById("lead").textContent = "いまは、メンバー募集を受け付けていません（大会の設定・組み合わせの抽選のあとなど）。"; return; }
       D = d;
       var r = d.result;
       if (WAIT && r && r.nonce === WAIT) {
