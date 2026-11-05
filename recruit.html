@@ -720,7 +720,7 @@
     else if (u && u.team) out.push(["team", "🏷 あなたのチーム"]);
     else if (me && me.prof && u && u.pf_ok && !isMgr()) out.push(["create", "🆕 チーム作成"]);
     if (u && arr(u.wishes).length) out.push(["wishes", "📨 あなたの応募"]);
-    out.push(["manager", "🧑‍💼 マネージャー登録"]);                                       // マネージャー登録は、だれでも
+    if (!(u && (u.leader || u.team))) out.push(["manager", "🧑‍💼 マネージャー登録"]);       // マネージャー登録：リーダー・選手には出さない
     if (D && D.staff && (D.staff.caster || D.staff.moderator)) out.push(["staff", "🎙 キャスター・🛡 モデレーター"]);
     out.push(["profile", "🪪 あなたの選手情報"]);
     return out;
