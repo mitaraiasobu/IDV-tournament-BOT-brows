@@ -354,7 +354,7 @@
   function addSec(d, s) { return new Date(d.getTime() + s * 1000); }
   function parseLocal(s) { if (!s) return null; var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
   function msec(s) { return Math.floor(s / 60) + "分" + (s % 60 ? s % 60 + "秒" : ""); }
-  function introTotal(n, c, p) { return n * c + TM.team_sec + 4 * p + TM.team_sec + p + TM.margin_sec; }     // キャスター → チーム → サバイバー4人 → チーム → ハンター1人 → 試合開始まで
+  function introTotal(n, c, p) { return n * c + TM.team_sec + 4 * p + TM.team_sec + p; }     // キャスター → チーム → サバイバー4人 → チーム → ハンター1人
   function introBudget() {                                                          // 紹介は、その試合の準備時間の中で行う：試合ごとのキャスターの人数で見る（別の試合の人数は、足さない）。いちばん長い試合で確かめる
     var worst = null, lim = TM.prep_minutes * 60;
     (TM.round_casters || []).forEach(function (r) {
@@ -415,16 +415,16 @@
     (TM.matches || []).forEach(function (m) {
       var prep = parseLocal(m.prep), play = parseLocal(m.play), end = parseLocal(m.end), n = m.first === false ? 0 : (m.casters || 2);
       var cs = ovr(m.mid, "caster_sec"), ps = ovr(m.mid, "player_sec");
-      var it = introTotal(n, cs, ps), itStart = prep ? addSec(prep, TM.margin_sec) : null, itEnd = itStart ? addSec(itStart, it - TM.margin_sec) : null;
+      var it = introTotal(n, cs, ps), itStart = prep, itEnd = itStart ? addSec(itStart, it) : null;    // 紹介は、両チームの出場選手が決まったら始まる（早くて、BAN/PICKの開始のとき）
       var vs = (m.a || "（未定）") + " vs " + (m.b || "（未定）");
-      var bpEd = [E("margin_sec", "BAN/PICKの開始から紹介まで", "秒")];
+      var bpEd = [];
       if (TM.dev && TM.step_sec != null) bpEd.push(E("step_sec", "BAN/PICKの1手ごとの間隔（開発者用大会の自動進行）", "秒"));
       var players = [card(prep, m.label + "：選手のBAN/PICK", vs + "（試合開始まで。準備時間" + TM.prep_minutes + "分）", "", { cat: "BAN/PICK", who: "tm", dur: prep && play ? msec((play - prep) / 1000) : "", edit: bpEd })];
       var ed = [E("player_sec", "選手紹介（1人）", "秒", m.mid), E("team_sec", "チーム紹介（1チーム）", "秒")];
       if (n) ed.unshift(E("caster_sec", "キャスター自己紹介（1人）", "秒", m.mid));
-      var casters = [card(itStart, m.label + (n ? "：キャスター自己紹介 → チーム紹介 → 選手紹介" : "：チーム紹介 → 選手紹介"),
-                          (n ? (!m.casters ? "キャスター未定（仮に" + n + "人で計算）" : "キャスター" + n + "人") + "×" + cs + "秒 ＋ " : "") + "チーム紹介 ＋ 選手5人×" + ps + "秒（" + (itEnd ? hhmm(itEnd) : "--:--") + " ごろまで）", (play && itEnd > play) ? "bad" : "",
-                          { cat: "紹介", who: "c", dur: msec(it - TM.margin_sec), edit: ed, cast: m })];
+      var casters = [card(itStart, m.label + (n ? "：キャスター自己紹介 → チーム紹介 → 選手紹介（両チームの出場選手が決まったら、始まります）" : "：チーム紹介 → 選手紹介（両チームの出場選手が決まったら、始まります）"),
+                          (n ? (!m.casters ? "キャスター未定（仮に" + n + "人で計算）" : "キャスター" + n + "人") + "×" + cs + "秒 ＋ " : "") + "チーム紹介 ＋ 選手5人×" + ps + "秒（早ければ " + (itEnd ? hhmm(itEnd) : "--:--") + " ごろまで）", (play && itEnd > play) ? "bad" : "",
+                          { cat: "紹介", who: "c", dur: msec(it), edit: ed, cast: m })];
       if (itEnd && play && itEnd < play) casters.push(card(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）", "", { cat: "雑談", who: "c", dur: msec((play - itEnd) / 1000) }));
       group(prep, [{ title: "選手（" + vs + "）", cards: players }, { title: "キャスター", cards: casters }]);
       add(play, m.label + "：試合開始（予定）", vs + "：00:00でゲームを始めます", "", { cat: "試合", who: "tcm" });
@@ -432,17 +432,17 @@
     });
     if (last) {
       var fr = TM.final_result_sec || 0, fc = TM.finale_champ_sec || 0, fp = TM.finale_prize_sec || 0, fm = TM.finale_mvp_sec || 0, ent = TM.enter_sec || 0;
-      var iv = opt.interview ? ent + (TM.interview_minutes || 0) * 60 : 0, mv = opt.mvp ? fm + fp : 0, mvi = opt.mvp && opt.interview ? ent + (TM.interview_minutes || 0) * 60 : 0;
+      var ivs = TM.interview_sec || 0, iv = opt.interview ? ent + ivs : 0, mvi = opt.mvp && opt.interview ? ent + ivs : 0;
       var t0 = addSec(last, fr), t1 = addSec(t0, fc), t2 = addSec(t1, fp), t3 = addSec(t2, iv), t4 = addSec(t3, opt.mvp ? fm : 0), t5 = addSec(t4, opt.mvp ? fp : 0), t6 = addSec(t5, mvi), t7 = addSec(t6, TM.close_greet_sec || 0), t8 = addSec(t7, TM.end_screen_sec);
-      var ivEd = [E("enter_sec", "入室のお知らせ", "秒"), E("interview_minutes", "インタビューの時間（1人）", "分")];
+      var ivEd = [E("enter_sec", "入室のお知らせ", "秒"), E("interview_sec", "インタビューの時間（1人）", "秒")];
       add(last, "成績の画面（FINAL RESULT）", "", "", { cat: "優勝", who: "", dur: msec(fr), edit: [E("final_result_sec", "成績の画面", "秒")] });
       add(t0, "優勝の発表", "", "", { cat: "優勝", who: "tc", dur: msec(fc), edit: [E("finale_champ_sec", "優勝の発表", "秒")] });
       add(t1, "賞品の贈呈（優勝）", "1ページの時間（賞品の数ぶん）", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ", edit: [E("finale_prize_sec", "賞品の贈呈（1ページ）", "秒")] });
-      add(t2, "優勝チームのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + (TM.interview_minutes || 0) + "分（1人で計算）" : "インタビューは、使わない設定です", "",
+      add(t2, "優勝チームのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + msec(ivs) + "（1人で計算）" : "インタビューは、使わない設定です", "",
           opt.interview ? { cat: "インタビュー", who: "tcm", dur: msec(iv), edit: ivEd } : { cat: "インタビュー", off: true, go: ["interview", "⚙ インタビューを使う設定にする"] });
       add(t3, "MVPの発表", opt.mvp ? "" : "MVPは、使わない設定です", "", opt.mvp ? { cat: "MVP", who: "c", dur: msec(fm), edit: [E("finale_mvp_sec", "MVPの発表", "秒")] } : { cat: "MVP", off: true, go: ["mvp", "⚙ MVPを使う設定にする"] });
       if (opt.mvp) add(t4, "賞品の贈呈（MVP）", "1ページの時間は、優勝の贈呈と同じです", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ", edit: [E("finale_prize_sec", "賞品の贈呈（1ページ）", "秒")] });
-      if (opt.mvp) add(t5, "MVPのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + (TM.interview_minutes || 0) + "分（1人で計算）" : "インタビューは、使わない設定です", "",
+      if (opt.mvp) add(t5, "MVPのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + msec(ivs) + "（1人で計算）" : "インタビューは、使わない設定です", "",
           opt.interview ? { cat: "インタビュー", who: "tcm", dur: msec(mvi), edit: ivEd } : { cat: "インタビュー", off: true, go: ["interview", "⚙ インタビューを使う設定にする"] });
       add(t6, "閉会のごあいさつ", "", "", { cat: "閉会", who: "c", dur: msec(TM.close_greet_sec || 0), edit: [E("close_greet_sec", "閉会のごあいさつ", "秒")] });
       add(t7, "「大会終了」の画面", "", "", { cat: "閉会", who: "", dur: msec(TM.end_screen_sec), edit: [E("end_screen_sec", "「大会終了」の画面", "秒")] });
@@ -630,7 +630,7 @@
       var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
     });
     if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
-      var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_minutes", "finale_champ_sec", "finale_prize_sec", "finale_mvp_sec"];
+      var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_sec", "finale_champ_sec", "finale_prize_sec", "finale_mvp_sec"];
       if (JSON.stringify(TM.intro_overrides || {}) !== JSON.stringify(to.intro_overrides || {})) { tf.intro_overrides = TM.intro_overrides || {}; any = true; }    // 「この試合だけ」の秒数
       keys = keys.concat(Object.keys(TM.const_labels || {}));                                                                                                     // 時間の決まり（交代の画面・成績の画面など）
       if (TM.cast_changes && Object.keys(TM.cast_changes).length) ops.push({ op: "set_casters", changes: TM.cast_changes, pool: (TM.caster_pool || []).length });   // キャスターの入れ替え
