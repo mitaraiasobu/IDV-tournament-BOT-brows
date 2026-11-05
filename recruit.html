@@ -53,14 +53,19 @@
   .wish b { min-width: 4.5em; } .wish .st { font-size: 13px; color: var(--sub); flex: 1; }
   .frm { display: grid; grid-template-columns: 180px 1fr; gap: 10px 14px; align-items: center; }
   .frm label { font-weight: 700; font-size: 14px; } .frm .hint { grid-column: 2; font-size: 12px; color: var(--sub); margin-top: -6px; }
-  .bad { border-color: var(--ng) !important; color: var(--ng); } .badtxt { color: var(--ng); font-size: 12px; font-weight: 700; }
+  .bad { border-color: var(--ng) !important; color: var(--ng); }
+  .hdr { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .notice { background: var(--panel); border: 2px solid var(--accent); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-weight: 800; font-size: 17px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; } .chips label { font-weight: 400; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+  .chips label.on { border-color: var(--accent); background: var(--panel2); font-weight: 700; }
+  .prev { max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--line); } .badtxt { color: var(--ng); font-size: 12px; font-weight: 700; }
   @media (max-width: 640px) { .frm { grid-template-columns: 1fr; } .frm .hint { grid-column: 1; } }
 </style>
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "recruit";</script>
 <header>
-  <h1 id="ttl">メンバー募集</h1>
+  <div class="hdr"><h1 id="ttl">メンバー募集</h1><button type="button" id="profbtn" hidden>🪪 あなたの選手情報</button></div>
   <div class="lead" id="lead">募集中のチームです。カードを押すと、くわしい内容が見られます。</div>
 </header>
 <main>
@@ -73,10 +78,14 @@
   var params = new URLSearchParams(location.search);
   var key = params.get("t") || "";
   var frag = (location.hash || "").replace(/^#/, "") || params.get("f") || "";
-  var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印
+  function decodeProf(t) {                                                           // URLに入れた、いまの選手情報（URLの # のあとは、サーバーに送られない）
+    if (!t) return null;
+    try { var b = atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)); var o = JSON.parse(decodeURIComponent(escape(b))); return o && o.n ? o : null; } catch (e) { return null; }
+  }
+  var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印.選手情報
   if (frag) {
     var p = frag.split(".");
-    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "" };
+    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", prof: decodeProf(p[6] || "") };
   }
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
@@ -131,13 +140,13 @@
   function rankScore(v) {                                                              // 強さの順（比べるため）
     var c = rankCode(v); if (!c[0]) return null;
     if (/^[1-6]$/.test(c[0])) return (Number(c[0]) - 1) * 5 + (6 - Number(c[1]));
-    return 30 + Number(c[1]) / 10 + (c[0] === "P" ? 1 : 0);
+    return 31 + Number(c[1] || 0) / 10;
   }
   function rankOk(v) { var c = rankCode(v); if (!c[0]) return !v; if (c[0] === "P") { var n = Number(c[1]); return /^\d{2,3}$/.test(c[1]) && n >= 25; } return true; }
-  function rankPick(v, put) {
+  function rankPick(v, put, required) {
     var c = rankCode(v), box = el("div", "row"), a = el("select");
     box.style.marginTop = "0";
-    RANKS.forEach(function (r) { var o = el("option", "", r[1]); o.value = r[0]; if (r[0] === c[0]) o.selected = true; a.appendChild(o); });
+    RANKS.forEach(function (r) { var o = el("option", "", r[0] ? r[1] : (required ? "選んでください" : r[1])); o.value = r[0]; if (r[0] === c[0]) o.selected = true; a.appendChild(o); });
     box.appendChild(a);
     var b;
     if (/^[1-6]$/.test(c[0])) {
@@ -225,6 +234,145 @@
     box.appendChild(c);
   }
 
+  // ───── あなたの選手情報（応募に要る、すべての情報と、プロフィール画像） ─────
+  var PF = null, PEND = null, IMG = null;
+  function profForm(box, inline) {
+    var cur = me.prof || {};
+    if (!PF) PF = { n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
+    var c = el("div", "card");
+    c.appendChild(el("h2", "", "🪪 あなたの選手情報"));
+    c.appendChild(el("div", "lead", "応募に使う、あなたの基本の選手情報です（大会をまたいで使います）。チームに加入すると、この内容で選手登録されます。"));
+    var f = el("div", "frm");
+    function lab(t) { f.appendChild(el("label", "", t)); }
+    function txt(k, max, ph, digits) { var i = el("input"); i.type = "text"; i.maxLength = max; i.value = PF[k]; if (ph) i.placeholder = ph; if (digits) i.inputMode = "numeric";
+      i.addEventListener("input", function () { if (digits) { var d = i.value.replace(/[^0-9]/g, ""); if (d !== i.value) i.value = d; } PF[k] = i.value; }); f.appendChild(i); return i; }
+    lab("名前"); txt("n", 20, "ゲーム内の名前など");
+    lab("名前の読み方"); txt("r", 40, "ひらがな（かなだけの名前なら、空でよい）");
+    lab("ゲーム内ID"); txt("g", 12, "数字", true);
+    lab("出場する陣営"); var fs = el("select"); [["", "選んでください"], ["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (PF.f === o2[0]) o.selected = true; fs.appendChild(o); });
+    fs.addEventListener("change", function () { PF.f = fs.value; render(); }); f.appendChild(fs);
+    if (PF.f === "survivor" || PF.f === "both") { lab("サバイバーの過去最高段位"); f.appendChild(rankPick(PF.sr, function (v) { PF.sr = v; render(); }, true)); }
+    if (PF.f === "hunter" || PF.f === "both") { lab("ハンターの過去最高段位"); f.appendChild(rankPick(PF.hr, function (v) { PF.hr = v; render(); }, true)); }
+    lab("閲歴"); txt("lv", 4, "数字", true);
+    lab("得意キャラ（" + (D.fav_max || 10) + "人まで）"); var ch = el("div", "chips");
+    arr(D.chars).filter(function (x) { return PF.f === "both" || !PF.f || x[2] === PF.f; }).forEach(function (x) {
+      var on = PF.fav.indexOf(x[0]) >= 0, l = el("label", on ? "on" : "", x[1]);
+      l.addEventListener("click", function () { var k = PF.fav.indexOf(x[0]); if (k >= 0) PF.fav.splice(k, 1); else if (PF.fav.length < (D.fav_max || 10)) PF.fav.push(x[0]); render(); });
+      ch.appendChild(l);
+    });
+    f.appendChild(ch);
+    lab("サブアカウント"); var sr = el("div", "row"); sr.style.marginTop = "0"; var sc = el("input"); sc.type = "checkbox"; sc.checked = PF.sub; sc.addEventListener("change", function () { PF.sub = sc.checked; render(); });
+    sr.appendChild(sc); sr.appendChild(el("span", "", "サブアカウントで出場する")); f.appendChild(sr);
+    if (PF.sub) { lab("サブアカウントを使う理由"); txt("why", 200, ""); lab("サブアカウントのゲーム内ID"); txt("sg", 12, "数字", true); }
+    c.appendChild(f);
+    var bad = [];
+    if ((PF.f === "survivor" || PF.f === "both") && !rankOk(PF.sr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
+    if ((PF.f === "hunter" || PF.f === "both") && !rankOk(PF.hr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
+    bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
+    var row = el("div", "row");
+    var sv = el("button", "go", "💾 選手情報を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
+    sv.addEventListener("click", function () {
+      if (!PF.n.trim() || !PF.g || !PF.f || PF.lv === "") { setMsg("ng", "⚠ 名前・ゲーム内ID・陣営・閲歴を入れてください。"); return; }
+      PEND = { kind: "prof", data: JSON.parse(JSON.stringify(PF)) };
+      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.f === "hunter" ? "" : PF.sr, hr: PF.f === "survivor" ? "" : PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg } }, "保存しています…");
+    });
+    row.appendChild(sv);
+    if (me.prof) {
+      var dl = el("button", "danger", "選手情報を消す"); dl.type = "button";
+      dl.addEventListener("click", function () { if (confirm("あなたの選手情報を消します（プロフィール画像も）。よろしいですか？")) { PEND = { kind: "delete" }; send({ act: "profile_delete" }, "消しています…"); } });
+      row.appendChild(dl);
+    }
+    c.appendChild(row);
+    // プロフィール画像：ブラウザで小さくしてから送る（BOTは、あなたとのDMに置くだけ。BOTのサーバーには保存しない）
+    var ic = el("div", "card"); ic.style.marginTop = "10px";
+    ic.appendChild(el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"));
+    ic.appendChild(el("div", "lead", (cur.img ? "登録済みです。" : "まだ登録していません。") + "サブアカウントで出場するときは、過去最高段位のアカウントの画面にしてください。BOTからのDMに、控えが届きます。"));
+    if (me.prof) {
+      var fi = el("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp";
+      fi.addEventListener("change", function () { if (fi.files && fi.files[0]) shrink(fi.files[0], function (u) { IMG = u; render(); }); });
+      ic.appendChild(fi);
+      if (IMG) { var im = el("img", "prev"); im.src = IMG; im.alt = ""; ic.appendChild(im); }
+      var ir = el("div", "row");
+      var up = el("button", "go", "この画像を登録"); up.type = "button"; up.disabled = !IMG || BUSY;
+      up.addEventListener("click", function () { PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を送っています…"); });
+      ir.appendChild(up);
+      if (cur.img) { var di = el("button", "danger", "画像を消す"); di.type = "button"; di.addEventListener("click", function () { if (confirm("プロフィール画像を消します。よろしいですか？")) { PEND = { kind: "imgdel" }; send({ act: "profile_image_delete" }, "消しています…"); } }); ir.appendChild(di); }
+      ic.appendChild(ir);
+    } else ic.appendChild(el("div", "lead", "先に、上の選手情報を保存してください。"));
+    c.appendChild(ic);
+    c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+  function shrink(file, done) {                                                       // 長い辺を1200pxまでに小さくして、JPEGに（送る量を小さく）
+    var rd = new FileReader();
+    rd.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1200 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        done(cv.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(file);
+  }
+  function openProfile() {
+    var old = document.getElementById("ov"); if (old) old.remove();
+    var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
+    ov.addEventListener("click", function (e) { if (e.target === ov) { ov.remove(); PROFOPEN = false; } });
+    profForm(d, false);
+    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { ov.remove(); PROFOPEN = false; }); d.appendChild(cl);
+    ov.appendChild(d); document.body.appendChild(ov);
+  }
+  var PROFOPEN = false;
+  function createTeamView(box) {                                                      // チームを作って、メンバーを募集する
+    var c = el("div", "card"); c.appendChild(el("h2", "", "🆕 チームを作って、メンバーを募集する"));
+    c.appendChild(el("div", "lead", "あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります（チームのエントリーは、選手が" + (D.min || 1) + "人以上になってから）。"));
+    var f = el("div", "frm"), T = createTeamView.T = createTeamView.T || { name: "", reading: "", abbr: "", abbr_reading: "" };
+    function txt(lb, k, max, ph) { f.appendChild(el("label", "", lb)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = T[k]; i.placeholder = ph || ""; i.addEventListener("input", function () { T[k] = i.value; }); f.appendChild(i); }
+    txt("チーム名（仮でよい）", "name", 30, "あとで変えられます"); txt("チーム名の読み方", "reading", 60, "ひらがな");
+    if (D.abbr) { txt("略称", "abbr", 6, "英数字"); txt("略称の読み方", "abbr_reading", 30, "ひらがな"); }
+    c.appendChild(f);
+    var row = el("div", "row"), b = el("button", "go", "チームを作る"); b.type = "button"; b.disabled = BUSY;
+    b.addEventListener("click", function () { if (!T.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; } send({ act: "create_team", form: T }, "チームを作っています…"); });
+    row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+  function leaderExtra(box, u) {                                                      // リーダー：応募への返事・メンバー・エントリー・チーム名・解散
+    var c = el("div", "card");
+    c.appendChild(el("h2", "", "📨 このチームへの応募"));
+    var apps = arr(u.apps);
+    if (!apps.length) c.appendChild(el("div", "lead", "いま、返事を待っている応募はありません。"));
+    apps.forEach(function (a) {
+      var r = el("div", "wish");
+      r.appendChild(el("b", "", a.name));
+      r.appendChild(el("span", "st", (FN[a.f] || "") + "｜" + (a.ranks || "段位なし") + "｜閲歴" + (a.lv == null ? "—" : a.lv) + "｜この人の第" + a.rank + "希望｜" + a.label + (a.msg ? "\n「" + a.msg + "」" : "")));
+      if (a.status === "pending") {
+        var ok = el("button", "go", "✅ 承認"); ok.type = "button"; ok.addEventListener("click", function () { send({ act: "decide", wish: a.id, ok: true }); });
+        var ng = el("button", "danger", "❌ 否認"); ng.type = "button"; ng.addEventListener("click", function () { if (confirm(a.name + " さんの応募を否認します。よろしいですか？")) send({ act: "decide", wish: a.id, ok: false }); });
+        r.appendChild(ok); r.appendChild(ng);
+      }
+      c.appendChild(r);
+    });
+    c.appendChild(el("h2", "", "👥 メンバー（" + arr(u.members).length + "/" + (D.cap || "—") + "）"));
+    c.appendChild(el("div", "lead", arr(u.members).join("、") || "（まだいません）"));
+    var row = el("div", "row");
+    if (u.recruiting) {
+      var en = el("button", "go", "🎉 この内容でエントリーする"); en.type = "button"; en.disabled = !u.can_enter || BUSY;
+      en.addEventListener("click", function () { if (confirm("大会にエントリーします。よろしいですか？")) send({ act: "enter", team: u.leader }, "エントリーしています…"); });
+      row.appendChild(en);
+      if (!u.can_enter) row.appendChild(el("span", "lim", "エントリーは、選手が" + (D.min || 1) + "人以上になってから"));
+    }
+    var rn = el("button", "", "🏷 チーム名を変える"); rn.type = "button";
+    rn.addEventListener("click", function () { var n = prompt("新しいチーム名", teamName(u.leader)); if (!n) return; var rd = prompt("チーム名の読み方（ひらがな。かなだけの名前なら空でよい）", "") || ""; send({ act: "rename_team", team: u.leader, name: n, reading: rd }); });
+    var ds = el("button", "danger", "🗑 チームを解散する"); ds.type = "button";
+    ds.addEventListener("click", function () { if (confirm("チーム「" + teamName(u.leader) + "」を解散します。メンバーの登録も消え、応募も取り消されます。取り消せません。本当に解散しますか？")) send({ act: "dissolve", team: u.leader }, "解散しています…"); });
+    row.appendChild(rn); row.appendChild(ds);
+    c.appendChild(row); c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+
   // ───── 応募した人：自分の応募（希望の順・取り消し） ─────
   function wishesView(box, u) {
     var act = arr(u.wishes).filter(function (w) { return w.status === "pending" || w.status === "approved"; }).sort(function (a, b) { return a.rank - b.rank; });
@@ -269,15 +417,24 @@
   function render() {
     var grid = document.getElementById("grid"), mine = document.getElementById("mine");
     if (!D) return;
-    var active = document.activeElement, focusTag = active && active.closest ? active.closest("#mine") : null;
+    var active = document.activeElement, focusTag = active && active.closest ? (active.closest("#mine") || active.closest("#ov")) : null;
     if (focusTag && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;      // 書いている途中は、描き直さない
     grid.textContent = ""; mine.textContent = "";
     document.getElementById("ttl").textContent = "メンバー募集｜" + (D.title || "");
     var u = U();
-    if (u && u.leader) leaderView(mine, u.leader);
+    document.getElementById("profbtn").hidden = !me;
+    if (me && !me.prof && !(u && (u.leader || u.team))) {                             // 選手情報がまだ（チームに入っていない人）：まず登録してもらう（このページで、そのまま）
+      mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
+      if (!PROFOPEN) profForm(mine, true);
+    }
+    if (u && u.leader) { leaderView(mine, u.leader); leaderExtra(mine, u); }
     else if (u && u.team) memberView(mine, u);
-    if (u && !u.leader && !u.team) wishesView(mine, u);
+    if (me && me.prof && (!u || (!u.leader && !u.team))) {
+      if (u) wishesView(mine, u);
+      if (!(u && arr(u.wishes).some(function (w) { return w.status === "pending" || w.status === "approved"; }))) createTeamView(mine);
+    }
     document.getElementById("lead").textContent = !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー応募」から開いてください。"
+      : !me.prof && !(u && (u.leader || u.team)) ? "応募やチーム作りの前に、あなたの選手情報を登録してください。"
       : u && u.leader ? "あなたはチームリーダーです。上で、募集の内容を書けます。下は、いま募集しているチームの一覧です。"
       : u && u.team ? "あなたは、もうチームに入っています。下は、いま募集しているチームの一覧です（応募するときは、先に脱退してください）。"
       : "あなたに合うチームを、上に並べています。カードを押して、内容を見てから応募してください（同時に" + (D.max_wishes || 3) + "チームまで）。";
@@ -305,6 +462,7 @@
       grid.appendChild(c);
     });
     if (OPEN != null) dialog();
+    else if (PROFOPEN) openProfile();
   }
   function dialog(step) {
     var old = document.getElementById("ov"); if (old) old.remove();
@@ -380,15 +538,25 @@
       var r = d.result;
       if (WAIT && r && r.nonce === WAIT) {
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
+        if (r.ok && PEND) {
+          if (PEND.kind === "prof") { var q = PEND.data; me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv) });
+            me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
+          else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; }
+          else if (PEND.kind === "imgdel") me.prof.img = 0;
+          else if (PEND.kind === "delete") me.prof = null;
+          PF = null;
+        }
+        PEND = null;
         if (r.ok && OPEN != null) { OPEN = null; var o = document.getElementById("ov"); if (o) o.remove(); }
         render();
         setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         return;
       }
-      if (!document.getElementById("ov") && !BUSY) render();
+      if (!document.getElementById("ov") && !BUSY) render();                         // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
     }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
+  document.getElementById("profbtn").addEventListener("click", function () { PROFOPEN = true; PF = null; openProfile(); });
   load(); setInterval(load, 4000);
 })();
 </script>
