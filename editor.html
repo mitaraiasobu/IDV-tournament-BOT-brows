@@ -90,19 +90,23 @@
   .flrow { display: flex; gap: 8px; } .flow.v .flrow { flex-wrap: wrap; } #timenote.bad { color: var(--bad); font-weight: 700; border: 1px solid var(--bad); border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
   .brbar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px; margin: 10px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
   .brdialog { border-color: var(--ac); } .brrow button.on { border-color: var(--ac); color: var(--ac); }
-  .brwrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 10px 0; cursor: grab; max-height: 80vh; touch-action: pan-x pan-y; }
+  .brwrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 10px 0; cursor: grab; max-height: 80vh; touch-action: auto; -webkit-overflow-scrolling: touch; }
   .brwrap.grab { cursor: grabbing; user-select: none; }
   .bk { display: flex; gap: 34px; min-width: max-content; }
   .bround { display: flex; flex-direction: column; width: 270px; flex: none; gap: 6px; } .bround.champ { width: 170px; }
   .bhd { display: flex; gap: 8px; align-items: center; font-size: 16px; color: var(--sub); } .bhd small { font-size: 12px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; }
   .bstart { display: flex; flex-direction: column; gap: 2px; } 
-  .bcol { flex: 1; display: flex; flex-direction: column; }
-  .bgroup { flex: 1; display: flex; flex-direction: column; position: relative; }
-  .bround:not(.final):not(.champ) .bgroup::after { content: ""; position: absolute; right: -17px; width: 17px; top: 25%; bottom: 25%; border: 2px solid var(--line); border-left: 0; pointer-events: none; }
-  .bslot { flex: 1; display: flex; align-items: center; padding: 5px 0; }
+  .bcol { display: flex; flex-direction: column; gap: 4px; }                      /* 上に詰めて並べる */
+  .bgroup { display: flex; flex-direction: column; position: relative; gap: 4px; }
+  .bdur { font-size: 12px; color: var(--ac); font-weight: 700; }
+  .bround:not(.final):not(.champ) .bgroup::after { display: none; }
+  .x-unused-connector { content: ""; position: absolute; right: -17px; width: 17px; top: 25%; bottom: 25%; border: 2px solid var(--line); border-left: 0; pointer-events: none; }
+  .bslot { display: flex; align-items: center; padding: 2px 0; }
   .bmatch { position: relative; width: 100%; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; }
-  .bround:not(.first) .bmatch::before, .bchamp::before { content: ""; position: absolute; left: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
-  .bround.final .bmatch::after { content: ""; position: absolute; right: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
+  .bround:not(.first) .bmatch::before, .bchamp::before { display: none; }
+  .x-unused-connector2 { content: ""; position: absolute; left: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
+  .bround.final .bmatch::after { display: none; }
+  .x-unused-connector3 { content: ""; position: absolute; right: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
   .bmatch.is-bye { border-style: dashed; }
   .bhead { padding: 3px 10px; font-size: 12px; color: var(--sub); background: var(--panel2); border-radius: 8px 8px 0 0; }
   .bteam { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); font-weight: 700; font-size: 15px; }
@@ -111,7 +115,7 @@
   .bteam.tbd .tname, .bteam.bye .tname { color: var(--sub); font-weight: 400; font-style: italic; }
   .bbreak { font-size: 12px; color: var(--ac); padding: 3px 10px; border-top: 1px dashed var(--line); }
   .bround > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
-  .bchamp { position: relative; margin: auto 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
+  .bchamp { position: relative; margin: 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
   .brsec { margin-top: 14px; } tr.slotrow td { font-size: 13px; color: var(--sub); padding-top: 2px; }
   .badtxt { color: var(--bad); font-size: 12px; font-weight: 700; margin-top: 4px; } input.bad { border-color: var(--bad) !important; color: var(--bad); } #dirty.bad { color: var(--bad); font-weight: 700; }
   .srow.dim { opacity: .4; } .srow.unset label { color: var(--bad); font-weight: 700; } .rankpick { display: flex; gap: 6px; }
@@ -636,8 +640,8 @@
   // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
-  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, breaks: null }; return BRS; }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -667,7 +671,7 @@
     row.appendChild(el("span", "tname", t ? t.name : "（未定）"));
     if (t && t.rank) row.appendChild(el("span", "trank", t.rank));
     if (canSwap && t && t.team != null) {
-      row.draggable = true; row.title = "ドラッグして、ほかのチームの上で離すと、入れ替えます（2つ順に押しても入れ替えられます）";
+      row.draggable = !("ontouchstart" in window);                                    // スマホでは、ドラッグではなく、2つ順に押して入れ替える row.title = "ドラッグして、ほかのチームの上で離すと、入れ替えます（2つ順に押しても入れ替えられます）";
       row.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", String(t.team)); e.dataTransfer.effectAllowed = "move"; });
       row.addEventListener("dragover", function (e) { e.preventDefault(); row.classList.add("over"); });
       row.addEventListener("dragleave", function () { row.classList.remove("over"); });
@@ -686,7 +690,8 @@
   function brPan(wrap) {                                                            // 表の何もないところをつかんで、横（縦）にスライド
     var on = false, sx = 0, sy = 0, sl = 0, st = 0;
     wrap.addEventListener("pointerdown", function (e) {
-      if (e.target.closest && e.target.closest(".bteam[draggable=true], input, button, select")) return;
+      if (e.pointerType && e.pointerType !== "mouse") return;                          // スマホ・タブレット：指のときは、ふつうのスクロール（ボタンが押せなくならないように）
+      if (e.target.closest && e.target.closest(".bteam, input, button, select, .seg")) return;
       on = true; sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop; wrap.classList.add("grab");
     });
     window.addEventListener("pointermove", function (e) { if (!on) return; wrap.scrollLeft = sl - (e.clientX - sx); wrap.scrollTop = st - (e.clientY - sy); });
@@ -715,6 +720,7 @@
     var st = brState(), ops = [];
     if (st.draw) ops.push(st.draw.mode === "rating" ? { op: "bracket_draw", mode: "rating", seed: B.seed, reset: B.has_results } : { op: "bracket_draw", mode: "random", reset: B.has_results });
     st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
+    Object.keys(st.fmts || {}).forEach(function (r) { ops.push({ op: "set_round_format", round: Number(r), fmt: st.fmts[r] }); });     // 試合形式（抽選の前だけ）
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
@@ -780,9 +786,21 @@
     var R = B.rounds.length;
     B.rounds.forEach(function (r) {
       var col = el("section", "bround" + (r.no === 1 ? " first" : "") + (r.no === R ? " final" : ""));
-      var h = el("div", "bhd"); h.appendChild(el("b", "", r.no === R ? "決勝" : r.name)); h.appendChild(el("small", "", r.fmt));
+      var fmt = (st.fmts || {})[r.no] || r.fmt;
+      var h = el("div", "bhd"); h.appendChild(el("b", "", r.no === R ? "決勝" : r.name));
       col.appendChild(h);
       var conc = st.modes[r.no] != null ? st.modes[r.no] : r.concurrent;
+      col.appendChild(sseg([["BO1", "BO1"], ["BO3", "BO3"]], fmt, function (x) {      // 試合形式（抽選の前だけ変えられる）
+        if (B.drawn) { setResult("ng", "⚠ 組み合わせを抽選したあとは、試合形式は変えられません。"); return; }
+        if (x === r.fmt) delete st.fmts[r.no]; else st.fmts[r.no] = x; renderBracket();
+      }));
+      var nm = r.matches.filter(function (m) { return !m.bye; }).length || Math.max(1, r.matches.length);
+      var half = B.half_minutes, prep = B.prep_minutes || 20;
+      if (half) {                                                                     // このラウンドにかかる時間（延長戦まで見込む。順番なら試合の数ぶん、同時なら1試合ぶん。試合のあとの休憩も）
+        var est = half * ((fmt === "BO3" ? 3 : 1) + 1) * 2, brk = brks.filter(function (x) { return String(x.after).indexOf("R" + r.no + "-") === 0; }).reduce(function (a, x) { return a + (x.minutes || 0); }, 0);
+        var tot = conc ? prep + est : (prep + est) * nm + brk;
+        col.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分" + (brk ? "・休憩" + brk + "分" : "") + "）"));
+      } else col.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
       col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"]], conc ? "1" : "0", function (x) {
         var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; renderBracket();
       }));
@@ -822,7 +840,7 @@
     var cbox = el("div", "bchamp"); cbox.appendChild(el("div", "", "🏆")); cbox.appendChild(el("div", "muted", "CHAMPION")); champ.appendChild(cbox);
     bk.appendChild(champ);
     var n1 = (B.rounds[0] || { matches: [] }).matches.length;
-    bk.style.minHeight = Math.max(360, n1 * 150 + 120) + "px";
+    bk.style.minHeight = "";                                                           // 上に詰めて並べる
     wrap.appendChild(bk); brPan(wrap); v.appendChild(wrap);
     // 休憩
     var bkc = el("div", "card brsec brk"); bkc.appendChild(el("h2", "", "☕ 休憩（スタッフの休憩にも）"));
