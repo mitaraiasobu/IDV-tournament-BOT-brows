@@ -504,7 +504,7 @@
     });
     function jpDT(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" + hhmm(d); }
     var SV = ST || {};                                                                 // 「⚙ 大会設定」の日時（保存していない変更も入れる）
-    [["apply_deadline", "📅 選手の応募締切", "まで", "t"], ["staff_deadline", "📅 スタッフ応募の締切", "まで", "cm"], ["start_at", "📅 大会日時（ラウンド1の開始）", "から", ""]].forEach(function (k) {
+    [["apply_deadline", "📅 選手のエントリー締切", "まで", "t"], ["staff_deadline", "📅 スタッフ応募の締切", "まで", "cm"], ["start_at", "📅 大会日時（ラウンド1の開始）", "から", ""]].forEach(function (k) {
       var d = parseLocal(SV[k[0]]);
       if (d) ev.push(card(d, k[1], jpDT(d) + k[2], "", { cat: "日程", who: k[3], go: [k[0], "⚙ 日時を変える"] }));
     });
