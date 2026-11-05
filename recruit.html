@@ -58,6 +58,10 @@
   .top1 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; } .top1 .badges { max-width: none; justify-content: flex-start; flex: 1; }
   .tname { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; line-height: 1.4; }
   a.btnlink { display: inline-block; background: var(--accent); color: #fff !important; font-weight: 800; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 17px; }
+  details.card.fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  details.card.fold > summary::-webkit-details-marker { display: none; }
+  details.card.fold > summary h2 { margin: 0; flex: 1; } details.card.fold > summary .arw { color: var(--sub); font-size: 13px; }
+  details.card.fold[open] > summary { margin-bottom: 6px; }
   .wants { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
   .title { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
   .wanted { font-size: 13px; overflow-wrap: anywhere; }
@@ -97,8 +101,8 @@
   .kv { display: grid; grid-template-columns: 11em 1fr; gap: 6px 12px; font-size: 14px; margin: 8px 0; } .kv b { color: var(--sub); font-weight: 700; } .kv span { overflow-wrap: anywhere; white-space: pre-wrap; }
   .ask { margin: 10px 0; padding: 12px; border-radius: 10px; border: 2px solid var(--warn); font-weight: 800; color: var(--warn); }
   .logos { display: flex; gap: 16px; flex-wrap: wrap; } .logos figure { margin: 0; text-align: center; font-size: 12px; color: var(--sub); } .logos img { width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--line); display: block; margin-bottom: 4px; }
-  #busy { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px); padding: 14px 20px; border-radius: 12px;
-          background: var(--panel); border: 3px solid var(--accent); color: var(--text); font-weight: 800; font-size: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.35); display: flex; gap: 12px; align-items: center; }
+  #busy { position: fixed; left: 0; right: 0; top: 14px; margin: 0 auto; z-index: 60; width: min(560px, calc(100% - 32px)); padding: 12px 18px; border-radius: 12px;
+          background: var(--panel); border: 3px solid var(--accent); color: var(--text); font-weight: 800; font-size: 16px; line-height: 1.5; box-shadow: 0 6px 24px rgba(0,0,0,.35); display: flex; gap: 12px; align-items: center; }
   #busy.ok { border-color: var(--ok); color: var(--ok); } #busy.ng { border-color: var(--ng); color: var(--ng); }
   #busy .spin { width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -180,7 +184,7 @@
     }).catch(function () { me.wait = false; return true; });
   }
   function teamName(id) { return ((D && D.team_names) || {})[String(id)] || ("チーム" + id); }
-  var EXF = { survivor: "サバイバー", hunter: "ハンター", both: "両陣営OK", both_only: "必ず両陣営" };
+  var EXF = { survivor: "サバイバー", hunter: "ハンター", both: "どちらでも/両陣営OK", both_only: "必ず両陣営" };
   function needText(t) {
     var n = arr(t.need), parts = [];
     if (n[0]) parts.push("サバイバー" + n[0] + "人"); if (n[1]) parts.push("ハンター" + n[1] + "人");
@@ -190,13 +194,15 @@
   }
   function needBox(t, big) {                                                          // 求めている人材：陣営ごとに「サバイバー2人／救助職／勝ちに積極的」
     var n = arr(t.need), w = t.wants || {}, box = el("div", big ? "full" : "wanted"), lines = [];
-    var sv = arr(w.sr).concat(arr(w.ss)), hu = arr(w.hs);
+    var sv = arr(w.sr), hu = [];
     var ex = t.state === "extra", ef = t.extra_faction || "both";
     var wantS = n[0] > 0 || (ex && ef !== "hunter"), wantH = n[1] > 0 || (ex && ef !== "survivor");
     if (wantS || sv.length) lines.push(["サバイバー" + (n[0] ? n[0] + "人" : "")].concat(sv).join("／"));
     if (wantH || hu.length) lines.push(["ハンター" + (n[1] ? n[1] + "人" : "")].concat(hu).join("／"));
     var cn = arr(w.ch).map(function (id) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; return x ? x[1] : ""; }).filter(Boolean);
     if (cn.length) lines.push("キャラ：" + cn.join("・"));
+    var tps = arr(w.tp).filter(function (x) { return x !== "初心者歓迎"; });
+    if (tps.length) lines.push("チームの方針：" + tps.join("・"));
     box.appendChild(el("b", "", ex ? "追加募集（" + (EXF[ef] || "両陣営OK") + "）" : "求めている人材"));
     if (!lines.length) lines.push("（人数はそろいました）");
     lines.forEach(function (l) { box.appendChild(el("div", "", l)); });
@@ -205,8 +211,7 @@
   function wantsText(w) {                                                             // サバイバーの役割・ハンターのプレイ方針・キャラ
     w = w || {}; var out = [];
     if (arr(w.sr).length) out.push("サバイバーの役割：" + arr(w.sr).join("・"));
-    if (arr(w.ss).length) out.push("サバイバーの方針：" + arr(w.ss).join("・"));
-    if (arr(w.hs).length) out.push("ハンターのプレイ方針：" + arr(w.hs).join("・"));
+    if (arr(w.tp).length) out.push("チームの方針：" + arr(w.tp).join("・"));
     var cn = arr(w.ch).map(function (id) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; return x ? x[1] : ""; }).filter(Boolean);
     if (cn.length) out.push("キャラ：" + cn.join("・"));
     return out.join("\n");
@@ -215,8 +220,8 @@
     if (!me || !me.prof) return [];
     var w = t.wants || {}, st = me.prof.st || {}, f = me.f || "both", out = [];
     function hit(a, b) { arr(a).forEach(function (x) { if (arr(b).indexOf(x) >= 0) out.push(x); }); }
-    if (f !== "hunter") { hit(w.sr, st.sr); hit(w.ss, st.ss); }
-    if (f !== "survivor") hit(w.hs, st.hs);
+    if (f !== "hunter") hit(w.sr, st.sr);
+    hit(arr(w.tp).filter(function (x) { return x !== "初心者歓迎"; }), st.tp);
     arr(w.ch).forEach(function (id) { if (arr(me.prof.fav).indexOf(id) >= 0) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; if (x) out.push(x[1]); } });
     if (w.beg && st.beg) out.push("初心者歓迎");
     return out;
@@ -291,25 +296,25 @@
   function gateView(box, u) {                                                         // 本人以外は、ここから先を見られない
     var c = el("div", "card"); c.style.maxWidth = "520px"; c.style.margin = "20px auto";
     var setting = !(u && u.pwv);
-    c.appendChild(el("h2", "", setting ? "🔑 パスワードを決めてください" : "🔑 パスワードを入れてください"));
+    c.appendChild(el("h2", "", setting ? "🔑 アカウントパスワードを決めてください" : "🔑 アカウントパスワードを入れてください"));
     var lk = el("div", "lead"); lk.appendChild(document.createTextNode("このURLを所有する選手本人以外はここにアクセスできません。間違えてここに来てしまった場合はこちらから正しくアクセスしてください（"));
     var a = el("a", "", "共有用URL"); a.href = shareUrl(); lk.appendChild(a); lk.appendChild(document.createTextNode("）")); c.appendChild(lk);
-    if (setting) c.appendChild(el("div", "lead", "このページをはじめて開きました。次から使うパスワード（8〜20文字の英数字）を決めてください。"));
+    if (setting) c.appendChild(el("div", "lead", "このページをはじめて開きました。次から使うアカウントパスワード（8〜20文字の英数字）を決めてください。"));
     var f = el("div", "frm");
     function pin(label, k) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "password"; i.maxLength = 20; i.autocomplete = setting ? "new-password" : "current-password"; i.value = PWIN[k];
       i.addEventListener("input", function () { i.value = i.value.replace(/[^A-Za-z0-9]/g, ""); PWIN[k] = i.value; });
       i.addEventListener("keydown", function (e) { if (e.key === "Enter") go.click(); }); f.appendChild(i); }
-    pin("パスワード", "a"); if (setting) pin("もう一度（確認）", "b");
+    pin("アカウントパスワード", "a"); if (setting) pin("もう一度（確認）", "b");
     c.appendChild(f);
     if (PWERR) c.appendChild(el("div", "badtxt", "⚠ " + PWERR));
-    var r = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 確かめています…" : setting ? "このパスワードにする" : "開く"); go.type = "button"; go.disabled = BUSY;
+    var r = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 確かめています…" : setting ? "このアカウントパスワードにする" : "開く"); go.type = "button"; go.disabled = BUSY;
     go.addEventListener("click", function () {
-      if (!/^[A-Za-z0-9]{8,20}$/.test(PWIN.a)) { PWERR = "パスワードは、8〜20文字の英数字にしてください。"; render(); return; }
-      if (setting && PWIN.a !== PWIN.b) { PWERR = "確認のパスワードが違います。"; render(); return; }
+      if (!/^[A-Za-z0-9]{8,20}$/.test(PWIN.a)) { PWERR = "アカウントパスワードは、8〜20文字の英数字にしてください。"; render(); return; }
+      if (setting && PWIN.a !== PWIN.b) { PWERR = "確認のアカウントパスワードが違います。"; render(); return; }
       phOf(PWIN.a).then(function (ph) {
-        if (setting) { PH = ph; PEND = { kind: "pw" }; send({ act: "set_pw" }, "パスワードを決めています…"); return; }
+        if (setting) { PH = ph; PEND = { kind: "pw" }; send({ act: "set_pw" }, "アカウントパスワードを決めています…"); return; }
         verOf(ph).then(function (v) {
-          if (v !== u.pwv) { PWERR = "パスワードが違います。忘れたときは、Discordのエントリーパネルの「📝 エントリー」から作り直せます。"; render(); return; }
+          if (v !== u.pwv) { PWERR = "アカウントパスワードが違います。忘れたときは、Discordのエントリーパネルの「📝 エントリー」から作り直せます。"; render(); return; }
           PH = ph; UNLOCKED = true; PWERR = ""; PWIN = { a: "", b: "" };
           try { sessionStorage.setItem("rc_ph_" + me.uid, ph); } catch (e) { /* そのまま */ }
           render();
@@ -318,6 +323,15 @@
     });
     r.appendChild(go); c.appendChild(r); c.appendChild(liveMsg());
     box.appendChild(c);
+  }
+  var FOLD = {};
+  function fold(c, key) {                                                             // カードを折りたためるように（見出しを押すと、閉じる・開く）
+    var h = c.querySelector("h2"); if (!h || h.parentNode !== c) return c;
+    var d = document.createElement("details"); d.className = c.className + " fold"; d.open = FOLD[key] !== false;
+    var sm = document.createElement("summary"); sm.appendChild(el("span", "arw", d.open ? "▼" : "▶")); c.removeChild(h); sm.appendChild(h); d.appendChild(sm);
+    while (c.firstChild) d.appendChild(c.firstChild);
+    d.addEventListener("toggle", function () { FOLD[key] = d.open; sm.firstChild.textContent = d.open ? "▼" : "▶"; });
+    return d;
   }
   function joinPrompt() {                                                            // 招待用のページで、応募・チーム作りをしようとしたとき
     var old = document.getElementById("joinask"); if (old) old.remove();
@@ -350,7 +364,8 @@
     clearTimeout(BUSY_T); b.textContent = ""; b.className = cls || ""; b.hidden = false;
     if (!cls) b.appendChild(el("div", "spin"));
     b.appendChild(el("span", "", text));
-    if (cls) BUSY_T = setTimeout(function () { b.hidden = true; }, cls === "ng" ? 9000 : 5000);
+    if (cls) BUSY_T = setTimeout(function () { b.hidden = true; }, cls === "ng" ? 6000 : 3000);      // 終わったお知らせは3秒（うまくいかなかったときは、読めるように少し長く）
+    b.onclick = function () { if (cls) b.hidden = true; };                             // 押しても消せる
   }
   function setMsg(cls, text) {
     if (!cls && text) banner("", text); else if (text && (BUSY_T !== null || document.getElementById("busy"))) banner(cls, text); var ms = document.querySelectorAll(".msg.live"); for (var i = 0; i < ms.length; i++) { ms[i].className = "msg live " + cls; ms[i].textContent = text; } }
@@ -393,32 +408,32 @@
       FORM = { _team: teamId, title: cur.title || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
                extra: !!cur.extra, extra_faction: cur.extra_faction || "both", usepw: !!cur.lock, password: "",
                level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "", mode: null,
-               wants: { sr: arr((cur.wants || {}).sr).slice(), ss: arr((cur.wants || {}).ss).slice(), hs: arr((cur.wants || {}).hs).slice(), ch: arr((cur.wants || {}).ch).slice(), beg: !!(cur.wants || {}).beg } };
+               wants: { sr: arr((cur.wants || {}).sr).slice(), tp: arr((cur.wants || {}).tp).slice(), hs: arr((cur.wants || {}).hs).slice(), ch: arr((cur.wants || {}).ch).slice(), beg: !!(cur.wants || {}).beg } };
     }
     if (FORM.mode == null) FORM.mode = cur.first ? "" : (cur.friends ? "friends" : "open");
     var c = el("div", "card");
     if (!FORM.mode) {                                                                   // まず、大きな選択肢
       c.appendChild(el("h2", "", "📝 どうやってメンバーを集めますか？"));
       var md = el("div", "modes");
-      var b1 = el("button", "", "👫 友達だけを呼ぶ"); b1.type = "button"; b1.appendChild(el("small", "", "パスワードを知っている友達だけが入れます。募集の投稿には、求める人材や方針などは出しません。"));
+      var b1 = el("button", "", "👫 友達だけを呼ぶ"); b1.type = "button"; b1.appendChild(el("small", "", "応募パスワードを知っている友達だけが入れます。募集の投稿には、求める人材や方針などは出しません。"));
       b1.addEventListener("click", function () { FORM.mode = "friends"; render(); });
       var b2 = el("button", "go", "📣 新しく友達を募集する"); b2.type = "button"; b2.appendChild(el("small", "", "求める人材・方針・制限などを書いて、だれでも応募できるように募集します。"));
       b2.addEventListener("click", function () { FORM.mode = "open"; render(); });
       md.appendChild(b1); md.appendChild(b2); c.appendChild(md);
-      box.appendChild(c); return;
+      box.appendChild(fold(c, "form")); return;
     }
     if (FORM.mode === "friends") {                                                       // 友達だけ：パスワードだけ
       c.appendChild(el("h2", "", "👫 友達だけを呼ぶ"));
-      c.appendChild(el("div", "lead", "友達に、チーム名とパスワードを伝えてください。友達は、エントリーパネルの「📝 エントリー」から開いたページで、このチームを選び、パスワードを入れて応募します（友達にも、選手情報の登録が必要です）。"));
+      c.appendChild(el("div", "lead", "友達に、チーム名と応募パスワードを伝えてください。友達は、エントリーパネルの「📝 エントリー」から開いたページで、このチームを選び、応募パスワードを入れて応募します（友達にも、選手情報の登録が必要です）。"));
       var ff = el("div", "frm");
-      ff.appendChild(el("label", "", "パスワード")); var fpw = el("input"); fpw.type = "text"; fpw.maxLength = 20; fpw.value = FORM.password; fpw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4〜20文字の英数字"; fpw.style.width = "14em";
+      ff.appendChild(el("label", "", "応募パスワード")); var fpw = el("input"); fpw.type = "text"; fpw.maxLength = 20; fpw.value = FORM.password; fpw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4〜20文字の英数字"; fpw.style.width = "14em";
       fpw.addEventListener("input", function () { fpw.value = fpw.value.replace(/[^A-Za-z0-9]/g, ""); FORM.password = fpw.value; }); ff.appendChild(fpw);
       c.appendChild(ff);
       var frow = el("div", "row");
       var fsv = el("button", "go", BUSY ? "⏳ 保存中…" : (cur.first || !cur.friends ? "💾 この内容で始める" : "💾 保存")); fsv.type = "button"; fsv.disabled = BUSY;
       fsv.addEventListener("click", function () {
         var have = cur.lock && cur.friends;
-        if (!(have && !FORM.password) && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ パスワードは、4〜20文字の英数字にしてください。"); return; }
+        if (!(have && !FORM.password) && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ 応募パスワードは、4〜20文字の英数字にしてください。"); return; }
         var form = { friends: true }; if (FORM.password) form.password = FORM.password;
         send({ act: "form", team: teamId, form: form }, "保存しています…");
       });
@@ -431,11 +446,11 @@
       frow.appendChild(sw);
       if (!cur.first) { var fcl = el("button", cur.closed ? "" : "danger", cur.closed ? "▶ 募集を再開する" : "⏸ 募集を締め切る"); fcl.type = "button"; fcl.addEventListener("click", function () { send({ act: cur.closed ? "reopen" : "close", team: teamId }); }); frow.appendChild(fcl); }
       c.appendChild(frow); c.appendChild(liveMsg());
-      box.appendChild(c); return;
+      box.appendChild(fold(c, "form")); return;
     }
     c.appendChild(el("h2", "", "📝 応募情報（募集の内容）"));
     var swr = el("div", "row"); swr.style.marginTop = "0"; var sw2 = el("button", "", "👫 友達だけを呼ぶ に切り替える"); sw2.type = "button";
-    sw2.addEventListener("click", function () { FORM.mode = "friends"; FORM.password = ""; render(); if (!cur.first) setMsg("ok", "友達に伝えるパスワードを決めて、保存してください（保存するまでは、いまの募集のままです）。"); }); swr.appendChild(sw2); c.appendChild(swr);
+    sw2.addEventListener("click", function () { FORM.mode = "friends"; FORM.password = ""; render(); if (!cur.first) setMsg("ok", "友達に伝える応募パスワードを決めて、保存してください（保存するまでは、いまの募集のままです）。"); }); swr.appendChild(sw2); c.appendChild(swr);
     c.appendChild(el("div", "lead", cur.first ? "募集の内容を書いて保存してください。制限は、決めなければ「制限なし」になります。あとから、いつでも変えられます。"
                                               : "募集の内容は、いつでも変えられます。"));
     var f = el("div", "frm");
@@ -454,36 +469,37 @@
       f.appendChild(ch);
     }
     var mo = el("details", "more"); mo.open = WANTS_OPEN; mo.addEventListener("toggle", function () { WANTS_OPEN = mo.open; });
-    var nsel = FORM.wants.sr.length + FORM.wants.ss.length + FORM.wants.hs.length + FORM.wants.ch.length + (FORM.wants.beg ? 1 : 0);
-    mo.appendChild(el("summary", "", "🎯 求める役割・方針・キャラ・初心者歓迎（任意）" + (nsel ? "：" + nsel + "個選択中" : "")));
+    var nsel = FORM.wants.sr.length + FORM.wants.tp.length + FORM.wants.ch.length;
+    mo.appendChild(el("summary", "", "🎯 求める役割・チームの方針・キャラ（任意）" + (nsel ? "：" + nsel + "個選択中" : "")));
     var outer = f; f = el("div", "frm"); mo.appendChild(f);
     var wc = el("details", "cau"); wc.style.gridColumn = "1 / -1"; wc.open = WCAU_OPEN; wc.addEventListener("toggle", function () { WCAU_OPEN = wc.open; });
     wc.appendChild(el("summary", "", "⚠ 指定するときの注意（必ず読んでください）"));
     wc.appendChild(el("div", "", "役職や方針を指定するとより適したメンバーが集まりますが、条件に合致しづらくなるため応募数は減る可能性があります。参加者の少ない大会では指定しないことをオススメします。"));
     f.appendChild(wc);
     chips("サバイバーの役割", D.surv_roles, "sr");
-    chips("サバイバーの方針", D.surv_styles, "ss");
-    chips("ハンターのプレイ方針", D.hunter_styles, "hs");
+    chips("チームの方針", D.team_styles, "tp");
+    hint("「初心者歓迎」を選ぶと、一覧のカードに「🔰 初心者歓迎」が付きます。");
     lab("キャラ"); var cbx = el("div");
     var cl0 = el("div", "chips");
     FORM.wants.ch.forEach(function (id, k) { var x = arr(D.chars).filter(function (c2) { return c2[0] === id; })[0]; var l = el("label", "on", "✖ " + (x ? x[1] : id)); l.title = "押すと外します";
       l.addEventListener("click", function () { FORM.wants.ch.splice(k, 1); render(); }); cl0.appendChild(l); });
     cbx.appendChild(cl0);
     if (FORM.wants.ch.length < 10) {
-      var cs = el("select"), o0 = el("option", "", "＋ キャラを足す"); o0.value = ""; cs.appendChild(o0);
-      [["survivor", "サバイバー"], ["hunter", "ハンター"]].forEach(function (g) { var og = document.createElement("optgroup"); og.label = g[1];
-        arr(D.chars).filter(function (x) { return x[2] === g[0] && FORM.wants.ch.indexOf(x[0]) < 0; }).forEach(function (x) { var o = el("option", "", x[1]); o.value = String(x[0]); og.appendChild(o); }); cs.appendChild(og); });
-      cs.addEventListener("change", function () { if (cs.value) { FORM.wants.ch.push(Number(cs.value)); render(); } });
-      cs.style.marginTop = "6px"; cbx.appendChild(cs);
+      var crow = el("div", "row"); crow.style.marginTop = "6px";
+      [["survivor", "＋ サバイバーを足す"], ["hunter", "＋ ハンターを足す"]].forEach(function (g) {
+        var cs = el("select"), o0 = el("option", "", g[1]); o0.value = ""; cs.appendChild(o0);
+        arr(D.chars).filter(function (x) { return x[2] === g[0] && FORM.wants.ch.indexOf(x[0]) < 0; }).forEach(function (x) { var o = el("option", "", x[1]); o.value = String(x[0]); cs.appendChild(o); });
+        cs.addEventListener("change", function () { if (cs.value) { FORM.wants.ch.push(Number(cs.value)); render(); } });
+        crow.appendChild(cs);
+      });
+      cbx.appendChild(crow);
     }
     f.appendChild(cbx);
-    lab("初心者歓迎"); var br = el("div", "row"); br.style.marginTop = "0"; var bc = el("input"); bc.type = "checkbox"; bc.checked = FORM.wants.beg; bc.addEventListener("change", function () { FORM.wants.beg = bc.checked; });
-    br.appendChild(bc); br.appendChild(el("span", "", "初心者歓迎（一覧のカードの右上に「🔰 初心者歓迎」が付きます）")); f.appendChild(br);
     f = outer; f.appendChild(mo);
     lab("人数を超えても募集する"); var xr = el("div", "row"); xr.style.marginTop = "0";
     var xc = el("input"); xc.type = "checkbox"; xc.checked = FORM.extra; xc.addEventListener("change", function () { FORM.extra = xc.checked; render(); });
     xr.appendChild(xc); xr.appendChild(el("span", "", "求めている人材の人数を超えても募集する"));
-    if (FORM.extra) { var xs = el("select"); [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営OK（両陣営でも、片方の陣営でもよい）"], ["both_only", "必ず両陣営（両陣営で出る人だけ）"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (FORM.extra_faction === o2[0]) o.selected = true; xs.appendChild(o); }); xs.addEventListener("change", function () { FORM.extra_faction = xs.value; }); xr.appendChild(xs); }
+    if (FORM.extra) { var xs = el("select"); [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "どちらでも/両陣営OK"], ["both_only", "必ず両陣営"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (FORM.extra_faction === o2[0]) o.selected = true; xs.appendChild(o); }); xs.addEventListener("change", function () { FORM.extra_faction = xs.value; }); xr.appendChild(xs); }
     f.appendChild(xr); hint("人数がそろったあとも「追加募集」として、選んだ陣営の人を募集できます（一覧では下のほうに出ます）。");
     lab("概要（任意）"); text("summary", 1000, "性別やVCの有無、使用キャラクター、バッジの有無などを制限したい場合はここに記載してください。", true);
     lab("閲歴の下限・上限"); var lr = el("div", "row"); lr.style.marginTop = "0";
@@ -500,9 +516,9 @@
     var s1 = rankScore(FORM.rank_min), s2 = rankScore(FORM.rank_max);
     if (s1 != null && s2 != null && s1 > s2) bad.push("段位の下限が、上限より高くなっています。");
     if (FORM.level_min && FORM.level_max && Number(FORM.level_min) > Number(FORM.level_max)) bad.push("閲歴の下限が、上限より大きくなっています。");
-    lab("パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
+    lab("応募パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
     var pc = el("input"); pc.type = "checkbox"; pc.checked = FORM.usepw; pc.addEventListener("change", function () { FORM.usepw = pc.checked; render(); });
-    pr.appendChild(pc); pr.appendChild(el("span", "", "パスワードつきの募集（友人だけを招待したいとき）"));
+    pr.appendChild(pc); pr.appendChild(el("span", "", "応募パスワードつきの募集（友人だけを招待したいとき）"));
     if (FORM.usepw) { var pw = el("input"); pw.type = "text"; pw.maxLength = 20; pw.value = FORM.password; pw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4文字以上の英数字"; pw.style.width = "14em"; pw.addEventListener("input", function () { pw.value = pw.value.replace(/[^A-Za-z0-9]/g, ""); FORM.password = pw.value; }); pr.appendChild(pw); }
     f.appendChild(pr);
     c.appendChild(f);
@@ -512,7 +528,7 @@
     sv.addEventListener("click", function () {
       if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
       if ((cur.first || cur.friends) && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
-      if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ パスワードは、4〜20文字の英数字にしてください。"); return; }
+      if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ 応募パスワードは、4〜20文字の英数字にしてください。"); return; }
       var form = { friends: false, title: FORM.title, wanted: "", summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
                    level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null, wants: FORM.wants };
       if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
@@ -525,7 +541,7 @@
       row.appendChild(cl);
     }
     c.appendChild(row); c.appendChild(liveMsg());
-    box.appendChild(c);
+    box.appendChild(fold(c, "form"));
   }
 
   // ───── あなたの選手情報（応募に要る、すべての情報と、プロフィール画像） ─────
@@ -547,7 +563,7 @@
   }
   function profForm(box, inline) {
     var cur = me.prof || {};
-    if (!PF) PF = { st: { sr: arr((cur.st || {}).sr).slice(), ss: arr((cur.st || {}).ss).slice(), hs: arr((cur.st || {}).hs).slice(), beg: !!(cur.st || {}).beg }, n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
+    if (!PF) PF = { st: { sr: arr((cur.st || {}).sr).slice(), tp: arr((cur.st || {}).tp).slice(), beg: !!(cur.st || {}).beg }, n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
     var c = el("div", "card");
     c.appendChild(el("h2", "", "🪪 あなたの選手情報"));
     c.appendChild(el("div", "lead", "応募に使う、あなたの基本の選手情報です（大会をまたいで使います）。チームに加入すると、この内容で選手登録されます。"));
@@ -578,9 +594,8 @@
     }
     lab("サバイバーの過去最高段位"); f.appendChild(rankPick(PF.sr, function (v) { PF.sr = v; render(); }, true));     // 出場しない陣営の段位も入れる（Discordと同じ）
     stChips("　└ サバイバーの役割（任意）", D.surv_roles, "sr");
-    stChips("　└ サバイバーの方針（任意）", D.surv_styles, "ss");
     lab("ハンターの過去最高段位"); f.appendChild(rankPick(PF.hr, function (v) { PF.hr = v; render(); }, true));
-    stChips("　└ ハンターのプレイ方針（任意）", D.hunter_styles, "hs");
+    stChips("希望するチームの方針（任意）", arr(D.team_styles).filter(function (x) { return x !== "初心者歓迎"; }), "tp");
     f.appendChild(el("div", "hint", "出場しない陣営の段位も入れてください（緊急時の代打の判定に使います）。"));
     lab("閲歴"); var lvi = txt("lv", 5, "数字", true);
     f.appendChild(el("div", "hint", "お持ちのアカウントの中で最も高い閲歴を入力してください。閲歴は、ゲームのプロフィール画面で確かめられます（下の画像）。"));
@@ -612,7 +627,10 @@
     c.appendChild(f);
     if (!PF._te) { PF._te = JSON.parse(JSON.stringify((me.prof && me.prof.te) || {})); PF._tc = JSON.parse(JSON.stringify((me.prof && me.prof.tc) || {})); PF._ta = {}; }
     c.appendChild(el("h2", "", "📋 この大会の登録内容"));                               // Discordの選手登録と同じ項目（大会ごと）
-    var tf = el("div", "frm"); entryInputs(tf, PF._te); var hasTRule = customInputs(tf, D.player_fields, PF._tc, PF._ta); c.appendChild(tf);
+    var tf = el("div", "frm"), hasTRule = false;
+    if (D.locked) { tf.appendChild(el("div", "lead", "🔒 エントリー締切を過ぎたため、この大会の登録内容は変更できません。")); tf.style.display = "block"; }
+    else { entryInputs(tf, PF._te); hasTRule = customInputs(tf, D.player_fields, PF._tc, PF._ta); }
+    c.appendChild(tf);
     var bad = [];
     if (!rankOk(PF.sr) || !rankOk(PF.hr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
@@ -622,11 +640,11 @@
       if (!PF.n.trim() || !PF.g || !PF.f || PF.lv === "") { setMsg("ng", "⚠ 名前・ゲーム内ID・陣営・閲歴を入れてください。"); return; }
       if (!PF.sr || !PF.hr) { setMsg("ng", "⚠ サバイバー・ハンターの両方の過去最高段位を入れてください（出場しない陣営も）。"); return; }
       if (PF.sub && (!PF.why.trim() || !PF.sg)) { setMsg("ng", "⚠ サブアカウントを使う理由と、サブ垢のゲーム内IDを入れてください。"); return; }
-      var tmiss = missingCustom(D.player_fields, PF._tc).concat(missingEntry(PF._te));
+      var tmiss = D.locked ? [] : missingCustom(D.player_fields, PF._tc).concat(missingEntry(PF._te));
       if (tmiss.length) { setMsg("ng", "⚠ この大会の登録内容で、入れていない項目があります：" + tmiss.join("、")); return; }
       if (hasTRule && !PF._ta.ok) { setMsg("ng", "⚠ この大会の登録内容のルールを読んで、同意してください。"); return; }
       PEND = { kind: "prof", data: JSON.parse(JSON.stringify(PF)) };
-      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg, st: PF.st }, entry: PF._te, custom: PF._tc }, "保存しています…");
+      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg, st: PF.st }, entry: D.locked ? undefined : PF._te, custom: D.locked ? undefined : PF._tc }, "保存しています…");
     });
     row.appendChild(sv);
     if (me.prof) {
@@ -768,7 +786,7 @@
   }
   function createTeamView(box) {                                                      // チームを作って、メンバーを募集する
     var c = el("div", "card"); c.appendChild(el("h2", "", "🆕 チームを作って、メンバーを募集する"));
-    c.appendChild(el("div", "lead", "あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります（チームのエントリーは、選手が" + (D.min || 1) + "人以上になってから）。"));
+    c.appendChild(el("div", "lead", "まずは、チーム名と略称を決めてください（仮でよく、あとから変えられます）。OKすると、次に、詳しい募集内容やロゴ・チームカラーを入れて、募集を始められます。あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります。"));
     var LT = (me && me.prof && me.prof.lt) || {};                                     // リーダーだった人：いちばん最近開催された大会の、自分のチーム
     var f = el("div", "frm"), T = createTeamView.T = createTeamView.T || { name: LT.name || "", reading: LT.reading || "", abbr: LT.abbr || "", abbr_reading: LT.abbr_reading || "" };
     function txt(lb, k, max, ph) { f.appendChild(el("label", "", lb)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = T[k]; i.placeholder = ph || ""; i.addEventListener("input", function () { T[k] = i.value; }); f.appendChild(i); }
@@ -776,17 +794,18 @@
     if (D.abbr) { txt("略称", "abbr", 6, "英数字"); txt("略称の読み方", "abbr_reading", 30, "ひらがな"); }
     T.custom = T.custom || {}; T.pcustom = T.pcustom || {}; T.agree = T.agree || {}; T.pagree = T.pagree || {};
     var r1 = customInputs(f, D.team_fields, T.custom, T.agree);                         // 大会ごとの追加項目（チーム）
-    if (arr((D.player_fields || {}).fields).length || (D.player_fields || {}).rule) { f.appendChild(el("label", "", "あなた（リーダー）の選手としての追加項目")); f.appendChild(el("div", "")); }
-    T.entry = T.entry || {}; entryInputs(f, T.entry);                                   // リーダー自身の選手登録の項目（Discordと同じ）
-    var r2 = customInputs(f, D.player_fields, T.pcustom, T.pagree);                    // リーダー自身の選手の追加項目
+    var r2 = false;                                                                     // リーダー自身の選手の項目（一言メッセージなど）は、選手情報の「この大会の登録内容」から
     c.appendChild(f);
-    var row = el("div", "row"), b = el("button", "go", "チームを作る"); b.type = "button"; b.disabled = BUSY;
+    var row = el("div", "row"), b = el("button", "go", BUSY ? "⏳ 作っています…" : "OK（このチーム名・略称で作る）"); b.type = "button"; b.disabled = BUSY;
     b.addEventListener("click", function () {
       if (!T.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
-      var miss = missingCustom(D.team_fields, T.custom).concat(missingCustom(D.player_fields, T.pcustom)).concat(missingEntry(T.entry));
+      var pe = (me.prof && me.prof.te) || {}, pc = (me.prof && me.prof.tc) || {};
+      var pmiss = missingCustom(D.player_fields, pc).concat(missingEntry(pe));
+      if (pmiss.length) { setMsg("ng", "⚠ 先に「🪪 あなたの選手情報」の「この大会の登録内容」を入れてください：" + pmiss.join("、")); return; }
+      var miss = missingCustom(D.team_fields, T.custom);
       if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
       if ((r1 && !T.agree.ok) || (r2 && !T.pagree.ok)) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
-      send({ act: "create_team", form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: T.pcustom, entry: T.entry } }, "チームを作っています…");
+      send({ act: "create_team", form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
     });
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
@@ -795,6 +814,8 @@
   function teamInfoView(box, u) {                                                    // チーム情報（リーダー）：チーム名 → 略称 → チームカラー → チームロゴ → メンバー → リーダーを譲る
     var c = el("div", "card"), fm = (D.forms || {})[String(u.leader)] || {};
     c.appendChild(el("h2", "", "🏷 チーム情報｜" + teamName(u.leader)));
+    var missL = []; if (D.logo_on && u.logo === "no") missL.push("ロゴ"); if (!u.color) missL.push("チームカラー");
+    if (missL.length) c.appendChild(el("div", "subwarn", "⚠ まだ未入力の事項があります：" + missL.join("・") + "。保留したままでも募集は始められますが、エントリー締切までに必ず登録してください（締切の1週間前・3日前・1日前の18時に、お知らせします）。"));
     if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: fm.abbr_reading || "", color: u.color || "" };
     var f = el("div", "frm");
     function inp(label, k, max, ph) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = TN[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { TN[k] = i.value; }); f.appendChild(i); return i; }
@@ -876,7 +897,7 @@
     ds.addEventListener("click", function () { if (confirm("チーム「" + teamName(u.leader) + "」を解散します。メンバーの登録も消え、応募も取り消されます。取り消せません。本当に解散しますか？")) send({ act: "dissolve", team: u.leader }, "解散しています…"); });
     row.appendChild(ds); c.appendChild(row);
     c.appendChild(liveMsg());
-    box.appendChild(c);
+    box.appendChild(fold(c, "team"));
   }
   function appsView(box, u) {                                                         // このチームへの応募（承認・否認）
     var c = el("div", "card");
@@ -895,7 +916,7 @@
       c.appendChild(r);
     });
     c.appendChild(liveMsg());
-    box.appendChild(c);
+    box.appendChild(fold(c, "apps"));
   }
   var LOGO = null;
   function shrinkTo(file, max, type, done) {                                         // ロゴ：長い辺を max までに（送る量を小さく。正方形に整えるのはBOT）
@@ -989,6 +1010,7 @@
       var jt = el("button", "", "🆕 自分のチームを募集する"); jt.type = "button"; jt.addEventListener("click", joinPrompt); jr.appendChild(jt);
       jc.appendChild(jr); mine.appendChild(jc);
     }
+    if (me && D.locked) mine.appendChild(el("div", "subwarn", "🔒 エントリー締切を過ぎたため、この大会の情報（チーム・募集・応募・この大会の登録内容）は変更できません。基本の選手情報は変えられますが、この大会の登録には反映しません。"));
     if (u && u.cool && u.cool * 1000 > Date.now()) {
       var lm = Math.ceil((u.cool * 1000 - Date.now()) / 60000);
       mine.appendChild(el("div", "subwarn", "⚠ 短い間に加入・脱退をくり返したため、クールタイム中です（あと約" + Math.floor(lm / 60) + "時間" + (lm % 60) + "分）。そのあいだは、応募・チーム作りはできません。"));
@@ -1042,7 +1064,7 @@
       c.appendChild(el("div", "tname", (t.locked ? "🔒 " : "") + t.name));
       if (t.friends) {
         bd.appendChild(el("span", "badge lock", "👫 友達だけ")); 
-        c.appendChild(el("div", "lim", "パスワードを知っている友達だけが応募できます。"));
+        c.appendChild(el("div", "lim", "応募パスワードを知っている友達だけが応募できます。"));
         c.addEventListener("click", function () { OPEN = t.id; dialog(); });
         grid.appendChild(c); return;
       }
@@ -1074,7 +1096,7 @@
     put("サバイバーの過去最高段位", rankLabel(q.sr)); put("ハンターの過去最高段位", rankLabel(q.hr)); put("閲歴", q.lv);
     put("得意キャラ", arr(q.fav).map(charName).filter(Boolean).join("、"));
     var st0 = q.st || {};
-    put("サバイバーの役割・方針", arr(st0.sr).concat(arr(st0.ss)).join("・")); put("ハンターのプレイ方針", arr(st0.hs).join("・")); put("初心者", st0.beg ? "はい" : "いいえ");
+    put("サバイバーの役割", arr(st0.sr).join("・")); put("希望するチームの方針", arr(st0.tp).join("・")); put("初心者", st0.beg ? "はい" : "いいえ");
     put("サブアカウント", q.sub ? "使う" : "使わない");
     if (q.sub) { put("サブアカウントを使う理由", q.why); put("サブ垢のゲーム内ID", q.sg); }
     put("一言メッセージ", te.message);
@@ -1154,7 +1176,7 @@
       profileSummary(d);
       var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
       var pw = null;
-      if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、パスワードつきの募集です。リーダーから聞いたパスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
+      if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、応募パスワードつきの募集です。リーダーから聞いた応募パスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
       var order = act.map(function (w) { return w.team; }).concat([t.id]);
       if (act.length) {                                                                // 2つ目からは、希望の順を並べ替える（先に応募したチームが上）
         d.appendChild(el("div", "lead", "希望の順を決めてください（ふつうは、先に応募したチームが上です）。"));
@@ -1186,7 +1208,7 @@
       show(); return;
     }
     d.appendChild(el("div", "count", (t.locked ? "🔒 " : "") + t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
-    if (t.friends) d.appendChild(el("div", "lead", "👫 友達だけの募集です。チームのリーダーから聞いたパスワードで応募できます。"));
+    if (t.friends) d.appendChild(el("div", "lead", "👫 友達だけの募集です。チームのリーダーから聞いた応募パスワードで応募できます。"));
     else { d.appendChild(el("h2", "", t.title)); d.appendChild(needBox(t, true)); }
     if ((t.wants || {}).beg) d.appendChild(el("div", "tag ok", "🔰 初心者歓迎"));
     var mt2 = matches(t); if (mt2.length) d.appendChild(el("div", "tag warn", "⭐ 条件一致：" + mt2.join("・")));
