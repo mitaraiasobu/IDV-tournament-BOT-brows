@@ -226,12 +226,16 @@
     if (w.beg && st.beg) out.push("初心者歓迎");
     return out;
   }
-  function factionOk(t, f) {                                                          // 陣営が、このチームの求めている人材に合うか
-    f = f || "both";
+  var FN2 = { survivor: "サバイバー", hunter: "ハンター", both: "必ず両陣営", any: "どちらでも/両陣営OK" };
+  function myF() { var f = me && me.f || "both"; return f === "both" && ((me.prof && me.prof.st) || {}).fx !== false ? "any" : f; }   // 両陣営の人：どちらでもか、必ず両陣営か
+  function factionOk(t, f) {                                                          // 陣営が、このチームの求めている人材に合うか（any＝どちらでも/両陣営OK）
+    f = f || "any";
     if (t.friends) return true;
     var n = arr(t.need);
-    if (t.state === "extra") { var ef = t.extra_faction || "both"; if (ef === "both_only") return f === "both"; return ef === "both" || f === "both" || f === ef; }
-    return (n[0] > 0 && (f === "survivor" || f === "both")) || (n[1] > 0 && (f === "hunter" || f === "both"));
+    if (t.state === "extra") { var ef = t.extra_faction || "both"; if (ef === "both_only") return f === "both" || f === "any"; if (ef === "both") return true; return f === ef || f === "any"; }
+    if (f === "both") return n[0] > 0 && n[1] > 0;                                     // 必ず両陣営：両陣営を募集しているときだけ
+    if (f === "any") return n[0] > 0 || n[1] > 0;                                      // どちらでも：片方だけの募集にも合う
+    return (n[0] > 0 && f === "survivor") || (n[1] > 0 && f === "hunter");
   }
   function limitsOk(t, f, sr, hr) {                                                   // 段位・閲歴の制限に合うか（陣営を変えたときにも使う）
     if (t.friends) return true;
@@ -256,7 +260,7 @@
     if (!me) return true;
     var f = me.f || "both";
     if (t.friends) return true;                                                        // 友達だけ：パスワードを知っていれば
-    if (!factionOk(t, f)) return false;
+    if (!factionOk(t, myF())) return false;
     var lv = arr(t.lv), rk = arr(t.rk);
     if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
     if (lv[0] != null && me.lv < lv[0]) return false;
@@ -336,11 +340,11 @@
   function joinPrompt() {                                                            // 招待用のページで、応募・チーム作りをしようとしたとき
     var old = document.getElementById("joinask"); if (old) old.remove();
     var w = el("div", "imgask"); w.id = "joinask"; var b = el("div", "box");
-    b.appendChild(el("div", "q", "まずは大会のdiscordに加入してください。"));
-    b.appendChild(el("div", "lead", "加入したあと、Discordのエントリーパネルの「📝 エントリー」を押すと、あなた専用のページが開き、応募やチーム作りができます。"));
+    var q1 = el("div", "q", "まずは大会のdiscordに\n加入してください。"); q1.style.whiteSpace = "pre-line"; b.appendChild(q1);   // 改行の位置は、決めたところで（スマホもパソコンも）
+    b.appendChild(el("div", "lead", "そしてDiscord内にあるエントリーパネルのエントリーボタンを押すと、あなた専用のページが開いて応募やチーム作りができます。"));
     var r = el("div", "row"); r.style.justifyContent = "center";
     if (D && D.join_url) { var a = el("a", "", "Discordに加入する"); a.href = D.join_url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.className = "btnlink"; r.appendChild(a); }
-    else b.appendChild(el("div", "badtxt", "招待リンクが、まだ設定されていません。大会の運営に、お問い合わせください。"));
+    else { var nb = el("div", "badtxt", "招待リンクがまだ設定されていません。\n大会の運営にお問い合わせください。"); nb.style.whiteSpace = "pre-line"; b.appendChild(nb); }
     var n = el("button", "", "閉じる"); n.type = "button"; n.addEventListener("click", function () { w.remove(); }); r.appendChild(n);
     b.appendChild(r); w.appendChild(b); document.body.appendChild(w);
   }
@@ -412,6 +416,7 @@
     }
     if (FORM.mode == null) FORM.mode = cur.first ? "" : (cur.friends ? "friends" : "open");
     var c = el("div", "card");
+    if (cur.stopped) c.appendChild(el("div", "subwarn", "⏸ 運営が、この募集を停止しています。再開については、運営に問い合わせてください（内容は残っています）。"));
     if (!FORM.mode) {                                                                   // まず、大きな選択肢
       c.appendChild(el("h2", "", "📝 どうやってメンバーを集めますか？"));
       var md = el("div", "modes");
@@ -563,7 +568,7 @@
   }
   function profForm(box, inline) {
     var cur = me.prof || {};
-    if (!PF) PF = { st: { sr: arr((cur.st || {}).sr).slice(), tp: arr((cur.st || {}).tp).slice(), beg: !!(cur.st || {}).beg }, n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
+    if (!PF) PF = { _any: cur.f === "both" && (cur.st || {}).fx !== false, st: { sr: arr((cur.st || {}).sr).slice(), tp: arr((cur.st || {}).tp).slice(), beg: !!(cur.st || {}).beg }, n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
     var c = el("div", "card");
     c.appendChild(el("h2", "", "🪪 あなたの選手情報"));
     c.appendChild(el("div", "lead", "応募に使う、あなたの基本の選手情報です（大会をまたいで使います）。チームに加入すると、この内容で選手登録されます。"));
@@ -583,7 +588,8 @@
     f.appendChild(cau);
     lab("名前の読み方"); txt("r", 40, "ひらがな（かなだけの名前なら、空でよい）");
     lab("ゲーム内ID"); txt("g", 12, "数字", true);
-    lab("出場する陣営"); var fs = el("select"); [["", "選んでください"], ["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (PF.f === o2[0]) o.selected = true; fs.appendChild(o); });
+    if (PF._any) { PF.f = "any"; PF._any = false; }
+    lab("出場する陣営"); var fs = el("select"); [["", "選んでください"], ["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "必ず両陣営"], ["any", "どちらでも/両陣営OK"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (PF.f === o2[0]) o.selected = true; fs.appendChild(o); });
     fs.addEventListener("change", function () { PF.f = fs.value; render(); }); f.appendChild(fs);
     function stChips(label, list, key) {                                             // 自分の役割・方針（任意・いくつでも。募集と合うと「条件一致」）
       lab(label); var ch = el("div", "chips sm");
@@ -644,7 +650,7 @@
       if (tmiss.length) { setMsg("ng", "⚠ この大会の登録内容で、入れていない項目があります：" + tmiss.join("、")); return; }
       if (hasTRule && !PF._ta.ok) { setMsg("ng", "⚠ この大会の登録内容のルールを読んで、同意してください。"); return; }
       PEND = { kind: "prof", data: JSON.parse(JSON.stringify(PF)) };
-      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg, st: PF.st }, entry: D.locked ? undefined : PF._te, custom: D.locked ? undefined : PF._tc }, "保存しています…");
+      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f === "any" ? "both" : PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg, st: Object.assign({}, PF.st, { fx: PF.f === "any" || (PF.f !== "both" && PF.st.fx !== false) }) }, entry: D.locked ? undefined : PF._te, custom: D.locked ? undefined : PF._tc }, "保存しています…");
     });
     row.appendChild(sv);
     if (me.prof) {
@@ -1004,7 +1010,7 @@
       showGuide();                                                                    // はじめての人だけ：上から案内（右上のボタンを押すまで、ほかは押せない）
     }
     if (!me && INV) {
-      var jc = el("div", "notice"); jc.appendChild(el("div", "", "大会に参加したい方へ：まずは大会のDiscordに加入してください。"));
+      var jc = el("div", "notice"); var jt0 = el("div", "", "大会に参加したい方へ：\nまずは大会のdiscordに加入してください。"); jt0.style.whiteSpace = "pre-line"; jc.appendChild(jt0);
       var jr = el("div", "row");
       if (D.join_url) { var ja = el("a", "btnlink", "Discordに加入する"); ja.href = D.join_url; ja.target = "_blank"; ja.rel = "noopener noreferrer"; jr.appendChild(ja); }
       var jt = el("button", "", "🆕 自分のチームを募集する"); jt.type = "button"; jt.addEventListener("click", joinPrompt); jr.appendChild(jt);
@@ -1072,10 +1078,11 @@
       c.appendChild(needBox(t, false));
       if (t.summary) c.appendChild(el("div", "sum", t.summary));
       if (t.limits) c.appendChild(el("div", "lim", t.limits));
-      if (t.state === "closed") c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
+      if (t.stopped) c.appendChild(el("div", "tag ng", "⏸ 運営が募集を停止中"));
+      else if (t.state === "closed") c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
       else if (t.state === "full") c.appendChild(el("div", "tag ng", "満員"));
       else if (t.state === "done") c.appendChild(el("div", "tag ng", "募集している人数がそろいました"));
-      else if (me && !t._fit) c.appendChild(el("div", "tag ng", !factionOk(t, me.f) ? "陣営が合いません" : "段位・閲歴の制限が合いません"));
+      else if (me && !t._fit) c.appendChild(el("div", "tag ng", !factionOk(t, myF()) ? "陣営が合いません" : "段位・閲歴の制限が合いません"));
       if (t.entered) c.appendChild(el("div", "lim", "エントリー済みのチーム（追加のメンバーを募集）"));
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
@@ -1133,14 +1140,14 @@
     }
     var base0 = me && u && u.pf_ok && !u.leader && !u.team && !act.some(function (w) { return w.team === t.id; }) && act.length < (D.max_wishes || 3) && (t.state === "open" || t.state === "extra");
     var can = base0 && t._fit;
-    var fOnly = base0 && !t._fit && !factionOk(t, me.f);                                 // 陣営が合わない（陣営を変えれば、応募できるかもしれない）
+    var fOnly = base0 && !t._fit && !factionOk(t, myF());                                 // 陣営が合わない（陣営を変えれば、応募できるかもしれない）
     if ((step === "faction" || step === "fpick") && fOnly) {
       if (step === "faction") {
         d.appendChild(el("h2", "", "⚠ 陣営が合いません"));
         d.appendChild(el("div", "ask", "陣営が合いません。出場する陣営を変更しますか？"));
-        d.appendChild(el("div", "lead", "このチームの" + needText(t) + "／あなたの出場する陣営：" + (FN[me.f] || "—")));
+        d.appendChild(el("div", "lead", "このチームの" + needText(t) + "／あなたの出場する陣営：" + (FN2[myF()] || "—")));
         var fr0 = el("div", "row");
-        var fy = el("button", "go", "はい"); fy.type = "button"; fy.addEventListener("click", function () { FPICK = me.f || ""; dialog("fpick"); });
+        var fy = el("button", "go", "はい"); fy.type = "button"; fy.addEventListener("click", function () { FPICK = myF() || ""; dialog("fpick"); });
         var fn0 = el("button", "", "いいえ"); fn0.type = "button"; fn0.addEventListener("click", close);
         fr0.appendChild(fy); fr0.appendChild(fn0); d.appendChild(fr0);
         show(); return;
@@ -1149,19 +1156,19 @@
       d.appendChild(el("div", "notice", "このチームの" + needText(t)));
       var q0 = me.prof || {};
       var fsel = el("div", "chips");
-      [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営"]].forEach(function (o2) {
+      [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "必ず両陣営"], ["any", "どちらでも/両陣営OK"]].forEach(function (o2) {
         var on = FPICK === o2[0], l = el("label", on ? "on" : "", (on ? "🔘 " : "⚪ ") + o2[1]);
         l.addEventListener("click", function () { FPICK = o2[0]; dialog("fpick"); }); fsel.appendChild(l);
       });
       d.appendChild(fsel);
-      var fok = FPICK && factionOk(t, FPICK), lok = FPICK && limitsOk(t, FPICK, rankScore(q0.sr), rankScore(q0.hr));
+      var fok = FPICK && factionOk(t, FPICK), lok = FPICK && limitsOk(t, FPICK === "any" ? "both" : FPICK, rankScore(q0.sr), rankScore(q0.hr));
       if (FPICK && !fok) d.appendChild(el("div", "subwarn", "⚠ 陣営が合いません。このチームが求めている陣営を選んでください。"));
       else if (FPICK && !lok) d.appendChild(el("div", "subwarn", "⚠ この陣営では、このチームの段位・閲歴の制限に合いません。"));
       var fr1 = el("div", "row");
       var fs = el("button", "go", BUSY ? "⏳ 保存中…" : "この陣営にする（あなたの選手情報も変わります）"); fs.type = "button"; fs.disabled = BUSY || !fok || !lok;
       fs.addEventListener("click", function () {
-        var form = { n: q0.n, r: q0.r, g: q0.g, f: FPICK, sr: q0.sr, hr: q0.hr, fav: arr(q0.fav), lv: q0.lv == null ? "" : String(q0.lv), sub: !!q0.sub, why: q0.why || "", sg: q0.sg || "", st: q0.st || {} };
-        PEND = { kind: "prof", data: Object.assign({}, form, { _te: q0.te || {}, _tc: q0.tc || {} }) };
+        var form = { n: q0.n, r: q0.r, g: q0.g, f: FPICK === "any" ? "both" : FPICK, sr: q0.sr, hr: q0.hr, fav: arr(q0.fav), lv: q0.lv == null ? "" : String(q0.lv), sub: !!q0.sub, why: q0.why || "", sg: q0.sg || "", st: Object.assign({}, q0.st || {}, { fx: FPICK === "any" }) };
+        PEND = { kind: "prof", data: Object.assign({}, form, { f: FPICK, _te: q0.te || {}, _tc: q0.tc || {} }) };
         BACK_TO = t.id;                                                                 // 保存できたら、応募の確認へ
         send({ act: "profile", form: form }, "出場する陣営を変えています…");
       });
@@ -1248,6 +1255,7 @@
         if (PEND && PEND.kind === "pw") { if (r.ok) { UNLOCKED = true; PWIN = { a: "", b: "" }; PWERR = ""; try { sessionStorage.setItem("rc_ph_" + me.uid, PH); } catch (e) { /* そのまま */ } } else { PH = ""; } PEND = null; }
         if (r.ok && PEND) {
           if (PEND.kind === "prof") { var q = PEND.data; var uu = U(); if (uu) uu.pf_ok = true;
+            if (q.f === "any") { q.f = "both"; q.st = Object.assign({}, q.st || {}, { fx: true }); } else if (q.f === "both") q.st = Object.assign({}, q.st || {}, { fx: false });
             if (BACK_TO != null) { OPEN = BACK_TO; var bt = arr(D.teams).filter(function (x) { return x.id === BACK_TO; })[0]; DSTEP = DSTEP === "fpick" && bt && bt.state === "extra" ? "extra" : "confirm"; BACK_TO = null; PROFOPEN = false; var po = document.getElementById("ov"); if (po) po.remove(); } me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv), te: q._te || {}, tc: q._tc || {}, st: q.st || (me.prof || {}).st || {} });
             me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
           else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; IMG_FAIL = false; }
