@@ -2558,7 +2558,7 @@
     if (mode === "mvp_interview" && cur.reason) mid.appendChild(el("div", "iv-why", cur.reason));     // MVPに選ばれた理由（チーム名の下）
     wrap.appendChild(mid);
     var box = el("div", "iv-timer");
-    var count = el("div", "iv-count", fmtCount((src.minutes || 3) * 60));
+    var count = el("div", "iv-count", fmtCount(src.seconds || (src.minutes || 3) * 60));
     box.appendChild(count);
     box.appendChild(el("div", "iv-who", cur.role || (mode === "mvp_interview" ? "MVP" : "優勝チーム")));
     if (holding) box.style.visibility = "hidden";                                     // 合間は、時間を出さない
@@ -2566,7 +2566,7 @@
     screenEl.replaceChildren(wrap);
     var startMs = Date.parse(src.started_at || "");
     if (isNaN(startMs)) startMs = Date.now();
-    var total = (src.minutes || 3) * 60;
+    var total = src.seconds || (src.minutes || 3) * 60;
     function tick() {
       var left = total - (Date.now() - startMs) / 1000;
       count.textContent = fmtCount(left);
