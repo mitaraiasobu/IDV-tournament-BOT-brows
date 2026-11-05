@@ -11,7 +11,7 @@
   ・URLの ?t=（募集用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いた、募集中のチーム）を読む。
   ・エントリーパネルの「🙋 メンバー応募」で出る本人用のURLは、# のあとに「ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印」が入る。
     本人の印で、データの中の「本人ごとの様子」（応募・所属・リーダーのチーム）を見る（データには、Discordの番号を入れない）。
-  ・リーダー：募集の内容を書く（初めては、制限も含めて、すべてをまとめて）。チームの選手：脱退できる。それ以外：応募（第一希望〜第三希望）・取り消し・希望の並べ替え。
+  ・リーダー：募集の内容を書く（チーム名・読み方も。制限は、決めなければ「制限なし」）。チームの選手：脱退できる。それ以外：応募（第一希望〜第三希望）・取り消し・希望の並べ替え。
   ・送った依頼は、受け箱へ（BOTが処理して、結果を書き戻す）。
 -->
 <style>
@@ -207,19 +207,21 @@
   function leaderView(box, teamId) {
     var cur = (D.forms || {})[String(teamId)] || { first: true };
     if (!FORM || FORM._team !== teamId) {
-      FORM = { _team: teamId, title: cur.title || "", wanted: cur.wanted || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
+      FORM = { _team: teamId, team_name: cur.team_name || teamName(teamId), team_reading: cur.team_reading || "", title: cur.title || "", wanted: cur.wanted || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
                extra: !!cur.extra, extra_faction: cur.extra_faction || "both", usepw: !!cur.lock, password: "",
                level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "" };
     }
     var c = el("div", "card");
     c.appendChild(el("h2", "", "📝 募集の内容｜" + teamName(teamId)));
-    c.appendChild(el("div", "lead", cur.first ? "初めて募集の内容を書くときは、制限も含めて、すべての項目を決めてから保存してください。あとから、いつでも変えられます。"
+    c.appendChild(el("div", "lead", cur.first ? "募集の内容を書いて保存してください。制限は、決めなければ「制限なし」になります。あとから、いつでも変えられます。"
                                               : "募集の内容は、いつでも変えられます（変えた項目だけ、まとめて保存します）。"));
     var f = el("div", "frm");
     function lab(t) { f.appendChild(el("label", "", t)); }
     function hint(t) { f.appendChild(el("div", "hint", t)); }
     function text(k, max, ph, area) { var i = el(area ? "textarea" : "input"); if (!area) i.type = "text"; i.maxLength = max; i.value = FORM[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { FORM[k] = i.value; }); f.appendChild(i); }
     function num(k, lo, hi) { var s = el("select"); for (var n = lo; n <= hi; n++) { var o = el("option", "", n + "人"); o.value = String(n); if (Number(FORM[k]) === n) o.selected = true; s.appendChild(o); } s.addEventListener("change", function () { FORM[k] = Number(s.value); }); return s; }
+    lab("チーム名"); text("team_name", 30, "チーム名");
+    lab("チーム名の読み方"); text("team_reading", 60, "ひらがな（かなだけの名前なら、空でよい）");
     lab("募集タイトル（20字以内）"); text("title", 20, "例：初心者さん大歓迎！");
     lab("求めている人材"); var nr = el("div", "row"); nr.style.marginTop = "0"; nr.appendChild(el("span", "", "サバイバー")); nr.appendChild(num("need_s", 0, D.need_max || 10)); nr.appendChild(el("span", "", "ハンター")); nr.appendChild(num("need_h", 0, D.need_max || 10)); f.appendChild(nr);
     hint("両陣営の人が加入したら、サバイバー・ハンターの両方を、1人ずつ減らします。");
@@ -254,10 +256,11 @@
     var row = el("div", "row");
     var sv = el("button", "go", "💾 募集の内容を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
     sv.addEventListener("click", function () {
+      if (!FORM.team_name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
       if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
       if (cur.first && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
       if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ パスワードは、4〜20文字の英数字にしてください。"); return; }
-      var form = { title: FORM.title, wanted: FORM.wanted, summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
+      var form = { team_name: FORM.team_name.trim(), team_reading: FORM.team_reading.trim(), title: FORM.title, wanted: FORM.wanted, summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
                    level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null };
       if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
       if (cur.first && !("password" in form)) form.password = "";
