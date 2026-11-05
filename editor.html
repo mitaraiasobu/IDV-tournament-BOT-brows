@@ -63,6 +63,14 @@
   .srow textarea, .srow input[type=number], .srow input[type=datetime-local] { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; color: var(--text); font: inherit; color-scheme: dark; }
   .srow textarea { min-height: 90px; } .srow.changed { background: rgba(255, 176, 32, .07); }
   .flow { display: flex; gap: 10px; } .flow.h { flex-direction: row; overflow-x: auto; padding-bottom: 8px; } .flow.v { flex-direction: column; }
+  .flow.grid { display: grid; gap: 6px; overflow: auto; max-height: 80vh; align-items: start; }
+  .fhd { position: sticky; background: var(--panel); z-index: 1; font-size: 12px; color: var(--sub); padding: 4px 6px; border-radius: 6px; }
+  .flow.h .fhd.time, .flow.h .fhd.corner { top: 0; } .flow.h .fhd.lane, .flow.h .fhd.corner { left: 0; z-index: 2; }
+  .flow.v .fhd.lane, .flow.v .fhd.corner { top: 0; } .flow.v .fhd.time, .flow.v .fhd.corner { left: 0; z-index: 2; }
+  .fhd.lane { font-weight: 700; color: var(--text); align-self: stretch; } .fhd.time { font-weight: 700; color: var(--text); }
+  .fcell { display: flex; flex-direction: column; gap: 6px; min-height: 30px; border-left: 1px dashed var(--line); padding-left: 4px; }
+  .fcell.together { border-left: 2px solid var(--ac); } .flow.grid .fcard { width: auto; }
+  .fref { font-size: 12px; color: var(--sub); border: 1px dashed var(--line); border-radius: 8px; padding: 4px 6px; }
   .fcard { flex: none; width: 230px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
   .flow.v .fcard { width: auto; } .fcard.bad { border-color: var(--bad); }
   .fcard .ftm { color: var(--ac); font-weight: 800; font-variant-numeric: tabular-nums; } .fcard .fcat { font-size: 11px; color: var(--sub); }
@@ -76,7 +84,36 @@
   .fgroup { flex: none; display: flex; flex-direction: column; gap: 8px; border: 1px dashed var(--ac); border-radius: 12px; padding: 8px; }
   .fgtitle { color: var(--ac); font-size: 12px; font-weight: 700; } .flane { display: flex; flex-direction: column; gap: 4px; } .fltitle { font-size: 12px; color: var(--sub); }
   .flrow { display: flex; gap: 8px; } .flow.v .flrow { flex-wrap: wrap; } #timenote.bad { color: var(--bad); font-weight: 700; border: 1px solid var(--bad); border-radius: 10px; padding: 8px 10px; margin: 10px 0; }
-  .brsec { margin-top: 14px; } .brrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+  .brbar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px; margin: 10px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .brdialog { border-color: var(--ac); } .brrow button.on { border-color: var(--ac); color: var(--ac); }
+  .brwrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 10px 0; cursor: grab; max-height: 80vh; touch-action: pan-x pan-y; }
+  .brwrap.grab { cursor: grabbing; user-select: none; }
+  .bk { display: flex; gap: 34px; min-width: max-content; }
+  .bround { display: flex; flex-direction: column; width: 270px; flex: none; gap: 6px; } .bround.champ { width: 170px; }
+  .bhd { display: flex; gap: 8px; align-items: center; font-size: 16px; color: var(--sub); } .bhd small { font-size: 12px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; }
+  .bstart { display: flex; flex-direction: column; gap: 2px; } .bstart input { font-size: 12px; padding: 3px 4px; }
+  .bcol { flex: 1; display: flex; flex-direction: column; }
+  .bgroup { flex: 1; display: flex; flex-direction: column; position: relative; }
+  .bround:not(.final):not(.champ) .bgroup::after { content: ""; position: absolute; right: -17px; width: 17px; top: 25%; bottom: 25%; border: 2px solid var(--line); border-left: 0; pointer-events: none; }
+  .bslot { flex: 1; display: flex; align-items: center; padding: 5px 0; }
+  .bmatch { position: relative; width: 100%; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; }
+  .bround:not(.first) .bmatch::before, .bchamp::before { content: ""; position: absolute; left: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
+  .bround.final .bmatch::after { content: ""; position: absolute; right: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
+  .bmatch.is-bye { border-style: dashed; }
+  .bhead { padding: 3px 10px; font-size: 12px; color: var(--sub); background: var(--panel2); border-radius: 8px 8px 0 0; }
+  .bteam { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); font-weight: 700; font-size: 15px; }
+  .bteam .tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .bteam .trank { font-size: 11px; color: var(--sub); font-weight: 400; }
+  .bteam[draggable=true] { cursor: move; } .bteam.sel { outline: 2px solid var(--ac); } .bteam.over { background: rgba(255, 176, 32, .18); }
+  .bteam.tbd .tname, .bteam.bye .tname { color: var(--sub); font-weight: 400; font-style: italic; }
+  .bbreak { font-size: 12px; color: var(--ac); padding: 3px 10px; border-top: 1px dashed var(--line); }
+  .bround > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
+  .bchamp { position: relative; margin: auto 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
+  .brsec { margin-top: 14px; }
+  .srow.dim { opacity: .4; } .srow.unset label { color: var(--bad); font-weight: 700; } .rankpick { display: flex; gap: 6px; }
+  .bigpop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .bigpop[hidden] { display: none; }
+  .bigpop-in { background: var(--panel); border: 3px solid var(--bad); border-radius: 16px; padding: 24px; max-width: 640px; width: 100%; font-size: 17px; display: flex; flex-direction: column; gap: 12px; }
+  .bigpop-in h2 { color: var(--bad); margin: 0; font-size: 26px; } .brrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
   .pair { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
   .tbtn.sel { outline: 2px solid var(--ac); } .muted { color: var(--sub); font-size: 12px; } .brk input[type=number] { width: 70px; }
   .fsub { white-space: pre-wrap; }
@@ -114,8 +151,9 @@
     <h2>ラウンドごとの手順</h2>
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
     </div>
+    <div id="bigpop" class="bigpop" hidden></div>
     <div id="tab-br" hidden>
-      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。ここのボタンは、押すとすぐBOTに送ります（「💾 保存」とは別）。</div>
+      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別。保存のときに、公開するかを聞きます）。</div>
       <div id="brview"></div>
     </div>
     <div id="tab-time" hidden>
@@ -387,7 +425,7 @@
     var base = parseLocal(TM.round_start), lead = TM.lead_min, open = base && lead != null && lead !== "" ? addMin(base, -lead) : null;
     var warns = [];
     TMOK = true;                                                                    // 保存してよい内容か（赤い警告が出ていないか）
-    if (!TM.stream_round_name) warns.push("実況・解説がつくラウンド（順番に進めるラウンド）が、まだありません（⚙ 大会設定の「進行方法」で決めます）。");
+    if (!TM.stream_round_name) warns.push("実況・解説がつくラウンド（順番に進めるラウンド）が、まだありません（🏆 トーナメント表タブの、各ラウンドの進め方で決めます）。");
     else if (!base) warns.push("トーナメント表に、" + TM.stream_round_name + "の開始時刻が入っていません（⚙ 大会設定の「大会日時」）。");
     var needL = leadNeed();
     if (lead != null && lead !== "" && lead < needL) { warns.push("開会の演出に、約" + (needL - 1) + "分かかります。配信開始は、ラウンドの開始の" + needL + "分前より、前にしてください。"); TMOK = false; }
@@ -438,6 +476,12 @@
       group(prep, [{ title: "選手（" + vs + "）", cards: players }, { title: "キャスター", cards: casters }]);
       add(play, m.label + "：試合開始（予定）", vs + "：00:00でゲームを始めます", "", { cat: "試合", who: "tcm" });
       if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "試合", who: "tm", dur: play ? msec((end - play) / 1000) : "", go: ["half_minutes", "⚙ 試合の想定時間を変える"] }); last = end; }
+    });
+    function jpDT(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" + hhmm(d); }
+    var SV = ST || {};                                                                 // 「⚙ 大会設定」の日時（保存していない変更も入れる）
+    [["apply_deadline", "📅 選手の応募締切", "まで", "t"], ["staff_deadline", "📅 スタッフ応募の締切", "まで", "cm"], ["start_at", "📅 大会日時（ラウンド1の開始）", "から", ""]].forEach(function (k) {
+      var d = parseLocal(SV[k[0]]);
+      if (d) ev.push(card(d, k[1], jpDT(d) + k[2], "", { cat: "日程", who: k[3], go: [k[0], "⚙ 日時を変える"] }));
     });
     (TM.breaks || []).forEach(function (b) {                                          // 休憩（スタッフの休憩にも）
       var bs = parseLocal(b.start);
@@ -538,168 +582,246 @@
     if (e.x.go) { var gb = el("button", "", e.x.go[1]); gb.type = "button"; gb.addEventListener("click", function () { goSetting(e.x.go[0]); }); c.appendChild(gb); }
     return c;
   }
-  function renderFlow(ev, base) {
-    var f = $("flow"); if (!f) return; f.textContent = ""; f.className = "flow " + FLOWDIR;
-    ev.forEach(function (e) {
-      if (!e.lanes) { f.appendChild(fcardEl(e, base)); return; }
-      var g = el("div", "fgroup");                                                          // 同時に起きること：上下に分けて
-      g.appendChild(el("div", "fgtitle", hhmm(e.d) + dayLabel(e.d, base) + "　同時に進みます"));
-      e.lanes.forEach(function (l) {
-        var lane = el("div", "flane"); lane.appendChild(el("div", "fltitle", l.title));
-        var row = el("div", "flrow"); l.cards.forEach(function (c) { row.appendChild(fcardEl(c, base)); }); lane.appendChild(row);
-        g.appendChild(lane);
+  var LANES = [["c", "キャスター"], ["m", "モデレーター"], ["t", "チーム（選手）"], ["", "配信画面・日程"]];
+  function laneOf(c) {                                                               // カードを、どの役職の段に、くわしく出すか（ほかの出番の段には、短く出す）
+    var w = c.x.who || "";
+    for (var i = 0; i < "tcm".length; i++) if (w.indexOf("tcm"[i]) >= 0) return "tcm"[i];
+    return "";
+  }
+  function renderFlow(ev, base) {                                                    // 横軸が時間・縦軸が役職の表（上から下にすると、縦軸が時間）
+    var f = $("flow"); if (!f) return; f.textContent = ""; f.className = "flow grid " + FLOWDIR;
+    var cols = ev.map(function (e) { return { d: e.d, cards: e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e], together: !!e.lanes }; });
+    var H = FLOWDIR === "h";
+    f.style.gridTemplateColumns = H ? "110px repeat(" + cols.length + ", 230px)" : "70px repeat(" + LANES.length + ", minmax(200px, 1fr))";
+    function placeAt(node, row, col) { node.style.gridRow = String(H ? row : col); node.style.gridColumn = String(H ? col : row); f.appendChild(node); }
+    placeAt(el("div", "fhd corner", H ? "時刻 →" : "↓"), 1, 1);
+    LANES.forEach(function (ln, li) { placeAt(el("div", "fhd lane", ln[1]), li + 2, 1); });
+    cols.forEach(function (c, ci) {
+      var th = el("div", "fhd time", c.d ? hhmm(c.d) + dayLabel(c.d, base) : "--:--"); if (c.together) th.appendChild(el("div", "fgtitle", "同時に進みます"));
+      placeAt(th, 1, ci + 2);
+      var cells = {};
+      LANES.forEach(function (ln, li) { var cell = el("div", "fcell" + (c.together ? " together" : "")); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
+      c.cards.forEach(function (card) {
+        var main = laneOf(card);
+        cells[main].appendChild(fcardEl(card, base));
+        (card.x.who || "").split("").forEach(function (k) {
+          if (k === main || !cells[k]) return;
+          var ref = el("div", "fref"); ref.appendChild(el("b", "", card.d ? hhmm(card.d) : "")); ref.appendChild(el("span", "", " " + card.main)); cells[k].appendChild(ref);
+        });
       });
-      f.appendChild(g);
     });
   }
   function OVR() { return TM.intro_overrides || {}; }
-  // ───── 🏆 トーナメント表：抽選・入れ替え・日程（日を分ける）・休憩・確定して公開（押すと、すぐBOTへ） ─────
-  var BRSWAP = null, BRK = null;                                                    // 入れ替えで、1つ目に選んだチーム／編集中の休憩
-  function brSend(ops, busy) {
-    if (dirty()) { setResult("ng", "⚠ 保存していない変更があります。先に「💾 保存」してから、操作してください。"); return; }
-    runOps(ops, busy);
-  }
+  // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
+  //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
+  var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
+  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, breaks: null }; return BRS; }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || b.breaks !== null); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
-  function brTeam(t, onPick) {
-    if (!t || t.team == null) return el("span", "muted", t ? t.name : "（未定）");
-    var b = el("button", "tbtn" + (BRSWAP === t.team ? " sel" : ""), t.name + (t.rank ? "（" + t.rank + "相当）" : "")); b.type = "button";
-    b.addEventListener("click", function () { onPick(t); });
-    return b;
-  }
-  function renderBracket() {
-    var v = $("brview"); if (!v || !data) return; v.textContent = "";
-    var B = data.bracket; if (!B) { v.appendChild(el("div", "note", "トーナメント表の情報が、まだありません。")); return; }
+  function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
     B.rounds.forEach(function (r) { if (!Array.isArray(r.matches)) r.matches = []; });
     if (B.rating) { if (!Array.isArray(B.rating.pairs)) B.rating.pairs = []; if (!Array.isArray(B.rating.missing)) B.rating.missing = []; }
     if (!Array.isArray(B.break_limits)) B.break_limits = [1, 240];
+  }
+  function brPairs(B) {                                                              // ラウンド1の組み合わせ（保存していない抽選・入れ替えも入れた、いまの見た目）
+    var st = brState(), pairs;
+    if (st.draw && st.draw.mode === "random") return null;                          // ランダムは、保存したときにBOTが決める
+    var src = st.draw && st.draw.mode === "rating" ? B.rating.pairs : B.current;
+    pairs = src.map(function (c) { return { a: Object.assign({}, c.a), b: Object.assign({}, c.b) }; });
+    st.swaps.forEach(function (sw) {
+      var pa = null, pb = null;
+      pairs.forEach(function (pr) { ["a", "b"].forEach(function (k) { if (pr[k].team === sw[0]) pa = [pr, k]; if (pr[k].team === sw[1]) pb = [pr, k]; }); });
+      if (pa && pb) { var t = pa[0][pa[1]]; pa[0][pa[1]] = pb[0][pb[1]]; pb[0][pb[1]] = t; }
+    });
+    return pairs;
+  }
+  function brSwap(a, b) {
+    if (a == null || b == null || a === b) return;
+    brState().swaps.push([a, b]); BRSEL = null; renderBracket();
+  }
+  function brTeamRow(t, canSwap) {
+    var cls = "bteam" + (!t || t.team == null ? (t && t.bye ? " bye" : " tbd") : "") + (t && t.team != null && BRSEL === t.team ? " sel" : "");
+    var row = el("div", cls);
+    row.appendChild(el("span", "tname", t ? t.name : "（未定）"));
+    if (t && t.rank) row.appendChild(el("span", "trank", t.rank));
+    if (canSwap && t && t.team != null) {
+      row.draggable = true; row.title = "ドラッグして、ほかのチームの上で離すと、入れ替えます（2つ順に押しても入れ替えられます）";
+      row.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", String(t.team)); e.dataTransfer.effectAllowed = "move"; });
+      row.addEventListener("dragover", function (e) { e.preventDefault(); row.classList.add("over"); });
+      row.addEventListener("dragleave", function () { row.classList.remove("over"); });
+      row.addEventListener("drop", function (e) { e.preventDefault(); row.classList.remove("over"); brSwap(Number(e.dataTransfer.getData("text/plain")), t.team); });
+      row.addEventListener("click", function () { if (BRSEL == null) { BRSEL = t.team; renderBracket(); } else if (BRSEL === t.team) { BRSEL = null; renderBracket(); } else brSwap(BRSEL, t.team); });
+    }
+    return row;
+  }
+  function brMatch(m, head, a, b, canSwap, brks) {
+    var c = el("div", "bmatch" + (m && m.bye ? " is-bye" : ""));
+    c.appendChild(el("div", "bhead", head));
+    c.appendChild(brTeamRow(a, canSwap)); c.appendChild(brTeamRow(b, canSwap));
+    (brks || []).forEach(function (bk) { c.appendChild(el("div", "bbreak", "☕ " + (bk.label || "休憩") + " " + bk.minutes + "分（この試合のあと）")); });
+    return c;
+  }
+  function brPan(wrap) {                                                            // 表の何もないところをつかんで、横（縦）にスライド
+    var on = false, sx = 0, sy = 0, sl = 0, st = 0;
+    wrap.addEventListener("pointerdown", function (e) {
+      if (e.target.closest && e.target.closest(".bteam[draggable=true], input, button, select")) return;
+      on = true; sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop; wrap.classList.add("grab");
+    });
+    window.addEventListener("pointermove", function (e) { if (!on) return; wrap.scrollLeft = sl - (e.clientX - sx); wrap.scrollTop = st - (e.clientY - sy); });
+    window.addEventListener("pointerup", function () { on = false; wrap.classList.remove("grab"); });
+  }
+  function brBreaks(B) { var st = brState(); return st.breaks !== null ? st.breaks : B.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: b.label }; }); }
+  function brSaveDialog(ops) {                                                      // 保存のとき：公開するかを聞く
+    var box = $("brdialog"); box.textContent = ""; box.hidden = false;
+    var B = data.bracket;
+    box.appendChild(el("h2", "", "トーナメント表を保存します"));
+    box.appendChild(el("div", "", "このトーナメント表を、公開しますか？"));
+    box.appendChild(el("div", "muted", "公開すると、対戦カードチャンネルを用意して、大会名チャンネルと各チームのチャンネルに、サイレントでお知らせします（1分ほどかかります）。" +
+                     (B.published ? "いまは公開済みです。組み合わせを変えたときは、もう一度公開してください。" : "")));
+    var row = el("div", "brrow");
+    function bt(label, cls, fn) { var b = el("button", cls, label); b.type = "button"; b.addEventListener("click", function () { box.hidden = true; fn(); }); row.appendChild(b); }
+    bt("保存して公開する", "primary", function () { brSend(ops.concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…"); });
+    bt("保存だけする（公開しない）", "", function () { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); });
+    bt("やめる", "", function () {});
+    box.appendChild(row);
+  }
+  function brSend(ops, busy) {
+    if (dirty()) { setResult("ng", "⚠ ほかのタブに、保存していない変更があります。先に「💾 保存」してから、トーナメント表を保存してください。"); return; }
+    runOps(ops, busy);
+  }
+  function brOps(B) {                                                               // 保存していない変更を、BOTへ送る操作に
+    var st = brState(), ops = [];
+    if (st.draw) ops.push(st.draw.mode === "rating" ? { op: "bracket_draw", mode: "rating", seed: B.seed, reset: B.has_results } : { op: "bracket_draw", mode: "random", reset: B.has_results });
+    st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
+    Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
+    Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
+    if (st.breaks !== null) ops.push({ op: "set_breaks", items: st.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: (b.label || "休憩").trim() || "休憩" }; }) });
+    return ops;
+  }
+  function renderBracket() {
+    var v = $("brview"); if (!v || !data) return; v.textContent = "";
+    var B = data.bracket; if (!B) { v.appendChild(el("div", "note", "トーナメント表の情報が、まだありません。")); return; }
+    brNorm(B);
+    var st = brState(), pairs = brPairs(B), brks = brBreaks(B);
     if (B.locked) v.appendChild(el("div", "warn", "この大会は優勝が決まって終了しているため、トーナメント表は変えられません。"));
-    // 状態
-    var st = el("div", "card brsec");
-    st.appendChild(el("h2", "", "いまの状態"));
-    st.appendChild(el("div", "", "登録チーム：" + B.registered + " / " + B.team_count + "　｜　組み合わせ：" + (B.drawn ? "決まっています" : "まだ") +
-                      "　｜　公開：" + (B.published ? "確定して公開済み" : B.publish_pending ? "公開の準備中（1分ほどで、BOTが行います）" : "まだ")));
-    st.appendChild(el("div", "muted", "大会日時（ラウンド1の開始）：" + (B.start_at ? fmtDT(B.start_at) : "未設定") + "（下の「ラウンドと日程」か、⚙ 大会設定の「大会日時」で変えます）"));
-    v.appendChild(st);
-    // 組み合わせ
-    var dc = el("div", "card brsec"); dc.appendChild(el("h2", "", "ラウンド1の組み合わせ"));
-    if (B.drawn) {
-      dc.appendChild(el("div", "muted", "入れ替え：チームを2つ順に押すと、対戦表の位置を入れ替えます（チーム名の入れ替えは、ここだけでできます）。"));
-      B.current.forEach(function (c, i) {
-        var row = el("div", "pair"); row.appendChild(el("b", "", (i + 1) + ". "));
-        var pick = function (t) {
-          if (BRSWAP == null) { BRSWAP = t.team; renderBracket(); return; }
-          if (BRSWAP === t.team) { BRSWAP = null; renderBracket(); return; }
-          var a = BRSWAP, an = (B.teams.filter(function (x) { return x.team === a; })[0] || {}).name; BRSWAP = null;
-          if (!confirm(an + " と " + t.name + " を入れ替えます。よろしいですか？" + (B.published ? "\n（公開済みのため、入れ替えたあと、もう一度「確定して公開」が要ります）" : ""))) { renderBracket(); return; }
-          brSend([{ op: "bracket_swap", a: a, b: t.team }], "入れ替えています…");
-        };
-        row.appendChild(brTeam(c.a, pick)); row.appendChild(el("span", "", " vs ")); row.appendChild(brTeam(c.b, pick));
-        dc.appendChild(row);
-      });
-    } else dc.appendChild(el("div", "note", "まだ組み合わせが決まっていません。"));
-    var hasR = B.has_results;
-    var rowb = el("div", "brrow");
-    var rb = el("button", "", B.drawn ? "🎲 ランダムに抽選し直す" : "🎲 ランダムに抽選"); rb.type = "button"; rb.disabled = !B.full || B.locked;
-    rb.addEventListener("click", function () {
-      if (!confirm((B.drawn ? "組み合わせを、ランダムに抽選し直します。いまの組み合わせは変わります。" : B.team_count + "チームを、ランダムに組み合わせます。") + (hasR ? "\n⚠ 登録済みの試合結果も、すべて取り消されます。" : "") + "\nよろしいですか？")) return;
-      brSend([{ op: "bracket_draw", mode: "random", reset: hasR }], "抽選しています…");
+    // 保存の帯
+    var bar = el("div", "brbar");
+    bar.appendChild(el("span", brDirty() ? "fwarn" : "muted", brDirty() ? "● トーナメント表に、保存していない変更があります" : "トーナメント表の変更はありません"));
+    var sv = el("button", "primary", "💾 トーナメント表を保存"); sv.type = "button"; sv.disabled = B.locked || !brDirty();
+    sv.addEventListener("click", function () {
+      var bad = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
+      if (bad.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
+      brSaveDialog(brOps(B));
     });
-    rowb.appendChild(rb); dc.appendChild(rowb);
-    if (!B.full) dc.appendChild(el("div", "muted", "全チーム（" + B.team_count + "チーム）がそろってから、抽選できます（いま" + B.registered + "チーム）。"));
+    var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
+    undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
+    bar.appendChild(sv); bar.appendChild(undo);
+    if (!brDirty() && B.drawn && !B.locked) {
+      var pub = el("button", "", B.published ? "📣 もう一度公開する" : "📣 公開する"); pub.type = "button"; pub.disabled = B.publish_pending;
+      pub.addEventListener("click", function () { if (confirm("トーナメント表を公開します（対戦カードの用意と、サイレントのお知らせ）。よろしいですか？")) brSend([{ op: "bracket_publish" }], "公開を依頼しています…"); });
+      bar.appendChild(pub);
+    }
+    bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + "・" +
+                       (B.published ? "公開済み" : B.publish_pending ? "公開の準備中" : "未公開")));
+    v.appendChild(bar);
+    var dlg = el("div", "card brdialog"); dlg.id = "brdialog"; dlg.hidden = true; v.appendChild(dlg);
+    // 組み合わせの決め方
+    var dc = el("div", "brrow");
+    var rb = el("button", st.draw && st.draw.mode === "random" ? "on" : "", "🎲 ランダムに抽選"); rb.type = "button"; rb.disabled = !B.full || B.locked;
+    rb.addEventListener("click", function () { st.draw = { mode: "random" }; st.swaps = []; renderBracket(); });
+    var ab = el("button", st.draw && st.draw.mode === "rating" ? "on" : "", "📊 段位で自動計算"); ab.type = "button"; ab.disabled = !B.full || B.locked || !B.rating;
+    ab.addEventListener("click", function () { st.draw = { mode: "rating" }; st.swaps = []; renderBracket(); });
+    dc.appendChild(rb); dc.appendChild(ab);
+    if (st.draw && st.draw.mode === "rating") {
+      var re = el("button", "", "🔄 計算し直す"); re.type = "button";
+      re.addEventListener("click", function () { if (!brDirty() || confirm("計算し直すと、ほかの保存していない変更は消えます。よろしいですか？")) { BRS = null; brSend([{ op: "bracket_reseed" }], "計算し直しています…"); } });
+      dc.appendChild(re);
+    }
+    if (!B.full) dc.appendChild(el("span", "muted", "全チーム（" + B.team_count + "チーム）がそろってから、組み合わせを決められます（いま" + B.registered + "チーム）。"));
+    else if (st.draw && st.draw.mode === "random") dc.appendChild(el("span", "fwarn", "ランダムの組み合わせは、保存したときにBOTが決めます（入れ替えは、そのあとで）。"));
+    else if (st.draw && st.draw.mode === "rating" && B.rating) dc.appendChild(el("span", "muted", "段位の強さが近い相手同士です（強さの差：平均 " + B.rating.avg + "／最大 " + B.rating.max + "）。" +
+                                                             (B.rating.missing.length ? "⚠ 選手が未登録のチーム（" + B.rating.missing.join("、") + "）は、全体の平均として扱っています。" : "")));
+    if (B.has_results && st.draw) dc.appendChild(el("span", "fwarn", "⚠ 保存すると、登録済みの試合結果は、すべて取り消されます。"));
     v.appendChild(dc);
-    // 段位で自動計算
-    var rc = el("div", "card brsec"); rc.appendChild(el("h2", "", "📊 段位で自動計算"));
-    rc.appendChild(el("div", "muted", "登録された選手の段位から、各チームの強さ（平均）を出し、ラウンド1は、できるだけ強さの近い相手同士にします。シードが出るときは、強いチームから順にシードになります。"));
-    if (B.rating) {
-      B.rating.pairs.forEach(function (pr, i) {
-        var row = el("div", "pair"); row.appendChild(el("b", "", (i + 1) + ". "));
-        var nm = function (t) { return t.name + (t.bye ? "" : t.rank ? "（" + t.rank + "相当）" : "（選手未登録）"); };
-        row.appendChild(el("span", "", nm(pr.a) + " vs " + nm(pr.b)));
-        if (pr.diff != null) row.appendChild(el("span", "muted", "強さの差 " + pr.diff));
-        rc.appendChild(row);
-      });
-      if (B.rating.avg != null) rc.appendChild(el("div", "muted", "強さの差：平均 " + B.rating.avg + "／最大 " + B.rating.max + "（1段Ⅴ＝1 … 6段Ⅰ＝30、7段 ★0＝31、星10個で1段階分）"));
-      if (B.rating.missing.length) rc.appendChild(el("div", "fwarn", "⚠ 選手が未登録のチーム：" + B.rating.missing.join("、") + "（全体の平均として扱っています）"));
-      var r2 = el("div", "brrow");
-      var ok = el("button", "primary", "この組み合わせで決定"); ok.type = "button"; ok.disabled = B.locked;
-      ok.addEventListener("click", function () {
-        if (!confirm("この組み合わせに決めます。" + (B.drawn ? "いまの組み合わせは変わります。" : "") + (hasR ? "\n⚠ 登録済みの試合結果も、すべて取り消されます。" : "") + "\nよろしいですか？")) return;
-        brSend([{ op: "bracket_draw", mode: "rating", seed: B.seed, reset: hasR }], "組み合わせを決めています…");
-      });
-      var re = el("button", "", "🔄 計算し直す"); re.type = "button"; re.disabled = B.locked;
-      re.addEventListener("click", function () { brSend([{ op: "bracket_reseed" }], "計算し直しています…"); });
-      r2.appendChild(ok); r2.appendChild(re); rc.appendChild(r2);
-    } else rc.appendChild(el("div", "note", "全チームがそろうと、ここに計算の結果が出ます。"));
-    v.appendChild(rc);
-    // 公開
-    var pc = el("div", "card brsec"); pc.appendChild(el("h2", "", "📣 確定して公開"));
-    pc.appendChild(el("div", "muted", "対戦カードチャンネルを用意して、大会名チャンネルと各チームのチャンネルに、サイレントでお知らせします（抽選しただけでは、何も作らず、知らせません）。"));
-    var pb = el("button", "primary", B.published ? "📣 変更を確定して公開" : "📣 確定して公開"); pb.type = "button"; pb.disabled = !B.drawn || B.locked || B.publish_pending;
-    pb.addEventListener("click", function () { if (confirm("トーナメント表を確定して公開します。よろしいですか？")) brSend([{ op: "bracket_publish" }], "公開を依頼しています…"); });
-    pc.appendChild(pb); v.appendChild(pc);
-    // ラウンドと日程
-    var rd = el("div", "card brsec"); rd.appendChild(el("h2", "", "ラウンドと日程（日を分けるとき）"));
-    rd.appendChild(el("div", "muted", "ふつうは、前のラウンドの終わり（休憩を足した時刻）から、自動で続きます。別の日に分けるときは、そのラウンドの開始日時を入れます（BAN/PICKが始まる時刻）。"));
+    v.appendChild(el("div", "muted", "チームは、ドラッグして別のチームの上で離すか、2つ順に押すと、入れ替わります。表の何もないところをつかむと、横にスライドできます。各ラウンドの見出しで、進め方・開始日時（日を分けるとき）を変えられます。"));
+    // 表（公開用と同じ形：ラウンドごとの列・2試合ずつ線でつなぐ・優勝の箱）
+    var wrap = el("div", "brwrap"), bk = el("div", "bk");
+    var R = B.rounds.length;
     B.rounds.forEach(function (r) {
-      var box = el("div", "pair"); box.style.display = "block";
-      box.appendChild(el("b", "", r.name + "（" + r.fmt + "）"));
-      box.appendChild(el("span", "muted", "　開始：" + (r.start ? fmtDT(r.start) : "未定") + (r.no === 1 ? "（大会日時）" : r.override ? "（日を分けて指定）" : "（自動）")));
-      var row = el("div", "brrow");
-      row.appendChild(sseg([["0", "順番に進める（実況・解説つき）"], ["1", "同時に進める"]], r.concurrent ? "1" : "0", function (x) {
-        if ((x === "1") === r.concurrent) return;
-        brSend([{ op: "set_round_mode", round: r.no, concurrent: x === "1" }], "進め方を変えています…");
+      var col = el("section", "bround" + (r.no === 1 ? " first" : "") + (r.no === R ? " final" : ""));
+      var h = el("div", "bhd"); h.appendChild(el("b", "", r.no === R ? "決勝" : r.name)); h.appendChild(el("small", "", r.fmt));
+      col.appendChild(h);
+      var conc = st.modes[r.no] != null ? st.modes[r.no] : r.concurrent;
+      col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"]], conc ? "1" : "0", function (x) {
+        var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; renderBracket();
       }));
-      var dt = el("input"); dt.type = "datetime-local"; dt.value = r.no === 1 ? (B.start_at || "") : (r.override || "");
-      var setb = el("button", "", r.no === 1 ? "大会日時にする" : "この日時から始める"); setb.type = "button";
-      setb.addEventListener("click", function () { if (!dt.value) { setResult("ng", "⚠ 日時を入れてください。"); return; } brSend([{ op: "set_round_start", round: r.no, at: dt.value }], "日程を変えています…"); });
-      row.appendChild(dt); row.appendChild(setb);
-      if (r.no > 1 && r.override) {
-        var clr = el("button", "", "自動に戻す"); clr.type = "button";
-        clr.addEventListener("click", function () { brSend([{ op: "set_round_start", round: r.no, at: null }], "日程を変えています…"); });
-        row.appendChild(clr);
-      }
-      box.appendChild(row);
-      r.matches.forEach(function (m) {
-        box.appendChild(el("div", "muted", "　第" + m.no + "試合：" + (m.a || "（未定）") + " vs " + (m.b || "（未定）") + "　BAN/PICK " + (m.prep ? fmtDT(m.prep) : "--") + " → 試合 " + (m.play ? fmtDT(m.play) : "--")));
+      var cur = st.starts[r.no] !== undefined ? st.starts[r.no] : (r.no === 1 ? B.start_at : r.override);
+      var dt = el("input"); dt.type = "datetime-local"; dt.value = cur || ""; dt.title = r.no === 1 ? "大会日時（ラウンド1の開始）" : "日を分けるときの、このラウンドの開始（空＝前のラウンドから自動）";
+      dt.addEventListener("change", function () {
+        var orig = r.no === 1 ? (B.start_at || "") : (r.override || "");
+        var val = dt.value || (r.no === 1 ? orig : "");
+        if (val === orig) delete st.starts[r.no]; else st.starts[r.no] = val || null;
+        renderBracket();
       });
-      rd.appendChild(box);
+      var sl = el("div", "bstart"); sl.appendChild(el("span", "muted", r.no === 1 ? "開始（大会日時）" : (cur ? "開始（日を分ける）" : "開始：自動 " + (r.start ? fmtDT(r.start) : ""))));
+      sl.appendChild(dt); col.appendChild(sl);
+      var body = el("div", "bcol");
+      var ms = r.matches.slice().sort(function (x, y) { return x.no - y.no; });
+      var cards = ms.map(function (m, k) {
+        var a = { name: m.a || (m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye }, b = { name: m.b || (m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye };
+        var swap = false;
+        if (r.no === 1) {
+          if (pairs && pairs[k]) { a = pairs[k].a; b = pairs[k].b; swap = !B.locked; }
+          else if (!pairs) { a = { name: "（保存したときに決まります）" }; b = { name: "（保存したときに決まります）" }; }
+        } else if (st.draw || st.swaps.length) { a = { name: "（未定）" }; b = { name: "（未定）" }; }
+        var head = m.bye ? "シード" : (m.play ? fmtDT(m.play) + " 試合開始" : "時間未定");
+        return brMatch(m, head, a, b, swap, brks.filter(function (x) { return x.after === m.mid; }));
+      });
+      if (r.no === R) cards.forEach(function (c) { var sl2 = el("div", "bslot"); sl2.appendChild(c); body.appendChild(sl2); });
+      else for (var q = 0; q < cards.length; q += 2) {
+        var g = el("div", "bgroup");
+        cards.slice(q, q + 2).forEach(function (c) { var sl3 = el("div", "bslot"); sl3.appendChild(c); g.appendChild(sl3); });
+        body.appendChild(g);
+      }
+      col.appendChild(body);
+      brks.filter(function (x) { return x.after === "R" + r.no; }).forEach(function (x) { col.appendChild(el("div", "bbreak", "☕ " + (x.label || "休憩") + " " + x.minutes + "分（このラウンドのあと）")); });
+      bk.appendChild(col);
     });
-    v.appendChild(rd);
+    var champ = el("section", "bround champ"); champ.appendChild(el("div", "bhd", "優勝"));
+    var cbox = el("div", "bchamp"); cbox.appendChild(el("div", "", "🏆")); cbox.appendChild(el("div", "muted", "CHAMPION")); champ.appendChild(cbox);
+    bk.appendChild(champ);
+    var n1 = (B.rounds[0] || { matches: [] }).matches.length;
+    bk.style.minHeight = Math.max(360, n1 * 150 + 120) + "px";
+    wrap.appendChild(bk); brPan(wrap); v.appendChild(wrap);
     // 休憩
-    var bk = el("div", "card brsec brk"); bk.appendChild(el("h2", "", "☕ 休憩（スタッフの休憩にも）"));
-    bk.appendChild(el("div", "muted", "試合のあと、またはラウンドのあとに、休憩を入れます。休憩のぶん、あとの試合の時間が、後ろへずれます（日を分けて開始日時を入れたラウンドは、ずれません）。"));
-    if (BRK == null) BRK = (B.breaks || []).map(function (b) { return { after: b.after, minutes: b.minutes, label: b.label }; });
+    var bkc = el("div", "card brsec brk"); bkc.appendChild(el("h2", "", "☕ 休憩（スタッフの休憩にも）"));
+    bkc.appendChild(el("div", "muted", "試合のあと、またはラウンドのあとに、休憩を入れます。休憩のぶん、あとの試合の時間が後ろへずれます（日を分けて開始日時を入れたラウンドは、ずれません）。"));
     var places = [];
     B.rounds.forEach(function (r) {
-      if (!r.concurrent) r.matches.forEach(function (m) { places.push([m.mid, r.name + " 第" + m.no + "試合のあと"]); });
+      var conc = st.modes[r.no] != null ? st.modes[r.no] : r.concurrent;
+      if (!conc) r.matches.forEach(function (m) { if (!m.bye) places.push([m.mid, r.name + " 第" + m.no + "試合のあと"]); });
       places.push(["R" + r.no, r.name + "のあと"]);
     });
-    BRK.forEach(function (b, i) {
+    function editBreaks(fn) { var list = brBreaks(B).map(function (b) { return Object.assign({}, b); }); fn(list); st.breaks = list; renderBracket(); }
+    brks.forEach(function (b, i) {
       var row = el("div", "brrow");
       var sel = el("select"); places.forEach(function (pl) { var o = el("option", "", pl[1]); o.value = pl[0]; if (pl[0] === b.after) o.selected = true; sel.appendChild(o); });
-      sel.addEventListener("change", function () { b.after = sel.value; });
+      sel.addEventListener("change", function () { editBreaks(function (l) { l[i].after = sel.value; }); });
       var mi = el("input"); mi.type = "number"; mi.min = B.break_limits[0]; mi.max = B.break_limits[1]; mi.value = b.minutes;
-      mi.addEventListener("change", function () { b.minutes = Math.round(Number(mi.value)); });
+      mi.addEventListener("change", function () { editBreaks(function (l) { l[i].minutes = Math.round(Number(mi.value)); }); });
       var lb = el("input"); lb.type = "text"; lb.maxLength = 30; lb.value = b.label; lb.placeholder = "休憩の名前";
-      lb.addEventListener("input", function () { b.label = lb.value; });
-      var del = el("button", "", "削除"); del.type = "button"; del.addEventListener("click", function () { BRK.splice(i, 1); renderBracket(); });
+      lb.addEventListener("change", function () { editBreaks(function (l) { l[i].label = lb.value; }); });
+      var del = el("button", "", "削除"); del.type = "button"; del.addEventListener("click", function () { editBreaks(function (l) { l.splice(i, 1); }); });
       row.appendChild(sel); row.appendChild(mi); row.appendChild(el("span", "", "分")); row.appendChild(lb); row.appendChild(del);
-      var cur = (B.breaks || [])[i];
-      if (cur && cur.after === b.after && cur.start) row.appendChild(el("span", "muted", fmtDT(cur.start) + "〜" + (cur.end ? hhmm(parseLocal(cur.end)) : "")));
-      bk.appendChild(row);
+      var saved = B.breaks[i];
+      if (st.breaks === null && saved && saved.start) row.appendChild(el("span", "muted", fmtDT(saved.start) + "〜" + (saved.end ? hhmm(parseLocal(saved.end)) : "")));
+      bkc.appendChild(row);
     });
-    var r3 = el("div", "brrow");
-    var addb = el("button", "", "＋ 休憩を追加"); addb.type = "button"; addb.disabled = !places.length;
-    addb.addEventListener("click", function () { BRK.push({ after: places.length ? places[0][0] : "R1", minutes: 15, label: "休憩" }); renderBracket(); });
-    var svb = el("button", "primary", "休憩を保存"); svb.type = "button"; svb.disabled = B.locked;
-    svb.addEventListener("click", function () {
-      var bad = BRK.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
-      if (bad.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
-      brSend([{ op: "set_breaks", items: BRK.map(function (b) { return { after: b.after, minutes: b.minutes, label: (b.label || "休憩").trim() }; }) }], "休憩を保存しています…");
-    });
-    r3.appendChild(addb); r3.appendChild(svb); bk.appendChild(r3);
-    v.appendChild(bk);
+    var addb = el("button", "", "＋ 休憩を追加"); addb.type = "button"; addb.disabled = !places.length || B.locked;
+    addb.addEventListener("click", function () { editBreaks(function (l) { l.push({ after: places[0][0], minutes: 15, label: "休憩" }); }); });
+    bkc.appendChild(addb);
+    v.appendChild(bkc);
   }
   function showTab(name) {
     $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br";
@@ -718,6 +840,52 @@
     });
     return g;
   }
+  var RANKS = [["", "制限なし"], ["1", "1段"], ["2", "2段"], ["3", "3段"], ["4", "4段"], ["5", "5段"], ["6", "6段"], ["7", "7段"], ["P", "最高峰"]];
+  function rankPick(v, put) {                                                        // 過去最高段位：段位と小段位を、横に並べて選ぶ（保存は「4-1」「7*10」「P*50」の形）
+    var m = /^([1-6])-([1-5])$/.exec(v) || /^(7|P)\*(\d{1,4})$/.exec(v), dan = m ? m[1] : "", sub = m ? m[2] : "";
+    var box = el("div", "rankpick"), a = el("select"), b = el("select");
+    RANKS.forEach(function (r) { var o = el("option", "", r[1]); o.value = r[0]; if (r[0] === dan) o.selected = true; a.appendChild(o); });
+    function subs(d) {
+      if (/^[1-6]$/.test(d)) return [["5", "Ⅴ"], ["4", "Ⅳ"], ["3", "Ⅲ"], ["2", "Ⅱ"], ["1", "Ⅰ"]];
+      var out = [], lo = d === "7" ? 0 : 25, hi = d === "7" ? 24 : 200;
+      for (var i = lo; i <= hi; i++) out.push([String(i), "★" + i]);
+      return out;
+    }
+    function fill() {
+      b.textContent = ""; var d = a.value; b.disabled = !d;
+      if (!d) { var o0 = el("option", "", "―"); o0.value = ""; b.appendChild(o0); return; }
+      subs(d).forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (x[0] === sub) o.selected = true; b.appendChild(o); });
+      if (!subs(d).some(function (x) { return x[0] === sub; })) b.value = subs(d)[0][0];
+    }
+    function val() { var d = a.value; if (!d) return ""; return /^[1-6]$/.test(d) ? d + "-" + b.value : d + "*" + b.value; }
+    fill();
+    a.addEventListener("change", function () { sub = ""; fill(); put(val()); });
+    b.addEventListener("change", function () { sub = b.value; put(val()); });
+    box.appendChild(a); box.appendChild(b);
+    return box;
+  }
+  function unsetTri() {                                                              // オンかオフを、まだ選んでいない設定（代打の段位制限など）
+    return (((data || {}).settings || {}).items || []).filter(function (it) { return it.type === "tri" && (ST[it.key] === "" || ST[it.key] == null); });
+  }
+  function backupKey() { return "editor_backup:" + key; }
+  function saveBackup() { try { localStorage.setItem(backupKey(), JSON.stringify({ at: Date.now(), work: [P, ROUNDS, DELETED, TM, ST] })); } catch (e) { /* 保存できなくても、そのまま */ } }
+  function showUnsetPopup(list) {                                                    // 大きなポップアップ：オンかオフを、必ず選んでもらう
+    var pop = $("bigpop"); pop.textContent = ""; pop.hidden = false;
+    var inner = el("div", "bigpop-in");
+    inner.appendChild(el("h2", "", "⚠ 保存できません"));
+    inner.appendChild(el("div", "", "次の設定は、オンかオフを必ず選んでください。選ぶまで、保存できません（いまの入力は、このブラウザにバックアップしました）。"));
+    list.forEach(function (it) {
+      var row = el("div", "brrow"); row.appendChild(el("b", "fwarn", it.label));
+      row.appendChild(sseg([["on", "オン"], ["off", "オフ"]], ST[it.key] || "", function (x) { ST[it.key] = x; refreshDirty(); var rest = unsetTri(); if (rest.length) showUnsetPopup(rest); else { pop.hidden = true; renderSettings(); setResult("ok", "選びました。もう一度「💾 保存」を押してください。"); } }));
+      inner.appendChild(row);
+    });
+    inner.appendChild(el("div", "hint", it0help(list)));
+    var close = el("button", "", "設定の画面で選ぶ"); close.type = "button";
+    close.addEventListener("click", function () { pop.hidden = true; showTab("set"); var r0 = document.querySelector('.srow[data-key="' + list[0].key + '"]'); if (r0) r0.scrollIntoView({ behavior: "smooth", block: "center" }); });
+    inner.appendChild(close);
+    pop.appendChild(inner);
+  }
+  function it0help(list) { return (list[0] && list[0].help) || ""; }
   function renderSettings() {
     var f = $("setform"); if (!f) return; f.textContent = "";
     var set = (data && data.settings) || { groups: [], items: [] };
@@ -727,13 +895,17 @@
       f.appendChild(el("h2", "", g[1]));
       var card = el("div", "card");
       items.forEach(function (it) {
-        var row = el("div", "srow" + (JSON.stringify(ST[it.key]) !== JSON.stringify(ST0[it.key]) ? " changed" : "")); row.setAttribute("data-key", it.key);
+        var off = it.depends && !ST[it.depends];                                          // もとになる設定がオフ：暗くして、変えられない
+        var unset = it.type === "tri" && (ST[it.key] === "" || ST[it.key] == null);      // オンかオフを、まだ選んでいない（赤い文字）
+        var row = el("div", "srow" + (JSON.stringify(ST[it.key]) !== JSON.stringify(ST0[it.key]) ? " changed" : "") + (off ? " dim" : "") + (unset ? " unset" : "")); row.setAttribute("data-key", it.key);
         var left = el("div"); left.appendChild(el("label", "", it.label));
+        if (off) left.appendChild(el("div", "hint", "（「" + ((set.items.filter(function (x) { return x.key === it.depends; })[0] || {}).label || "") + "」がオンのときだけ、使います）"));
         if (it.help) left.appendChild(el("div", "hint", it.help));
         var right = el("div"), v = ST[it.key];
         function put(val) { ST[it.key] = val; renderSettings(); refreshDirty(); }
         if (it.type === "bool") right.appendChild(sseg([[true, "オン"], [false, "オフ"]], !!v, put));
-        else if (it.type === "tri") right.appendChild(sseg([["", "未設定"], ["on", "オン"], ["off", "オフ"]], v || "", put));
+        else if (it.type === "tri") right.appendChild(sseg([["on", "オン"], ["off", "オフ"]], v || "", put));          // 未設定には、戻せない
+        else if (it.type === "rank") right.appendChild(rankPick(v || "", put));
         else if (it.type === "choice") {
           var sel = el("select");
           it.choices.forEach(function (c) { var o = el("option", "", c[1]); o.value = c[0]; if (String(v) === String(c[0])) o.selected = true; sel.appendChild(o); });
@@ -748,11 +920,14 @@
           if (it.type === "int") { if (it.min != null) inp.min = it.min; if (it.max != null) inp.max = it.max; }
           else if (it.max) inp.maxLength = it.max;
           inp.value = v == null ? "" : v;
+          if (it.type === "int") { inp.inputMode = "numeric"; inp.addEventListener("input", function () { var c = inp.value.replace(/[^0-9]/g, ""); if (c !== inp.value) inp.value = c; }); }   // 数字以外は、はじく
           inp.addEventListener("change", function () { put(it.type === "int" && inp.value !== "" ? Number(inp.value) : inp.value); });
           right.appendChild(inp);
+          if (it.warn3 && v != null && String(v).length >= 3) right.appendChild(el("div", "swarn", "⚠ " + it.warn3));        // 3桁以上
         }
         var on = it.type === "bool" ? !!v : it.type === "tri" ? true : it.type === "choice" ? String(v) === "live" : false;     // 警告：オン（非推奨）のとき・未設定を選ばせる設定・非推奨の選択肢
         if (it.warn && (on || it.type === "tri")) right.appendChild(el("div", "swarn", "⚠ " + it.warn.replace(/^⚠\s*/, "")));
+        if (off) Array.prototype.forEach.call([right], function (r) { r.style.pointerEvents = "none"; });
         row.appendChild(left); row.appendChild(right); card.appendChild(row);
       });
       f.appendChild(card);
@@ -766,7 +941,7 @@
     TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、BOTに保存されている値と比べる
     if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（25分前）を画面に入れておく。BOTには、まだ保存されていないので、そのまま保存すると、保存される
     if (SEL == null || SEL >= P.length) SEL = 0;
-    BRK = null; BRSWAP = null;
+    BRS = null; BRSEL = null;
     ST = {}; ST0 = {};
     ((d.settings || {}).items || []).forEach(function (it) { ST[it.key] = it.value; ST0[it.key] = it.value; });
     BASEJSON = JSON.stringify([P, ROUNDS, DELETED, TM0, ST0]);
@@ -775,10 +950,16 @@
   function init() {
     $("gate").hidden = true; $("app").hidden = false;
     adopt(data); render();
+    var bk = null; try { bk = JSON.parse(localStorage.getItem(backupKey()) || "null"); } catch (e) { bk = null; }
+    if (bk && bk.work && confirm("保存できなかった入力のバックアップがあります（" + new Date(bk.at).toLocaleString() + "）。戻しますか？\n（戻さないときは、バックアップを消します）")) {
+      P = bk.work[0]; ROUNDS = bk.work[1]; DELETED = bk.work[2]; TM = bk.work[3]; ST = bk.work[4]; render();
+    } else if (bk) { try { localStorage.removeItem(backupKey()); } catch (e) { /* そのまま */ } }
   }
 
   function save(share) {
     var ops = [], bad = "";
+    var un = unsetTri();
+    if (un.length) { saveBackup(); showUnsetPopup(un); setResult("ng", "⚠ オンかオフを選んでいない設定があります（" + un.map(function (x) { return x.label; }).join("、") + "）。"); return; }
     DELETED.forEach(function (id) { ops.push({ op: "delete_pattern", id: id }); });
     P.forEach(function (p) {
       if (p.builtin) return;
@@ -828,7 +1009,7 @@
     }).then(waitResult).then(function (r) {
       $("share").disabled = false;
       if (!r) { setResult("ng", "BOTからの返事がありません。しばらくして「最新を読み込む」を押して、確かめてください。"); refreshDirty(); return; }
-      if (r.ok) { setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); return load().then(function (d) { adopt(d); render(); }); }
+      if (r.ok) { try { localStorage.removeItem(backupKey()); } catch (e2) { /* そのまま */ } setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); return load().then(function (d) { adopt(d); render(); }); }
       setResult("ng", "⚠ " + (r.error || "保存できませんでした。")); refreshDirty();
     }).catch(function (e) { $("share").disabled = false; setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
   }
@@ -848,11 +1029,11 @@
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("tabbr").addEventListener("click", function () { showTab("br"); });
   $("reload").addEventListener("click", function () {
-    if (dirty() && !confirm("保存していない変更は、消えます。最新を読み込みますか？")) return;
+    if ((dirty() || brDirty()) && !confirm("保存していない変更は、消えます。最新を読み込みますか？")) return;
     load().then(function (d) { adopt(d); render(); setResult("", ""); });
   });
   $("newp").addEventListener("click", function () { P.push({ id: null, name: "新しい手順" + (P.length + 1), builtin: false, steps: [{ side: "survivor", action: "ban", target: "hunter", count: 1 }] }); SEL = P.length - 1; render(); });
-  window.addEventListener("beforeunload", function (e) { if (AUTH && dirty()) { e.preventDefault(); e.returnValue = ""; } });
+  window.addEventListener("beforeunload", function (e) { if (AUTH && (dirty() || brDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
   if (!key || !BASE) { gate(function (g) { g.appendChild(el("h1", "", "URLが正しくありません")); g.appendChild(el("div", "", "管理者メニューで出る、設定用のURLから開いてください。")); }); return; }
   if (!(window.crypto && crypto.subtle)) { gate(function (g) { g.appendChild(el("div", "", "このブラウザでは使えません（https:// のURLで、新しいブラウザで開いてください）。")); }); return; }
