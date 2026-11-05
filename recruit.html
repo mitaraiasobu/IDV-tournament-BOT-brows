@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>メンバー募集</title>
 <meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https://cdn.discordapp.com https://media.discordapp.net; connect-src https:; base-uri 'none'; form-action 'none'">
 <!--
   メンバー募集のページ（どの大会にも共通の1枚）。
   ・URLの ?t=（募集用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いた、募集中のチーム）を読む。
   ・エントリーパネルの「🙋 メンバー応募」で出る本人用のURLは、# のあとに「ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印」が入る。
     本人の印で、データの中の「本人ごとの様子」（応募・所属・リーダーのチーム）を見る（データには、Discordの番号を入れない）。
-  ・リーダー：募集の内容を書く（チーム名・読み方も。制限は、決めなければ「制限なし」）。チームの選手：脱退できる。それ以外：応募（第一希望〜第三希望）・取り消し・希望の並べ替え。
+  ・リーダー：チーム情報（チーム名・略称・カラー・ロゴ・メンバー・リーダーを譲る）と、応募情報（募集の内容。制限は、決めなければ「制限なし」）。チームの選手：脱退できる。それ以外：応募（第一希望〜第三希望）・取り消し・希望の並べ替え。
   ・送った依頼は、受け箱へ（BOTが処理して、結果を書き戻す）。
 -->
 <style>
@@ -64,8 +64,23 @@
   .guide-arrow { position: fixed; font-size: 36px; color: #fff; animation: gbounce 1s infinite; }
   .guide-tip { position: fixed; max-width: 280px; background: var(--panel); color: var(--text); border: 2px solid var(--accent); border-radius: 12px; padding: 12px 14px; font-weight: 800; font-size: 16px; }
   @keyframes gbounce { 50% { transform: translateY(-8px); } }
+  .cau { font-size: 13px; } .frm .cau { grid-column: 2; } .cau summary { cursor: pointer; color: var(--warn); font-weight: 800; } .cau div { margin: 6px 0 0; line-height: 1.6; }
+  .subwarn { margin: 8px 0; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--ng); background: var(--panel2); color: var(--ng); font-weight: 800; font-size: 15px; }
+  .kv { display: grid; grid-template-columns: 11em 1fr; gap: 6px 12px; font-size: 14px; margin: 8px 0; } .kv b { color: var(--sub); font-weight: 700; } .kv span { overflow-wrap: anywhere; white-space: pre-wrap; }
+  .ask { margin: 10px 0; padding: 12px; border-radius: 10px; border: 2px solid var(--warn); font-weight: 800; color: var(--warn); }
+  .logos { display: flex; gap: 16px; flex-wrap: wrap; } .logos figure { margin: 0; text-align: center; font-size: 12px; color: var(--sub); } .logos img { width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--line); display: block; margin-bottom: 4px; }
+  #busy { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px); padding: 14px 20px; border-radius: 12px;
+          background: var(--panel); border: 3px solid var(--accent); color: var(--text); font-weight: 800; font-size: 18px; box-shadow: 0 6px 24px rgba(0,0,0,.35); display: flex; gap: 12px; align-items: center; }
+  #busy.ok { border-color: var(--ok); color: var(--ok); } #busy.ng { border-color: var(--ng); color: var(--ng); }
+  #busy .spin { width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--line); border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .imgask { position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .imgask .box { background: var(--panel); border-radius: 14px; padding: 16px; max-width: 520px; width: 100%; text-align: center; border: 1px solid var(--line); }
+  .imgask img { max-width: 100%; max-height: 60vh; border-radius: 8px; border: 1px solid var(--line); }
+  .imgask .q { font-size: 18px; font-weight: 800; margin: 12px 0; } .imgask button { font-size: 17px; padding: 10px 28px; }
+  .mem { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); } .mem span { flex: 1; }
   .prev { max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--line); } .badtxt { color: var(--ng); font-size: 12px; font-weight: 700; }
-  @media (max-width: 640px) { .frm { grid-template-columns: 1fr; } .frm .hint { grid-column: 1; } }
+  @media (max-width: 640px) { .frm { grid-template-columns: 1fr; } .frm .hint, .frm .cau { grid-column: 1; } .kv { grid-template-columns: 1fr; } .kv b { margin-top: 4px; } }
 </style>
 </head>
 <body>
@@ -170,7 +185,17 @@
       })
       .catch(function () { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした。通信を確かめて、もう一度お試しください。"); });
   }
-  function setMsg(cls, text) { var ms = document.querySelectorAll(".msg.live"); for (var i = 0; i < ms.length; i++) { ms[i].className = "msg live " + cls; ms[i].textContent = text; } }
+  var BUSY_T = null;
+  function banner(cls, text) {                                                       // 画面の上に大きく：処理中（くるくる）・結果
+    var b = document.getElementById("busy");
+    if (!b) { b = el("div"); b.id = "busy"; document.body.appendChild(b); }
+    clearTimeout(BUSY_T); b.textContent = ""; b.className = cls || ""; b.hidden = false;
+    if (!cls) b.appendChild(el("div", "spin"));
+    b.appendChild(el("span", "", text));
+    if (cls) BUSY_T = setTimeout(function () { b.hidden = true; }, cls === "ng" ? 9000 : 5000);
+  }
+  function setMsg(cls, text) {
+    if (!cls && text) banner("", text); else if (text && (BUSY_T !== null || document.getElementById("busy"))) banner(cls, text); var ms = document.querySelectorAll(".msg.live"); for (var i = 0; i < ms.length; i++) { ms[i].className = "msg live " + cls; ms[i].textContent = text; } }
   function liveMsg() { return el("div", "msg live"); }
 
   // ───── リーダー：募集の内容（初めては、制限も含めて、すべてをまとめて） ─────
@@ -207,25 +232,27 @@
   function leaderView(box, teamId) {
     var cur = (D.forms || {})[String(teamId)] || { first: true };
     if (!FORM || FORM._team !== teamId) {
-      FORM = { _team: teamId, team_name: cur.team_name || teamName(teamId), team_reading: cur.team_reading || "", title: cur.title || "", wanted: cur.wanted || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
+      FORM = { _team: teamId, title: cur.title || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
                extra: !!cur.extra, extra_faction: cur.extra_faction || "both", usepw: !!cur.lock, password: "",
                level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "" };
     }
     var c = el("div", "card");
-    c.appendChild(el("h2", "", "📝 募集の内容｜" + teamName(teamId)));
+    c.appendChild(el("h2", "", "📝 応募情報（募集の内容）"));
     c.appendChild(el("div", "lead", cur.first ? "募集の内容を書いて保存してください。制限は、決めなければ「制限なし」になります。あとから、いつでも変えられます。"
-                                              : "募集の内容は、いつでも変えられます（変えた項目だけ、まとめて保存します）。"));
+                                              : "募集の内容は、いつでも変えられます。"));
     var f = el("div", "frm");
     function lab(t) { f.appendChild(el("label", "", t)); }
     function hint(t) { f.appendChild(el("div", "hint", t)); }
     function text(k, max, ph, area) { var i = el(area ? "textarea" : "input"); if (!area) i.type = "text"; i.maxLength = max; i.value = FORM[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { FORM[k] = i.value; }); f.appendChild(i); }
     function num(k, lo, hi) { var s = el("select"); for (var n = lo; n <= hi; n++) { var o = el("option", "", n + "人"); o.value = String(n); if (Number(FORM[k]) === n) o.selected = true; s.appendChild(o); } s.addEventListener("change", function () { FORM[k] = Number(s.value); }); return s; }
-    lab("チーム名"); text("team_name", 30, "チーム名");
-    lab("チーム名の読み方"); text("team_reading", 60, "ひらがな（かなだけの名前なら、空でよい）");
     lab("募集タイトル（20字以内）"); text("title", 20, "例：初心者さん大歓迎！");
     lab("求めている人材"); var nr = el("div", "row"); nr.style.marginTop = "0"; nr.appendChild(el("span", "", "サバイバー")); nr.appendChild(num("need_s", 0, D.need_max || 10)); nr.appendChild(el("span", "", "ハンター")); nr.appendChild(num("need_h", 0, D.need_max || 10)); f.appendChild(nr);
     hint("両陣営の人が加入したら、サバイバー・ハンターの両方を、1人ずつ減らします。");
-    lab("ひとこと（任意）"); text("wanted", 100, "例：VCで話せる人");
+    lab("人数を超えても募集する"); var xr = el("div", "row"); xr.style.marginTop = "0";
+    var xc = el("input"); xc.type = "checkbox"; xc.checked = FORM.extra; xc.addEventListener("change", function () { FORM.extra = xc.checked; render(); });
+    xr.appendChild(xc); xr.appendChild(el("span", "", "求めている人材の人数を超えても募集する"));
+    if (FORM.extra) { var xs = el("select"); [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営OK"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (FORM.extra_faction === o2[0]) o.selected = true; xs.appendChild(o); }); xs.addEventListener("change", function () { FORM.extra_faction = xs.value; }); xr.appendChild(xs); }
+    f.appendChild(xr); hint("人数がそろったあとも「余分募集」として、選んだ陣営の人を募集できます（一覧では下のほうに出ます）。");
     lab("概要（任意）"); text("summary", 1000, "性別やVCの有無、使用キャラクター、バッジの有無などを制限したい場合はここに記載してください。", true);
     lab("閲歴の下限・上限"); var lr = el("div", "row"); lr.style.marginTop = "0";
     ["level_min", "level_max"].forEach(function (k, ix) {
@@ -241,11 +268,6 @@
     var s1 = rankScore(FORM.rank_min), s2 = rankScore(FORM.rank_max);
     if (s1 != null && s2 != null && s1 > s2) bad.push("段位の下限が、上限より高くなっています。");
     if (FORM.level_min && FORM.level_max && Number(FORM.level_min) > Number(FORM.level_max)) bad.push("閲歴の下限が、上限より大きくなっています。");
-    lab("人数を超えても募集する"); var xr = el("div", "row"); xr.style.marginTop = "0";
-    var xc = el("input"); xc.type = "checkbox"; xc.checked = FORM.extra; xc.addEventListener("change", function () { FORM.extra = xc.checked; render(); });
-    xr.appendChild(xc); xr.appendChild(el("span", "", "求めている人材の人数を超えても募集する"));
-    if (FORM.extra) { var xs = el("select"); [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営OK"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (FORM.extra_faction === o2[0]) o.selected = true; xs.appendChild(o); }); xs.addEventListener("change", function () { FORM.extra_faction = xs.value; }); xr.appendChild(xs); }
-    f.appendChild(xr); hint("人数がそろったあとも「余分募集」として、選んだ陣営の人を募集できます（一覧では下のほうに出ます）。");
     lab("パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
     var pc = el("input"); pc.type = "checkbox"; pc.checked = FORM.usepw; pc.addEventListener("change", function () { FORM.usepw = pc.checked; render(); });
     pr.appendChild(pc); pr.appendChild(el("span", "", "パスワードつきの募集（友人だけを招待したいとき）"));
@@ -254,16 +276,14 @@
     c.appendChild(f);
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
     var row = el("div", "row");
-    var sv = el("button", "go", "💾 募集の内容を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
+    var sv = el("button", "go", "💾 応募情報を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
     sv.addEventListener("click", function () {
-      if (!FORM.team_name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
       if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
       if (cur.first && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
       if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ パスワードは、4〜20文字の英数字にしてください。"); return; }
-      var form = { team_name: FORM.team_name.trim(), team_reading: FORM.team_reading.trim(), title: FORM.title, wanted: FORM.wanted, summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
+      var form = { title: FORM.title, wanted: "", summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
                    level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null };
       if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
-      if (cur.first && !("password" in form)) form.password = "";
       send({ act: "form", team: teamId, form: form }, "保存しています…");
     });
     row.appendChild(sv);
@@ -277,7 +297,22 @@
   }
 
   // ───── あなたの選手情報（応募に要る、すべての情報と、プロフィール画像） ─────
-  var PF = null, PEND = null, IMG = null;
+  var PF = null, PEND = null, IMG = null, CAU_OPEN = false, IMG_FAIL = false;
+  function imgExpired(u) { var m = /[?&]ex=([0-9a-f]+)/.exec(u || ""); return !!m && parseInt(m[1], 16) * 1000 < Date.now(); }   // DiscordのURLは期限つき
+  function curImage(box, small) {                                                     // 登録済みのプロフィール画像（見られないときは、見られる場所を教える）
+    var u = (me.prof && me.prof.iu) || "";
+    if (!me.prof || !me.prof.img) return;
+    if (u && !imgExpired(u) && !IMG_FAIL) {
+      var im = el("img", "prev"); im.src = u; im.alt = "登録済みのプロフィール画像"; if (small) { im.style.maxWidth = "160px"; im.style.maxHeight = "120px"; }
+      im.addEventListener("error", function () { IMG_FAIL = true; render(); });
+      box.appendChild(im);
+    } else {
+      box.appendChild(el("div", "lead", "登録済みの画像は、Discordのエントリーパネルの「🪪 選手基本情報」で見られます。"));
+      var rb = el("button", "", "🔄 ここに画像を表示する"); rb.type = "button"; rb.disabled = BUSY;
+      rb.addEventListener("click", function () { IMG_FAIL = false; send({ act: "profile_image_refresh" }, "画像を読み込んでいます…"); });
+      var rr = el("div", "row"); rr.appendChild(rb); box.appendChild(rr);
+    }
+  }
   function profForm(box, inline) {
     var cur = me.prof || {};
     if (!PF) PF = { n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
@@ -288,7 +323,16 @@
     function lab(t) { f.appendChild(el("label", "", t)); }
     function txt(k, max, ph, digits) { var i = el("input"); i.type = "text"; i.maxLength = max; i.value = PF[k]; if (ph) i.placeholder = ph; if (digits) i.inputMode = "numeric";
       i.addEventListener("input", function () { if (digits) { var d = i.value.replace(/[^0-9]/g, ""); if (d !== i.value) i.value = d; } PF[k] = i.value; }); f.appendChild(i); return i; }
-    lab("名前"); txt("n", 20, "ゲーム内の名前など");
+    lab("名前");
+    var tab = D.abbr ? ((U() || {}).tabbr || "") : "", ni = el("input"); ni.type = "text"; ni.maxLength = 20; ni.value = PF.n; ni.placeholder = "ゲーム内の名前など（チーム略称は入れない）";
+    ni.addEventListener("input", function () { PF.n = ni.value; });
+    if (tab) { var nw2 = el("div", "row"); nw2.style.marginTop = "0"; nw2.style.flexWrap = "nowrap"; nw2.appendChild(el("b", "", tab + "_")); ni.style.flex = "1"; nw2.appendChild(ni); f.appendChild(nw2); }   // 略称は自動で付く（見せるだけ）
+    else f.appendChild(ni);
+    var cau = el("details", "cau"); cau.open = CAU_OPEN; cau.addEventListener("toggle", function () { CAU_OPEN = cau.open; });
+    cau.appendChild(el("summary", "", "⚠ 選手名の注意（必ず読んでください）"));
+    cau.appendChild(el("div", "", "チーム略称は含めないでください。自動で付きます。手動でもつけると重複してAB_AB_Mitaのようになってしまいます。"));
+    cau.appendChild(el("div", "", "ゲーム内では名前は略称を含めて全角7字/半角14字までしか入れられませんが、入りきるところまで入れてください。例:選手名をMitaraiAsobuVtuberにしたい場合、ゲーム内ではAB_MitaraiAsobにしてください。"));
+    f.appendChild(cau);
     lab("名前の読み方"); txt("r", 40, "ひらがな（かなだけの名前なら、空でよい）");
     lab("ゲーム内ID"); txt("g", 12, "数字", true);
     lab("出場する陣営"); var fs = el("select"); [["", "選んでください"], ["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (PF.f === o2[0]) o.selected = true; fs.appendChild(o); });
@@ -350,22 +394,33 @@
     // プロフィール画像：ブラウザで小さくしてから送る（BOTは、あなたとのDMに置くだけ。BOTのサーバーには保存しない）
     var ic = el("div", "card"); ic.style.marginTop = "10px";
     ic.appendChild(el("h2", "", "🖼 プロフィール画像（ゲーム内のプロフィール画面のスクリーンショット）"));
-    ic.appendChild(el("div", "lead", (cur.img ? "登録済みです。" : "まだ登録していません。") + "サブアカウントで出場するときは、過去最高段位のアカウントの画面にしてください。BOTからのDMに、控えが届きます。"));
+    ic.appendChild(el("div", cur.img ? "lead" : "badtxt", cur.img ? "✅ 登録済みです（いまの画像）。" : "⚠ まだ登録していません。応募・チーム作りには、プロフィール画像が必要です。"));
+    if (PF.sub) ic.appendChild(el("div", "subwarn", "⚠ サブアカではなく、過去最高段位が表示されている本アカのプロフィール画像を送信してください。"));
+    curImage(ic, false);
     var fi = el("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp"; fi.style.display = "none";       // 選ぶボタン（見やすい大きなボタン）から開く
-    fi.addEventListener("change", function () { if (fi.files && fi.files[0]) shrink(fi.files[0], function (u) { IMG = u; render(); }); });
-    var pick = el("button", "go", IMG ? "📷 別の画像を選ぶ" : "📷 画像を選ぶ"); pick.type = "button"; pick.disabled = !me.prof || BUSY;
+    fi.addEventListener("change", function () { if (fi.files && fi.files[0]) shrink(fi.files[0], function (u) { IMG = u; fi.value = ""; askImage(); }); });
+    var pick = el("button", "go", cur.img ? "📷 画像を送り直す" : "📷 画像を送る"); pick.type = "button"; pick.disabled = !me.prof || BUSY;
     pick.addEventListener("click", function () { fi.click(); });
     var ir = el("div", "row"); ir.appendChild(fi); ir.appendChild(pick);
-    var up = el("button", "go", "⬆ この画像を登録"); up.type = "button"; up.disabled = !IMG || !me.prof || BUSY;
-    up.addEventListener("click", function () { PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を送っています…"); });
-    ir.appendChild(up);
     if (cur.img) { var di = el("button", "danger", "画像を消す"); di.type = "button"; di.addEventListener("click", function () { if (confirm("プロフィール画像を消します。よろしいですか？")) { PEND = { kind: "imgdel" }; send({ act: "profile_image_delete" }, "消しています…"); } }); ir.appendChild(di); }
     ic.appendChild(ir);
-    if (IMG) { var im = el("img", "prev"); im.src = IMG; im.alt = ""; ic.appendChild(im); ic.appendChild(el("div", "lead", "この画像でよければ「⬆ この画像を登録」を押してください。")); }
     if (!me.prof) ic.appendChild(el("div", "badtxt", "先に、上の「💾 選手情報を保存」を押してください。保存すると、画像を選べるようになります。"));
     c.appendChild(ic);
     c.appendChild(liveMsg());
     box.appendChild(c);
+  }
+  function askImage() {                                                              // 送った画像を大きく見せて、登録するか選んでもらう
+    var old = document.getElementById("imgask"); if (old) old.remove();
+    if (!IMG) return;
+    var w = el("div", "imgask"); w.id = "imgask"; var b = el("div", "box");
+    var im = el("img"); im.src = IMG; im.alt = "送る画像"; b.appendChild(im);
+    if (PF && PF.sub) b.appendChild(el("div", "subwarn", "⚠ サブアカではなく、過去最高段位が表示されている本アカのプロフィール画像を送信してください。"));
+    b.appendChild(el("div", "q", "この画像で登録しますか？"));
+    var r = el("div", "row"); r.style.justifyContent = "center";
+    var y = el("button", "go", "はい"); y.type = "button";
+    y.addEventListener("click", function () { w.remove(); PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を登録しています…"); });
+    var n = el("button", "", "いいえ"); n.type = "button"; n.addEventListener("click", function () { w.remove(); IMG = null; });
+    r.appendChild(y); r.appendChild(n); b.appendChild(r); w.appendChild(b); document.body.appendChild(w);
   }
   function shrink(file, done) {                                                       // 長い辺を900pxまでに小さくして、JPEGに（送る量を小さく）
     var rd = new FileReader();
@@ -381,15 +436,18 @@
     };
     rd.readAsDataURL(file);
   }
+  function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
   function openProfile() {
+    var st = keepScroll();
     var old = document.getElementById("ov"); if (old) old.remove();
     var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
-    ov.addEventListener("click", function (e) { if (e.target === ov) { ov.remove(); PROFOPEN = false; } });
+    ov.addEventListener("click", function (e) { if (e.target === ov) { ov.remove(); PROFOPEN = false; BACK_TO = null; } });
+    if (BACK_TO != null) d.appendChild(el("div", "ask", "直したら「💾 選手情報を保存」を押してください。保存すると、応募の確認の画面に戻ります。"));
     profForm(d, false);
-    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { ov.remove(); PROFOPEN = false; }); d.appendChild(cl);
-    ov.appendChild(d); document.body.appendChild(ov);
+    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { ov.remove(); PROFOPEN = false; BACK_TO = null; }); d.appendChild(cl);
+    ov.appendChild(d); document.body.appendChild(ov); d.scrollTop = st;
   }
-  var PROFOPEN = false;
+  var PROFOPEN = false, CT_OPEN = false, BACK_TO = null, DSTEP = null;
   function guideSeen() { try { return localStorage.getItem("rc_guide_seen") === "1"; } catch (e) { return false; } }
   function showGuide() {                                                              // ゲームのチュートリアルのように：画面を暗くして、矢印で「ここを押して」
     if (guideSeen() || document.getElementById("guide")) return;
@@ -488,7 +546,94 @@
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
   }
-  function leaderExtra(box, u) {                                                      // リーダー：応募への返事・メンバー・エントリー・チーム名・解散
+  var TN = null;
+  function teamInfoView(box, u) {                                                    // チーム情報（リーダー）：チーム名 → 略称 → チームカラー → チームロゴ → メンバー → リーダーを譲る
+    var c = el("div", "card"), fm = (D.forms || {})[String(u.leader)] || {};
+    c.appendChild(el("h2", "", "🏷 チーム情報｜" + teamName(u.leader)));
+    if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: "", color: u.color || "" };
+    var f = el("div", "frm");
+    function inp(label, k, max, ph) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = TN[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { TN[k] = i.value; }); f.appendChild(i); return i; }
+    inp("チーム名", "name", 30, "チーム名");
+    inp("チーム名の読み方", "reading", 60, "ひらがな（かなだけの名前なら、空でよい）");
+    if (D.abbr) { inp("略称", "abbr", 8, "半角英数字"); f.appendChild(el("div", "hint", "略称を変えると、選手名の頭も自動で変わります。")); inp("略称の読み方", "abbr_reading", 60, "変えるときだけ（ひらがな）"); }
+    f.appendChild(el("label", "", "🎨 チームカラー"));
+    var cr = el("div", "row"); cr.style.marginTop = "0";
+    var ci = el("input"); ci.type = "color"; ci.value = /^#[0-9a-fA-F]{6}$/.test(TN.color) ? TN.color : "#ff69b4";
+    var ct = el("input"); ct.type = "text"; ct.maxLength = 7; ct.value = TN.color; ct.placeholder = "#ff69b4（空＝標準の色）"; ct.style.width = "12em";
+    ci.addEventListener("input", function () { ct.value = ci.value; TN.color = ci.value; });
+    ct.addEventListener("input", function () { TN.color = ct.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) ci.value = ct.value; });
+    cr.appendChild(ci); cr.appendChild(ct); f.appendChild(cr);
+    f.appendChild(el("div", "hint", "配信の画面で、チームの色になります。空にすると、標準の色になります。"));
+    if (D.logo_on) {
+      f.appendChild(el("label", "", "🖼 チームロゴ"));
+      var lbox = el("div"), lg = (me.prof && me.prof.lg) || {}, figs = el("div", "logos");
+      function fig(src, cap) { var g = el("figure"); var im = el("img"); im.src = src; im.alt = cap; g.appendChild(im); g.appendChild(el("div", "", cap)); figs.appendChild(g); }
+      if (lg.cur) fig(lg.cur, "✅ いま使っているロゴ");
+      if (lg.pend) fig(lg.pend, "⏳ 申請中（承認待ち）");
+      if (LOGO) fig(LOGO, "📷 保存すると送るロゴ");
+      if (figs.childNodes.length) lbox.appendChild(figs);
+      else lbox.appendChild(el("div", "lead", u.logo === "pending" ? "送ったロゴは、管理者の承認を待っています。" : u.logo === "yes" ? "承認されたロゴを使っています。" : "まだ登録していません（略称から作った、自動のロゴが使われます）。"));
+      var lf = el("input"); lf.type = "file"; lf.accept = "image/png,image/jpeg,image/webp"; lf.style.display = "none";
+      lf.addEventListener("change", function () { if (lf.files && lf.files[0]) shrinkTo(lf.files[0], 600, "image/png", function (x) { LOGO = x; render(); }); });
+      var lr = el("div", "row"), lp = el("button", "", LOGO ? "📷 別の画像を選ぶ" : "📷 ロゴの画像を選ぶ"); lp.type = "button"; lp.addEventListener("click", function () { lf.click(); });
+      lr.appendChild(lf); lr.appendChild(lp);
+      if (LOGO) { var lx = el("button", "", "選んだ画像をやめる"); lx.type = "button"; lx.addEventListener("click", function () { LOGO = null; render(); }); lr.appendChild(lx); }
+      if (u.logo && u.logo !== "no") { var ld = el("button", "danger", "ロゴを消す"); ld.type = "button"; ld.addEventListener("click", function () { if (confirm("登録していたロゴ（承認待ちも）を消します。よろしいですか？")) send({ act: "team_logo_delete", team: u.leader }, "ロゴを消しています…"); }); lr.appendChild(ld); }
+      lbox.appendChild(lr);
+      lbox.appendChild(el("div", "lim", "正方形（縦と横が同じ長さ）の画像にしてください。送ったロゴは、管理者が承認してから使われます。"));
+      f.appendChild(lbox);
+    }
+    c.appendChild(f);
+    var srow = el("div", "row"), sb = el("button", "go", "💾 チーム情報を保存"); sb.type = "button"; sb.disabled = BUSY;
+    sb.addEventListener("click", function () {
+      if (!TN.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
+      if (TN.color && !/^#[0-9a-fA-F]{6}$/.test(TN.color)) { setMsg("ng", "⚠ チームカラーは、#ff69b4 のような形にしてください（空なら標準の色）。"); return; }
+      var info = { name: TN.name.trim(), reading: TN.reading.trim(), color: TN.color };
+      if (D.abbr) { info.abbr = TN.abbr.trim(); info.abbr_reading = TN.abbr_reading.trim(); }
+      if (LOGO) info.logo = LOGO;
+      send({ act: "team_info", team: u.leader, info: info }, "チーム情報を保存しています…");
+    });
+    srow.appendChild(sb); c.appendChild(srow);
+    var roster = arr(u.roster);
+    c.appendChild(el("h2", "", "👥 メンバー（" + roster.length + "/" + (D.cap || "—") + "）"));
+    if (!roster.length) c.appendChild(el("div", "lead", "（まだいません）"));
+    roster.forEach(function (m) {
+      var r = el("div", "mem"); r.appendChild(el("span", "", m.name + (m.me ? "（あなた・リーダー）" : "")));
+      if (!m.me) {
+        var kb = el("button", "danger", "脱退させる"); kb.type = "button"; kb.disabled = BUSY;
+        kb.addEventListener("click", function () { if (confirm("本当に " + m.name + " さんを、チームから脱退させますか？")) send({ act: "kick", team: u.leader, pid: m.pid }, m.name + " さんを脱退させています…"); });
+        r.appendChild(kb);
+      }
+      c.appendChild(r);
+    });
+    var others = roster.filter(function (m) { return !m.me; });
+    c.appendChild(el("h2", "", "👑 リーダーを譲る"));
+    if (!others.length) c.appendChild(el("div", "lead", "譲れるメンバーが、まだいません。"));
+    else {
+      var tr = el("div", "row"), ts = el("select"); var o0 = el("option", "", "新しいリーダーを選ぶ"); o0.value = ""; ts.appendChild(o0);
+      others.forEach(function (m) { var o = el("option", "", m.name); o.value = String(m.pid); ts.appendChild(o); });
+      var tb = el("button", "danger", "リーダーを譲る"); tb.type = "button";
+      tb.addEventListener("click", function () {
+        if (!ts.value) { setMsg("ng", "⚠ 新しいリーダーを選んでください。"); return; }
+        var nm = ts.options[ts.selectedIndex].textContent;
+        if (confirm(nm + " さんに、リーダーを譲ります。応募への返事や募集の内容は、新しいリーダーが行うようになり、あなたはふつうのメンバーになります。よろしいですか？")) send({ act: "transfer_leader", team: u.leader, pid: Number(ts.value) }, "リーダーを譲っています…");
+      });
+      tr.appendChild(ts); tr.appendChild(tb); c.appendChild(tr);
+    }
+    var row = el("div", "row");
+    if (u.recruiting) {
+      var en = el("button", "go", "🎉 この内容でエントリーする"); en.type = "button"; en.disabled = !u.can_enter || BUSY;
+      en.addEventListener("click", function () { if (confirm("大会にエントリーします。よろしいですか？")) send({ act: "enter", team: u.leader }, "エントリーしています…"); });
+      row.appendChild(en);
+      if (!u.can_enter) row.appendChild(el("span", "lim", "エントリーは、選手が" + (D.min || 1) + "人以上になってから"));
+    }
+    var ds = el("button", "danger", "🗑 チームを解散する"); ds.type = "button";
+    ds.addEventListener("click", function () { if (confirm("チーム「" + teamName(u.leader) + "」を解散します。メンバーの登録も消え、応募も取り消されます。取り消せません。本当に解散しますか？")) send({ act: "dissolve", team: u.leader }, "解散しています…"); });
+    row.appendChild(ds); c.appendChild(row);
+    c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+  function appsView(box, u) {                                                         // このチームへの応募（承認・否認）
     var c = el("div", "card");
     c.appendChild(el("h2", "", "📨 このチームへの応募"));
     var apps = arr(u.apps);
@@ -504,65 +649,6 @@
       }
       c.appendChild(r);
     });
-    c.appendChild(el("h2", "", "👥 メンバー（" + arr(u.members).length + "/" + (D.cap || "—") + "）"));
-    c.appendChild(el("div", "lead", arr(u.members).join("、") || "（まだいません）"));
-    var row = el("div", "row");
-    if (u.recruiting) {
-      var en = el("button", "go", "🎉 この内容でエントリーする"); en.type = "button"; en.disabled = !u.can_enter || BUSY;
-      en.addEventListener("click", function () { if (confirm("大会にエントリーします。よろしいですか？")) send({ act: "enter", team: u.leader }, "エントリーしています…"); });
-      row.appendChild(en);
-      if (!u.can_enter) row.appendChild(el("span", "lim", "エントリーは、選手が" + (D.min || 1) + "人以上になってから"));
-    }
-    var rn = el("button", "", "🏷 チーム名を変える"); rn.type = "button";
-    rn.addEventListener("click", function () { var n = prompt("新しいチーム名", teamName(u.leader)); if (!n) return; var rd = prompt("チーム名の読み方（ひらがな。かなだけの名前なら空でよい）", "") || ""; send({ act: "rename_team", team: u.leader, name: n, reading: rd }); });
-    var ds = el("button", "danger", "🗑 チームを解散する"); ds.type = "button";
-    ds.addEventListener("click", function () { if (confirm("チーム「" + teamName(u.leader) + "」を解散します。メンバーの登録も消え、応募も取り消されます。取り消せません。本当に解散しますか？")) send({ act: "dissolve", team: u.leader }, "解散しています…"); });
-    row.appendChild(rn); row.appendChild(ds);
-    c.appendChild(row);
-    // チームカラー・ロゴ・略称・リーダーを譲る（Discordのチームの画面と同じ）
-    c.appendChild(el("h2", "", "🎨 チームカラー"));
-    var cr = el("div", "row"), ci = el("input"); ci.type = "color"; ci.value = /^#[0-9a-fA-F]{6}$/.test(u.color || "") ? u.color : "#ff69b4";
-    var ct = el("input"); ct.type = "text"; ct.maxLength = 7; ct.value = u.color || ""; ct.placeholder = "#ff69b4"; ct.style.width = "8em";
-    ci.addEventListener("input", function () { ct.value = ci.value; });
-    ct.addEventListener("input", function () { if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) ci.value = ct.value; });
-    var cs = el("button", "go", "色を保存"); cs.type = "button"; cs.addEventListener("click", function () { send({ act: "team_color", team: u.leader, color: ct.value.trim() }); });
-    var cx = el("button", "", "色を消す（標準の色）"); cx.type = "button"; cx.addEventListener("click", function () { send({ act: "team_color", team: u.leader, color: "" }); });
-    cr.appendChild(ci); cr.appendChild(ct); cr.appendChild(cs); cr.appendChild(cx); c.appendChild(cr);
-    c.appendChild(el("div", "lim", "配信の画面で、チームの色になります（#000000 の形）。登録しなくても、標準の色が使われます。"));
-    if (D.logo_on) {
-      c.appendChild(el("h2", "", "🖼 チームのロゴ"));
-      c.appendChild(el("div", "lead", { yes: "承認されたロゴを使っています。", pending: "送ったロゴは、管理者の承認を待っています。", no: "まだ登録していません（略称から作った、自動のロゴが使われます）。" }[u.logo || "no"] + "ロゴは、正方形（縦と横が同じ長さ）の画像にしてください（Discordで送るときと同じ決まりです）。送ったロゴは、管理者が承認してから使われます。"));
-      var lf = el("input"); lf.type = "file"; lf.accept = "image/png,image/jpeg,image/webp"; lf.style.display = "none";
-      lf.addEventListener("change", function () { if (lf.files && lf.files[0]) shrinkTo(lf.files[0], 600, "image/png", function (x) { LOGO = x; render(); }); });
-      var lr = el("div", "row"), lp = el("button", "go", LOGO ? "📷 別の画像を選ぶ" : "📷 ロゴの画像を選ぶ"); lp.type = "button"; lp.addEventListener("click", function () { lf.click(); });
-      var lu = el("button", "go", "⬆ このロゴを送る"); lu.type = "button"; lu.disabled = !LOGO || BUSY; lu.addEventListener("click", function () { send({ act: "team_logo", team: u.leader, image: LOGO }, "ロゴを送っています…"); });
-      lr.appendChild(lf); lr.appendChild(lp); lr.appendChild(lu);
-      if (u.logo && u.logo !== "no") { var ld = el("button", "danger", "ロゴを消す"); ld.type = "button"; ld.addEventListener("click", function () { if (confirm("登録していたロゴ（承認待ちも）を消します。よろしいですか？")) send({ act: "team_logo_delete", team: u.leader }); }); lr.appendChild(ld); }
-      c.appendChild(lr);
-      if (LOGO) { var li = el("img", "prev"); li.src = LOGO; li.alt = ""; c.appendChild(li); }
-    }
-    if (D.abbr) {
-      c.appendChild(el("h2", "", "🔤 略称（いま：" + (u.abbr || "") + "）"));
-      var ar = el("div", "row"), ai = el("input"); ai.type = "text"; ai.maxLength = 8; ai.placeholder = "新しい略称（半角英数字）"; ai.style.width = "12em";
-      var ar2 = el("input"); ar2.type = "text"; ar2.maxLength = 60; ar2.placeholder = "略称の読み方（ひらがな）"; ar2.style.width = "14em";
-      var as = el("button", "go", "略称を変える"); as.type = "button";
-      as.addEventListener("click", function () { if (!ai.value.trim()) { setMsg("ng", "⚠ 新しい略称を入れてください。"); return; } if (confirm("略称を「" + ai.value.trim() + "」に変えます。選手名の頭も自動で変わります。よろしいですか？")) send({ act: "team_abbr", team: u.leader, abbr: ai.value.trim(), reading: ar2.value.trim() }); });
-      ar.appendChild(ai); ar.appendChild(ar2); ar.appendChild(as); c.appendChild(ar);
-    }
-    var others = arr(u.roster).filter(function (m) { return !m.me; });
-    c.appendChild(el("h2", "", "👑 リーダーを譲る"));
-    if (!others.length) c.appendChild(el("div", "lead", "譲れるメンバーが、まだいません。"));
-    else {
-      var tr = el("div", "row"), ts = el("select"); var o0 = el("option", "", "新しいリーダーを選ぶ"); o0.value = ""; ts.appendChild(o0);
-      others.forEach(function (m) { var o = el("option", "", m.name); o.value = String(m.pid); ts.appendChild(o); });
-      var tb = el("button", "danger", "リーダーを譲る"); tb.type = "button";
-      tb.addEventListener("click", function () {
-        if (!ts.value) { setMsg("ng", "⚠ 新しいリーダーを選んでください。"); return; }
-        var nm = ts.options[ts.selectedIndex].textContent;
-        if (confirm(nm + " さんに、リーダーを譲ります。応募への返事や募集の内容は、新しいリーダーが行うようになり、あなたはふつうのメンバーになります。よろしいですか？")) send({ act: "transfer_leader", team: u.leader, pid: Number(ts.value) }, "リーダーを譲っています…");
-      });
-      tr.appendChild(ts); tr.appendChild(tb); c.appendChild(tr);
-    }
     c.appendChild(liveMsg());
     box.appendChild(c);
   }
@@ -640,11 +726,20 @@
       var gr = el("div", "row"); gr.appendChild(go); mine.appendChild(gr);
       showGuide();                                                                    // はじめての人だけ：上から案内（右上のボタンを押すまで、ほかは押せない）
     }
-    if (u && u.leader) { leaderView(mine, u.leader); leaderExtra(mine, u); }
+    if (u && u.cool && u.cool * 1000 > Date.now()) {
+      var lm = Math.ceil((u.cool * 1000 - Date.now()) / 60000);
+      mine.appendChild(el("div", "subwarn", "⚠ 短い間に加入・脱退をくり返したため、クールタイム中です（あと約" + Math.floor(lm / 60) + "時間" + (lm % 60) + "分）。そのあいだは、応募・チーム作りはできません。"));
+    }
+    if (u && u.leader) { teamInfoView(mine, u); leaderView(mine, u.leader); appsView(mine, u); }
     else if (u && u.team) memberView(mine, u);
     if (me && me.prof && u && u.pf_ok && !u.leader && !u.team) {
       if (u) wishesView(mine, u);
-      if (!(u && arr(u.wishes).some(function (w) { return w.status === "pending" || w.status === "approved"; }))) createTeamView(mine);
+      if (!(u && arr(u.wishes).some(function (w) { return w.status === "pending" || w.status === "approved"; }))) {
+        var ctb = el("button", CT_OPEN ? "" : "go", CT_OPEN ? "▲ チーム作りを閉じる" : "🆕 自分のチームを募集する"); ctb.type = "button";
+        ctb.addEventListener("click", function () { CT_OPEN = !CT_OPEN; render(); });
+        var ctr = el("div", "row"); ctr.style.marginTop = "0"; ctr.style.marginBottom = "10px"; ctr.appendChild(ctb); mine.insertBefore(ctr, mine.firstChild);
+        if (CT_OPEN) { var ctw = el("div"); createTeamView(ctw); mine.insertBefore(ctw, ctr.nextSibling); }
+      }
     }
     document.getElementById("lead").textContent = !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー応募」から開いてください。"
       : !(me.prof && u && u.pf_ok) && !(u && (u.leader || u.team)) ? "応募やチーム作りの前に、あなたの選手情報を確かめて、保存してください。"
@@ -674,27 +769,92 @@
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
     });
-    if (OPEN != null) dialog();
+    if (OPEN != null) dialog(DSTEP);
     else if (PROFOPEN) openProfile();
   }
+  function rankLabel(v) {
+    var c = rankCode(v); if (!c[0]) return "—";
+    if (/^[1-6]$/.test(c[0])) return c[0] + "段" + ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ"][Number(c[1])];
+    return (c[0] === "7" ? "7段" : "最高峰") + "★" + c[1];
+  }
+  function charName(id) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; return x ? x[1] : ""; }
+  function profileSummary(box) {                                                     // 応募の確認：選手情報のすべて（見るだけ）
+    var q = me.prof || {}, te = q.te || {}, tc = q.tc || {}, v = D.entry || {}, kv = el("div", "kv");
+    function put(k, val) { kv.appendChild(el("b", "", k)); kv.appendChild(el("span", "", val == null || val === "" ? "—" : String(val))); }
+    put("名前", q.n); put("名前の読み方", q.r); put("ゲーム内ID", q.g); put("出場する陣営", FN[q.f] || "");
+    put("サバイバーの過去最高段位", rankLabel(q.sr)); put("ハンターの過去最高段位", rankLabel(q.hr)); put("閲歴", q.lv);
+    put("得意キャラ", arr(q.fav).map(charName).filter(Boolean).join("、"));
+    put("サブアカウント", q.sub ? "使う" : "使わない");
+    if (q.sub) { put("サブアカウントを使う理由", q.why); put("サブ垢のゲーム内ID", q.sg); }
+    put("一言メッセージ", te.message);
+    if (v.nw) { put(v.nw + "を使い始めたキッカケ", te.nw_trigger); put(v.nw + "のプレイ歴", te.nw_history); put(v.nw + "のバッジ履歴", te.nw_badges); }
+    if (arr(v.dates).length) put("参加できる日", arr(te.dates).join("、"));
+    if (arr(v.times).length) put("参加できる時間帯", arr(te.times).join("、"));
+    arr((D.player_fields || {}).fields).forEach(function (f) { put(f.title, tc[f.key]); });
+    kv.appendChild(el("b", "", "プロフィール画像"));
+    var ib = el("span"); if (q.img) curImage(ib, true); else ib.appendChild(el("span", "badtxt", "⚠ 未登録（登録が必要です）")); kv.appendChild(ib);
+    box.appendChild(kv);
+  }
   function dialog(step) {
+    var st = DSTEP === (step || null) ? keepScroll() : 0;                             // 同じ画面の描き直しだけ、スクロールの位置を保つ
+    DSTEP = step || null;
     var old = document.getElementById("ov"); if (old) old.remove();
     var t = arr(D.teams).filter(function (x) { return x.id === OPEN; })[0];
-    if (!t) { OPEN = null; return; }
+    if (!t) { OPEN = null; DSTEP = null; return; }
+    t._fit = fits(t);                                                                   // データを読み直したあとも、合うかを確かめ直す
     var u = U() || { wishes: [] };
     var act = arr(u.wishes).filter(function (w) { return w.status === "pending" || w.status === "approved"; }).sort(function (a, b) { return a.rank - b.rank; });
     var ov = el("div", "ov"); ov.id = "ov";
-    ov.addEventListener("click", function (e) { if (e.target === ov) { OPEN = null; ov.remove(); } });
+    function close() { OPEN = null; DSTEP = null; ov.remove(); }
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
     var d = el("div", "dlg");
-    function close() { OPEN = null; ov.remove(); }
+    function show() { ov.appendChild(d); document.body.appendChild(ov); d.scrollTop = st; }
     if (step === "extra") {                                                            // 余分募集：本当にこのチームでいいか
       d.appendChild(el("h2", "", "➕ 余分募集のチームです"));
       d.appendChild(el("div", "full", D.extra_note || ""));
       var r0 = el("div", "row");
-      var y = el("button", "go", "このチームに応募する"); y.type = "button"; y.addEventListener("click", function () { dialog("form"); });
+      var y = el("button", "go", "このチームに応募する"); y.type = "button"; y.addEventListener("click", function () { dialog("confirm"); });
       var n = el("button", "", "別のチームを検討します。"); n.type = "button"; n.addEventListener("click", close);
       r0.appendChild(y); r0.appendChild(n); d.appendChild(r0);
-      ov.appendChild(d); document.body.appendChild(ov); return;
+      show(); return;
+    }
+    var can = me && u && u.pf_ok && !u.leader && !u.team && !act.some(function (w) { return w.team === t.id; }) && t._fit && act.length < (D.max_wishes || 3);
+    if (step === "confirm" && can) {                                                   // 確認：この情報で応募するか
+      d.appendChild(el("h2", "", "📋 応募の確認｜" + t.name));
+      d.appendChild(el("div", "ask", "この情報でよろしいですか？必ず最新の情報にしてください！"));
+      profileSummary(d);
+      var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
+      var pw = null;
+      if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、パスワードつきの募集です。リーダーから聞いたパスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
+      var order = act.map(function (w) { return w.team; }).concat([t.id]);
+      if (act.length) {                                                                // 2つ目からは、希望の順を並べ替える（先に応募したチームが上）
+        d.appendChild(el("div", "lead", "希望の順を決めてください（ふつうは、先に応募したチームが上です）。"));
+        var ol = el("div"); d.appendChild(ol);
+        var draw = function () {
+          ol.textContent = "";
+          order.forEach(function (id, i) {
+            var r = el("div", "wish"); r.appendChild(el("b", "", "第" + (i + 1) + "希望")); r.appendChild(el("span", "st", teamName(id) + (id === t.id ? "（今回の応募）" : "")));
+            var up = el("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.addEventListener("click", function () { var x = order[i - 1]; order[i - 1] = order[i]; order[i] = x; draw(); });
+            var dn = el("button", "", "↓"); dn.type = "button"; dn.disabled = i === order.length - 1; dn.addEventListener("click", function () { var x = order[i + 1]; order[i + 1] = order[i]; order[i] = x; draw(); });
+            r.appendChild(up); r.appendChild(dn); ol.appendChild(r);
+          });
+        };
+        draw();
+      }
+      var rc = el("div", "row");
+      var ok = el("button", "go", BUSY ? "送信中…" : "✅ OK（この内容で応募する）"); ok.type = "button"; ok.disabled = BUSY;
+      ok.addEventListener("click", function () {
+        if (!q.img) { setMsg("ng", "⚠ プロフィール画像が登録されていません。「✏ 編集する」から登録してください。"); return; }
+        var miss = missingCustom(D.player_fields, tc).concat(missingEntry(te));
+        if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります（「✏ 編集する」から入れてください）：" + miss.join("、")); return; }
+        ORDER = null; send({ act: "wish", team: t.id, message: te.message || "", order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
+      });
+      var ed = el("button", "", "✏ 編集する"); ed.type = "button";
+      ed.addEventListener("click", function () { BACK_TO = t.id; OPEN = null; DSTEP = null; ov.remove(); PROFOPEN = true; PF = null; openProfile(); });
+      var cl0 = el("button", "", "やめる"); cl0.type = "button"; cl0.addEventListener("click", close);
+      rc.appendChild(ok); rc.appendChild(ed); rc.appendChild(cl0); d.appendChild(rc);
+      d.appendChild(liveMsg());
+      show(); return;
     }
     d.appendChild(el("div", "count", (t.locked ? "🔒 " : "") + t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
     d.appendChild(el("h2", "", t.title));
@@ -703,42 +863,10 @@
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
-    if (me && u && u.pf_ok && !u.leader && !u.team && !already && t._fit) {
-      if (step !== "form" && t.state === "extra") {
-        var go0 = el("button", "go", "このチームに応募する"); go0.type = "button"; go0.addEventListener("click", function () { dialog("extra"); });
-        row.appendChild(go0);
-      } else if (act.length >= (D.max_wishes || 3)) {
-        d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
-      } else {
-        var PC = dialog.pc = dialog.pc || JSON.parse(JSON.stringify((me.prof && me.prof.tc) || {})), PA = dialog.pa = dialog.pa || {}, PE = dialog.pe = dialog.pe || JSON.parse(JSON.stringify((me.prof && me.prof.te) || {}));
-        d.appendChild(el("div", "lead", "加入すると、この内容で選手登録されます（Discordの選手登録と同じ項目です）。メッセージは、リーダーとチームのメンバーにも届きます。"));
-        var cbox = el("div", "frm"); entryInputs(cbox, PE); var hasRule = customInputs(cbox, D.player_fields, PC, PA); d.appendChild(cbox);   // 登録の項目・大会ごとの追加項目（選手）
-        var pw = null;
-        if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、パスワードつきの募集です。リーダーから聞いたパスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
-        var order = act.map(function (w) { return w.team; }).concat([t.id]);
-        if (act.length) {                                                              // 2つ目からは、希望の順を並べ替える（先に応募したチームが上）
-          d.appendChild(el("div", "lead", "希望の順を決めてください（ふつうは、先に応募したチームが上です）。"));
-          var ol = el("div"); d.appendChild(ol);
-          var draw = function () {
-            ol.textContent = "";
-            order.forEach(function (id, i) {
-              var r = el("div", "wish"); r.appendChild(el("b", "", "第" + (i + 1) + "希望")); r.appendChild(el("span", "st", teamName(id) + (id === t.id ? "（今回の応募）" : "")));
-              var up = el("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.addEventListener("click", function () { var x = order[i - 1]; order[i - 1] = order[i]; order[i] = x; draw(); });
-              var dn = el("button", "", "↓"); dn.type = "button"; dn.disabled = i === order.length - 1; dn.addEventListener("click", function () { var x = order[i + 1]; order[i + 1] = order[i]; order[i] = x; draw(); });
-              r.appendChild(up); r.appendChild(dn); ol.appendChild(r);
-            });
-          };
-          draw();
-        }
-        var go = el("button", "go", BUSY ? "送信中…" : "このチームに応募する"); go.type = "button"; go.disabled = BUSY;
-        go.addEventListener("click", function () {
-          var miss = missingCustom(D.player_fields, PC).concat(missingEntry(PE));
-          if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
-          if (hasRule && !PA.ok) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
-          ORDER = null; send({ act: "wish", team: t.id, message: PE.message || "", order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: PC, entry: PE });
-        });
-        row.appendChild(go);
-      }
+    if (can) {
+      var go = el("button", "go", "このチームに応募する"); go.type = "button";
+      go.addEventListener("click", function () { dialog(t.state === "extra" ? "extra" : "confirm"); });
+      row.appendChild(go);
     }
     var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close);
     row.appendChild(cl); d.appendChild(row);
@@ -748,8 +876,9 @@
     else if (u.leader) d.appendChild(el("div", "msg ng", "チームリーダーは、ほかのチームに応募できません。"));
     else if (u.team) d.appendChild(el("div", "msg ng", "あなたは、もうチームに入っています。応募するときは、先に脱退してください。"));
     else if (!t._fit) d.appendChild(el("div", "msg ng", t.state === "closed" ? "このチームは、募集を締め切りました。" : t.state === "full" ? "このチームは満員です。" : t.state === "done" ? "このチームは、募集している人数がそろいました。" : "このチームの制限（段位・閲歴）か、求めている陣営に合わないため、応募できません。"));
+    else if (act.length >= (D.max_wishes || 3)) d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
     d.appendChild(liveMsg());
-    ov.appendChild(d); document.body.appendChild(ov);
+    show();
   }
   function load() {
     fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
@@ -758,17 +887,21 @@
       var r = d.result;
       if (WAIT && r && r.nonce === WAIT) {
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
+        var WASPROF = !!(PEND && PEND.kind === "prof");
+        if (r.ok) { LOGO = null; TN = null; }
         if (r.ok && PEND) {
-          if (PEND.kind === "prof") { var q = PEND.data; var uu = U(); if (uu) uu.pf_ok = true; me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv) });
+          if (PEND.kind === "prof") { var q = PEND.data; var uu = U(); if (uu) uu.pf_ok = true;
+            if (BACK_TO != null) { OPEN = BACK_TO; DSTEP = "confirm"; BACK_TO = null; PROFOPEN = false; var po = document.getElementById("ov"); if (po) po.remove(); } me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv), te: q._te || {}, tc: q._tc || {} });
             me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
-          else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; }
+          else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; IMG_FAIL = false; }
           else if (PEND.kind === "imgdel") me.prof.img = 0;
           else if (PEND.kind === "delete") me.prof = null;
           LOGO = null;
           PF = null;
         }
         PEND = null;
-        if (r.ok && OPEN != null) { OPEN = null; var o = document.getElementById("ov"); if (o) o.remove(); }
+        if (r.ok && OPEN != null && !(DSTEP === "confirm" && WASPROF)) { OPEN = null; DSTEP = null; var o = document.getElementById("ov"); if (o) o.remove(); }
+        IMG_FAIL = false;
         render();
         setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         return;
