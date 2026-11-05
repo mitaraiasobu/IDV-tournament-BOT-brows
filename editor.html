@@ -64,6 +64,8 @@
   .srow label { font-weight: 700; } .srow .hint { color: var(--sub); font-size: 13px; white-space: pre-wrap; } .srow .swarn { color: var(--bad); font-size: 13px; margin-top: 4px; white-space: pre-wrap; }
   .srow textarea, .srow input[type=number], .srow input[type=datetime-local] { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; color: var(--text); font: inherit; color-scheme: dark; }
   .srow textarea { min-height: 90px; } .srow.changed { background: rgba(255, 176, 32, .07); }
+  .srow.problem { background: rgba(255, 70, 70, .30); box-shadow: inset 5px 0 0 var(--bad); border-radius: 8px; }   /* 直すところ：明るい赤（変えた項目の、ほんのり黄色とは別） */
+  .srow.problem input, .srow.problem select { border-color: var(--bad) !important; box-shadow: 0 0 0 2px rgba(255, 70, 70, .45); }
   .flow { display: flex; gap: 10px; } .flow.h { flex-direction: row; overflow-x: auto; padding-bottom: 8px; } .flow.v { flex-direction: column; }
   .flow.grid { display: grid; gap: 6px; overflow: auto; max-height: 80vh; align-items: start; }
   .fhd { position: sticky; background: var(--panel); z-index: 1; font-size: 12px; color: var(--sub); padding: 4px 6px; border-radius: 6px; }
@@ -897,6 +899,16 @@
     if (ST.level_min && ST.level_max && Number(ST.level_min) > Number(ST.level_max)) out.push("閲歴の下限が、上限より大きくなっています。");
     return out;
   }
+  function problemKeys() {                                                           // 直すところがある設定（明るい赤で、入力欄ごと目立たせる）
+    var k = {};
+    if (!rankOk(ST.rank_min)) k.rank_min = 1;
+    if (!rankOk(ST.rank_max)) k.rank_max = 1;
+    var a = rankScore(ST.rank_min), b = rankScore(ST.rank_max);
+    if (a != null && b != null && a > b) { k.rank_min = 1; k.rank_max = 1; }
+    if (ST.level_min && ST.level_max && Number(ST.level_min) > Number(ST.level_max)) { k.level_min = 1; k.level_max = 1; }
+    unsetTri().forEach(function (it) { k[it.key] = 1; });
+    return k;
+  }
   function unsetTri() {                                                              // オンかオフを、まだ選んでいない設定（代打の段位制限など）
     return (((data || {}).settings || {}).items || []).filter(function (it) { return it.type === "tri" && (ST[it.key] === "" || ST[it.key] == null); });
   }
@@ -919,8 +931,10 @@
     pop.appendChild(inner);
   }
   function it0help(list) { return (list[0] && list[0].help) || ""; }
+  var PROB = {};
   function renderSettings() {
     var f = $("setform"); if (!f) return; f.textContent = "";
+    PROB = problemKeys();
     var set = (data && data.settings) || { groups: [], items: [] };
     set.groups.forEach(function (g) {
       var items = set.items.filter(function (it) { return it.group === g[0]; });
@@ -930,7 +944,7 @@
       items.forEach(function (it) {
         var off = it.depends && !ST[it.depends];                                          // もとになる設定がオフ：暗くして、変えられない
         var unset = it.type === "tri" && (ST[it.key] === "" || ST[it.key] == null);      // オンかオフを、まだ選んでいない（赤い文字）
-        var row = el("div", "srow" + (JSON.stringify(ST[it.key]) !== JSON.stringify(ST0[it.key]) ? " changed" : "") + (off ? " dim" : "") + (unset ? " unset" : "")); row.setAttribute("data-key", it.key);
+        var row = el("div", "srow" + (JSON.stringify(ST[it.key]) !== JSON.stringify(ST0[it.key]) ? " changed" : "") + (off ? " dim" : "") + (unset ? " unset" : "") + (PROB[it.key] ? " problem" : "")); row.setAttribute("data-key", it.key);
         var left = el("div"); left.appendChild(el("label", "", it.label));
         if (off) left.appendChild(el("div", "hint", "（「" + ((set.items.filter(function (x) { return x.key === it.depends; })[0] || {}).label || "") + "」がオンのときだけ、使います）"));
         if (it.help) left.appendChild(el("div", "hint", it.help));
