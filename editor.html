@@ -569,6 +569,10 @@
   function renderBracket() {
     var v = $("brview"); if (!v || !data) return; v.textContent = "";
     var B = data.bracket; if (!B) { v.appendChild(el("div", "note", "トーナメント表の情報が、まだありません。")); return; }
+    ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
+    B.rounds.forEach(function (r) { if (!Array.isArray(r.matches)) r.matches = []; });
+    if (B.rating) { if (!Array.isArray(B.rating.pairs)) B.rating.pairs = []; if (!Array.isArray(B.rating.missing)) B.rating.missing = []; }
+    if (!Array.isArray(B.break_limits)) B.break_limits = [1, 240];
     if (B.locked) v.appendChild(el("div", "warn", "この大会は優勝が決まって終了しているため、トーナメント表は変えられません。"));
     // 状態
     var st = el("div", "card brsec");
