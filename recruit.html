@@ -59,6 +59,11 @@
   .notice { background: var(--panel); border: 2px solid var(--accent); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-weight: 800; font-size: 17px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; } .chips label { font-weight: 400; font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
   .chips label.on { border-color: var(--accent); background: var(--panel2); font-weight: 700; }
+  .guide { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .72); }       /* 案内：ほかは押せない */
+  #profbtn { position: relative; } #profbtn.guide-on { z-index: 41; box-shadow: 0 0 0 4px var(--accent), 0 0 24px var(--accent); background: var(--accent); color: #fff; font-weight: 800; }
+  .guide-arrow { position: fixed; font-size: 36px; color: #fff; animation: gbounce 1s infinite; }
+  .guide-tip { position: fixed; max-width: 280px; background: var(--panel); color: var(--text); border: 2px solid var(--accent); border-radius: 12px; padding: 12px 14px; font-weight: 800; font-size: 16px; }
+  @keyframes gbounce { 50% { transform: translateY(-8px); } }
   .prev { max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--line); } .badtxt { color: var(--ng); font-size: 12px; font-weight: 700; }
   @media (max-width: 640px) { .frm { grid-template-columns: 1fr; } .frm .hint { grid-column: 1; } }
 </style>
@@ -314,6 +319,9 @@
       f.appendChild(el("div", "hint", "⚠ サブアカウントを使う場合、プロフィール画像は、過去最高段位のアカウント（上のゲーム内ID）の画面にしてください。"));
     }
     c.appendChild(f);
+    if (!PF._te) { PF._te = JSON.parse(JSON.stringify((me.prof && me.prof.te) || {})); PF._tc = JSON.parse(JSON.stringify((me.prof && me.prof.tc) || {})); PF._ta = {}; }
+    c.appendChild(el("h2", "", "📋 この大会の登録内容"));                               // Discordの選手登録と同じ項目（大会ごと）
+    var tf = el("div", "frm"); entryInputs(tf, PF._te); var hasTRule = customInputs(tf, D.player_fields, PF._tc, PF._ta); c.appendChild(tf);
     var bad = [];
     if (!rankOk(PF.sr) || !rankOk(PF.hr)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
@@ -323,8 +331,11 @@
       if (!PF.n.trim() || !PF.g || !PF.f || PF.lv === "") { setMsg("ng", "⚠ 名前・ゲーム内ID・陣営・閲歴を入れてください。"); return; }
       if (!PF.sr || !PF.hr) { setMsg("ng", "⚠ サバイバー・ハンターの両方の過去最高段位を入れてください（出場しない陣営も）。"); return; }
       if (PF.sub && (!PF.why.trim() || !PF.sg)) { setMsg("ng", "⚠ サブアカウントを使う理由と、サブ垢のゲーム内IDを入れてください。"); return; }
+      var tmiss = missingCustom(D.player_fields, PF._tc).concat(missingEntry(PF._te));
+      if (tmiss.length) { setMsg("ng", "⚠ この大会の登録内容で、入れていない項目があります：" + tmiss.join("、")); return; }
+      if (hasTRule && !PF._ta.ok) { setMsg("ng", "⚠ この大会の登録内容のルールを読んで、同意してください。"); return; }
       PEND = { kind: "prof", data: JSON.parse(JSON.stringify(PF)) };
-      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg } }, "保存しています…");
+      send({ act: "profile", form: { n: PF.n, r: PF.r, g: PF.g, f: PF.f, sr: PF.sr, hr: PF.hr, fav: PF.fav, lv: PF.lv, sub: PF.sub, why: PF.why, sg: PF.sg }, entry: PF._te, custom: PF._tc }, "保存しています…");
     });
     row.appendChild(sv);
     if (me.prof) {
@@ -376,6 +387,25 @@
     ov.appendChild(d); document.body.appendChild(ov);
   }
   var PROFOPEN = false;
+  function guideSeen() { try { return localStorage.getItem("rc_guide_seen") === "1"; } catch (e) { return false; } }
+  function showGuide() {                                                              // ゲームのチュートリアルのように：画面を暗くして、矢印で「ここを押して」
+    if (guideSeen() || document.getElementById("guide")) return;
+    var btn = document.getElementById("profbtn"); if (!btn || btn.hidden) return;
+    var g = el("div", "guide"); g.id = "guide";
+    var r = btn.getBoundingClientRect();
+    var tip = el("div", "guide-tip", "ここを押して、選手情報を登録しましょう！");
+    var ar = el("div", "guide-arrow", "⬆");
+    tip.style.top = (r.bottom + 46) + "px"; tip.style.right = Math.max(8, window.innerWidth - r.right) + "px";
+    ar.style.top = (r.bottom + 4) + "px"; ar.style.left = (r.left + r.width / 2 - 18) + "px";
+    g.appendChild(ar); g.appendChild(tip);
+    document.body.appendChild(g);
+    btn.classList.add("guide-on");
+  }
+  function endGuide() {
+    try { localStorage.setItem("rc_guide_seen", "1"); } catch (e) { /* そのまま */ }
+    var g = document.getElementById("guide"); if (g) g.remove();
+    var btn = document.getElementById("profbtn"); if (btn) btn.classList.remove("guide-on");
+  }
   function customInputs(box, spec, vals, agree) {                                     // 大会ごとの追加項目（と、項目のルールへの同意）
     spec = spec || {}; var fs = arr(spec.fields);
     if (spec.rule) { box.appendChild(el("div", "full", "📖 " + spec.rule)); }
@@ -603,7 +633,9 @@
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
       mine.appendChild(el("div", "lead", me.prof ? "これまでに登録した内容が入っています。内容を確かめて、直すところがあれば直してから、「💾 選手情報を保存」を押してください（保存するまで、応募・チーム作りはできません）。"
                                                  : "※ Discordで選手登録したことがある方は、エントリーパネルの「🙋 メンバー応募」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります。"));
-      if (!PROFOPEN) profForm(mine, true);
+      var go = el("button", "go", "🪪 選手情報を登録する"); go.type = "button"; go.addEventListener("click", function () { PROFOPEN = true; PF = null; openProfile(); });
+      var gr = el("div", "row"); gr.appendChild(go); mine.appendChild(gr);
+      showGuide();                                                                    // はじめての人だけ：上から案内（右上のボタンを押すまで、ほかは押せない）
     }
     if (u && u.leader) { leaderView(mine, u.leader); leaderExtra(mine, u); }
     else if (u && u.team) memberView(mine, u);
@@ -675,7 +707,7 @@
       } else if (act.length >= (D.max_wishes || 3)) {
         d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
       } else {
-        var PC = dialog.pc = dialog.pc || {}, PA = dialog.pa = dialog.pa || {}, PE = dialog.pe = dialog.pe || {};
+        var PC = dialog.pc = dialog.pc || JSON.parse(JSON.stringify((me.prof && me.prof.tc) || {})), PA = dialog.pa = dialog.pa || {}, PE = dialog.pe = dialog.pe || JSON.parse(JSON.stringify((me.prof && me.prof.te) || {}));
         d.appendChild(el("div", "lead", "加入すると、この内容で選手登録されます（Discordの選手登録と同じ項目です）。メッセージは、リーダーとチームのメンバーにも届きます。"));
         var cbox = el("div", "frm"); entryInputs(cbox, PE); var hasRule = customInputs(cbox, D.player_fields, PC, PA); d.appendChild(cbox);   // 登録の項目・大会ごとの追加項目（選手）
         var pw = null;
@@ -742,7 +774,7 @@
     }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
-  document.getElementById("profbtn").addEventListener("click", function () { PROFOPEN = true; PF = null; openProfile(); });
+  document.getElementById("profbtn").addEventListener("click", function () { endGuide(); PROFOPEN = true; PF = null; openProfile(); });
   load(); setInterval(load, 4000);
 })();
 </script>
