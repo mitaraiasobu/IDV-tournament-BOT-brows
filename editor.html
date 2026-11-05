@@ -112,7 +112,7 @@
   .bbreak { font-size: 12px; color: var(--ac); padding: 3px 10px; border-top: 1px dashed var(--line); }
   .bround > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
   .bchamp { position: relative; margin: auto 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
-  .brsec { margin-top: 14px; }
+  .brsec { margin-top: 14px; } tr.slotrow td { font-size: 13px; color: var(--sub); padding-top: 2px; }
   .badtxt { color: var(--bad); font-size: 12px; font-weight: 700; margin-top: 4px; } input.bad { border-color: var(--bad) !important; color: var(--bad); } #dirty.bad { color: var(--bad); font-weight: 700; }
   .srow.dim { opacity: .4; } .srow.unset label { color: var(--bad); font-weight: 700; } .rankpick { display: flex; gap: 6px; }
   .bigpop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .7); display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -154,7 +154,7 @@
       <div class="card" id="pedit"></div>
     </div>
     <h2>ラウンドごとの手順</h2>
-    <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます（セットごとに変える設定は、Discordの「🎯 BAN/PICK」から）。</div></div>
+    <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
     <div id="tab-br" hidden>
@@ -392,8 +392,22 @@
       P.forEach(function (p, i) { var o = el("option", "", p.name || "（名前なし）"); o.value = String(i); sel.appendChild(o); });
       var idx = P.findIndex(function (p) { return (r.pname != null ? p.name === r.pname : p.id === r.pattern); });
       sel.value = String(idx < 0 ? 0 : idx);
-      sel.addEventListener("change", function () { var p = P[Number(sel.value)]; r.pattern = p.id; r.pname = p.id == null ? p.name : null; refreshDirty(); });
+      sel.addEventListener("change", function () { var p = P[Number(sel.value)]; r.pattern = p.id; r.pname = p.id == null ? p.name : null; renderRounds(); refreshDirty(); });
       b.appendChild(sel); tr.appendChild(a); tr.appendChild(b); t.appendChild(tr);
+      if (!Array.isArray(r.slots)) r.slots = [];                                      // セット・延長戦ごと（空＝ラウンドと同じ）
+      r.slots.forEach(function (sl) {
+        var tr2 = el("tr", "slotrow"), a2 = el("td", "", "　└ " + sl.label), b2 = el("td"), s2 = el("select");
+        var o0 = el("option", "", "（ラウンドと同じ）"); o0.value = ""; s2.appendChild(o0);
+        P.forEach(function (p, i) { var o = el("option", "", p.name || "（名前なし）"); o.value = String(i); s2.appendChild(o); });
+        var k = sl.pname != null ? P.findIndex(function (p) { return p.name === sl.pname; }) : (sl.pattern != null ? P.findIndex(function (p) { return p.id === sl.pattern; }) : -1);
+        s2.value = k < 0 ? "" : String(k);
+        s2.addEventListener("change", function () {
+          if (s2.value === "") { sl.pattern = null; sl.pname = null; }
+          else { var p = P[Number(s2.value)]; sl.pattern = p.id; sl.pname = p.id == null ? p.name : null; }
+          refreshDirty();
+        });
+        b2.appendChild(s2); tr2.appendChild(a2); tr2.appendChild(b2); t.appendChild(tr2);
+      });
     });
   }
   // ───────── ⏱ 時間管理（大会ごとに別。トーナメント表の時間は、ここでは変わらない）
@@ -1023,6 +1037,16 @@
       var orig = data.rounds.filter(function (q) { return q.no === r.no; })[0];
       if (orig && orig.pattern === r.pattern && r.pname == null) return;
       var o = { op: "set_round_pattern", round: r.no }; if (r.pname != null) o.pattern_name = r.pname.trim(); else o.pattern = r.pattern; ops.push(o);
+    });
+    ROUNDS.forEach(function (r) {                                                      // セット・延長戦ごとの手順：変えた枠だけ送る
+      var orig = data.rounds.filter(function (q) { return q.no === r.no; })[0] || {};
+      (r.slots || []).forEach(function (sl) {
+        var os = ((orig.slots || []).filter(function (x) { return x.key === sl.key; })[0] || {});
+        if ((os.pattern == null ? null : os.pattern) === (sl.pattern == null ? null : sl.pattern) && sl.pname == null) return;
+        var o = { op: "set_slot_pattern", round: r.no, key: sl.key };
+        if (sl.pname != null) o.pattern_name = sl.pname.trim(); else o.pattern = sl.pattern == null ? null : sl.pattern;
+        ops.push(o);
+      });
     });
     if (TM && TM0) {                                                                  // 時間の設定：変えた項目だけを送る
       var to = TM0, tf = {}, any = false, keys = ["lead_min", "caster_sec", "player_sec", "open_greet_sec", "close_greet_sec", "interview_sec", "prep_minutes", "finale_champ_sec", "finale_prize_sec", "finale_mvp_sec"];
