@@ -111,6 +111,7 @@
   .bround > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
   .bchamp { position: relative; margin: auto 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
   .brsec { margin-top: 14px; }
+  .badtxt { color: var(--bad); font-size: 12px; font-weight: 700; margin-top: 4px; } input.bad { border-color: var(--bad) !important; color: var(--bad); } #dirty.bad { color: var(--bad); font-weight: 700; }
   .srow.dim { opacity: .4; } .srow.unset label { color: var(--bad); font-weight: 700; } .rankpick { display: flex; gap: 6px; }
   .bigpop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .7); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .bigpop[hidden] { display: none; }
@@ -183,7 +184,7 @@
   var BASEJSON = "";                                    // 最後に読み込んだ・保存した内容（変更の有無の判定用）
   var ST = {}, ST0 = {};                                 // 「⚙ 大会設定」：いまの値（作業中）と、BOTに保存されている値
   var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔";
-  var SIDE = { survivor: "サバイバー側", hunter: "ハンター側" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
+  var SIDE = { survivor: "サバイバーが", hunter: "ハンターが" }, ACT = { ban: "BAN", pick: "PICK" }, TGT = { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -274,7 +275,7 @@
   }
 
   // ───────── 手順の検査（BOTと同じ決まり）
-  function stepText(s) { return SIDE[s.side] + "が " + TGT[s.target] + "を " + ACT[s.action] + " ×" + s.count; }
+  function stepText(s) { return SIDE[s.side] + " " + TGT[s.target] + "を " + ACT[s.action] + " ×" + s.count; }
   function tgtOK(side, action, target) { return target === "map" || (action === "ban" ? target !== side : target === side); }   // BANは相手の陣営／PICKは自分の陣営（BOTと同じ決まり）
   function fixTgt(s) { if (!tgtOK(s.side, s.action, s.target)) s.target = s.action === "pick" ? s.side : (s.side === "survivor" ? "hunter" : "survivor"); if (s.target === "map" && s.action === "pick") s.count = 1; }
   function check(steps, lim) {
@@ -305,9 +306,9 @@
   // ───────── 画面
   function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM, ST]) !== BASEJSON; }
   function refreshDirty() {
-    var d = dirty(), e = $("dirty");
-    e.textContent = d ? "● 保存していない変更があります" : "変更はありません"; e.className = d ? "" : "clean";
-    $("save").disabled = !d;
+    var d = dirty(), e = $("dirty"), bad = typeof limitProblems === "function" && ST ? limitProblems() : [];
+    e.textContent = bad.length ? "⚠ 直すところがあります（" + bad[0] + "）" : d ? "● 保存していない変更があります" : "変更はありません"; e.className = d && !bad.length ? "" : bad.length ? "bad" : "clean";
+    $("save").disabled = !d || bad.length > 0;                                        // おかしいところがあれば、保存できない（入力は、このブラウザにバックアップ）
   }
   function renderList() {
     var box = $("plist"); box.textContent = "";
@@ -347,9 +348,11 @@
       var row = el("div", "step");
       row.appendChild(el("div", "num", CIRC.charAt(i)));
       var mid = el("div");
-      mid.appendChild(seg([["survivor", "サバイバー側"], ["hunter", "ハンター側"]], s.side, { survivor: "s", hunter: "h" }, function (v) { s.side = v; fixTgt(s); render(); }, ro));
+      mid.appendChild(seg([["survivor", "サバイバーが"], ["hunter", "ハンターが"]], s.side, { survivor: "s", hunter: "h" }, function (v) { s.side = v; fixTgt(s); render(); }, ro));
+      mid.appendChild(seg([["survivor", "サバイバーを"], ["hunter", "ハンターを"], ["map", "マップを"]], s.target, { survivor: "s", hunter: "h" }, function (v) {
+        s.target = v; if (!tgtOK(s.side, s.action, v)) s.action = v === s.side ? "pick" : "ban";      // 自分の陣営はPICKだけ・相手の陣営はBANだけ：BAN/PICKを合わせる
+        if (v === "map" && s.action === "pick") s.count = 1; render(); }, ro));
       mid.appendChild(seg([["ban", "BAN"], ["pick", "PICK"]], s.action, null, function (v) { s.action = v; fixTgt(s); render(); }, ro));
-      mid.appendChild(seg([["survivor", "サバイバーを"], ["hunter", "ハンターを"], ["map", "マップを"]].filter(function (o) { return tgtOK(s.side, s.action, o[0]); }), s.target, { survivor: "s", hunter: "h" }, function (v) { s.target = v; if (v === "map" && s.action === "pick") s.count = 1; render(); }, ro));
       var c = el("span", "cnt"), mn = el("button", "", "−"), pl = el("button", "", "＋");
       mn.type = pl.type = "button"; mn.disabled = ro || s.count <= 1; pl.disabled = ro || s.count >= data.limits.max_count || (s.target === "map" && s.action === "pick");
       mn.addEventListener("click", function () { s.count--; render(); }); pl.addEventListener("click", function () { s.count++; render(); });
@@ -618,7 +621,7 @@
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || b.breaks !== null); }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -698,6 +701,7 @@
     st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
+    if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
     if (st.breaks !== null) ops.push({ op: "set_breaks", items: st.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: (b.label || "休憩").trim() || "休憩" }; }) });
     return ops;
   }
@@ -746,6 +750,14 @@
                                                              (B.rating.missing.length ? "⚠ 選手が未登録のチーム（" + B.rating.missing.join("、") + "）は、全体の平均として扱っています。" : "")));
     if (B.has_results && st.draw) dc.appendChild(el("span", "fwarn", "⚠ 保存すると、登録済みの試合結果は、すべて取り消されます。"));
     v.appendChild(dc);
+    var hm = el("div", "brrow"); hm.appendChild(el("b", "", "前半戦・後半戦1つぶんの想定時間"));
+    var hv = st.half != null ? st.half : ST0.half_minutes;
+    var hi = el("input"); hi.type = "number"; hi.min = 1; hi.max = 180; hi.value = hv == null ? "" : hv; hi.style.width = "6em";
+    hi.addEventListener("input", function () { var c = hi.value.replace(/[^0-9]/g, ""); if (c !== hi.value) hi.value = c; });
+    hi.addEventListener("change", function () { var n = hi.value === "" ? null : Number(hi.value); if (n === ST0.half_minutes) delete st.half; else st.half = n; renderBracket(); });
+    hm.appendChild(hi); hm.appendChild(el("span", "", "分"));
+    hm.appendChild(el("span", "muted", "トーナメント表の時間の計算に使います（⚙ 大会設定の同じ項目と、同じ設定です）。"));
+    v.appendChild(hm);
     v.appendChild(el("div", "muted", "チームは、ドラッグして別のチームの上で離すか、2つ順に押すと、入れ替わります。表の何もないところをつかむと、横にスライドできます。各ラウンドの見出しで、進め方・開始日時（日を分けるとき）を変えられます。"));
     // 表（公開用と同じ形：ラウンドごとの列・2試合ずつ線でつなぐ・優勝の箱）
     var wrap = el("div", "brwrap"), bk = el("div", "bk");
@@ -844,14 +856,23 @@
   }
   var RANKS = [["", "制限なし"], ["1", "1段"], ["2", "2段"], ["3", "3段"], ["4", "4段"], ["5", "5段"], ["6", "6段"], ["7", "7段"], ["P", "最高峰"]];
   function rankPick(v, put) {                                                        // 過去最高段位：段位と小段位を、横に並べて選ぶ（保存は「4-1」「7*10」「P*50」の形）
-    var m = /^([1-6])-([1-5])$/.exec(v) || /^(7|P)\*(\d{1,4})$/.exec(v), dan = m ? m[1] : "", sub = m ? m[2] : "";
+    var m = /^([1-6])-([1-5])$/.exec(v) || /^(7|P)\*(\d{0,4})$/.exec(v), dan = m ? m[1] : "", sub = m ? m[2] : "";
     var box = el("div", "rankpick"), a = el("select"), b = el("select");
     RANKS.forEach(function (r) { var o = el("option", "", r[1]); o.value = r[0]; if (r[0] === dan) o.selected = true; a.appendChild(o); });
     function subs(d) {
       if (/^[1-6]$/.test(d)) return [["5", "Ⅴ"], ["4", "Ⅳ"], ["3", "Ⅲ"], ["2", "Ⅱ"], ["1", "Ⅰ"]];
-      var out = [], lo = d === "7" ? 0 : 25, hi = d === "7" ? 24 : 200;
-      for (var i = lo; i <= hi; i++) out.push([String(i), "★" + i]);
+      var out = [];
+      for (var i = 0; i <= 24; i++) out.push([String(i), "★" + i]);
       return out;
+    }
+    if (dan === "P") {                                                                 // 最高峰：星の数は、書いて入れる（25以上の2〜3桁）
+      var pin = el("input"); pin.type = "text"; pin.inputMode = "numeric"; pin.maxLength = 3; pin.value = sub; pin.placeholder = "★の数（25以上）"; pin.style.width = "9em";
+      if (!rankOk(v)) pin.className = "bad";
+      pin.addEventListener("input", function () { var c = pin.value.replace(/[^0-9]/g, ""); if (c !== pin.value) pin.value = c; });
+      pin.addEventListener("change", function () { put("P*" + pin.value); });
+      a.addEventListener("change", function () { var d = a.value; put(!d ? "" : /^[1-6]$/.test(d) ? d + "-5" : d === "7" ? "7*0" : "P*25"); });
+      box.appendChild(a); box.appendChild(pin);
+      return box;
     }
     function fill() {
       b.textContent = ""; var d = a.value; b.disabled = !d;
@@ -861,10 +882,20 @@
     }
     function val() { var d = a.value; if (!d) return ""; return /^[1-6]$/.test(d) ? d + "-" + b.value : d + "*" + b.value; }
     fill();
-    a.addEventListener("change", function () { sub = ""; fill(); put(val()); });
+    a.addEventListener("change", function () { sub = ""; if (a.value === "P") { put("P*25"); return; } fill(); put(val()); });
     b.addEventListener("change", function () { sub = b.value; put(val()); });
     box.appendChild(a); box.appendChild(b);
     return box;
+  }
+  function rankOk(v) { if (!v) return true; var m = /^P\*(\d+)$/.exec(v); if (m) return /^\d{2,3}$/.test(m[1]) && Number(m[1]) >= 25; return /^([1-6])-([1-5])$|^7\*(\d{1,2})$/.test(v); }
+  function rankScore(v) { var m = /^([1-6])-([1-5])$/.exec(v || ""); if (m) return (Number(m[1]) - 1) * 5 + (6 - Number(m[2])); m = /^(7|P)\*(\d+)$/.exec(v || ""); return m ? 30 + Number(m[2]) / 10 + (m[1] === "P" ? 1 : 0) : null; }
+  function limitProblems() {                                                         // エントリー制限の、おかしいところ（あれば、保存できない）
+    var out = [];
+    if (!rankOk(ST.rank_min) || !rankOk(ST.rank_max)) out.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
+    var a = rankScore(ST.rank_min), b = rankScore(ST.rank_max);
+    if (a != null && b != null && a > b) out.push("過去最高段位の下限が、上限より高くなっています。");
+    if (ST.level_min && ST.level_max && Number(ST.level_min) > Number(ST.level_max)) out.push("閲歴の下限が、上限より大きくなっています。");
+    return out;
   }
   function unsetTri() {                                                              // オンかオフを、まだ選んでいない設定（代打の段位制限など）
     return (((data || {}).settings || {}).items || []).filter(function (it) { return it.type === "tri" && (ST[it.key] === "" || ST[it.key] == null); });
@@ -907,7 +938,10 @@
         function put(val) { ST[it.key] = val; renderSettings(); refreshDirty(); }
         if (it.type === "bool") right.appendChild(sseg([[true, "オン"], [false, "オフ"]], !!v, put));
         else if (it.type === "tri") right.appendChild(sseg([["on", "オン"], ["off", "オフ"]], v || "", put));          // 未設定には、戻せない
-        else if (it.type === "rank") right.appendChild(rankPick(v || "", put));
+        else if (it.type === "rank") {
+          right.appendChild(rankPick(v || "", function (x) { put(x); if (limitProblems().length) saveBackup(); }));
+          if (it.key === "rank_max") limitProblems().forEach(function (t) { right.appendChild(el("div", "badtxt", "⚠ " + t)); });
+        }
         else if (it.type === "choice") {
           var sel = el("select");
           it.choices.forEach(function (c) { var o = el("option", "", c[1]); o.value = c[0]; if (String(v) === String(c[0])) o.selected = true; sel.appendChild(o); });
