@@ -9,44 +9,52 @@
 <!--
   メンバー募集のページ（どの大会にも共通の1枚）。
   ・URLの ?t=（募集用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 .json（BOTが書いた、募集中のチーム）を読む。
-  ・Discordの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」で出る本人用のURLは、# のあとに「ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位」が入る。
-    自分に合う（段位・閲歴の制限に入る）チームを上に、合わないチームを下に並べる。応募（メッセージつき）は、受け箱へ送る（BOTが、リーダーの承認待ちの選手にする）。
+  ・エントリーパネルの「🙋 メンバー応募」で出る本人用のURLは、# のあとに「ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印」が入る。
+    本人の印で、データの中の「本人ごとの様子」（応募・所属・リーダーのチーム）を見る（データには、Discordの番号を入れない）。
+  ・リーダー：募集の内容を書く（初めては、制限も含めて、すべてをまとめて）。チームの選手：脱退できる。それ以外：応募（第一希望〜第三希望）・取り消し・希望の並べ替え。
+  ・送った依頼は、受け箱へ（BOTが処理して、結果を書き戻す）。
 -->
 <style>
-  :root { --bg: #f6f7fb; --panel: #ffffff; --text: #1d2130; --sub: #5e6478; --line: #dde1ec; --accent: #3b6ee8; --ok: #1f9d55; --ng: #d64545; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #12141b; --panel: #1b1e28; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; } }
-  :root[data-theme="dark"] { --bg: #12141b; --panel: #1b1e28; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; }
+  :root { --bg: #f6f7fb; --panel: #ffffff; --panel2: #eef1f8; --text: #1d2130; --sub: #5e6478; --line: #dde1ec; --accent: #3b6ee8; --ok: #1f9d55; --ng: #d64545; --warn: #c97a00; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #12141b; --panel: #1b1e28; --panel2: #232838; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; --warn: #ffb020; } }
+  :root[data-theme="dark"] { --bg: #12141b; --panel: #1b1e28; --panel2: #232838; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; --warn: #ffb020; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font-family: "Noto Sans JP", system-ui, sans-serif; }
   header { padding: 18px 16px 8px; max-width: 1100px; margin: 0 auto; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 18px; margin: 18px 0 8px; }
   .lead { color: var(--sub); font-size: 13px; line-height: 1.6; }
   main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 40px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .card:hover { border-color: var(--accent); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .grid .card { cursor: pointer; } .grid .card:hover { border-color: var(--accent); }
   .card.nofit { opacity: .55; }
   .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .team { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .count { flex: none; font-weight: 800; color: var(--accent); }
   .title { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
-  .wanted { font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+  .wanted { font-size: 13px; overflow-wrap: anywhere; }
   .sum { font-size: 13px; color: var(--sub); white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
   .lim { font-size: 12px; color: var(--sub); }
-  .tag { font-size: 12px; font-weight: 800; }
-  .tag.ok { color: var(--ok); } .tag.ng { color: var(--ng); }
+  .tag { font-size: 12px; font-weight: 800; } .tag.ok { color: var(--ok); } .tag.ng { color: var(--ng); } .tag.warn { color: var(--warn); }
   .empty { color: var(--sub); padding: 30px 0; text-align: center; }
-  .ov { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .dlg { background: var(--panel); color: var(--text); border-radius: 14px; max-width: 560px; width: 100%; max-height: 90vh; overflow: auto; padding: 18px; border: 1px solid var(--line); }
+  .ov { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .dlg { background: var(--panel); color: var(--text); border-radius: 14px; max-width: 600px; width: 100%; max-height: 90vh; overflow: auto; padding: 18px; border: 1px solid var(--line); }
   .dlg h2 { margin: 0 0 6px; font-size: 19px; overflow-wrap: anywhere; }
-  .dlg .full { white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin: 8px 0; overflow-wrap: anywhere; }
-  textarea { width: 100%; min-height: 90px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .full { white-space: pre-wrap; font-size: 14px; line-height: 1.6; margin: 8px 0; overflow-wrap: anywhere; }
+  textarea, input, select { font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); color-scheme: light dark; }
+  textarea { width: 100%; min-height: 90px; } input[type=text], input[type=password] { width: 100%; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
   button { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
   button.go { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 800; }
+  button.danger { border-color: var(--ng); color: var(--ng); font-weight: 800; }
   button:disabled { opacity: .5; cursor: default; }
-  .msg { font-size: 13px; margin-top: 8px; }
-  .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+  .msg { font-size: 13px; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+  .wish { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
+  .wish b { min-width: 4.5em; } .wish .st { font-size: 13px; color: var(--sub); flex: 1; }
+  .frm { display: grid; grid-template-columns: 180px 1fr; gap: 10px 14px; align-items: center; }
+  .frm label { font-weight: 700; font-size: 14px; } .frm .hint { grid-column: 2; font-size: 12px; color: var(--sub); margin-top: -6px; }
+  .bad { border-color: var(--ng) !important; color: var(--ng); } .badtxt { color: var(--ng); font-size: 12px; font-weight: 700; }
+  @media (max-width: 640px) { .frm { grid-template-columns: 1fr; } .frm .hint { grid-column: 1; } }
 </style>
 </head>
 <body>
@@ -56,6 +64,7 @@
   <div class="lead" id="lead">募集中のチームです。カードを押すと、くわしい内容が見られます。</div>
 </header>
 <main>
+  <div id="mine"></div>
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" hidden>いま、メンバーを募集しているチームはありません。</div>
 </main>
@@ -64,26 +73,39 @@
   var params = new URLSearchParams(location.search);
   var key = params.get("t") || "";
   var frag = (location.hash || "").replace(/^#/, "") || params.get("f") || "";
-  var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位
+  var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印
   if (frag) {
     var p = frag.split(".");
-    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null };
+    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "" };
   }
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
-  var D = null, OPEN = null, BUSY = false, WAIT = null;
+  var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
+  var FN = { survivor: "サバイバー", hunter: "ハンター", both: "両陣営" };
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function fits(t) {                                                                   // 自分に合うか（段位は、出場する陣営の段位で）。募集を締め切ったチームは、合わない扱い
-    if (t.closed) return false;
+  function arr(x) { return Array.isArray(x) ? x : []; }                                // 空のリストは、データ置き場（Firebase）で消えて届かない
+  function U() { return me && D && D.users ? D.users[me.mark] || null : null; }
+  function teamName(id) { return ((D && D.team_names) || {})[String(id)] || ("チーム" + id); }
+  function needText(t) {
+    var n = arr(t.need), parts = [];
+    if (n[0]) parts.push("サバイバー" + n[0] + "人"); if (n[1]) parts.push("ハンター" + n[1] + "人");
+    if (parts.length) return "求めている人材：" + parts.join("・") + (t.wanted ? "（" + t.wanted + "）" : "");
+    if (t.state === "extra") return "余分募集：" + (FN[t.extra_faction] || "両陣営") + (t.wanted ? "（" + t.wanted + "）" : "");
+    return "求めている人材：" + (t.wanted || "（人数はそろいました）");
+  }
+  function fits(t) {                                                                   // 自分に合うか（段位・閲歴の制限・求めている陣営）
+    if (t.state !== "open" && t.state !== "extra") return false;
     if (!me) return true;
-    var lv = t.lv || [], rk = t.rk || [];
+    var f = me.f || "both", n = arr(t.need);
+    if (t.state === "open" && !((n[0] > 0 && (f === "survivor" || f === "both")) || (n[1] > 0 && (f === "hunter" || f === "both")))) return false;
+    if (t.state === "extra" && t.extra_faction && t.extra_faction !== "both" && f !== "both" && f !== t.extra_faction) return false;
+    var lv = arr(t.lv), rk = arr(t.rk);
     if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
     if (lv[0] != null && me.lv < lv[0]) return false;
     if (lv[1] != null && me.lv > lv[1]) return false;
     var mine = [];
-    if (me.f === "survivor" || me.f === "both") mine.push(me.s);
-    if (me.f === "hunter" || me.f === "both") mine.push(me.h);
+    if (f === "survivor" || f === "both") mine.push(me.s);
+    if (f === "hunter" || f === "both") mine.push(me.h);
     if (rk[0] != null || rk[1] != null) {
-      if (!mine.length) return false;
       for (var i = 0; i < mine.length; i++) {
         if (mine[i] == null) return false;
         if (rk[0] != null && mine[i] < rk[0]) return false;
@@ -92,71 +114,264 @@
     }
     return true;
   }
+  function send(body, busyText) {                                                      // 受け箱へ（BOTが処理して、結果を書き戻す）
+    if (BUSY || !me) return;
+    BUSY = true; setMsg("", busyText || "送信中…（BOTが確認します。数秒かかります）");
+    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    WAIT = nonce; body.uid = me.uid;
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: body } }) })
+      .catch(function () { BUSY = false; WAIT = null; setMsg("ng", "⚠ 送れませんでした。もう一度お試しください。"); });
+  }
+  function setMsg(cls, text) { var ms = document.querySelectorAll(".msg.live"); for (var i = 0; i < ms.length; i++) { ms[i].className = "msg live " + cls; ms[i].textContent = text; } }
+  function liveMsg() { return el("div", "msg live"); }
+
+  // ───── リーダー：募集の内容（初めては、制限も含めて、すべてをまとめて） ─────
+  var RANKS = [["", "制限なし"], ["1", "1段"], ["2", "2段"], ["3", "3段"], ["4", "4段"], ["5", "5段"], ["6", "6段"], ["7", "7段"], ["P", "最高峰"]];
+  function rankCode(v) { var m = /^([1-6])-([1-5])$/.exec(v || "") || /^(7|P)\*(\d{0,4})$/.exec(v || ""); return m ? [m[1], m[2]] : ["", ""]; }
+  function rankScore(v) {                                                              // 強さの順（比べるため）
+    var c = rankCode(v); if (!c[0]) return null;
+    if (/^[1-6]$/.test(c[0])) return (Number(c[0]) - 1) * 5 + (6 - Number(c[1]));
+    return 30 + Number(c[1]) / 10 + (c[0] === "P" ? 1 : 0);
+  }
+  function rankOk(v) { var c = rankCode(v); if (!c[0]) return !v; if (c[0] === "P") { var n = Number(c[1]); return /^\d{2,3}$/.test(c[1]) && n >= 25; } return true; }
+  function rankPick(v, put) {
+    var c = rankCode(v), box = el("div", "row"), a = el("select");
+    box.style.marginTop = "0";
+    RANKS.forEach(function (r) { var o = el("option", "", r[1]); o.value = r[0]; if (r[0] === c[0]) o.selected = true; a.appendChild(o); });
+    box.appendChild(a);
+    var b;
+    if (/^[1-6]$/.test(c[0])) {
+      b = el("select"); [["5", "Ⅴ"], ["4", "Ⅳ"], ["3", "Ⅲ"], ["2", "Ⅱ"], ["1", "Ⅰ"]].forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (x[0] === c[1]) o.selected = true; b.appendChild(o); });
+      b.addEventListener("change", function () { put(c[0] + "-" + b.value); });
+    } else if (c[0] === "7") {
+      b = el("select"); for (var i = 0; i <= 24; i++) { var o = el("option", "", "★" + i); o.value = String(i); if (String(i) === c[1]) o.selected = true; b.appendChild(o); }
+      b.addEventListener("change", function () { put("7*" + b.value); });
+    } else if (c[0] === "P") {                                                          // 最高峰：星の数は、書いて入れる（25以上の2〜3桁）
+      b = el("input"); b.type = "text"; b.inputMode = "numeric"; b.maxLength = 3; b.value = c[1]; b.placeholder = "★の数（25以上）"; b.style.width = "9em";
+      b.addEventListener("input", function () { var d = b.value.replace(/[^0-9]/g, ""); if (d !== b.value) b.value = d; });
+      b.addEventListener("change", function () { put("P*" + b.value); });
+      if (!rankOk(v)) b.className = "bad";
+    }
+    a.addEventListener("change", function () { var d = a.value; put(!d ? "" : /^[1-6]$/.test(d) ? d + "-5" : d === "7" ? "7*0" : "P*25"); });
+    if (b) box.appendChild(b);
+    return box;
+  }
+  function leaderView(box, teamId) {
+    var cur = (D.forms || {})[String(teamId)] || { first: true };
+    if (!FORM || FORM._team !== teamId) {
+      FORM = { _team: teamId, title: cur.title || "", wanted: cur.wanted || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
+               extra: !!cur.extra, extra_faction: cur.extra_faction || "both", usepw: !!cur.lock, password: "",
+               level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "" };
+    }
+    var c = el("div", "card");
+    c.appendChild(el("h2", "", "📝 募集の内容｜" + teamName(teamId)));
+    c.appendChild(el("div", "lead", cur.first ? "初めて募集の内容を書くときは、制限も含めて、すべての項目を決めてから保存してください。あとから、いつでも変えられます。"
+                                              : "募集の内容は、いつでも変えられます（変えた項目だけ、まとめて保存します）。"));
+    var f = el("div", "frm");
+    function lab(t) { f.appendChild(el("label", "", t)); }
+    function hint(t) { f.appendChild(el("div", "hint", t)); }
+    function text(k, max, ph, area) { var i = el(area ? "textarea" : "input"); if (!area) i.type = "text"; i.maxLength = max; i.value = FORM[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { FORM[k] = i.value; }); f.appendChild(i); }
+    function num(k, lo, hi) { var s = el("select"); for (var n = lo; n <= hi; n++) { var o = el("option", "", n + "人"); o.value = String(n); if (Number(FORM[k]) === n) o.selected = true; s.appendChild(o); } s.addEventListener("change", function () { FORM[k] = Number(s.value); }); return s; }
+    lab("募集タイトル（20字以内）"); text("title", 20, "例：初心者さん大歓迎！");
+    lab("求めている人材"); var nr = el("div", "row"); nr.style.marginTop = "0"; nr.appendChild(el("span", "", "サバイバー")); nr.appendChild(num("need_s", 0, D.need_max || 10)); nr.appendChild(el("span", "", "ハンター")); nr.appendChild(num("need_h", 0, D.need_max || 10)); f.appendChild(nr);
+    hint("両陣営の人が加入したら、サバイバー・ハンターの両方を、1人ずつ減らします。");
+    lab("ひとこと（任意）"); text("wanted", 100, "例：VCで話せる人");
+    lab("概要（任意）"); text("summary", 1000, "性別やVCの有無、使用キャラクター、バッジの有無などを制限したい場合はここに記載してください。", true);
+    lab("閲歴の下限・上限"); var lr = el("div", "row"); lr.style.marginTop = "0";
+    ["level_min", "level_max"].forEach(function (k, ix) {
+      var i = el("input"); i.type = "text"; i.inputMode = "numeric"; i.maxLength = 4; i.value = FORM[k] == null ? "" : FORM[k]; i.placeholder = ix ? "上限（空＝なし）" : "下限（空＝なし）"; i.style.width = "11em";
+      i.addEventListener("input", function () { var d = i.value.replace(/[^0-9]/g, ""); if (d !== i.value) i.value = d; FORM[k] = d; });
+      lr.appendChild(i);
+    });
+    f.appendChild(lr);
+    lab("過去最高段位の下限"); f.appendChild(rankPick(FORM.rank_min, function (v) { FORM.rank_min = v; render(); }));
+    lab("過去最高段位の上限"); f.appendChild(rankPick(FORM.rank_max, function (v) { FORM.rank_max = v; render(); }));
+    var bad = [];
+    if (!rankOk(FORM.rank_min) || !rankOk(FORM.rank_max)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
+    var s1 = rankScore(FORM.rank_min), s2 = rankScore(FORM.rank_max);
+    if (s1 != null && s2 != null && s1 > s2) bad.push("段位の下限が、上限より高くなっています。");
+    if (FORM.level_min && FORM.level_max && Number(FORM.level_min) > Number(FORM.level_max)) bad.push("閲歴の下限が、上限より大きくなっています。");
+    lab("人数を超えても募集する"); var xr = el("div", "row"); xr.style.marginTop = "0";
+    var xc = el("input"); xc.type = "checkbox"; xc.checked = FORM.extra; xc.addEventListener("change", function () { FORM.extra = xc.checked; render(); });
+    xr.appendChild(xc); xr.appendChild(el("span", "", "求めている人材の人数を超えても募集する"));
+    if (FORM.extra) { var xs = el("select"); [["survivor", "サバイバー"], ["hunter", "ハンター"], ["both", "両陣営OK"]].forEach(function (o2) { var o = el("option", "", o2[1]); o.value = o2[0]; if (FORM.extra_faction === o2[0]) o.selected = true; xs.appendChild(o); }); xs.addEventListener("change", function () { FORM.extra_faction = xs.value; }); xr.appendChild(xs); }
+    f.appendChild(xr); hint("人数がそろったあとも「余分募集」として、選んだ陣営の人を募集できます（一覧では下のほうに出ます）。");
+    lab("パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
+    var pc = el("input"); pc.type = "checkbox"; pc.checked = FORM.usepw; pc.addEventListener("change", function () { FORM.usepw = pc.checked; render(); });
+    pr.appendChild(pc); pr.appendChild(el("span", "", "パスワードつきの募集（友人だけを招待したいとき）"));
+    if (FORM.usepw) { var pw = el("input"); pw.type = "text"; pw.maxLength = 20; pw.value = FORM.password; pw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4文字以上の英数字"; pw.style.width = "14em"; pw.addEventListener("input", function () { pw.value = pw.value.replace(/[^A-Za-z0-9]/g, ""); FORM.password = pw.value; }); pr.appendChild(pw); }
+    f.appendChild(pr);
+    c.appendChild(f);
+    bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
+    var row = el("div", "row");
+    var sv = el("button", "go", "💾 募集の内容を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
+    sv.addEventListener("click", function () {
+      if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
+      if (cur.first && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
+      if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ パスワードは、4〜20文字の英数字にしてください。"); return; }
+      var form = { title: FORM.title, wanted: FORM.wanted, summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
+                   level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null };
+      if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
+      if (cur.first && !("password" in form)) form.password = "";
+      send({ act: "form", team: teamId, form: form }, "保存しています…");
+    });
+    row.appendChild(sv);
+    if (!cur.first) {
+      var cl = el("button", cur.closed ? "" : "danger", cur.closed ? "▶ 募集を再開する" : "⏸ 募集を締め切る"); cl.type = "button";
+      cl.addEventListener("click", function () { send({ act: cur.closed ? "reopen" : "close", team: teamId }); });
+      row.appendChild(cl);
+    }
+    c.appendChild(row); c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+
+  // ───── 応募した人：自分の応募（希望の順・取り消し） ─────
+  function wishesView(box, u) {
+    var act = arr(u.wishes).filter(function (w) { return w.status === "pending" || w.status === "approved"; }).sort(function (a, b) { return a.rank - b.rank; });
+    var done = arr(u.wishes).filter(function (w) { return !(w.status === "pending" || w.status === "approved"); });
+    if (!act.length && !done.length) return;
+    var c = el("div", "card"); c.appendChild(el("h2", "", "📨 あなたの応募"));
+    c.appendChild(el("div", "lead", "第一希望から順に見て、上の希望が否認（または取り消し）になったときだけ、次の希望のチームに加入します。下の希望から先に承認されたときは「保留」です。"));
+    if (!ORDER) ORDER = act.map(function (w) { return w.team; });
+    var changed = JSON.stringify(ORDER) !== JSON.stringify(act.map(function (w) { return w.team; }));
+    ORDER.forEach(function (tid, i) {
+      var w = act.filter(function (x) { return x.team === tid; })[0]; if (!w) return;
+      var r = el("div", "wish");
+      r.appendChild(el("b", "", "第" + (i + 1) + "希望"));
+      r.appendChild(el("span", "", teamName(tid)));
+      r.appendChild(el("span", "st", w.label));
+      var up = el("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.addEventListener("click", function () { var t = ORDER[i - 1]; ORDER[i - 1] = ORDER[i]; ORDER[i] = t; render(); });
+      var dn = el("button", "", "↓"); dn.type = "button"; dn.disabled = i === ORDER.length - 1; dn.addEventListener("click", function () { var t = ORDER[i + 1]; ORDER[i + 1] = ORDER[i]; ORDER[i] = t; render(); });
+      var cx = el("button", "danger", "取り消す"); cx.type = "button";
+      cx.addEventListener("click", function () { if (confirm(teamName(tid) + " への応募を取り消します。よろしいですか？")) send({ act: "cancel", wish: w.id }); });
+      r.appendChild(up); r.appendChild(dn); r.appendChild(cx); c.appendChild(r);
+    });
+    if (act.length > 1) {
+      var sv = el("button", "go", "希望の順を保存"); sv.type = "button"; sv.disabled = !changed || BUSY;
+      sv.addEventListener("click", function () { send({ act: "reorder", order: ORDER }, "希望の順を変えています…"); });
+      var row = el("div", "row"); row.appendChild(sv); c.appendChild(row);
+    }
+    done.slice(-5).forEach(function (w) { c.appendChild(el("div", "lim", teamName(w.team) + "：" + w.label + (w.note ? "（" + w.note + "）" : ""))); });
+    c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+
+  // ───── チームの選手：脱退 ─────
+  function memberView(box, u) {
+    var c = el("div", "card"); c.appendChild(el("h2", "", "🏷 あなたのチーム：" + teamName(u.team)));
+    c.appendChild(el("div", "lead", "今のチームから脱退できます（リーダーへの申請は要りません）。脱退すると、チーム専用チャンネルに、脱退したことが知らされます。"));
+    var b = el("button", "danger", "このチームから脱退する"); b.type = "button"; b.disabled = BUSY;
+    b.addEventListener("click", function () { if (confirm("本当に、チーム「" + teamName(u.team) + "」から脱退しますか？\n（もう一度入るときは、あらためて応募が必要です）")) send({ act: "leave" }, "脱退しています…"); });
+    var row = el("div", "row"); row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+
   function render() {
-    var grid = document.getElementById("grid"); grid.textContent = "";
+    var grid = document.getElementById("grid"), mine = document.getElementById("mine");
     if (!D) return;
+    var active = document.activeElement, focusTag = active && active.closest ? active.closest("#mine") : null;
+    if (focusTag && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;      // 書いている途中は、描き直さない
+    grid.textContent = ""; mine.textContent = "";
     document.getElementById("ttl").textContent = "メンバー募集｜" + (D.title || "");
-    document.getElementById("lead").textContent = me ? "あなたの段位・閲歴に合うチームを、上に並べています。カードを押して、内容を見てから応募してください。"
-                                                     : "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」から開いてください。";
-    var teams = (D.teams || []).slice();                                                // 締め切ったチームは、いちばん下
+    var u = U();
+    if (u && u.leader) leaderView(mine, u.leader);
+    else if (u && u.team) memberView(mine, u);
+    if (u && !u.leader && !u.team) wishesView(mine, u);
+    document.getElementById("lead").textContent = !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「🙋 メンバー応募」から開いてください。"
+      : u && u.leader ? "あなたはチームリーダーです。上で、募集の内容を書けます。下は、いま募集しているチームの一覧です。"
+      : u && u.team ? "あなたは、もうチームに入っています。下は、いま募集しているチームの一覧です（応募するときは、先に脱退してください）。"
+      : "あなたに合うチームを、上に並べています。カードを押して、内容を見てから応募してください（同時に" + (D.max_wishes || 3) + "チームまで）。";
+    var teams = arr(D.teams).slice();
+    var rank = { open: 0, extra: 1, done: 2, full: 2, closed: 3 };
     teams.forEach(function (t) { t._fit = fits(t); });
-    teams.sort(function (a, b) { return ((a.closed ? 1 : 0) - (b.closed ? 1 : 0)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
+    function rk(x) { return x.state in rank ? rank[x.state] : 3; }                     // 募集中 → 余分募集（下のほう） → そろった・満員 → 締め切り
+    teams.sort(function (a, b) { return (rk(a) - rk(b)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
     document.getElementById("empty").hidden = teams.length > 0;
     teams.forEach(function (t) {
       var c = el("div", "card" + (t._fit ? "" : " nofit"));
-      var top = el("div", "top"); top.appendChild(el("div", "team", t.name)); top.appendChild(el("div", "count", t.n + "/" + (t.cap || "—")));
+      var top = el("div", "top"); top.appendChild(el("div", "team", (t.locked ? "🔒 " : "") + t.name)); top.appendChild(el("div", "count", t.n + "/" + (t.cap || "—")));
       c.appendChild(top);
       c.appendChild(el("div", "title", t.title));
-      c.appendChild(el("div", "wanted", "求めている人材：" + t.wanted));
+      c.appendChild(el("div", "wanted", needText(t)));
       if (t.summary) c.appendChild(el("div", "sum", t.summary));
       if (t.limits) c.appendChild(el("div", "lim", t.limits));
-      if (t.closed) c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
-      else if (me) c.appendChild(el("div", "tag " + (t._fit ? "ok" : "ng"), t._fit ? "✔ あなたに合うチーム" : "制限に合いません"));
+      if (t.state === "extra") c.appendChild(el("div", "tag warn", "➕ 余分募集"));
+      if (t.state === "closed") c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
+      else if (t.state === "full") c.appendChild(el("div", "tag ng", "満員"));
+      else if (t.state === "done") c.appendChild(el("div", "tag ng", "募集している人数がそろいました"));
+      else if (me) c.appendChild(el("div", "tag " + (t._fit ? "ok" : "ng"), t._fit ? "✔ あなたに合うチーム" : "制限・求めている陣営に合いません"));
       if (t.entered) c.appendChild(el("div", "lim", "エントリー済みのチーム（追加のメンバーを募集）"));
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
     });
     if (OPEN != null) dialog();
   }
-  function dialog() {
+  function dialog(step) {
     var old = document.getElementById("ov"); if (old) old.remove();
-    var t = (D.teams || []).filter(function (x) { return x.id === OPEN; })[0];
+    var t = arr(D.teams).filter(function (x) { return x.id === OPEN; })[0];
     if (!t) { OPEN = null; return; }
+    var u = U() || { wishes: [] };
+    var act = arr(u.wishes).filter(function (w) { return w.status === "pending" || w.status === "approved"; }).sort(function (a, b) { return a.rank - b.rank; });
     var ov = el("div", "ov"); ov.id = "ov";
     ov.addEventListener("click", function (e) { if (e.target === ov) { OPEN = null; ov.remove(); } });
     var d = el("div", "dlg");
-    d.appendChild(el("div", "count", t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
+    function close() { OPEN = null; ov.remove(); }
+    if (step === "extra") {                                                            // 余分募集：本当にこのチームでいいか
+      d.appendChild(el("h2", "", "➕ 余分募集のチームです"));
+      d.appendChild(el("div", "full", D.extra_note || ""));
+      var r0 = el("div", "row");
+      var y = el("button", "go", "このチームに応募する"); y.type = "button"; y.addEventListener("click", function () { dialog("form"); });
+      var n = el("button", "", "別のチームを検討します。"); n.type = "button"; n.addEventListener("click", close);
+      r0.appendChild(y); r0.appendChild(n); d.appendChild(r0);
+      ov.appendChild(d); document.body.appendChild(ov); return;
+    }
+    d.appendChild(el("div", "count", (t.locked ? "🔒 " : "") + t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
     d.appendChild(el("h2", "", t.title));
-    d.appendChild(el("div", "wanted", "求めている人材：" + t.wanted));
+    d.appendChild(el("div", "wanted", needText(t)));
     d.appendChild(el("div", "full", t.summary || "（概要はありません）"));
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
-    var msg = el("div", "msg");
-    if (me) {
-      d.appendChild(el("div", "lead", "応募のメッセージ（リーダーとチームのメンバーに届きます。500字まで）"));
-      var ta = el("textarea"); ta.maxLength = 500; ta.id = "amsg"; d.appendChild(ta);
-      var row = el("div", "row");
-      var go = el("button", "go", BUSY ? "送信中…" : "このチームに応募する"); go.type = "button"; go.disabled = BUSY || !t._fit;
-      go.addEventListener("click", function () { apply(t.id, ta.value); });
-      row.appendChild(go);
-      var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", function () { OPEN = null; ov.remove(); });
-      row.appendChild(cl); d.appendChild(row);
-      if (t.closed) msg.textContent = "このチームは、募集を締め切りました。", msg.className = "msg ng";
-      else if (!t._fit) msg.textContent = "このチームの制限（段位・閲歴）に合わないため、応募できません。", msg.className = "msg ng";
-    } else {
-      d.appendChild(el("div", "lead", "応募は、Discordのエントリーパネルの「🙋 メンバー募集」→「🌐 募集中のチームを見る・応募する」で出る、あなた用のURLから行います。"));
+    var already = act.some(function (w) { return w.team === t.id; });
+    var row = el("div", "row");
+    if (me && u && !u.leader && !u.team && !already && t._fit) {
+      if (step !== "form" && t.state === "extra") {
+        var go0 = el("button", "go", "このチームに応募する"); go0.type = "button"; go0.addEventListener("click", function () { dialog("extra"); });
+        row.appendChild(go0);
+      } else if (act.length >= (D.max_wishes || 3)) {
+        d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
+      } else {
+        d.appendChild(el("div", "lead", "応募のメッセージ（リーダーとチームのメンバーに届きます。500字まで）"));
+        var ta = el("textarea"); ta.maxLength = 500; d.appendChild(ta);
+        var pw = null;
+        if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、パスワードつきの募集です。リーダーから聞いたパスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
+        var order = act.map(function (w) { return w.team; }).concat([t.id]);
+        if (act.length) {                                                              // 2つ目からは、希望の順を並べ替える（先に応募したチームが上）
+          d.appendChild(el("div", "lead", "希望の順を決めてください（ふつうは、先に応募したチームが上です）。"));
+          var ol = el("div"); d.appendChild(ol);
+          var draw = function () {
+            ol.textContent = "";
+            order.forEach(function (id, i) {
+              var r = el("div", "wish"); r.appendChild(el("b", "", "第" + (i + 1) + "希望")); r.appendChild(el("span", "st", teamName(id) + (id === t.id ? "（今回の応募）" : "")));
+              var up = el("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.addEventListener("click", function () { var x = order[i - 1]; order[i - 1] = order[i]; order[i] = x; draw(); });
+              var dn = el("button", "", "↓"); dn.type = "button"; dn.disabled = i === order.length - 1; dn.addEventListener("click", function () { var x = order[i + 1]; order[i + 1] = order[i]; order[i] = x; draw(); });
+              r.appendChild(up); r.appendChild(dn); ol.appendChild(r);
+            });
+          };
+          draw();
+        }
+        var go = el("button", "go", BUSY ? "送信中…" : "このチームに応募する"); go.type = "button"; go.disabled = BUSY;
+        go.addEventListener("click", function () { ORDER = null; send({ act: "wish", team: t.id, message: ta.value, order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra" }); });
+        row.appendChild(go);
+      }
     }
-    msg.id = "amsgres"; d.appendChild(msg);
+    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close);
+    row.appendChild(cl); d.appendChild(row);
+    if (!me) d.appendChild(el("div", "lead", "応募は、Discordのエントリーパネルの「🙋 メンバー応募」で出る、あなた用のURLから行います。"));
+    else if (already) d.appendChild(el("div", "msg ok", "このチームには、もう応募しています（上の「あなたの応募」で、様子を見られます）。"));
+    else if (u.leader) d.appendChild(el("div", "msg ng", "チームリーダーは、ほかのチームに応募できません。"));
+    else if (u.team) d.appendChild(el("div", "msg ng", "あなたは、もうチームに入っています。応募するときは、先に脱退してください。"));
+    else if (!t._fit) d.appendChild(el("div", "msg ng", t.state === "closed" ? "このチームは、募集を締め切りました。" : t.state === "full" ? "このチームは満員です。" : t.state === "done" ? "このチームは、募集している人数がそろいました。" : "このチームの制限（段位・閲歴）か、求めている陣営に合わないため、応募できません。"));
+    d.appendChild(liveMsg());
     ov.appendChild(d); document.body.appendChild(ov);
-  }
-  function setMsg(cls, text) { var m = document.getElementById("amsgres"); if (m) { m.className = "msg " + cls; m.textContent = text; } }
-  function apply(team, message) {
-    if (BUSY || !me) return;
-    BUSY = true; dialog(); setMsg("", "送信中…（BOTが確認します。数秒かかります）");
-    var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-    WAIT = nonce;
-    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" },
-                       body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: { uid: me.uid, act: "apply", team: team, message: message } } }) })
-      .catch(function () { BUSY = false; WAIT = null; dialog(); setMsg("ng", "⚠ 送れませんでした。もう一度お試しください。"); });
   }
   function load() {
     fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
@@ -164,12 +379,14 @@
       D = d;
       var r = d.result;
       if (WAIT && r && r.nonce === WAIT) {
-        BUSY = false; WAIT = null; render();
-        setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "応募しました。") : "⚠ " + (r.error || "応募できませんでした。"));
+        BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
+        if (r.ok && OPEN != null) { OPEN = null; var o = document.getElementById("ov"); if (o) o.remove(); }
+        render();
+        setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         return;
       }
-      if (!document.getElementById("ov")) render();
-    }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });          // まだデータが無い：募集しているチームが無い
+      if (!document.getElementById("ov") && !BUSY) render();
+    }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
   load(); setInterval(load, 4000);
