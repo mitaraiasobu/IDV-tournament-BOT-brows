@@ -162,7 +162,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
-    <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として「募集停止」「削除」できます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
+    <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
       <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別。保存のときに、公開するかを聞きます）。</div>
       <div id="brview"></div>
@@ -747,13 +747,21 @@
       var c = el("div", "card"); c.style.marginTop = "10px";
       var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = r.name + "（" + r.n + "/" + (r.cap || "—") + "人）"; c.appendChild(h);
       c.appendChild(el("div", "note", (r.friends ? "👫 友達だけの募集" : "タイトル：" + (r.title || "（なし）")) + "／返事待ちの応募：" + r.apps + "件"));
+      if (!r.friends) {                                                                // 投稿の中身（運営が確かめる）
+        var body = el("div", "note"); body.style.whiteSpace = "pre-wrap";
+        body.textContent = "求めている人材：サバイバー" + (r.need || [0, 0])[0] + "人・ハンター" + (r.need || [0, 0])[1] + "人" + (r.beg ? "　🔰 初心者歓迎" : "")
+          + (r.wants ? "\n" + r.wants : "") + (r.limits ? "\n制限：" + r.limits : "") + (r.summary ? "\n\n" + r.summary : "");
+        c.appendChild(body);
+      }
       c.appendChild(el("div", "", r.stopped ? "⏸ 運営が募集を停止中" : r.closed ? "⏸ リーダーが締め切り中" : r.state === "open" || r.state === "extra" ? "📣 募集中" : "人数がそろった・満員"));
       var row = el("div", "row");
       var st = el("button", r.stopped ? "primary" : "", r.stopped ? "▶ 募集を再開する" : "⏸ 募集停止"); st.type = "button";
       st.addEventListener("click", function () { if (r.stopped || confirm("「" + r.name + "」の募集を停止します（内容は残ります。再開すれば、同じ内容で募集します）。よろしいですか？")) brSend([{ op: "recruit_stop", team: r.team, stop: !r.stopped }], r.stopped ? "募集を再開しています…" : "募集を停止しています…"); });
       var dl = el("button", "", "🗑 削除"); dl.type = "button"; dl.style.color = "#ff7070";
       dl.addEventListener("click", function () { if (confirm("「" + r.name + "」の募集の投稿を削除します。返事待ちの応募は取り消しになります（チームとメンバーは残ります）。取り消せません。本当に削除しますか？")) brSend([{ op: "recruit_delete", team: r.team }], "募集の投稿を削除しています…"); });
-      row.appendChild(st); row.appendChild(dl); c.appendChild(row);
+      var wb = el("button", "", "⚠ 警告"); wb.type = "button";
+      wb.addEventListener("click", function () { var t = prompt("「" + r.name + "」のリーダーに送る問題点を書いてください（1000字まで）：", ""); if (t && t.trim()) brSend([{ op: "recruit_warn", team: r.team, text: t.trim().slice(0, 1000) }], "警告を送っています…"); });
+      row.appendChild(st); row.appendChild(wb); row.appendChild(dl); c.appendChild(row);
       box.appendChild(c);
     });
   }

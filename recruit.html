@@ -228,6 +228,7 @@
     return out;
   }
   var FN2 = { survivor: "サバイバー", hunter: "ハンター", both: "必ず両陣営", any: "どちらでも/両陣営OK" };
+  function isMgr() { var u = U(); return !!(u && u.kind === "manager"); }
   function myF() { var f = me && me.f || "both"; return f === "both" && ((me.prof && me.prof.st) || {}).fx !== false ? "any" : f; }   // 両陣営の人：どちらでもか、必ず両陣営か
   function factionOk(t, f) {                                                          // 陣営が、このチームの求めている人材に合うか（any＝どちらでも/両陣営OK）
     f = f || "any";
@@ -260,6 +261,7 @@
     if (t.state !== "open" && t.state !== "extra") return false;
     if (!me) return true;
     var f = me.f || "both";
+    if (isMgr()) return !!t.locked;                                                     // マネージャー：応募パスワードのある募集だけ
     if (t.friends) return true;                                                        // 友達だけ：パスワードを知っていれば
     if (!factionOk(t, myF())) return false;
     var lv = arr(t.lv), rk = arr(t.rk);
@@ -317,7 +319,7 @@
       if (!/^[A-Za-z0-9]{8,20}$/.test(PWIN.a)) { PWERR = "アカウントパスワードは、8〜20文字の英数字にしてください。"; render(); return; }
       if (setting && PWIN.a !== PWIN.b) { PWERR = "確認のアカウントパスワードが違います。"; render(); return; }
       phOf(PWIN.a).then(function (ph) {
-        if (setting) { PH = ph; PEND = { kind: "pw" }; send({ act: "set_pw" }, "アカウントパスワードを決めています…"); return; }
+        if (setting) { PH = ph; PEND = { kind: "pw" }; sha("rckey:" + me.key).then(function (kh) { send({ act: "set_pw", kh: kh }, "アカウントパスワードを決めています…"); }); return; }
         verOf(ph).then(function (v) {
           if (v !== u.pwv) { PWERR = "アカウントパスワードが違います。忘れたときは、Discordのエントリーパネルの「📝 エントリー」から作り直せます。"; render(); return; }
           PH = ph; UNLOCKED = true; PWERR = ""; PWIN = { a: "", b: "" };
@@ -706,13 +708,86 @@
     rd.readAsDataURL(file);
   }
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
+  var KIND = "";
+  function mgrForm(box) {                                                             // マネージャー：名前だけ
+    var u = U() || {};
+    var c = el("div", "card");
+    c.appendChild(el("h2", "", "🧑‍💼 マネージャーとして登録"));
+    c.appendChild(el("div", "lead", "マネージャーは、応募パスワードのある募集にだけ応募できます（チームのリーダーから、応募パスワードを聞いてください）。試合には出ません。"));
+    var f = el("div", "frm"); f.appendChild(el("label", "", "マネージャー名"));
+    var ni = el("input"); ni.type = "text"; ni.maxLength = 20; ni.value = MGRN != null ? MGRN : (u.mgr || ""); ni.placeholder = "マネージャー名（選手名と同じ決まり）";
+    ni.addEventListener("input", function () { MGRN = ni.value; }); f.appendChild(ni); c.appendChild(f);
+    var r = el("div", "row"), sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 マネージャーとして保存"); sv.type = "button"; sv.disabled = BUSY;
+    sv.addEventListener("click", function () { var v = (MGRN != null ? MGRN : ni.value).trim(); if (!v) { setMsg("ng", "⚠ マネージャー名を入れてください。"); return; } PEND = { kind: "mgr" }; send({ act: "manager_profile", name: v }, "保存しています…"); });
+    var sw = el("button", "", "🎮 選手として登録する に切り替える"); sw.type = "button"; sw.addEventListener("click", function () { KIND = "player"; PF = null; openProfile(); });
+    r.appendChild(sv); r.appendChild(sw); c.appendChild(r); c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+  var MGRN = null, SKIND = null, SF = {};
+  function staffCard(box, u) {                                                        // キャスター・モデレーターの応募（ブラウザ）
+    var S = D.staff || {}, kinds = ["caster", "moderator"].filter(function (k) { return S[k]; });
+    if (!kinds.length) return;
+    var c = el("div", "card"); c.appendChild(el("h2", "", "🎙 キャスター・🛡 モデレーター"));
+    var r = el("div", "row");
+    kinds.forEach(function (k) {
+      var st = ((u || {}).sapps || {})[k];
+      var b = el("button", "", (k === "caster" ? "🎙 キャスター応募" : "🛡 モデレーター応募") + (st ? "（" + ({ pending: "審査中", adopted: "採用", rejected: "不採用" }[st] || st) + "）" : ""));
+      b.type = "button"; b.addEventListener("click", function () { SKIND = k; SF = {}; staffDialog(); }); r.appendChild(b);
+    });
+    c.appendChild(r); box.appendChild(fold(c, "staff"));
+  }
+  function staffDialog() {                                                            // その役のページ：いまのメンバーの名前と、応募（Discordと同じ項目）
+    var old = document.getElementById("ov"); if (old) old.remove();
+    var S = (D.staff || {})[SKIND]; if (!S) return;
+    var u = U() || {}, st = (u.sapps || {})[SKIND];
+    var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
+    function close() { SKIND = null; ov.remove(); }
+    ov.addEventListener("click", function (e) { if (e.target === ov && !BUSY) close(); });
+    d.appendChild(el("h2", "", (SKIND === "caster" ? "🎙 " : "🛡 ") + S.label));
+    d.appendChild(el("div", "lead", "いまの" + S.label + "：" + (arr(S.names).length ? arr(S.names).join("、") : "（まだいません）")));
+    if (st) d.appendChild(el("div", "notice", "あなたは、もう応募しています（" + ({ pending: "審査中", adopted: "採用", rejected: "不採用" }[st] || st) + "）。内容を変えるときは、Discordのエントリーパネルの応募のボタンから変えられます。"));
+    else if (!S.open) d.appendChild(el("div", "msg ng", "応募の受付は、締め切りました。"));
+    else {
+      var f = el("div", "frm");
+      function lab(t) { f.appendChild(el("label", "", t)); }
+      function sel(key, list) { var s0 = el("select"), o0 = el("option", "", "選んでください"); o0.value = ""; s0.appendChild(o0); arr(list).forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (SF[key] === x[0]) o.selected = true; s0.appendChild(o); }); s0.addEventListener("change", function () { SF[key] = s0.value; }); f.appendChild(s0); }
+      function chips(key, list, lb) { lab(lb); SF[key] = SF[key] || []; var ch = el("div", "chips"); arr(list).forEach(function (x) { var v = x.v != null ? x.v : x, t = x.t || x; var on = SF[key].indexOf(v) >= 0, l = el("label", on ? "on" : "", (on ? "✅ " : "⬜ ") + t);
+        l.addEventListener("click", function () { var k = SF[key].indexOf(v); if (k >= 0) SF[key].splice(k, 1); else SF[key].push(v); l.className = SF[key].indexOf(v) >= 0 ? "on" : ""; l.textContent = (l.className ? "✅ " : "⬜ ") + t; }); ch.appendChild(l); }); f.appendChild(ch); }
+      if (SKIND === "caster") {
+        lab("希望"); sel("role", S.roles);
+        lab("身体的性別"); sel("sex", S.sexes);
+        if (arr(S.rounds).length) chips("rounds", arr(S.rounds).map(function (x) { return { v: x.round, t: x.name + "｜" + x.time }; }), "参加できるラウンド（1つ以上）");
+      }
+      lab("志望動機（" + (S.max || 200) + "字以内）"); var ta = el("textarea"); ta.maxLength = S.max || 200; ta.value = SF.message || ""; ta.addEventListener("input", function () { SF.message = ta.value; }); f.appendChild(ta);
+      lab("経験"); var er = el("div", "row"); er.style.marginTop = "0"; var ec = el("input"); ec.type = "checkbox"; ec.checked = !!SF.exp; ec.addEventListener("change", function () { SF.exp = ec.checked; staffDialog(); }); er.appendChild(ec); er.appendChild(el("span", "", "経験がある")); f.appendChild(er);
+      if (SF.exp) { lab("経験の詳細"); var ed = el("textarea"); ed.maxLength = S.max || 200; ed.value = SF.exp_detail || ""; ed.addEventListener("input", function () { SF.exp_detail = ed.value; }); f.appendChild(ed); }
+      if (arr(S.dates).length) chips("dates", S.dates, "📅 参加できる日（すべて選んでください）");
+      if (arr(S.times).length) chips("times", S.times, "🕒 参加できる時間帯（すべて選んでください）");
+      d.appendChild(f);
+      var rr = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 送信中…" : "この内容で応募する"); go.type = "button"; go.disabled = BUSY;
+      go.addEventListener("click", function () {
+        if (SKIND === "caster" && (!SF.role || !SF.sex)) { setMsg("ng", "⚠ 希望と身体的性別を選んでください。"); return; }
+        if (!(SF.message || "").trim()) { setMsg("ng", "⚠ 志望動機を入れてください。"); return; }
+        send({ act: "staff_apply", kind: SKIND, f: SF }, "応募しています…");
+      });
+      rr.appendChild(go); d.appendChild(rr);
+    }
+    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close); var cr = el("div", "row"); cr.appendChild(cl); d.appendChild(cr);
+    d.appendChild(liveMsg());
+    ov.appendChild(d); document.body.appendChild(ov);
+  }
   function openProfile() {
     var st = keepScroll();
     var old = document.getElementById("ov"); if (old) old.remove();
     var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
     ov.addEventListener("click", function (e) { if (e.target === ov && !BUSY) { ov.remove(); PROFOPEN = false; BACK_TO = null; } });
     if (BACK_TO != null) d.appendChild(el("div", "ask", "直したら「💾 選手情報を保存」を押してください。保存すると、応募の確認の画面に戻ります。"));
-    profForm(d, false);
+    var u0 = U() || {};
+    if ((KIND || u0.kind) === "manager") mgrForm(d);
+    else {
+      profForm(d, false);
+      if (!u0.leader && !u0.team && !u0.mteam) { var swm = el("button", "", "🧑‍💼 マネージャーとして登録する に切り替える"); swm.type = "button"; swm.addEventListener("click", function () { KIND = "manager"; openProfile(); }); var swr0 = el("div", "row"); swr0.appendChild(swm); d.appendChild(swr0); }
+    }
     var cl = el("button", "", BUSY ? "処理中は閉じられません" : "閉じる"); cl.type = "button"; cl.disabled = BUSY; cl.addEventListener("click", function () { if (BUSY) return; ov.remove(); PROFOPEN = false; BACK_TO = null; }); d.appendChild(cl);
     ov.appendChild(d); document.body.appendChild(ov); d.scrollTop = st;
   }
@@ -1002,12 +1077,13 @@
     if (me && me.wait) { mine.appendChild(el("div", "lead", "あなたの選手情報を読み込んでいます…")); }
     else if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「🙋 メンバー応募」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
-    } else if (me && !(me.prof && u && u.pf_ok) && !(u && (u.leader || u.team))) {   // 選手情報がまだ・自動で入っただけで確かめていない人：まず登録してもらう（自動で入っていても、同じ）
+    } else if (me && !(u && u.pf_ok && (me.prof || u.kind === "manager")) && !(u && (u.leader || u.team || u.mteam))) {   // 選手情報がまだ・自動で入っただけで確かめていない人：まず登録してもらう（自動で入っていても、同じ）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
       mine.appendChild(el("div", "lead", me.prof ? "これまでに登録した内容が入っています。内容を確かめて、直すところがあれば直してから、「💾 選手情報を保存」を押してください（保存するまで、応募・チーム作りはできません）。"
                                                  : "※ Discordで選手登録したことがある方は、エントリーパネルの「🙋 メンバー応募」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります。"));
-      var go = el("button", "go", "🪪 選手情報を登録する"); go.type = "button"; go.addEventListener("click", function () { PROFOPEN = true; PF = null; openProfile(); });
-      var gr = el("div", "row"); gr.appendChild(go); mine.appendChild(gr);
+      var go = el("button", "go", "🎮 選手として登録"); go.type = "button"; go.addEventListener("click", function () { KIND = "player"; PROFOPEN = true; PF = null; openProfile(); });
+      var gm = el("button", "", "🧑‍💼 マネージャーとして登録"); gm.type = "button"; gm.addEventListener("click", function () { KIND = "manager"; PROFOPEN = true; PF = null; openProfile(); });
+      var gr = el("div", "row"); gr.appendChild(go); gr.appendChild(gm); mine.appendChild(gr);
       showGuide();                                                                    // はじめての人だけ：上から案内（右上のボタンを押すまで、ほかは押せない）
     }
     if (!me && INV) {
@@ -1024,7 +1100,15 @@
     }
     if (u && u.leader) { teamInfoView(mine, u); leaderView(mine, u.leader); appsView(mine, u); }
     else if (u && u.team) memberView(mine, u);
-    if (me && me.prof && u && u.pf_ok && !u.leader && !u.team) {
+    if (me) staffCard(mine, u);
+    if (u && u.mteam) {                                                               // マネージャー登録
+      var mc = el("div", "card"); mc.appendChild(el("h2", "", "🧑‍💼 マネージャー登録｜" + teamName(u.mteam)));
+      mc.appendChild(el("div", "lead", u.mstatus === "pending" ? "リーダーの承認を待っています。" : "承認されました。チーム専用チャンネルに入れます。"));
+      var mr = el("div", "row"), mx = el("button", "danger", "マネージャー登録を取り消す"); mx.type = "button";
+      mx.addEventListener("click", function () { if (confirm("マネージャー登録を取り消します。よろしいですか？")) send({ act: "manager_cancel" }, "取り消しています…"); });
+      mr.appendChild(mx); mc.appendChild(mr); mc.appendChild(liveMsg()); mine.appendChild(mc);
+    }
+    if (me && me.prof && u && u.pf_ok && !u.leader && !u.team && !isMgr()) {
       if (u) wishesView(mine, u);
       if (!(u && arr(u.wishes).some(function (w) { return w.status === "pending" || w.status === "approved"; }))) {
         var ctb = el("button", CT_OPEN ? "" : "go", CT_OPEN ? "▲ チーム作りを閉じる" : "🆕 自分のチームを募集する"); ctb.type = "button";
@@ -1088,6 +1172,7 @@
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
     });
+    if (SKIND && !document.getElementById("ov")) staffDialog();
     if (OPEN != null) dialog(DSTEP);
     else if (PROFOPEN) openProfile();
   }
@@ -1224,10 +1309,17 @@
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
+    if (me && isMgr() && t.locked && u && !u.mteam && !u.team && (t.state === "open" || t.state === "extra")) {     // マネージャーとして応募
+      d.appendChild(el("div", "lead", "🔒 応募パスワードを入れて、マネージャーとして応募します（試合には出ません）。"));
+      var mpw = el("input"); mpw.type = "text"; mpw.maxLength = 20; mpw.placeholder = "応募パスワード"; d.appendChild(mpw);
+      var mg = el("button", "go", "🧑‍💼 マネージャーとして応募する"); mg.type = "button";
+      mg.addEventListener("click", function () { if (!mpw.value.trim()) { setMsg("ng", "⚠ 応募パスワードを入れてください。"); return; } send({ act: "manager_apply", team: t.id, password: mpw.value.trim() }, "応募しています…"); });
+      row.appendChild(mg);
+    } else if (me && isMgr() && !t.locked) d.appendChild(el("div", "msg ng", "マネージャーは、応募パスワードのある募集にだけ応募できます。"));
     if (!me && INV && (t.state === "open" || t.state === "extra")) {                   // 招待用のページ：押すと、まずDiscordに加入するようにお願いする
       var gj = el("button", "go", "このチームに応募する"); gj.type = "button"; gj.addEventListener("click", joinPrompt); row.appendChild(gj);
     }
-    if (can || fOnly) {
+    if ((can || fOnly) && !isMgr()) {
       var go = el("button", "go", "このチームに応募する"); go.type = "button";
       go.addEventListener("click", function () { dialog(fOnly ? "faction" : t.state === "extra" ? "extra" : "confirm"); });
       row.appendChild(go);
@@ -1239,7 +1331,7 @@
     else if (!u.pf_ok && !u.leader && !u.team) d.appendChild(el("div", "msg ng", "応募の前に、上の「🪪 あなたの選手情報」を確かめて、「💾 選手情報を保存」を押してください。"));
     else if (u.leader) d.appendChild(el("div", "msg ng", "チームリーダーは、ほかのチームに応募できません。"));
     else if (u.team) d.appendChild(el("div", "msg ng", "あなたは、もうチームに入っています。応募するときは、先に脱退してください。"));
-    else if (!t._fit && !fOnly) d.appendChild(el("div", "msg ng", t.state === "closed" ? "このチームは、募集を締め切りました。" : t.state === "full" ? "このチームは満員です。" : t.state === "done" ? "このチームは、募集している人数がそろいました。" : !factionOk(t, me.f) ? "陣営が合いません。" : "このチームの段位・閲歴の制限に合わないため、応募できません。"));
+    else if (!t._fit && !fOnly && !isMgr()) d.appendChild(el("div", "msg ng", t.state === "closed" ? "このチームは、募集を締め切りました。" : t.state === "full" ? "このチームは満員です。" : t.state === "done" ? "このチームは、募集している人数がそろいました。" : !factionOk(t, me.f) ? "陣営が合いません。" : "このチームの段位・閲歴の制限に合わないため、応募できません。"));
     else if (act.length >= (D.max_wishes || 3)) d.appendChild(el("div", "msg ng", "応募できるのは、同時に" + (D.max_wishes || 3) + "チームまでです。どれかを取り消してから、応募してください。"));
     d.appendChild(liveMsg());
     show();
@@ -1260,12 +1352,14 @@
             if (BACK_TO != null) { OPEN = BACK_TO; var bt = arr(D.teams).filter(function (x) { return x.id === BACK_TO; })[0]; DSTEP = DSTEP === "fpick" && bt && bt.state === "extra" ? "extra" : "confirm"; BACK_TO = null; PROFOPEN = false; var po = document.getElementById("ov"); if (po) po.remove(); } me.prof = Object.assign({}, me.prof || {}, { n: q.n, r: q.r, g: q.g, f: q.f, sr: q.sr, hr: q.hr, sub: q.sub ? 1 : 0, why: q.why, sg: q.sg, fav: q.fav, lv: Number(q.lv), te: q._te || {}, tc: q._tc || {}, st: q.st || (me.prof || {}).st || {} });
             me.f = q.f; me.lv = Number(q.lv); me.s = q.f !== "hunter" ? rankScore(q.sr) : null; me.h = q.f !== "survivor" ? rankScore(q.hr) : null; }
           else if (PEND.kind === "img") { me.prof.img = 1; IMG = null; IMG_FAIL = false; }
+          else if (PEND.kind === "mgr") { var um = U(); if (um) { um.kind = "manager"; um.pf_ok = true; } PROFOPEN = false; MGRN = null; var pm = document.getElementById("ov"); if (pm) pm.remove(); }
           else if (PEND.kind === "imgdel") me.prof.img = 0;
           else if (PEND.kind === "delete") me.prof = null;
           LOGO = null;
           PF = null;
         }
         PEND = null;
+        if (r.ok && SKIND) { SKIND = null; SF = {}; var so = document.getElementById("ov"); if (so) so.remove(); }
         if (r.ok && OPEN != null && !((DSTEP === "confirm" || DSTEP === "extra") && WASPROF)) { OPEN = null; DSTEP = null; var o = document.getElementById("ov"); if (o) o.remove(); }
         IMG_FAIL = false;
         render();
