@@ -381,8 +381,9 @@
   // ───── チュートリアル（はじめて開いた人。この端末に、どこまで進んだかを覚える。右上の赤いボタンで、いつでもスキップ） ─────
   var TUT_KEY = "rc_tut:" + ((me && me.key) ? me.key.slice(0, 12) : "");             // URL（鍵）ごと：URLを作り直したら、チュートリアルをもう一度見られる
   var TUT = ""; try { TUT = localStorage.getItem(TUT_KEY) || ""; } catch (e) { TUT = "done"; }
-  function setTut(v) { TUT = v; try { localStorage.setItem(TUT_KEY, v); } catch (e) { /* そのまま */ } }
-  function tutWaiting() { return TUT === "profile" || TUT === "create" || TUT === "recruit_go"; }             // メニューを点滅させて、待っている
+  function setTut(v) { TUT = v; TUT_REACHED = ""; try { localStorage.setItem(TUT_KEY, v); } catch (e) { /* そのまま */ } }
+  var TUT_REACHED = "";                                                                // 行くべきところに進んだ段階（その段階では、もう点滅しない）
+  function tutWaiting() { return (TUT === "profile" || TUT === "create" || TUT === "recruit_go") && TUT_REACHED !== TUT; }             // メニューを点滅させて、待っている
   function tutTarget() { return TUT === "profile" ? "profile" : TUT === "create" ? "create" : TUT === "recruit_go" ? "recruit" : ""; }
   function tutPop(text, buttons) {
     var old = document.getElementById("tutpop"); if (old) old.remove();
@@ -409,10 +410,21 @@
     }
     if (TUT === "welcome") {
       tutPop("こんにちは！\nエントリーブラウザへようこそ！\nあなたは何にエントリーしたいですか？", [
-        ["🎮 選手", function () { setTut("profile_intro"); tutStep(); }],
+        ["🎮 選手", function () { setTut(rulesText().trim() && !rulesOk() ? "rules" : "profile_intro"); tutStep(); }],
         ["🧑‍💼 チームのマネージャー", function () { setTut("done"); PAGE = "manager"; render(); }, ""],
         ["🎙 キャスター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).caster) { SKIND = "caster"; SF = {}; } render(); }, ""],
         ["🛡 モデレーター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).moderator) { SKIND = "moderator"; SF = {}; } render(); }, ""]]);
+      return;
+    }
+    if (TUT === "rules") {                                                            // まず、大会のルールを読む
+      var old0 = document.getElementById("tutpop"); if (old0) old0.remove();
+      var w0 = el("div", "tutpop"); w0.id = "tutpop"; var b0 = el("div", "box");
+      var sk0 = el("button", "skip", "チュートリアルをスキップ"); sk0.type = "button"; sk0.addEventListener("click", function () { w0.remove(); setTut("done"); render(); }); b0.appendChild(sk0);
+      b0.appendChild(el("div", "tx", "まずは、大会のルールを読みましょう！\n最後まで読んだら「同意して進む」を押してください。"));
+      var rb0 = el("div", "rulebox"); rb0.style.maxHeight = "50vh"; rb0.appendChild(mdRender(rulesText())); b0.appendChild(rb0);
+      var bs0 = el("div", "btns"), ok0 = el("button", "go", "ルールを読んで、同意して進む"); ok0.type = "button";
+      ok0.addEventListener("click", function () { w0.remove(); setRulesOk(); setTut("profile_intro"); tutStep(); });
+      bs0.appendChild(ok0); b0.appendChild(bs0); w0.appendChild(b0); document.body.appendChild(w0);
       return;
     }
     if (TUT === "profile_intro") { tutPop("では、まずはあなたの選手情報を登録しましょう！\nメニュー → 選手情報から登録してみましょう。", [["OK", function () { setTut("profile"); render(); }]]); return; }
@@ -463,6 +475,21 @@
       if (!hit) return;
       var b = ruleBtn(hit[1], t.replace(/（.*$/, "")); if (b) lb.appendChild(b);
     });
+  }
+  function rulesText() { return ((D && D.rules) || {}).apply || ""; }
+  function rulesKey() { var t = rulesText(), h = 0; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return "rc_rules:" + ((me && me.key) ? me.key.slice(0, 12) : "") + ":" + h; }
+  function rulesOk() { if (!rulesText().trim()) return true; try { return localStorage.getItem(rulesKey()) === "1"; } catch (e) { return !!RULES_MEM; } }
+  var RULES_MEM = false;
+  function setRulesOk() { RULES_MEM = true; try { localStorage.setItem(rulesKey(), "1"); } catch (e) { /* そのまま */ } }
+  function rulesGate(box, then) {                                                    // 登録の前：入力欄が何も無い画面で、大会のルールを読んで「同意して進む」
+    var c = el("div", "card");
+    c.appendChild(el("h2", "", "📖 大会のルール"));
+    c.appendChild(el("div", "lead", "登録の前に、大会のルールを最後まで読んでください。同意すると、入力の画面に進みます。"));
+    var rb = el("div", "rulebox"); rb.style.maxHeight = "60vh"; rb.appendChild(mdRender(rulesText())); c.appendChild(rb);
+    var r = el("div", "row"), ok = el("button", "go", "ルールを読んで、同意して進む"); ok.type = "button";
+    ok.addEventListener("click", function () { setRulesOk(); if (then) then(); else render(); });
+    r.appendChild(ok); c.appendChild(r);
+    box.appendChild(c);
   }
   function applyRulesBox(box, agreeObj) {                                            // 応募・チーム作成の前に読むルール（注意事項）と「同意します」
     var t = ((D && D.rules) || {}).apply || "";
@@ -893,6 +920,7 @@
       if (!pg[2]) { b.disabled = true; b.style.opacity = ".4"; b.title = pg[3] || ""; b.appendChild(el("div", "", pg[3] || "")); b.lastChild.style.cssText = "font-size:11px;font-weight:400;margin-top:2px"; }
       b.addEventListener("click", function () {
         MENU_OPEN = false;
+        if (tutTarget() === pg[0]) TUT_REACHED = TUT;                                  // チュートリアル：行くべきところに進んだ（点滅を止める）
         if (pg[0] === "profile") { drawMenu(u); endGuide(); PROFOPEN = true; PF = null; openProfile(); return; }
         PAGE = pg[0]; window.scrollTo(0, 0); render();
       });
@@ -1060,6 +1088,7 @@
     return arr((spec || {}).fields).filter(function (f) { return f.required && !String(vals[f.key] || "").trim(); }).map(function (f) { return f.title; });
   }
   function createTeamView(box) {                                                      // チームを作って、メンバーを募集する
+    if (!rulesOk()) { rulesGate(box); return; }                                         // 登録の前に、大会のルール
     var c = el("div", "card"); c.appendChild(el("h2", "", "🆕 チームを作って、メンバーを募集する"));
     c.appendChild(el("div", "lead", "まずは、チーム名と略称を決めてください（仮でよく、あとから変えられます）。OKすると、次に、詳しい募集内容やロゴ・チームカラーを入れて、募集を始められます。あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります。"));
     var LT = (me && me.prof && me.prof.lt) || {};                                     // リーダーだった人：いちばん最近開催された大会の、自分のチーム
@@ -1071,7 +1100,6 @@
     var r1 = customInputs(f, D.team_fields, T.custom, T.agree);                         // 大会ごとの追加項目（チーム）
     var r2 = false;                                                                     // リーダー自身の選手の項目（一言メッセージなど）は、選手情報の「この大会の登録内容」から
     c.appendChild(f);
-    T.ra = T.ra || {}; applyRulesBox(c, T.ra);                                         // 大会のルール（必ず読んで、同意）
     decorateRules(c);
     var row = el("div", "row"), b = el("button", "go", BUSY ? "⏳ 作っています…" : "OK（このチーム名・略称で作る）"); b.type = "button"; b.disabled = BUSY;
     b.addEventListener("click", function () {
@@ -1082,9 +1110,8 @@
       var miss = missingCustom(D.team_fields, T.custom);
       if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります：" + miss.join("、")); return; }
       if ((r1 && !T.agree.ok) || (r2 && !T.pagree.ok)) { setMsg("ng", "⚠ ルールを読んで、同意してください。"); return; }
-      if (!T.ra.ok) { setMsg("ng", "⚠ 大会のルールを読んで、「同意します」にチェックを入れてください。"); return; }
       PEND = { kind: "created" };
-      send({ act: "create_team", agree: true, form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
+      send({ act: "create_team", agree: rulesOk(), form: { name: T.name, reading: T.reading, abbr: T.abbr, abbr_reading: T.abbr_reading, custom: T.custom, pcustom: pc, entry: pe } }, "チームを作っています…");
     });
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
@@ -1499,12 +1526,12 @@
       d.appendChild(liveMsg());
       show(); return;
     }
+    if (step === "confirm" && can && !rulesOk()) { rulesGate(d, function () { dialog("confirm"); }); show(); return; }   // 応募の前に、大会のルール（入力欄なし）
     if (step === "confirm" && can) {                                                   // 確認：この情報で応募するか
       d.appendChild(el("h2", "", "📋 応募の確認｜" + t.name));
       d.appendChild(el("div", "ask", "この情報でよろしいですか？必ず最新の情報にしてください！"));
       profileSummary(d);
       var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
-      var RA = dialog.ra = dialog.ra || {}; applyRulesBox(d, RA);                    // 大会のルール（必ず読んで、同意）
       d.appendChild(el("div", "lead", "💬 応募のメッセージ（任意）：リーダーとチームのメンバーに届きます。"));
       var am = el("input"); am.type = "text"; am.maxLength = 200; am.placeholder = "例：よろしくお願いします。"; am.value = APPLY_MSG; am.addEventListener("input", function () { APPLY_MSG = am.value; }); d.appendChild(am);
       var pw = null;
@@ -1528,10 +1555,9 @@
       var ok = el("button", "go", BUSY ? "送信中…" : "✅ OK（この内容で応募する）"); ok.type = "button"; ok.disabled = BUSY;
       ok.addEventListener("click", function () {
         if (!q.img) { setMsg("ng", "⚠ プロフィール画像が登録されていません。「✏ 編集する」から登録してください。"); return; }
-        if (!RA.ok) { setMsg("ng", "⚠ 大会のルールを読んで、「同意します」にチェックを入れてください。"); return; }
         var miss = missingCustom(D.player_fields, tc).concat(missingEntry(te));
         if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります（「✏ 編集する」から入れてください）：" + miss.join("、")); return; }
-        ORDER = null; send({ act: "wish", agree: true, team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
+        ORDER = null; send({ act: "wish", agree: rulesOk(), team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
       });
       var ed = el("button", "", "✏ 編集する"); ed.type = "button";
       ed.addEventListener("click", function () { BACK_TO = t.id; OPEN = null; DSTEP = null; ov.remove(); PROFOPEN = true; PF = null; openProfile(); });
