@@ -146,7 +146,7 @@
   </header>
   <main>
     <div id="result"></div>
-    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button></div>
+    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 メンバー募集</button></div>
     <div id="tab-set">
       <div class="note" style="margin-top:10px">大会の設定を、ここでまとめて変えられます（変えた項目は、色が付きます）。「💾 保存」で、BOTに反映します。Discordの設定画面で変えても、同じ内容になります。</div>
       <div id="setform" class="sgrid"></div>
@@ -161,6 +161,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
+    <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として「募集停止」「削除」できます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
       <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別。保存のときに、公開するかを聞きます）。</div>
       <div id="brview"></div>
@@ -719,6 +720,42 @@
     bt("やめる", "", function () {});
     box.appendChild(row);
   }
+  // ───── 📣 メンバー募集：招待リンク・投稿の募集停止（再開）・削除 ─────
+  var RCINV = null;
+  function renderRecruit() {
+    var box = $("rclist"); if (!box) return; box.textContent = "";
+    var inv = (data && data.recruit_invite) || {};                                     // Discordの招待リンク（招待用の募集ページ）
+    var ic = el("div", "card"); ic.style.marginTop = "10px";
+    var ih = el("div", ""); ih.style.fontWeight = "800"; ih.textContent = "🔗 Discordサーバーへの招待リンク（招待用の募集ページ）"; ic.appendChild(ih);
+    ic.appendChild(el("div", "note", inv.help || ""));
+    var ir = el("div", "row"), ii = el("input"); ii.type = "text"; ii.maxLength = 200; ii.placeholder = "https://discord.gg/…"; ii.value = RCINV != null ? RCINV : (inv.link || ""); ii.style.flex = "1"; ii.style.minWidth = "16em";
+    ii.addEventListener("input", function () { RCINV = ii.value; });
+    var is = el("button", "primary", "招待リンクを保存"); is.type = "button";
+    is.addEventListener("click", function () { var v = (RCINV != null ? RCINV : ii.value).trim(); brSend([{ op: "set_settings", values: { invite_url: v } }], "招待リンクを保存しています…"); RCINV = null; });
+    ir.appendChild(ii); ir.appendChild(is); ic.appendChild(ir);
+    if (inv.page) {
+      ic.appendChild(el("div", "note", "【招待用の募集ページ】Discordにまだ入っていない人に渡すページです（見るだけで、応募やチーム作りはできません）。"));
+      var pr = el("div", "row"), pi = el("input"); pi.type = "text"; pi.readOnly = true; pi.value = inv.page; pi.style.flex = "1"; pi.style.minWidth = "16em"; pi.addEventListener("focus", function () { pi.select(); });
+      var pc = el("button", "", "コピー"); pc.type = "button"; pc.addEventListener("click", function () { pi.select(); try { navigator.clipboard.writeText(pi.value); } catch (e) { document.execCommand("copy"); } pc.textContent = "✅ コピーしました"; });
+      pr.appendChild(pi); pr.appendChild(pc); ic.appendChild(pr);
+    } else ic.appendChild(el("div", "note", "招待リンクを保存すると、ここに招待用の募集ページのURLが出ます。"));
+    box.appendChild(ic);
+    var list = (data && data.recruit) || [];
+    if (!list.length) { box.appendChild(el("div", "note", "いま、メンバー募集の投稿はありません。")); return; }
+    list.forEach(function (r) {
+      var c = el("div", "card"); c.style.marginTop = "10px";
+      var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = r.name + "（" + r.n + "/" + (r.cap || "—") + "人）"; c.appendChild(h);
+      c.appendChild(el("div", "note", (r.friends ? "👫 友達だけの募集" : "タイトル：" + (r.title || "（なし）")) + "／返事待ちの応募：" + r.apps + "件"));
+      c.appendChild(el("div", "", r.stopped ? "⏸ 運営が募集を停止中" : r.closed ? "⏸ リーダーが締め切り中" : r.state === "open" || r.state === "extra" ? "📣 募集中" : "人数がそろった・満員"));
+      var row = el("div", "row");
+      var st = el("button", r.stopped ? "primary" : "", r.stopped ? "▶ 募集を再開する" : "⏸ 募集停止"); st.type = "button";
+      st.addEventListener("click", function () { if (r.stopped || confirm("「" + r.name + "」の募集を停止します（内容は残ります。再開すれば、同じ内容で募集します）。よろしいですか？")) brSend([{ op: "recruit_stop", team: r.team, stop: !r.stopped }], r.stopped ? "募集を再開しています…" : "募集を停止しています…"); });
+      var dl = el("button", "", "🗑 削除"); dl.type = "button"; dl.style.color = "#ff7070";
+      dl.addEventListener("click", function () { if (confirm("「" + r.name + "」の募集の投稿を削除します。返事待ちの応募は取り消しになります（チームとメンバーは残ります）。取り消せません。本当に削除しますか？")) brSend([{ op: "recruit_delete", team: r.team }], "募集の投稿を削除しています…"); });
+      row.appendChild(st); row.appendChild(dl); c.appendChild(row);
+      box.appendChild(c);
+    });
+  }
   function brSend(ops, busy) {
     if (dirty()) { setResult("ng", "⚠ ほかのタブに、保存していない変更があります。先に「💾 保存」してから、トーナメント表を保存してください。"); return; }
     runOps(ops, busy);
@@ -883,8 +920,9 @@
     if (Math.abs(window.scrollY - keepPage) > 2) window.scrollTo(0, keepPage);
   }
   function showTab(name) {
-    $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br";
-    $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : "";
+    $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br"; $("tab-rc").hidden = name !== "rc";
+    $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : ""; $("tabrc").className = name === "rc" ? "on" : "";
+    if (name === "rc") renderRecruit();
     if (name === "br") renderBracket();
     if (name === "time") renderTimes();
     if (name === "set") renderSettings();
@@ -1026,7 +1064,7 @@
       f.appendChild(card);
     });
   }
-  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); refreshDirty(); }
+  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); refreshDirty(); }
 
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d;
@@ -1129,6 +1167,7 @@
     });
   });
   $("tabbp").addEventListener("click", function () { showTab("bp"); });
+  $("tabrc").addEventListener("click", function () { showTab("rc"); });
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("tabbr").addEventListener("click", function () { showTab("br"); });
   $("reload").addEventListener("click", function () {
