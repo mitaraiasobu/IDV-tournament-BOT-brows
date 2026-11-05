@@ -728,7 +728,9 @@
     return ops;
   }
   function renderBracket() {
-    var v = $("brview"); if (!v || !data) return; v.textContent = "";
+    var v = $("brview"); if (!v || !data) return;
+    var oldWrap = v.querySelector(".brwrap"), keepX = oldWrap ? oldWrap.scrollLeft : 0, keepY = oldWrap ? oldWrap.scrollTop : 0, keepPage = window.scrollY;   // 描き直しても、表の位置（スクロール）を保つ
+    v.textContent = "";
     var B = data.bracket; if (!B) { v.appendChild(el("div", "note", "トーナメント表の情報が、まだありません。")); return; }
     brNorm(B);
     var st = brState(), pairs = brPairs(B), brks = brBreaks(B);
@@ -842,6 +844,7 @@
     var n1 = (B.rounds[0] || { matches: [] }).matches.length;
     bk.style.minHeight = "";                                                           // 上に詰めて並べる
     wrap.appendChild(bk); brPan(wrap); v.appendChild(wrap);
+    wrap.scrollLeft = keepX; wrap.scrollTop = keepY;                                    // 押したところのまま（左上に戻さない）
     // 休憩
     var bkc = el("div", "card brsec brk"); bkc.appendChild(el("h2", "", "☕ 休憩（スタッフの休憩にも）"));
     bkc.appendChild(el("div", "muted", "試合のあと、またはラウンドのあとに、休憩を入れます。休憩のぶん、あとの試合の時間が後ろへずれます（日を分けて開始日時を入れたラウンドは、ずれません）。"));
@@ -870,6 +873,7 @@
     addb.addEventListener("click", function () { editBreaks(function (l) { l.push({ after: places[0][0], minutes: 15, label: "休憩" }); }); });
     bkc.appendChild(addb);
     v.appendChild(bkc);
+    if (Math.abs(window.scrollY - keepPage) > 2) window.scrollTo(0, keepPage);
   }
   function showTab(name) {
     $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br";
