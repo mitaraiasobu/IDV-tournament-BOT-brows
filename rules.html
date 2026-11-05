@@ -1495,6 +1495,41 @@
   var root = document.documentElement;
   var PAUSE = null, PAUSED_MEDIA = [];                                              // 一時停止：演出・進行の時計を、止めた時刻のまま（BOTのデータの pause）
   function NOW() { return PAUSE != null ? PAUSE * 1000 : Date.now(); }
+  // ── 次のシーンまでの残り時間（例：「優勝発表　01:20」）。キャスターが、そのシーンをどれくらい話せばいいか分かるように。──
+  // ※ BAN/PICKの表示・試合中のシーン以外は、すべてに付ける。今後シーンを足すときも、そのシーンで setNext(次のシーンの名前, その時刻(ミリ秒)) を呼ぶこと。
+  var NEXTS = null, NEXT_TIMER = null;
+  function setNext(label, atMs) { NEXTS = label && atMs ? { label: label, at: atMs } : null; drawNext(); }
+  function clearNext() { NEXTS = null; drawNext(); }
+  function drawNext() {
+    var b = document.getElementById("nextscene");
+    if (!NEXTS || window.PAGE_KIND === "rules") { if (b) b.remove(); return; }
+    if (!b) {
+      b = el("div", "nextscene"); b.id = "nextscene";
+      b.style.cssText = "position:fixed;left:1em;bottom:1em;z-index:8000;padding:.35em .9em;border-radius:.5em;background:rgba(0,0,0,.6);color:#fff;font-weight:900;font-size:1.6em;letter-spacing:.04em;font-variant-numeric:tabular-nums";
+      document.body.appendChild(b);
+    }
+    var left = Math.max(0, (NEXTS.at - NOW()) / 1000);
+    b.textContent = NEXTS.label + "　" + fmtCount(left);
+  }
+  NEXT_TIMER = setInterval(drawNext, 250);
+  var PZ_TIMER = null;
+  function pauseOverlay(data) {                                                     // 一時停止中：画面いっぱいに知らせる。再開のカウントダウン中は、残りの秒数
+    var ov = document.getElementById("pauseov");
+    if (data.pause == null || window.PAGE_KIND === "rules") { if (ov) ov.remove(); clearInterval(PZ_TIMER); PZ_TIMER = null; return; }
+    if (!ov) {
+      ov = el("div", "pauseov"); ov.id = "pauseov";
+      ov.style.cssText = "position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6em;background:rgba(0,0,0,.82);color:#fff;font-weight:900;text-align:center;padding:1em";
+      ov.appendChild(el("div", "pz-t")); ov.appendChild(el("div", "pz-c"));
+      document.body.appendChild(ov);
+    }
+    var t = ov.querySelector(".pz-t"), c = ov.querySelector(".pz-c");
+    t.style.fontSize = "2.4em"; t.textContent = data.pause_text || "運営に問題が発生しました。お知らせと再開をお待ちください。";
+    clearInterval(PZ_TIMER); PZ_TIMER = null;
+    if (data.resume_at) {                                                             // 再開まで：10秒のカウントダウン
+      var tick = function () { var left = Math.max(0, Math.ceil(Number(data.resume_at) - Date.now() / 1000)); c.style.fontSize = "5em"; c.textContent = left > 0 ? "再開まで " + left : "再開します"; };
+      tick(); PZ_TIMER = setInterval(tick, 250);
+    } else c.textContent = "";
+  }
   function applyPause(p) {                                                          // 止める：時計・アニメーション・音楽を止める／再開：続きから
     var was = PAUSE != null;
     PAUSE = p != null ? Number(p) : null;
@@ -2438,11 +2473,12 @@
   // 賞品の贈呈：優勝の発表（CHAMPION）を少し見せたあと、賞品のページを1ページずつ。MVPも同じ（MVPの発表のあと、MVPインタビューの前）。インタビューが始まれば、そちらを優先する。
   var CHAMP_SHOW_MS = 12000, MVP_SHOW_MS = 12000, PRIZE_PAGE_MS = 12000;
   var prizeIdx = 0, mvpPrizeIdx = 0, mvpSeen = { key: null, at: 0 };
-  function prizeStep(pages, age, showMs, setIdx) {             // 贈呈のページを出す時間なら、true（どのページかは setIdx で渡す）。次に描き直す時刻を決める
+  function prizeStep(pages, age, showMs, setIdx, names) {      // 贈呈のページを出す時間なら、true（どのページかは setIdx で渡す）。次に描き直す時刻を決める。names：次のシーンの名前
     if (!pages.length) return false;
     var dur = pages.length * PRIZE_PAGE_MS, wait = -1, on = false;
-    if (age < showMs) wait = showMs - age;
-    else if (age < showMs + dur) { var i = Math.floor((age - showMs) / PRIZE_PAGE_MS); setIdx(i); on = true; wait = showMs + (i + 1) * PRIZE_PAGE_MS - age; }
+    names = names || {};
+    if (age < showMs) { wait = showMs - age; setNext(names.first || "賞品の贈呈", NOW() + wait); }
+    else if (age < showMs + dur) { var i = Math.floor((age - showMs) / PRIZE_PAGE_MS); setIdx(i); on = true; wait = showMs + (i + 1) * PRIZE_PAGE_MS - age; if (i + 1 < pages.length) setNext("次の賞品", NOW() + wait); else if (names.after) setNext(names.after, NOW() + wait); }
     if (wait >= 0) { clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, wait + 60); }
     return on;
   }
@@ -2469,7 +2505,7 @@
     if ((st === "mvp" || st === "mvp_interview") && mvAwards.length) {                    // MVP発表（賞品があれば、そのあと、贈呈のページ）
       var mkey = JSON.stringify(mvAwards.map(function (a) { return a.name; }));
       if (mvpSeen.key !== mkey) mvpSeen = { key: mkey, at: NOW() };
-      if (prizeStep(arr((f.prizes || {}).mvp), NOW() - mvpSeen.at, MVP_SHOW_MS, function (i) { mvpPrizeIdx = i; })) return "mvp_prize";
+      if (prizeStep(arr((f.prizes || {}).mvp), NOW() - mvpSeen.at, MVP_SHOW_MS, function (i) { mvpPrizeIdx = i; }, { first: "MVPの賞品の贈呈" })) return "mvp_prize";
       return "mvp";
     }
     if (st === "interview" && (iv.current || iv.active)) return "interview";              // 優勝チームのインタビュー（いま話している人がいるとき。次の人を待つ合間も、この画面のまま：優勝画面・優勝の音楽に、一瞬戻らない）
@@ -2478,6 +2514,7 @@
       if (finalSeen.key !== key) finalSeen = { key: key, at: tm ? tm.t0 * 1000 : NOW() };
       var left = FINAL_RESULT_MS - (NOW() - finalSeen.at);
       if (left > 0) {                                                       // まだ、成績の画面を見せる時間：時間がきたら、描き直す
+        setNext("優勝発表", NOW() + left);
         clearTimeout(finalTimer);
         finalTimer = setTimeout(function () { if (lastData) render(lastData, true); }, left + 60);
         return null;
@@ -2486,10 +2523,11 @@
     var ck = (f.champion || {}).name || "";
     if (championSeen.key !== ck) championSeen = { key: ck, at: tm ? tm.t0 * 1000 + FINAL_RESULT_MS : NOW() };
     var pzC = arr((f.prizes || {}).champion), cage = NOW() - championSeen.at;
-    if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; })) return "prize";          // 賞品の贈呈
+    if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; }, { first: "賞品の贈呈", after: iv.enabled ? "" : "トーナメント表" })) return "prize";          // 賞品の贈呈
     if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面（と贈呈）のあと、最後のトーナメント表
       var cleft = CHAMPION_MS + pzC.length * PRIZE_PAGE_MS - cage;
       if (cleft <= 0) return "bracket";
+      if (!pzC.length) setNext("トーナメント表", NOW() + cleft);
       clearTimeout(championTimer);
       championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, cleft + 60);
     }
@@ -2768,6 +2806,7 @@
     else {
       var scene;
       clearTimeout(musicTimer);
+      if (data.pause != null && (m.scenes || {}).pause) { lastScene = "pause"; heldScene = null; clearTimeout(holdTimer); MusicPlayer.set((m.scenes || {}).pause); return; }   // 一時停止中：一時停止の音楽
       if (data.state === "black") scene = null;                                     // 真っ黒：音楽は止める（優勝画面などの音楽より、先に決める）
       else if (data.state === "open") scene = "open";                               // 配信開始の音楽：開会の演出が全部終わるまで、途中で切らない（挨拶・ルール紹介・キャスター交代まで）
       else if (data.state === "close") scene = "close";                             // 配信終了の音楽：閉会のごあいさつから「大会終了」の画面まで、同じ音楽（優勝・インタビューの音楽からは、閉会のごあいさつの始まりで切り替わる）
@@ -3260,6 +3299,7 @@
       b.box.style.transform = "translate(" + ((1920 - b.W * b.fitS) / 2) + "px," + ((1080 - b.H * b.fitS) / 2 + 40) + "px) scale(" + b.fitS + ")";
     }
   }
+  var OPEN_NEXT = { title: "大会名", organizer: "主催者", team: "参加チーム", bracket: "トーナメント表", tagline: "決め台詞", greet: "開会のごあいさつ", rules: "ルール紹介", swap: "キャスター交代", end: "最初の試合へ" };
   function renderOpen(data) {
     var op = data.open;
     function tick() {
@@ -3272,7 +3312,9 @@
         screenEl.replaceChildren(openScene(ph, op));
         fit();
       }
-      if (ph.kind === "end") return;
+      if (ph.kind === "end") { clearNext(); return; }
+      var nx = openPhase(op, ph.start + ph.dur + 0.05);
+      setNext(OPEN_NEXT[nx.kind] || "次へ", (ph.start + ph.dur) * 1000);              // 次の場面まで（例：「トーナメント表　00:12」）
       var sc = screenEl.firstChild;
       if (!sc || !sc.classList || !sc.classList.contains("op")) return;
       if (ph.kind === "greet") { var gc = sc.querySelector(".iv-count"); if (gc) gc.textContent = fmtCount(ph.start + ph.dur - nowS); }
@@ -3295,6 +3337,7 @@
           fit();
         }
         var cc = screenEl.querySelector(".iv-count"); if (cc) cc.textContent = fmtCount(cl.t0 - nowS);          // 右下：ごあいさつののこり時間
+        setNext("大会終了", cl.t0 * 1000);
         return;
       }
       if (!started) {
@@ -3310,6 +3353,7 @@
       }
       var blk = screenEl.querySelector(".cl-blk");
       if (blk && left <= 2.2) blk.classList.add("on");
+      setNext("配信終了", (cl.t0 + cl.sec) * 1000);
     }
     tick();
     openTimer = setInterval(tick, 200);
@@ -3368,6 +3412,7 @@
   function render(data, force) {
     if (!data) data = { state: "idle" };
     applyPause(data.pause);                                                          // 一時停止（BOTが、配信管理者の「一時停止」で、止めた時刻を送る）
+    pauseOverlay(data);                                                              // 「運営に問題が発生しました…」・再開の10秒カウントダウン
     lastRaw = data;
     data = expireResult(data);
     initMusic();
@@ -3380,6 +3425,7 @@
     lastData = data;
     ensureLogos(data.logos);
     stopIvTimer();
+    clearNext();                                                                    // 次のシーンまでの残り時間：シーンごとに、付け直す
     stopIntroTimer();
     var fm = finaleMode(data);                                // 優勝画面・インタビュー画面にするか（成績の画面を先に見せる間は、null）
     lastFm = fm;
@@ -3432,6 +3478,7 @@
     else if (data.state === "result") renderResult(data.result || {});
     else if (data.state === "rules") renderRules(data.rules || {});
     else renderIdle(data);
+    if (!fm && !NEXTS && data.next_scene && data.next_scene.at) setNext(data.next_scene.label, data.next_scene.at * 1000);   // 待機・成績・ルールの画面：次の試合の紹介まで
     stageEl.appendChild(mediaBox);
     setMedia(media);
     fit();

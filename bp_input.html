@@ -1815,7 +1815,27 @@
     var me = sd.who[UID];
     if (me && (VIEW === "s" ? sd.rep === me : sd.hp === me)) { SIDE = VIEW; VIEW = ""; }
   }
+  var BPZ_TIMER = null;
+  function bpPause() {                                                                // 一時停止中：入力・カウントダウンを止めて、知らせる。再開は、10秒のカウントダウンのあと
+    var p = S && S.pause, ov = document.getElementById("bppause");
+    if (!p) { if (ov) ov.remove(); clearInterval(BPZ_TIMER); BPZ_TIMER = null; return false; }
+    if (!ov) {
+      ov = document.createElement("div"); ov.id = "bppause";
+      ov.style.cssText = "position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(0,0,0,.85);color:#fff;font-weight:900;text-align:center;padding:16px";
+      var t = document.createElement("div"); t.className = "bz-t"; t.style.fontSize = "22px"; ov.appendChild(t);
+      var c = document.createElement("div"); c.className = "bz-c"; c.style.fontSize = "48px"; ov.appendChild(c);
+      document.body.appendChild(ov);
+    }
+    ov.querySelector(".bz-t").textContent = p.text || "運営に問題が発生しました。お知らせと再開をお待ちください。";
+    clearInterval(BPZ_TIMER); BPZ_TIMER = null;
+    var c2 = ov.querySelector(".bz-c");
+    if (p.resume_at) { var tk = function () { var left = Math.max(0, Math.ceil(Number(p.resume_at) - Date.now() / 1000)); c2.textContent = left > 0 ? "再開まで " + left : "再開します"; }; tk(); BPZ_TIMER = setInterval(tk, 250); }
+    else c2.textContent = "";
+    return true;
+  }
+
   function render() {
+    bpPause();                                                                         // 一時停止（運営に問題が発生したとき）
     if (!S) return;
     updateMusic();
     applyColor(SIDE || VIEW || "s");

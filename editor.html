@@ -147,7 +147,7 @@
   </header>
   <main>
     <div id="result"></div>
-    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 メンバー募集</button></div>
+    <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 チームとメンバー募集</button></div>
     <div id="tab-set">
       <div class="note" style="margin-top:10px">大会の設定を、ここでまとめて変えられます（変えた項目は、色が付きます）。「💾 保存」で、BOTに反映します。Discordの設定画面で変えても、同じ内容になります。</div>
       <div id="setform" class="sgrid"></div>
@@ -741,7 +741,39 @@
       pr.appendChild(pi); pr.appendChild(pc); ic.appendChild(pr);
     } else ic.appendChild(el("div", "note", "招待リンクを保存すると、ここに招待用の募集ページのURLが出ます。"));
     box.appendChild(ic);
+    var teamsA = (data && data.teams_admin) || [];                                       // チームごとの管理（メンバー・ロゴ）
+    if (teamsA.length) {
+      box.appendChild(el("h2", "", "🏷 チームの管理"));
+      teamsA.forEach(function (t) {
+        var c = el("div", "card"); c.style.marginTop = "10px";
+        var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = t.name + (t.abbr ? "（" + t.abbr + "）" : "") + (t.entered ? "　✅ エントリー済み" : "　📣 募集中"); c.appendChild(h);
+        var pl = el("div", "note"); pl.textContent = "選手：" + (t.players.length ? "" : "（まだいません）"); c.appendChild(pl);
+        t.players.forEach(function (p) {
+          var r = el("div", "row"); r.style.alignItems = "center";
+          r.appendChild(el("span", "", (p.leader ? "👑 " : "") + p.name + (p.status === "pending" ? "（承認待ち）" : "")));
+          var sel = el("select"), o0 = el("option", "", "別のチームへ移動…"); o0.value = ""; sel.appendChild(o0);
+          teamsA.forEach(function (x) { if (x.team === t.team) return; var o = el("option", "", x.name); o.value = String(x.team); sel.appendChild(o); });
+          sel.addEventListener("change", function () { if (!sel.value) return; var to = teamsA.filter(function (x) { return String(x.team) === sel.value; })[0];
+            if (confirm("「" + p.name + "」を「" + t.name + "」から「" + (to ? to.name : "") + "」へ移動します。よろしいですか？" + (p.leader ? "（リーダーを移動すると、元のチームの次に古い選手がリーダーになります）" : ""))) brSend([{ op: "team_move_player", pid: p.pid, team: Number(sel.value) }], "選手を移動しています…"); else sel.value = ""; });
+          r.appendChild(sel); c.appendChild(r);
+        });
+        if (t.managers.length) c.appendChild(el("div", "note", "マネージャー：" + t.managers.map(function (m) { return m.name + (m.status === "pending" ? "（承認待ち）" : ""); }).join("、")));
+        var lg = el("div", "row"); lg.style.alignItems = "center";
+        function im(src, cap) { var f = el("div", ""); f.style.textAlign = "center"; var i = document.createElement("img"); i.src = src; i.style.width = "72px"; i.style.height = "72px"; i.style.borderRadius = "8px"; f.appendChild(i); f.appendChild(el("div", "note", cap)); lg.appendChild(f); }
+        if (t.logo) im(t.logo, "いまのロゴ");
+        if (t.logo_pend) {
+          im(t.logo_pend, "⏳ 承認待ち");
+          var ok = el("button", "primary", "✅ ロゴを承認"); ok.type = "button"; ok.addEventListener("click", function () { brSend([{ op: "team_logo_ok", team: t.team }], "ロゴを承認しています…"); });
+          var ng = el("button", "", "❌ ロゴを却下"); ng.type = "button"; ng.addEventListener("click", function () { var rs = prompt("却下の理由を書いてください（リーダーに送ります）：", ""); if (rs && rs.trim()) brSend([{ op: "team_logo_ng", team: t.team, reason: rs.trim() }], "ロゴを却下しています…"); });
+          lg.appendChild(ok); lg.appendChild(ng);
+        }
+        if (!t.logo && !t.logo_pend) lg.appendChild(el("span", "note", "ロゴ：まだ登録していません"));
+        c.appendChild(lg);
+        box.appendChild(c);
+      });
+    }
     var list = (data && data.recruit) || [];
+    box.appendChild(el("h2", "", "📣 メンバー募集の投稿"));
     if (!list.length) { box.appendChild(el("div", "note", "いま、メンバー募集の投稿はありません。")); return; }
     list.forEach(function (r) {
       var c = el("div", "card"); c.style.marginTop = "10px";
@@ -1090,6 +1122,8 @@
   function init() {
     $("gate").hidden = true; $("app").hidden = false;
     adopt(data); render();
+    var wantTab = new URLSearchParams(location.search).get("tab");                         // エントリーパネルの「🛠 募集の管理」から開いたとき：「📣 チームとメンバー募集」タブ
+    if (wantTab && { set: 1, bp: 1, time: 1, br: 1, rc: 1 }[wantTab]) showTab(wantTab);
     var bk = null; try { bk = JSON.parse(localStorage.getItem(backupKey()) || "null"); } catch (e) { bk = null; }
     if (bk && bk.work && confirm("保存できなかった入力のバックアップがあります（" + new Date(bk.at).toLocaleString() + "）。戻しますか？\n（戻さないときは、バックアップを消します）")) {
       P = bk.work[0]; ROUNDS = bk.work[1]; DELETED = bk.work[2]; TM = bk.work[3]; ST = bk.work[4]; render();
