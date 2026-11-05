@@ -87,7 +87,13 @@
   var me = null;                                                                      // 本人用のURL：ユーザー番号.閲歴.陣営.サバイバーの段位.ハンターの段位.本人の印.選手情報
   if (frag) {
     var p = frag.split(".");
-    if (/^\d+$/.test(p[0] || "")) me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: p[3] ? Number(p[3]) : null, h: p[4] ? Number(p[4]) : null, mark: p[5] || "", key: /^k[0-9a-f]{32}$/.test(p[6] || "") ? p[6].slice(1) : "", prof: /^k[0-9a-f]{32}$/.test(p[6] || "") ? null : decodeProf(p[6] || ""), old: p.length < 7, wait: /^k[0-9a-f]{32}$/.test(p[6] || "") };
+    if (/^\d+$/.test(p[0] || "")) {                                                   // 本人の印・鍵は、うしろから読む（段位の数に小数点が入っていても、ずれない）
+      var last = p[p.length - 1] || "", isKey = /^k[0-9a-f]{32}$/.test(last), mid = p.slice(3, p.length - 2);
+      var sc = mid.length === 2 ? [Number(mid[0]), Number(mid[1])] : mid.length === 4 ? [Number(mid[0] + "." + mid[1]), Number(mid[2] + "." + mid[3])] : [null, null];
+      sc = sc.map(function (v) { return v != null && v > 100 ? v / 100 : v; });          // 新しいURLは100倍の整数
+      me = { uid: p[0], lv: p[1] ? Number(p[1]) : null, f: p[2] || "", s: isFinite(sc[0]) ? sc[0] : null, h: isFinite(sc[1]) ? sc[1] : null, mark: p.length >= 7 ? p[p.length - 2] : (p[5] || ""),
+             key: isKey ? last.slice(1) : "", prof: isKey ? null : decodeProf(last), old: p.length < 7, wait: isKey };
+    }
   }
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
@@ -112,7 +118,7 @@
       var o = JSON.parse(new TextDecoder().decode(out));
       PF_SEEN = blob; me.wait = false;
       me.prof = o && Object.keys(o).length ? o : null;
-      if (me.prof) { me.f = me.prof.f || me.f; if (me.prof.lv != null) me.lv = Number(me.prof.lv); }
+      if (me.prof) { me.f = me.prof.f || me.f; if (me.prof.lv != null) me.lv = Number(me.prof.lv); if (me.prof.sr) me.s = rankScore(me.prof.sr); if (me.prof.hr) me.h = rankScore(me.prof.hr); }
       if (!PROFOPEN) PF = null;                                                       // 開いていなければ、いまの内容で入れ直す
       return true;
     }).catch(function () { me.wait = false; return true; });
