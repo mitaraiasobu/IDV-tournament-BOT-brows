@@ -715,12 +715,12 @@
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
   var PAGE = "home", MENU_OPEN = false;
   function pages(u) {                                                                // ☰ メニューのページ（応募・募集・チーム・スタッフは、別のページ）
-    var out = [["home", "🏠 募集中のチーム（応募する）"]];
+    var out = [["home", "🏠 チームへ応募"]];
     if (u && u.leader) { out.push(["team", "🏷 チーム情報"]); out.push(["recruit", "📝 応募情報（募集の内容）"]); out.push(["apps", "📨 届いた応募" + (arr(u.apps).filter(function (a) { return a.status === "pending"; }).length ? "（" + arr(u.apps).filter(function (a) { return a.status === "pending"; }).length + "）" : "")]); }
     else if (u && u.team) out.push(["team", "🏷 あなたのチーム"]);
-    else if (me && me.prof && u && u.pf_ok && !isMgr()) out.push(["create", "🆕 自分のチームを募集する"]);
+    else if (me && me.prof && u && u.pf_ok && !isMgr()) out.push(["create", "🆕 チーム作成"]);
     if (u && arr(u.wishes).length) out.push(["wishes", "📨 あなたの応募"]);
-    if (u && u.mteam) out.push(["manager", "🧑‍💼 マネージャー登録"]);
+    out.push(["manager", "🧑‍💼 マネージャー登録"]);                                       // マネージャー登録は、だれでも
     if (D && D.staff && (D.staff.caster || D.staff.moderator)) out.push(["staff", "🎙 キャスター・🛡 モデレーター"]);
     out.push(["profile", "🪪 あなたの選手情報"]);
     return out;
@@ -1126,7 +1126,7 @@
       var jc = el("div", "notice"); var jt0 = el("div", "", "大会に参加したい方へ：\nまずは大会のdiscordに加入してください。"); jt0.style.whiteSpace = "pre-line"; jc.appendChild(jt0);
       var jr = el("div", "row");
       if (D.join_url) { var ja = el("a", "btnlink", "Discordに加入する"); ja.href = D.join_url; ja.target = "_blank"; ja.rel = "noopener noreferrer"; jr.appendChild(ja); }
-      var jt = el("button", "", "🆕 自分のチームを募集する"); jt.type = "button"; jt.addEventListener("click", joinPrompt); jr.appendChild(jt);
+      var jt = el("button", "", "🆕 チーム作成"); jt.type = "button"; jt.addEventListener("click", joinPrompt); jr.appendChild(jt);
       jc.appendChild(jr); mine.appendChild(jc);
     }
     if (me && D.locked) mine.appendChild(el("div", "subwarn", "🔒 エントリー締切を過ぎたため、この大会の情報（チーム・募集・応募・この大会の登録内容）は変更できません。基本の選手情報は変えられますが、この大会の登録には反映しません。"));
@@ -1150,6 +1150,20 @@
     if (me && PG === "home" && u && u.leader && arr(u.apps).some(function (a) { return a.status === "pending"; })) {     // リーダー：返事待ちの応募があれば、最初のページで知らせる
       var na = el("button", "go", "📨 返事待ちの応募があります（届いた応募を見る）"); na.type = "button"; na.addEventListener("click", function () { PAGE = "apps"; render(); });
       var nr0 = el("div", "row"); nr0.appendChild(na); mine.appendChild(nr0);
+    }
+    if (PG === "manager" && !(u && u.mteam)) {                                          // マネージャー登録（まだ）：名前を登録して、応募パスワードのあるチームへ応募
+      var mg0 = el("div", "card"); mg0.appendChild(el("h2", "", "🧑‍💼 マネージャー登録"));
+      mg0.appendChild(el("div", "lead", "マネージャーは、試合には出ずに、チームを手伝う人です。名前だけ登録して、チームのリーダーから聞いた応募パスワードで、そのチームに応募します。"));
+      if (u && u.kind === "manager" && u.mgr) mg0.appendChild(el("div", "notice", "マネージャー名：" + u.mgr + "。「🏠 チームへ応募」で、応募パスワードのあるチームを選んで、応募してください。"));
+      if (u && (u.leader || u.team)) mg0.appendChild(el("div", "msg ng", "あなたは、この大会にチームのリーダー・選手として登録しているため、マネージャーには登録できません。"));
+      else {
+        var mgb = el("button", "go", u && u.kind === "manager" ? "マネージャー名を変える" : "マネージャーとして登録する"); mgb.type = "button";
+        mgb.addEventListener("click", function () { KIND = "manager"; PROFOPEN = true; PF = null; openProfile(); });
+        var mgr0 = el("div", "row"); mgr0.appendChild(mgb);
+        if (u && u.kind === "manager") { var mgh = el("button", "", "🏠 チームへ応募 へ"); mgh.type = "button"; mgh.addEventListener("click", function () { PAGE = "home"; render(); }); mgr0.appendChild(mgh); }
+        mg0.appendChild(mgr0);
+      }
+      mine.appendChild(mg0);
     }
     if (PG === "manager" && u && u.mteam) {                                                               // マネージャー登録
       var mc = el("div", "card"); mc.appendChild(el("h2", "", "🧑‍💼 マネージャー登録｜" + teamName(u.mteam)));
