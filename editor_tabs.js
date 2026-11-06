@@ -537,11 +537,100 @@
     });
     return w;
   }
+  // ───── 📊 当日・結果：試合結果の管理・失格・保留・試合開始のやり直し・進行中のBAN/PICK ─────
+  function btnx(el, cls, text, fn) { var b = el("button", cls, text); b.type = "button"; b.addEventListener("click", fn); return b; }
+  function hangOpts(n) { var o = [["", "選んでください"]]; for (var i = 0; i <= n; i++) o.push([String(i), i + "吊 / " + (n - i) + "逃げ"]); return o; }
+  function renderResults(root, K) {
+    var el = K.el, R = (K.data() || {}).results || {};
+    var rc = box(el, "🏁 試合結果の管理", "Discordの管理者メニュー「結果の管理」「保留の判断」「試合開始のやり直し」と同じ処理です。押すとすぐ保存され、控えやお知らせは、BOTがDiscordに送ります（お知らせは、大会名の専用チャンネルへ）。");
+    if (!R.ready) { rc.appendChild(el("div", "note", "組み合わせの抽選が済むと、ここで試合結果を管理できます。")); root.appendChild(rc); return; }
+    var N = R.survivors || 4, SM = K.state("res", { m: "", edit: null, h: "", n: "", t: "", ah: "", an: "", at: "", times: {}, dq: "", why: "" });
+    var ms = (R.matches || []).filter(function (m) { return m.a[0] != null && m.b[0] != null && !m.bye; });
+    rc.appendChild(field(el, "試合", sel(el, [["", "試合を選んでください"]].concat(ms.map(function (m) { return [m.id, m.round + "｜" + m.a[1] + " vs " + m.b[1] + "（" + m.status_text + (m.winner ? "：" + m.winner + "の勝ち" : "") + "）"]; })), SM.m, function (v) { SM.m = v; SM.edit = null; SM.ah = SM.an = SM.at = ""; K.redraw(); })));
+    var m = ms.filter(function (x) { return x.id === SM.m; })[0];
+    if (m) {
+      var teams = [["", "選んでください"], [String(m.a[0]), m.a[1] + "がハンター"], [String(m.b[0]), m.b[1] + "がハンター"]];
+      rc.appendChild(el("div", "", "いま：" + m.status_text + (m.winner ? "（勝者：" + m.winner + (m.by_dq ? "・相手チームの失格" : "") + "）" : "") + (m.next_label && m.status !== "finished" && m.status !== "undecided" ? "　次の入力：" + m.next_label : "")));
+      if (!m.entries.length) rc.appendChild(el("div", "note", "まだ登録された結果はありません。"));
+      m.entries.forEach(function (e) {
+        var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0";
+        row.appendChild(el("span", "", "・" + e.label + (e.time ? "（" + e.time + "）" : "")));
+        row.appendChild(btnx(el, "", "✏ 修正", function () { SM.edit = e.id; SM.h = String(e.hunter); SM.n = String(e.hangs); SM.t = e.time; K.redraw(); }));
+        row.appendChild(btnx(el, "", "🗑 削除", function () { if (confirm("この結果を削除しますか？\n" + e.label + "\n（あとの結果が連動して変わることがあります。履歴には残ります）")) K.send([{ op: "res_delete", id: e.id }], "削除中…"); }));
+        rc.appendChild(row);
+        if (SM.edit === e.id) {
+          var ed = el("div", "card"); ed.style.margin = "4px 0 8px 12px";
+          ed.appendChild(el("div", "note", "ハンターを変えると、同じセットのもう片方も、自動で入れ替わります。"));
+          ed.appendChild(field(el, "ハンター側のチーム", sel(el, teams, SM.h, function (v) { SM.h = v; })));
+          ed.appendChild(field(el, "結果", sel(el, hangOpts(N), SM.n, function (v) { SM.n = v; })));
+          if (e.ext) { var ti = inp(el, SM.t, 8, "例：05:07"); ti.addEventListener("input", function () { SM.t = ti.value; }); ed.appendChild(field(el, "試合時間（延長戦）", ti)); }
+          var r2 = el("div", "row");
+          r2.appendChild(btnx(el, "primary", "修正する", function () { if (!SM.h || SM.n === "") { K.msg("ng", "⚠ ハンター側と結果を選んでください。"); return; } K.send([{ op: "res_edit", id: e.id, hunter: SM.h, hangs: SM.n, time: SM.t }], "保存中…"); SM.edit = null; }));
+          r2.appendChild(btnx(el, "", "やめる", function () { SM.edit = null; K.redraw(); }));
+          ed.appendChild(r2); rc.appendChild(ed);
+        }
+      });
+      if (m.need_time.length) {
+        var tc = el("div", "card"); tc.style.marginTop = "8px";
+        tc.appendChild(el("div", "", "⏱ 時間勝負：吊り人数が同数のため、延長戦の前半戦・後半戦の試合時間で決めます。"));
+        m.need_time.forEach(function (id, k) { var t2 = inp(el, SM.times[id] || "", 8, "例：05:07"); t2.addEventListener("input", function () { SM.times[id] = t2.value; }); tc.appendChild(field(el, (k ? "後半戦" : "前半戦") + "の試合時間", t2)); });
+        tc.appendChild(btnx(el, "primary", "試合時間を登録する", function () { var t = {}; m.need_time.forEach(function (id) { t[String(id)] = SM.times[id] || ""; }); K.send([{ op: "res_times", match: m.id, times: t }], "保存中…"); }));
+        rc.appendChild(tc);
+      } else if (m.next && m.status !== "finished" && m.status !== "undecided") {
+        var ac = el("div", "card"); ac.style.marginTop = "8px";
+        ac.appendChild(el("div", "", "➕ " + m.next_label + " の結果を入力"));
+        ac.appendChild(el("div", "note", "管理者の入力です（スクリーンショットは付きません。相手チームへの確認依頼も出ません）。ふだんは、選手がDiscordで入力します。"));
+        ac.appendChild(field(el, "ハンター側のチーム", sel(el, teams, SM.ah, function (v) { SM.ah = v; })));
+        ac.appendChild(field(el, "結果", sel(el, hangOpts(N), SM.an, function (v) { SM.an = v; })));
+        if (m.next_ext) { var at = inp(el, SM.at, 8, "例：05:07"); at.addEventListener("input", function () { SM.at = at.value; }); ac.appendChild(field(el, "試合時間（延長戦）", at)); }
+        ac.appendChild(btnx(el, "primary", "登録する", function () { if (!SM.ah || SM.an === "") { K.msg("ng", "⚠ ハンター側と結果を選んでください。"); return; } if (confirm(m.next_label + " の結果を登録します。よろしいですか？")) { K.send([{ op: "res_add", match: m.id, hunter: SM.ah, hangs: SM.an, time: SM.at }], "保存中…"); SM.ah = SM.an = SM.at = ""; } }));
+        rc.appendChild(ac);
+      }
+      if (m.status === "undecided") {
+        var dc = el("div", "card"); dc.style.marginTop = "8px";
+        dc.appendChild(el("div", "", "⚖ 保留の判断：延長戦でも決着しませんでした。勝者を選んでください。"));
+        var dr = el("div", "row");
+        [m.a, m.b].forEach(function (t) { dr.appendChild(btnx(el, "primary", t[1] + "の勝ち", function () { if (confirm(t[1] + " を勝者にしますか？")) K.send([{ op: "decide", match: m.id, winner: t[0] }], "保存中…"); })); });
+        dc.appendChild(dr); rc.appendChild(dc);
+      }
+      var r3 = el("div", "row"); r3.style.marginTop = "8px";
+      if (m.entries.length || m.status === "undecided") r3.appendChild(btnx(el, "", "♻ 試合結果をリセット", function () { if (confirm("この試合の登録済みの結果を、すべて取り消します（履歴には残ります）。よろしいですか？")) K.send([{ op: "res_reset", match: m.id }], "保存中…"); }));
+      if (m.resettable) r3.appendChild(btnx(el, "", "🔄 試合開始のやり直し", function () { if (confirm("この枠（" + m.next_label + "）の試合開始を、なかったことにします。\n先攻ハンターの抽選もBAN/PICKも取り消され、もう一度「試合開始」の抽選からやり直せます。入力済みの試合結果は、そのままです。よろしいですか？")) K.send([{ op: "bp_reset", match: m.id }], "保存中…"); }));
+      if (r3.childNodes.length) rc.appendChild(r3);
+    }
+    root.appendChild(rc);
+    // 失格
+    var qc = box(el, "🚫 失格・取り消し", "失格にすると、いまの試合（相手が未定なら次の試合）から、対戦相手の勝ちになります。前のラウンドの結果は動きません。");
+    (R.teams || []).filter(function (t) { return t.dq; }).forEach(function (t) {
+      var row = el("div", "row"); row.style.cssText = "align-items:center;gap:6px;margin:4px 0";
+      row.appendChild(el("span", "", "🚫 " + t.name + (t.reason ? "（理由：" + t.reason + "）" : "")));
+      row.appendChild(btnx(el, "", "失格を取り消す", function () { if (confirm(t.name + " の失格を取り消しますか？\n失格による勝敗の自動確定が、元に戻ります。")) K.send([{ op: "dq_undo", team: t.id }], "保存中…"); }));
+      qc.appendChild(row);
+    });
+    var live = (R.teams || []).filter(function (t) { return !t.dq; });
+    qc.appendChild(field(el, "失格にするチーム", sel(el, [["", "選んでください"]].concat(live.map(function (t) { return [String(t.id), t.name]; })), SM.dq, function (v) { SM.dq = v; })));
+    var wi = inp(el, SM.why, 300, "例：規約違反・不参加 など（空欄でもよい）"); wi.addEventListener("input", function () { SM.why = wi.value; }); qc.appendChild(field(el, "理由", wi));
+    qc.appendChild(btnx(el, "danger", "🚫 失格にする", function () { var t = live.filter(function (x) { return String(x.id) === SM.dq; })[0]; if (!t) { K.msg("ng", "⚠ チームを選んでください。"); return; } if (confirm(t.name + " を失格にしますか？\n対戦相手が自動で勝ち上がります（あとで取り消せます）。")) { K.send([{ op: "dq", team: t.id, reason: SM.why }], "保存中…"); SM.dq = ""; SM.why = ""; } }));
+    root.appendChild(qc);
+    // 進行中のBAN/PICK
+    var bc = box(el, "🎬 進行中のBAN/PICK", "Discordの「BAN/PICK設定→🎬 進行中のBAN/PICK」と同じです。");
+    if (!(R.sessions || []).length) bc.appendChild(el("div", "note", "進行中（または結果入力待ち）のBAN/PICKはありません。"));
+    (R.sessions || []).forEach(function (s2) {
+      var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0";
+      row.appendChild(el("span", "", "・" + s2.label + "（" + s2.status + "）"));
+      row.appendChild(btnx(el, "", "📣 ボードを再投稿", function () { K.send([{ op: "bp_repost", id: s2.id }], "送信中…"); }));
+      row.appendChild(btnx(el, "", "❌ 中止する", function () { if (confirm("このBAN/PICKを中止しますか？\n入力済みの内容は無効になり、最初からやり直しになります。")) K.send([{ op: "bp_cancel", id: s2.id }], "保存中…"); }));
+      bc.appendChild(row);
+    });
+    root.appendChild(bc);
+  }
+
   TABS.push({
     id: "lo", label: "📊 当日・結果",
-    intro: "大会の当日や、終わったあとに押すもの（集計・MVP・インタビュー・配信）です。Discordの同じボタンと、同じ処理です（Discordでのお知らせは、BOTが送ります）。取り消せないものは、押す前に確認します。",
+    intro: "大会の当日や、終わったあとに押すもの（試合結果・失格・集計・MVP・インタビュー・配信）です。Discordの同じボタンと、同じ処理です（Discordでのお知らせは、BOTが送ります）。取り消せないものは、押す前に確認します。",
     render: function (root, K) {
       var el = K.el, D = (K.data() || {}).liveops || {};
+      renderResults(root, K);
       // 配信
       var S = D.stream || {}, sc = box(el, "📡 配信（ライブブラウザの演出）", "配信開始は1回だけ押せます（最初からやり直すことはできません）。");
       var sr = el("div", "row");
