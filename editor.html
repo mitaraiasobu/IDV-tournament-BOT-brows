@@ -1503,7 +1503,7 @@
   $("tabrl").addEventListener("click", function () { showTab("rl"); });
   $("tabrb").addEventListener("click", function () { showTab("rb"); });
   // ───── 追加のタブ（editor_tabs.js）：賞品・ポイント／デザイン／BAN/PICKのルール設定 など。ボタンは、その場で保存する ─────
-  var CURX = null, K = { el: el, data: function () { return data; }, send: function (ops, busy) { brSend(ops, busy); }, msg: function (c, t) { setResult(c, t); }, redraw: function () { if (CURX) xrender(CURX); } };
+  var CURX = null, XOPEN = {}, K = { open: function (k, v) { if (v === undefined) return !!XOPEN[k]; XOPEN[k] = !!v; return !!v; }, el: el, data: function () { return data; }, send: function (ops, busy) { brSend(ops, busy); }, msg: function (c, t) { setResult(c, t); }, redraw: function () { if (CURX) xrender(CURX); } };
   function xrender(id) {
     if (!XTAB[id]) return; var root = $("xbody-" + id), keep = window.scrollY; root.textContent = "";
     try { XTAB[id].render(root, K); } catch (e) { root.appendChild(el("div", "note", "⚠ このタブを表示できませんでした：" + e.message)); }

@@ -105,6 +105,162 @@
     }
   });
 
+  // ───── 🎨 デザイン ─────
+  function mediaForm(el, K, c, cur, labelUrl, ph, onSave, onClear) {                // URL＋再生を始める位置の入力と、保存・消すボタン
+    var ui = inp(el, cur.url, 500, ph), st = inp(el, cur.start, 12, "00:00:00（空なら最初から）"); st.style.maxWidth = "14em";
+    c.appendChild(field(el, labelUrl, ui)); c.appendChild(field(el, "再生を始める位置（動画・YouTube・音楽。時:分:秒）", st));
+    if (cur.text) c.appendChild(el("div", "note", "いま：" + cur.text));
+    var r = el("div", "row"), sv = el("button", "primary", "💾 保存"); sv.type = "button";
+    sv.addEventListener("click", function () { if (!ui.value.trim()) { K.msg("ng", "⚠ URLを入れてください（消すときは、「消す」を押します）。"); return; } onSave(ui.value, st.value); });
+    var cl = el("button", "", "消す"); cl.type = "button"; cl.disabled = !cur.url; cl.addEventListener("click", function () { onClear(); });
+    r.appendChild(sv); r.appendChild(cl); c.appendChild(r);
+  }
+  TABS.push({
+    id: "dz", label: "🎨 デザイン",
+    intro: "配信・ルール・トーナメント表のページの見た目（デザイン・色・背景・音楽）を決めます。Discordの「🎨 ブラウザデザイン」と同じものです。ここで押したボタンは、その場で保存されて、ページには数秒で反映されます。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).design || {};
+      // デザイン
+      var c = box(el, "🖼 デザイン（形・質感・文字の雰囲気）", "色は、下の「テーマカラー」で変えます（どのデザインでも、テーマカラーが効きます）。");
+      (D.designs || []).forEach(function (d) {
+        var on = d[0] === D.design, row = el("div", ""); row.style.cssText = "border:2px solid " + (on ? "var(--ac,#6f95ff)" : "var(--line)") + ";border-radius:10px;padding:8px 10px;margin:6px 0";
+        var h = el("div", "", (on ? "✅ " : "") + d[1]); h.style.fontWeight = "800"; row.appendChild(h); row.appendChild(el("div", "note", d[2]));
+        var b = el("button", on ? "" : "primary", on ? "いま使っています" : "このデザインにする"); b.type = "button"; b.disabled = on;
+        b.addEventListener("click", function () { K.send([{ op: "design_set", design: d[0] }], "デザインを変えています…"); }); row.appendChild(b); c.appendChild(row);
+      });
+      root.appendChild(c);
+      // テーマカラー
+      var th = D.theme, tc = box(el, "🌈 テーマカラー", "ブラウザのページの色を、大会のテーマに合わせて変えます。ベース色は背景の色（明るい色なら文字が暗く、暗い色なら明るく、自動で切り替わります）。アクセント色は、タイトルの線・優勝の枠などの色です。" + (th ? "" : "いまは、標準（ダーク）です。"));
+      var bi = document.createElement("input"), ai = document.createElement("input");
+      bi.type = ai.type = "color"; bi.value = th ? th.base : "#0b0f1a"; ai.value = th ? th.accent : "#3b82f6"; bi.style.cssText = ai.style.cssText = "width:60px;height:40px;padding:0;border:none;background:none;cursor:pointer";
+      var cr = el("div", "row"); cr.style.cssText = "align-items:center;gap:14px;flex-wrap:wrap";
+      var w1 = el("label", ""); w1.style.cssText = "display:flex;align-items:center;gap:6px"; w1.appendChild(el("span", "", "ベース色")); w1.appendChild(bi);
+      var w2 = el("label", ""); w2.style.cssText = "display:flex;align-items:center;gap:6px"; w2.appendChild(el("span", "", "アクセント色")); w2.appendChild(ai);
+      cr.appendChild(w1); cr.appendChild(w2); tc.appendChild(cr);
+      var tr = el("div", "row"), ts = el("button", "primary", "💾 色を保存"); ts.type = "button";
+      ts.addEventListener("click", function () { K.send([{ op: "theme_set", base: bi.value, accent: ai.value }], "色を保存しています…"); });
+      var tz = el("button", "", "標準の色に戻す"); tz.type = "button"; tz.disabled = !th; tz.addEventListener("click", function () { K.send([{ op: "theme_reset" }], "標準の色に戻しています…"); });
+      tr.appendChild(ts); tr.appendChild(tz); tc.appendChild(tr); root.appendChild(tc);
+      // 背景
+      var bc = box(el, "🖼 背景（画像・動画・YouTube）", "URLは https:// で始まる、画像（.png .jpg .gif .webp）・動画（.mp4 .webm）のファイル、またはYouTubeのURLです（GitHubのファイルのページのURLも使えます）。動画は、音を出さずに繰り返し再生します。⚠ YouTubeは、再生ボタンなどが出てしまうことがあるので、非推奨です（自分のGitHubに動画をあげて、そのURLを入れてください）。DiscordにアップロードしたファイルのURLは、しばらくすると見られなくなります。");
+      mediaForm(el, K, bc, D.bg || {}, "背景のURL", "https://…（空にすると、背景を消します）",
+        function (u, s) { K.send([{ op: "bg_set", url: u, start: s }], "背景を保存しています…"); }, function () { K.send([{ op: "bg_set", url: "" }], "背景を消しています…"); });
+      root.appendChild(bc);
+      // 音楽
+      var mc = box(el, "🎵 ブラウザ音楽（場面ごと）", "配信用の画面（OBSのブラウザソース）に、場面ごとに音楽を流します。URLは、YouTube か、音声ファイル（.mp3 .wav .ogg .m4a など）です。⚠ 音楽の利用規約・著作権に、ご注意ください。配信や大会のページで流してよいか、必ず確認してから設定してください。ブラウザによっては、ページを開いたあと、1回タップするまで、音が出ないことがあります。");
+      (D.music || []).forEach(function (m) {
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!K.open("mz:" + m.key); d.addEventListener("toggle", function () { K.open("mz:" + m.key, d.open); });
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = (m.url ? "✅ " : "🎵 ") + m.label; d.appendChild(sm);
+        mediaForm(el, K, d, m, "音楽のURL", "https://…（YouTube・音声ファイル）",
+          function (u, s) { K.send([{ op: "music_set", scene: m.key, url: u, start: s }], "音楽を保存しています…"); }, function () { K.send([{ op: "music_set", scene: m.key, url: "" }], "音楽を消しています…"); });
+        mc.appendChild(d);
+      });
+      root.appendChild(mc);
+      root.appendChild(el("div", "note", "キャラがPICKされたときに出す画像・動画（衣装の設定）は、まだブラウザでは設定できません（Discordの「🎨 ブラウザデザイン」→「👗 衣装の設定」）。"));
+    }
+  });
+
+  // ───── 🚫 BAN/PICKのルール ─────
+  var BZ = { ban: {}, allow: {}, combo: { items: ["", ""], mode: "partial" }, req: {} };
+  function chooser(el, D, faction, value, onChange, label) {                           // キャラ（サバイバー・ハンター・マップ）を選ぶ
+    var list = (D.chars || {})[faction] || [], opts = [["", label || "選んでください"]].concat(list.map(function (c) { return [c[0], c[1]]; }));
+    return sel(el, opts, value, onChange);
+  }
+  function scopePick(el, K, D, st, key) {                                              // 範囲：大会全体／ラウンド／ラウンドの1試合
+    var w = el("div", ""); w.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+    var rounds = [["", "大会全体（どの試合でも）"]].concat((D.rounds || []).map(function (r) { return [r.no, r.name]; }));
+    w.appendChild(sel(el, rounds, st.round || "", function (v) { st.round = v; st.match = ""; K.redraw(); }));
+    if (st.round) {
+      var rr = (D.rounds || []).filter(function (r) { return String(r.no) === String(st.round); })[0], ms = [["", "そのラウンドのすべての試合"]];
+      for (var i = 1; i <= (rr ? rr.matches : 0); i++) ms.push([i, i + "試合目"]);
+      w.appendChild(sel(el, ms, st.match || "", function (v) { st.match = v; }));
+    }
+    return w;
+  }
+  function listRows(el, K, c, rows, text, removeOp, locked) {
+    if (!rows.length) { c.appendChild(el("div", "note", "（ありません）")); return; }
+    rows.forEach(function (r) {
+      var row = el("div", "row"); row.style.alignItems = "center";
+      var t = el("span", "", text(r)); t.style.flex = "1"; row.appendChild(t);
+      var d = el("button", "", "🗑 消す"); d.type = "button"; d.style.color = "#ff7070"; d.disabled = locked;
+      d.addEventListener("click", function () { if (confirm("「" + text(r) + "」を消します。よろしいですか？")) K.send([removeOp(r)], "消しています…"); });
+      row.appendChild(d); c.appendChild(row);
+    });
+  }
+  TABS.push({
+    id: "bz", label: "🚫 BAN/PICKのルール",
+    intro: "どのキャラ・マップを、禁止・許可・必須にするか（ローカルBAN／ローカル許可／組み合わせローカルBAN／ローカル必須）を決めます。Discordの「🎯 BAN/PICK」と同じものです。ここで押したボタンは、その場で保存されます。手順（誰が何をBAN/PICKするか）は、「🎯 BAN/PICKの手順」のタブです。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).bprules || {}, locked = !!D.locked;
+      if (locked) root.appendChild(el("div", "note", "⚠ この大会は終了しているので、BAN/PICKのルールは変えられません。"));
+      if (!D.enabled) root.appendChild(el("div", "note", "※ いまは、「⚙ 大会設定」で、BAN/PICKを「使わない」にしています（ルールは、使うときに効きます）。"));
+      function banBlock(kind, title, note, rows) {
+        var c = box(el, title, note), st = BZ[kind];
+        listRows(el, K, c, rows, function (r) { return r.item + "　（" + r.scope + "）"; }, function (r) { return { op: "bpr_ban_remove", kind: kind, id: r.id }; }, locked);
+        var chs = el("div", ""); chs.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:8px";
+        ["survivor", "hunter", "map"].forEach(function (f) {
+          var lbl = { survivor: "サバイバーを選ぶ", hunter: "ハンターを選ぶ", map: "マップを選ぶ" }[f];
+          chs.appendChild(chooser(el, D, f, st.faction === f ? st.item : "", function (v) { st.item = v; st.faction = v ? f : ""; K.redraw(); }, lbl));
+        });
+        c.appendChild(field(el, "足すもの（どれか1つ）", chs));
+        c.appendChild(field(el, "範囲", scopePick(el, K, D, st)));
+        var r = el("div", "row"), b = el("button", "primary", "＋ 足す"); b.type = "button"; b.disabled = locked;
+        b.addEventListener("click", function () { if (!st.item) { K.msg("ng", "⚠ キャラ・マップを選んでください。"); return; } var o = { op: "bpr_ban_add", kind: kind, item: st.item, round: st.round || "", match: st.match || "" }; st.item = ""; st.faction = ""; K.send([o], "足しています…"); });
+        r.appendChild(b); c.appendChild(r); root.appendChild(c);
+      }
+      banBlock("ban", "🚫 ローカルBAN（この大会で、絶対に選べない）", "キャラ・マップを指定します。範囲は、大会全体・ラウンド・ラウンドの1試合から選べます。ローカル許可・ローカル必須と、同じ試合で重なる指定はできません。", D.ban || []);
+      banBlock("allow", "✅ ローカル許可（いつでも使えて、BANもされない）", "BANされたくない（いつでも使いたい）キャラ・マップを指定します。", D.allow || []);
+      // 組み合わせ
+      var cc = box(el, "🧩 組み合わせローカルBAN（サバイバーの組み合わせを禁止）", "2〜4キャラ。「部分一致」は、指定したキャラが全員そろったらだめ。「完全一致」は、指定した組み合わせと全く同じ編成だけだめ（3キャラ以上のとき）。ハンターは、1人しか出ないので、指定できません。");
+      listRows(el, K, cc, D.combo || [], function (r) { return r.items.join("・") + "　（" + (r.mode === "exact" ? "完全一致" : "部分一致") + "／" + r.scope + "）"; }, function (r) { return { op: "bpr_combo_remove", id: r.id }; }, locked);
+      var st = BZ.combo;
+      for (var i = 0; i < st.items.length; i++) (function (i) {
+        cc.appendChild(field(el, (i + 1) + "人目", chooser(el, D, "survivor", st.items[i], function (v) { st.items[i] = v; }, "サバイバーを選ぶ")));
+      })(i);
+      var cr = el("div", "row");
+      var more = el("button", "", "＋ 1人増やす"); more.type = "button"; more.disabled = st.items.length >= 4; more.addEventListener("click", function () { st.items.push(""); K.redraw(); });
+      var less = el("button", "", "− 1人減らす"); less.type = "button"; less.disabled = st.items.length <= 2; less.addEventListener("click", function () { st.items.pop(); K.redraw(); });
+      cr.appendChild(more); cr.appendChild(less); cc.appendChild(cr);
+      cc.appendChild(field(el, "一致の種類", sel(el, [["partial", "部分一致"], ["exact", "完全一致"]], st.mode, function (v) { st.mode = v; })));
+      cc.appendChild(field(el, "範囲", scopePick(el, K, D, st)));
+      var ar = el("div", "row"), ab = el("button", "primary", "＋ 足す"); ab.type = "button"; ab.disabled = locked;
+      ab.addEventListener("click", function () {
+        var ids = st.items.filter(function (x) { return x; }); if (ids.length < 2) { K.msg("ng", "⚠ 2キャラ以上、選んでください。"); return; }
+        var o = { op: "bpr_combo_add", items: ids, mode: st.mode, round: st.round || "", match: st.match || "" }; st.items = ["", ""]; K.send([o], "足しています…");
+      });
+      ar.appendChild(ab); cc.appendChild(ar); root.appendChild(cc);
+      // ローカル必須
+      var rc = box(el, "📌 ローカル必須（そのキャラを、必ず使う）", "キャラを足して、ラウンドごとに「必須」「自由」を決めます（「ぜんぶ必須」「ぜんぶ自由」も押せます）。シーンごとの細かい設定（組み分けなど）は、Discordの「🎯 BAN/PICK→📌 ローカル必須」で決められます。");
+      if (!(D.required || []).length) rc.appendChild(el("div", "note", "（ありません）"));
+      (D.required || []).forEach(function (r) {
+        var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
+        var on = (r.rounds || []).length ? "必須のラウンド：" + r.rounds.map(function (n) { var rr = (D.rounds || []).filter(function (x) { return x.no === n; })[0]; return rr ? rr.name : n; }).join("、") : "いまは、どのラウンドも自由";
+        var h = el("div", "", r.item); h.style.fontWeight = "800"; row.appendChild(h); row.appendChild(el("div", "note", on + ((r.groups || []).length ? "（組み分けあり：Discordで設定）" : "")));
+        var br = el("div", "row");
+        var all = el("button", "primary", "ぜんぶ必須"); all.type = "button"; all.disabled = locked; all.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: "req" }], "必須にしています…"); });
+        var fr = el("button", "", "ぜんぶ自由"); fr.type = "button"; fr.disabled = locked; fr.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: "free" }], "自由にしています…"); });
+        br.appendChild(all); br.appendChild(fr);
+        (D.rounds || []).forEach(function (rd) {
+          var isReq = (r.rounds || []).indexOf(rd.no) >= 0, b = el("button", isReq ? "primary" : "", (isReq ? "✅ " : "") + rd.name); b.type = "button"; b.disabled = locked;
+          b.title = isReq ? "押すと、このラウンドを自由にします" : "押すと、このラウンドを必須にします";
+          b.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: isReq ? "free" : "req", round: rd.no }], "変えています…"); });
+          br.appendChild(b);
+        });
+        var dl = el("button", "", "🗑 ローカル必須から外す"); dl.type = "button"; dl.style.color = "#ff7070"; dl.disabled = locked;
+        dl.addEventListener("click", function () { if (confirm("「" + r.item + "」を、ローカル必須から外します。よろしいですか？")) K.send([{ op: "bpr_req_remove", id: r.id }], "外しています…"); });
+        br.appendChild(dl); row.appendChild(br); rc.appendChild(row);
+      });
+      var rst = BZ.req, rrw = el("div", ""); rrw.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:8px";
+      ["survivor", "hunter"].forEach(function (f) {
+        rrw.appendChild(chooser(el, D, f, rst.faction === f ? rst.item : "", function (v) { rst.item = v; rst.faction = v ? f : ""; K.redraw(); }, f === "survivor" ? "サバイバーを選ぶ" : "ハンターを選ぶ"));
+      });
+      rc.appendChild(field(el, "足すキャラ", rrw));
+      var rr2 = el("div", "row"), rb = el("button", "primary", "＋ ローカル必須に足す"); rb.type = "button"; rb.disabled = locked;
+      rb.addEventListener("click", function () { if (!rst.item) { K.msg("ng", "⚠ キャラを選んでください。"); return; } var o = { op: "bpr_req_add", item: rst.item }; rst.item = ""; rst.faction = ""; K.send([o], "足しています…"); });
+      rr2.appendChild(rb); rc.appendChild(rr2); root.appendChild(rc);
+    }
+  });
+
   window.EDX = (window.EDX || []).concat(TABS);
   window.EDX_UI = { box: box, field: field, sel: sel, inp: inp };                  // ほかのタブ（あとで足すもの）が使う、小さな部品
 })();
