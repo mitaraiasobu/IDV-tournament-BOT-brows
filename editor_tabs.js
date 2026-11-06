@@ -389,6 +389,139 @@
         });
         root.appendChild(b);
       });
+      // キャスターの装飾
+      var DC = (K.data() || {}).deco || {}, dc = box(el, "🎀 キャスターの装飾", "キャスター表示（OBS）で、キャスターのアイコンのまわりに付ける飾りです。キャスターは、応募のときなどに、ここに登録した装飾から選びます。画像は、透明なPNGのURL（GitHubなど、ずっと残る場所）。" + (DC.max || 20) + "個まで。");
+      var bl = el("a", "", "📥 基準画像をダウンロード（真ん中の透明な穴に、アイコンが入ります）"); bl.href = DC.base_url || "#"; bl.target = "_blank"; bl.rel = "noopener"; bl.style.cssText = "display:inline-block;margin:4px 0"; dc.appendChild(bl);
+      if (!(DC.items || []).length) dc.appendChild(el("div", "note", "（まだ装飾はありません）"));
+      (DC.items || []).forEach(function (d) {
+        var row = el("div", "row"); row.style.alignItems = "center";
+        var im = document.createElement("img"); im.src = d.url; im.alt = d.name; im.style.cssText = "width:48px;height:48px;object-fit:contain;background:#000;border-radius:6px"; im.referrerPolicy = "no-referrer"; row.appendChild(im);
+        var t = el("span", "", d.name); t.style.flex = "1"; row.appendChild(t);
+        var x = el("button", "", "🗑 消す"); x.type = "button"; x.style.color = "#ff7070";
+        x.addEventListener("click", function () { if (confirm("装飾「" + d.name + "」を消します（選んでいたキャスターは、装飾なしになります）。よろしいですか？")) K.send([{ op: "deco_remove", id: d.id }], "消しています…"); });
+        row.appendChild(x); dc.appendChild(row);
+      });
+      var DA = K.state("deco_add", { name: "", url: "" });
+      var dn = inp(el, DA.name, DC.name_max || 20, "装飾の名前（例：王冠）"); dn.addEventListener("input", function () { DA.name = dn.value; }); dc.appendChild(field(el, "装飾の名前", dn));
+      var du = inp(el, DA.url, 500, "https://…（透明なPNG）"); du.addEventListener("input", function () { DA.url = du.value; }); dc.appendChild(field(el, "画像のURL", du));
+      var dr = el("div", "row"), db = el("button", "primary", "＋ 装飾を足す"); db.type = "button";
+      db.addEventListener("click", function () { if (!DA.name.trim() || !DA.url.trim()) { K.msg("ng", "⚠ 名前と画像のURLを入れてください。"); return; } var o = { op: "deco_add", name: DA.name, url: DA.url }; DA.name = ""; DA.url = ""; K.send([o], "装飾を足しています…"); });
+      dr.appendChild(db); dc.appendChild(dr);
+      if ((DC.sources || []).length) {
+        var DP = K.state("deco_copy", { from: String(DC.sources[0].tid) });
+        dc.appendChild(field(el, "ほかの大会から（同じDiscordサーバーの大会だけ。同じ名前の装飾は、いまのものを残します）", sel(el, DC.sources.map(function (x2) { return [x2.tid, x2.name + "（" + x2.count + "個）"]; }), DP.from, function (v) { DP.from = v; })));
+        var dr2 = el("div", "row"), dk = el("button", "", "📥 この大会の装飾をコピー"), dm = el("button", "", "📚 全大会の装飾を統合して適用"); dk.type = dm.type = "button";
+        dk.addEventListener("click", function () { K.send([{ op: "deco_copy", from: DP.from }], "コピーを頼んでいます…"); });
+        dm.addEventListener("click", function () { if (confirm("このDiscordサーバーの、ほかの大会の装飾を、すべて、この大会に足します。よろしいですか？")) K.send([{ op: "deco_merge" }], "統合を頼んでいます…"); });
+        dr2.appendChild(dk); dr2.appendChild(dm); dc.appendChild(dr2);
+      }
+      root.appendChild(dc);
+      // OBSの追加のCSS
+      var oc = box(el, "🎬 キャスター表示（OBS）の追加のCSS", "キャスター表示のページのCSSの最後に付けます（文字の大きさ・色などを、細かく変えたいとき）。空にすると、消えます。場面ごとの配置は、キャスター表示の位置調整ページで変えられます。");
+      var OC = K.state("overlay_css", { css: null });
+      var ta = document.createElement("textarea"); ta.rows = 8; ta.maxLength = DC.css_max || 3900; ta.style.cssText = "width:100%;font-family:monospace;font-size:14px"; ta.value = OC.css != null ? OC.css : (DC.css || "");
+      ta.addEventListener("input", function () { OC.css = ta.value; }); oc.appendChild(ta);
+      var or = el("div", "row"), ob = el("button", "primary", "💾 CSSを保存"); ob.type = "button";
+      ob.addEventListener("click", function () { var v = OC.css != null ? OC.css : (DC.css || ""); OC.css = null; K.send([{ op: "overlay_css", css: v }], "CSSを保存しています…"); });
+      or.appendChild(ob); oc.appendChild(or); root.appendChild(oc);
+    }
+  });
+
+  // ───── 📮 投稿（予約投稿・アンケート） ─────
+  function dt(v) { return String(v || "").slice(0, 16); }                             // 2026-11-03T20:00 の形（日時の入力欄）
+  function soon() { var d = new Date(Date.now() + 2 * 60000); d.setSeconds(0, 0); var p = function (n) { return ("0" + n).slice(-2); }; return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes()); }
+  function dtInput(value, onChange) { var i = document.createElement("input"); i.type = "datetime-local"; i.value = dt(value); i.style.cssText = "font-size:16px;padding:8px"; i.addEventListener("change", function () { onChange(i.value); }); return i; }
+  function chanPicker(el, D, chosen, onChange) {                                      // チャンネルを選ぶ（いくつでも）
+    var w = el("div", ""); w.style.cssText = "max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px";
+    if (!(D.channels || []).length) w.appendChild(el("div", "note", D.ready ? "（チャンネルがありません）" : "チャンネルの一覧を、BOTから受け取っています（1分ほどで出ます。「最新を読み込む」を押してください）。"));
+    var lastCat = null;
+    (D.channels || []).forEach(function (c) {
+      if (c.cat !== lastCat) { lastCat = c.cat; var h = el("div", "note", c.cat || "（カテゴリなし）"); h.style.marginTop = "4px"; w.appendChild(h); }
+      var l = el("label", ""); l.style.cssText = "display:flex;gap:6px;align-items:center;padding:2px 0";
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = chosen.indexOf(c.t) >= 0;
+      cb.addEventListener("change", function () { var k = chosen.indexOf(c.t); if (cb.checked && k < 0) chosen.push(c.t); if (!cb.checked && k >= 0) chosen.splice(k, 1); onChange && onChange(); });
+      l.appendChild(cb); l.appendChild(el("span", "", "#" + c.name)); w.appendChild(l);
+    });
+    return w;
+  }
+  TABS.push({
+    id: "ps", label: "📮 投稿",
+    intro: "予約投稿（決めた日時に、決めたチャンネルへ、BOTが送る）と、アンケート（選手・キャスター・選んだチャンネルへ）です。Discordの「📮 投稿」と同じものです。アンケートは、ブラウザからは予約で送ります（すぐ送るときは「約2分後」を押してください）。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).posts || {};
+      // 予約投稿
+      var c = box(el, "📅 予約投稿（まだ送っていないもの：" + (D.posts || []).length + "件）");
+      (D.posts || []).forEach(function (p) {
+        var E = K.state("post_" + p.id, { content: p.content, send_at: dt(p.send_at), channels: (p.channels || []).slice(), live: !!p.live });
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!K.open("ps:" + p.id); d.addEventListener("toggle", function () { K.open("ps:" + p.id, d.open); });
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = dt(p.send_at).replace("T", " ") + "　→ " + p.targets + "　" + p.content.slice(0, 30) + (p.note ? "　⚠" + p.note : ""); d.appendChild(sm);
+        d.appendChild(field(el, "送る日時", dtInput(E.send_at, function (v) { E.send_at = v; })));
+        var ta = document.createElement("textarea"); ta.rows = 5; ta.maxLength = D.content_max || 1900; ta.value = E.content; ta.style.cssText = "width:100%;font-size:16px"; ta.addEventListener("input", function () { E.content = ta.value; }); d.appendChild(field(el, "本文", ta));
+        d.appendChild(field(el, "送るチャンネル", chanPicker(el, D, E.channels)));
+        var lr = el("label", ""); lr.style.cssText = "display:flex;gap:6px;align-items:center"; var lc = document.createElement("input"); lc.type = "checkbox"; lc.checked = E.live; lc.addEventListener("change", function () { E.live = lc.checked; }); lr.appendChild(lc); lr.appendChild(el("span", "", "送る時刻に、試合をしている対戦カードのチャンネル全部にも送る")); d.appendChild(lr);
+        var r = el("div", "row"), sv2 = el("button", "primary", "💾 直す"), cx = el("button", "", "🗑 予約を取り消す"); sv2.type = cx.type = "button"; cx.style.color = "#ff7070";
+        sv2.addEventListener("click", function () { K.send([{ op: "post_update", id: p.id, content: E.content, send_at: E.send_at, channels: E.channels, live: E.live }], "直しています…"); });
+        cx.addEventListener("click", function () { if (confirm("この予約投稿を取り消します。よろしいですか？")) K.send([{ op: "post_cancel", id: p.id }], "取り消しています…"); });
+        r.appendChild(sv2); r.appendChild(cx); d.appendChild(r); c.appendChild(d);
+      });
+      var N = K.state("post_new", { content: "", send_at: "", channels: [], live: false }), nw = el("div", ""); nw.style.cssText = "border-top:1px solid var(--line);margin-top:8px;padding-top:8px";
+      nw.appendChild(el("div", "", "＋ 新しい予約投稿")).style.fontWeight = "800";
+      nw.appendChild(field(el, "送る日時", dtInput(N.send_at, function (v) { N.send_at = v; })));
+      var nt = document.createElement("textarea"); nt.rows = 5; nt.maxLength = D.content_max || 1900; nt.value = N.content; nt.style.cssText = "width:100%;font-size:16px"; nt.placeholder = "送るメッセージ（" + (D.content_max || 1900) + "文字まで）"; nt.addEventListener("input", function () { N.content = nt.value; }); nw.appendChild(field(el, "本文", nt));
+      nw.appendChild(field(el, "送るチャンネル", chanPicker(el, D, N.channels)));
+      var nl = el("label", ""); nl.style.cssText = "display:flex;gap:6px;align-items:center"; var nc = document.createElement("input"); nc.type = "checkbox"; nc.checked = N.live; nc.addEventListener("change", function () { N.live = nc.checked; }); nl.appendChild(nc); nl.appendChild(el("span", "", "送る時刻に、試合をしている対戦カードのチャンネル全部にも送る")); nw.appendChild(nl);
+      var nr = el("div", "row"), nb = el("button", "primary", "📅 この内容で予約する"); nb.type = "button";
+      nb.addEventListener("click", function () { if (!N.send_at || !N.content.trim()) { K.msg("ng", "⚠ 送る日時と本文を入れてください。"); return; } if (!N.channels.length && !N.live) { K.msg("ng", "⚠ 送るチャンネルを選んでください。"); return; } var o = { op: "post_create", content: N.content, send_at: N.send_at, channels: N.channels.slice(), live: N.live }; N.content = ""; N.channels.length = 0; K.send([o], "予約しています…"); });
+      nr.appendChild(nb); nw.appendChild(nr); c.appendChild(nw);
+      if ((D.done || []).length) { var dd = document.createElement("details"); dd.style.marginTop = "8px"; var ds = document.createElement("summary"); ds.textContent = "送った・送れなかった予約（最近）"; dd.appendChild(ds); D.done.forEach(function (x) { dd.appendChild(el("div", "note", dt(x.send_at).replace("T", " ") + "［" + (x.status === "sent" ? "送った" : "送れなかった") + "］→ " + x.targets + "：" + x.content.slice(0, 40) + (x.note ? "（" + x.note + "）" : ""))); }); c.appendChild(dd); }
+      root.appendChild(c);
+      // アンケート
+      var sc = box(el, "📣 アンケート（" + (D.surveys || []).length + "件）");
+      (D.surveys || []).forEach(function (s) {
+        var E = K.state("sv_" + s.id, { question: s.question, options: (s.options || []).join("\n"), multi: s.multi, ask: s.ask, deadline: dt(s.deadline), send_at: dt(s.send_at) });
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!K.open("sv:" + s.id); d.addEventListener("toggle", function () { K.open("sv:" + s.id, d.open); });
+        var st = s.scheduled ? "📅 " + dt(s.send_at).replace("T", " ") + " に送る予約" + (s.error ? "（⚠ " + s.error + "）" : "") : s.closed ? "締め切り" : "送信済み";
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = "［" + st + "］" + s.question.slice(0, 40) + "　→ " + s.target + "　回答" + s.voters + "人"; d.appendChild(sm);
+        if (s.kind === "choice") { var cs = el("div", "note", "集計：" + Object.keys(s.counts || {}).map(function (k) { return k + " " + s.counts[k] + "人"; }).join("／")); d.appendChild(cs); }
+        else if ((s.texts || []).length) { var tx = document.createElement("details"); var tsum = document.createElement("summary"); tsum.textContent = "回答を見る（" + s.texts.length + "件）"; tx.appendChild(tsum); s.texts.forEach(function (t) { tx.appendChild(el("div", "note", t.name + (t.group ? "（" + t.group + "）" : "") + "：" + t.text)); }); d.appendChild(tx); }
+        var q = document.createElement("textarea"); q.rows = 4; q.maxLength = D.question_max || 1500; q.value = E.question; q.style.cssText = "width:100%;font-size:16px"; q.addEventListener("input", function () { E.question = q.value; }); d.appendChild(field(el, "アンケートの内容", q));
+        if (s.kind === "choice") { var o = document.createElement("textarea"); o.rows = 4; o.value = E.options; o.style.cssText = "width:100%;font-size:16px"; o.addEventListener("input", function () { E.options = o.value; }); d.appendChild(field(el, "選択肢（1行に1つ。回答が届いたあとは、変えられません）", o));
+          var ml = el("label", ""); ml.style.cssText = "display:flex;gap:6px;align-items:center"; var mc = document.createElement("input"); mc.type = "checkbox"; mc.checked = E.multi; mc.addEventListener("change", function () { E.multi = mc.checked; }); ml.appendChild(mc); ml.appendChild(el("span", "", "複数選んでよい")); d.appendChild(ml); }
+        var al = el("label", ""); al.style.cssText = "display:flex;gap:6px;align-items:center"; var ac = document.createElement("input"); ac.type = "checkbox"; ac.checked = E.ask; ac.addEventListener("change", function () { E.ask = ac.checked; }); al.appendChild(ac); al.appendChild(el("span", "", "「💬 問い合わせ」ボタンを付ける")); d.appendChild(al);
+        d.appendChild(field(el, "回答期限（空＝期限なし）", dtInput(E.deadline, function (v) { E.deadline = v; })));
+        var r = el("div", "row"), sv3 = el("button", "primary", "💾 直す"); sv3.type = "button";
+        sv3.addEventListener("click", function () { var op = { op: "survey_edit", id: s.id, question: E.question, ask: E.ask, deadline: E.deadline }; if (s.kind === "choice") { op.options = E.options.split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean); op.multi = E.multi; } K.send([op], "直しています…"); });
+        r.appendChild(sv3);
+        if (s.scheduled) {
+          d.appendChild(field(el, "送る日時", dtInput(E.send_at, function (v) { E.send_at = v; })));
+          var rs = el("button", "", "📅 送る日時を直す"), cx2 = el("button", "", "🗑 予約を取り消す"); rs.type = cx2.type = "button"; cx2.style.color = "#ff7070";
+          rs.addEventListener("click", function () { K.send([{ op: "survey_resched", id: s.id, send_at: E.send_at }], "直しています…"); });
+          cx2.addEventListener("click", function () { if (confirm("このアンケートの予約を取り消します（アンケートごと消えます）。よろしいですか？")) K.send([{ op: "survey_cancel", id: s.id }], "取り消しています…"); });
+          r.appendChild(rs); r.appendChild(cx2);
+        }
+        d.appendChild(r); sc.appendChild(d);
+      });
+      var S = K.state("sv_new", { question: "", kind: "choice", options: "", target: "player", channels: [], multi: true, ask: true, deadline: "", send_at: "" });
+      var sn = el("div", ""); sn.style.cssText = "border-top:1px solid var(--line);margin-top:8px;padding-top:8px"; sn.appendChild(el("div", "", "＋ 新しいアンケート")).style.fontWeight = "800";
+      var sq = document.createElement("textarea"); sq.rows = 4; sq.maxLength = D.question_max || 1500; sq.value = S.question; sq.style.cssText = "width:100%;font-size:16px"; sq.addEventListener("input", function () { S.question = sq.value; }); sn.appendChild(field(el, "アンケートの内容", sq));
+      sn.appendChild(field(el, "種類", sel(el, Object.keys(D.kinds || {}).map(function (k) { return [k, D.kinds[k]]; }), S.kind, function (v) { S.kind = v; K.redraw(); })));
+      if (S.kind === "choice") { var so = document.createElement("textarea"); so.rows = 4; so.value = S.options; so.style.cssText = "width:100%;font-size:16px"; so.placeholder = "1行に1つ（" + (D.options_min || 2) + "〜" + (D.options_max || 10) + "個）"; so.addEventListener("input", function () { S.options = so.value; }); sn.appendChild(field(el, "選択肢", so));
+        var sml = el("label", ""); sml.style.cssText = "display:flex;gap:6px;align-items:center"; var smc = document.createElement("input"); smc.type = "checkbox"; smc.checked = S.multi; smc.addEventListener("change", function () { S.multi = smc.checked; }); sml.appendChild(smc); sml.appendChild(el("span", "", "複数選んでよい")); sn.appendChild(sml); }
+      sn.appendChild(field(el, "送る相手", sel(el, Object.keys(D.targets || {}).map(function (k) { return [k, D.targets[k]]; }), S.target, function (v) { S.target = v; K.redraw(); })));
+      if (S.target === "channels") sn.appendChild(field(el, "送るチャンネル", chanPicker(el, D, S.channels)));
+      var sal = el("label", ""); sal.style.cssText = "display:flex;gap:6px;align-items:center"; var sac = document.createElement("input"); sac.type = "checkbox"; sac.checked = S.ask; sac.addEventListener("change", function () { S.ask = sac.checked; }); sal.appendChild(sac); sal.appendChild(el("span", "", "「💬 問い合わせ」ボタンを付ける")); sn.appendChild(sal);
+      sn.appendChild(field(el, "回答期限（空＝期限なし）", dtInput(S.deadline, function (v) { S.deadline = v; })));
+      var sendRow = el("div", "row"); sendRow.style.alignItems = "center"; var sdi = dtInput(S.send_at, function (v) { S.send_at = v; }); sendRow.appendChild(sdi);
+      var sb2 = el("button", "", "約2分後"); sb2.type = "button"; sb2.addEventListener("click", function () { S.send_at = soon(); sdi.value = S.send_at; }); sendRow.appendChild(sb2);
+      sn.appendChild(field(el, "送る日時", sendRow));
+      var sr2 = el("div", "row"), sgo = el("button", "primary", "📣 この内容で予約する"); sgo.type = "button";
+      sgo.addEventListener("click", function () {
+        if (!S.question.trim() || !S.send_at) { K.msg("ng", "⚠ アンケートの内容と、送る日時を入れてください。"); return; }
+        var op = { op: "survey_create", question: S.question, kind: S.kind, target: S.target, multi: S.multi, ask: S.ask, deadline: S.deadline, send_at: S.send_at,
+                   options: S.kind === "choice" ? S.options.split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean) : [], channels: S.target === "channels" ? S.channels.slice() : [] };
+        S.question = ""; S.options = ""; K.send([op], "予約しています…");
+      });
+      sr2.appendChild(sgo); sn.appendChild(sr2); sc.appendChild(sn); root.appendChild(sc);
     }
   });
 
