@@ -202,11 +202,18 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (x) { return (x < 16 ? "0" : "") + x.toString(16); }).join(""); }
   function unhex(s) { var a = new Uint8Array(s.length / 2); for (var i = 0; i < a.length; i++) a[i] = parseInt(s.substr(i * 2, 2), 16); return a; }
-  function canon(v) {                                   // BOTと同じ形のJSON（キーを並べ替え・空白なし）。署名の対象
-    if (v === null || typeof v !== "object") return JSON.stringify(v);
-    if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
-    return "{" + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ":" + canon(v[k]); }).join(",") + "}";
+  function nz(v) {                                      // データ置き場（Firebase）を通ると消える、空の入れ物（[]・{}）と null を、先に除く（BOTの署名と同じ決まり）
+    if (v === null || v === undefined) return undefined;
+    if (Array.isArray(v)) { var a = v.map(nz).filter(function (x) { return x !== undefined; }); return a.length ? a : undefined; }
+    if (typeof v === "object") { var o = {}, n = 0; Object.keys(v).forEach(function (k) { var y = nz(v[k]); if (y !== undefined) { o[k] = y; n++; } }); return n ? o : undefined; }
+    return v;
   }
+  function canon0(v) {                                  // キーを並べ替え・空白なしのJSON
+    if (v === null || typeof v !== "object") return JSON.stringify(v);
+    if (Array.isArray(v)) return "[" + v.map(canon0).join(",") + "]";
+    return "{" + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ":" + canon0(v[k]); }).join(",") + "}";
+  }
+  function canon(v) { var z = nz(v); return canon0(z === undefined ? [] : z); }            // BOTと同じ形のJSON。署名の対象
   function deriveAuth(pw, salt, iter) {
     return crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]).then(function (k) {
       return crypto.subtle.deriveBits({ name: "PBKDF2", salt: enc.encode(salt), iterations: iter, hash: "SHA-256" }, k, 256);
@@ -317,8 +324,12 @@
 
   // ───────── 画面
   function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM, ST]) !== BASEJSON || (typeof RB_DIRTY !== "undefined" && RB_DIRTY); }       // 大会ルールの変更も、上の「💾 保存」で保存する
+  var SAVING = false, SAVE_MSG = null;                                              // 保存中か・保存の結果（画面の上の表示に出す。下の方で押しても、上で分かる）
   function refreshDirty() {
     var d = dirty(), e = $("dirty"), bad = typeof limitProblems === "function" && ST ? limitProblems() : [];
+    if (SAVING) { e.textContent = "⏳ 保存中…（そのままお待ちください）"; e.className = ""; $("save").disabled = true; return; }
+    if (SAVE_MSG && !SAVE_MSG.ok) { e.textContent = "⚠ " + SAVE_MSG.text; e.className = "bad"; $("save").disabled = !d || bad.length > 0; return; }       // 失敗：変更は、残っている（もう一度、保存できる）
+    if (SAVE_MSG && SAVE_MSG.ok && !d && !bad.length) { e.textContent = SAVE_MSG.text; e.className = "clean"; $("save").disabled = true; return; }
     e.textContent = bad.length ? "⚠ 直すところがあります（" + bad[0] + "）" : d ? "● 保存していない変更があります" : "変更はありません"; e.className = d && !bad.length ? "" : bad.length ? "bad" : "clean";
     $("save").disabled = !d || bad.length > 0;                                        // おかしいところがあれば、保存できない（入力は、このブラウザにバックアップ）
   }
@@ -748,11 +759,13 @@
   // ───── 📖 大会ルール：タブ → セクション（見出し・本文）。全体をまとめて保存 ─────
   var RB = null, RB_DIRTY = false, RB_OPEN = {}, RTES = [];
   function rbClone(o) { return JSON.parse(JSON.stringify(o)); }
-  function rbNorm(d) {                                                               // BOTが保存する形（空白を落とす・空のセクションは消す）
+  function rbNorm(d) {                                                               // BOTが保存する形（空白を落とす・空のセクションは消す。非表示は、残す）
     return { tabs: (d.tabs || []).map(function (t) {
-      if (t.builtin) return { builtin: t.builtin };
-      return { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim() }; })
-        .filter(function (x) { return x.title || x.body; }).map(function (x) { return { title: x.title || "（見出しなし）", body: x.body }; }) };
+      if (t.builtin) return t.hidden ? { builtin: t.builtin, hidden: true } : { builtin: t.builtin };
+      var o = { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim(), hidden: !!x.hidden }; })
+        .filter(function (x) { return x.title || x.body; }).map(function (x) { var y = { title: x.title || "（見出しなし）", body: x.body }; if (x.hidden) y.hidden = true; return y; }) };
+      if (t.hidden) o.hidden = true;
+      return o;
     }), theme: rbTheme(d.theme) };
   }
   function rbTheme(t) { var o = {}; t = t || {}; ["bg", "accent"].forEach(function (k) { if (/^#[0-9a-fA-F]{6}$/.test(t[k] || "")) o[k] = t[k].toLowerCase(); }); return o; }
@@ -769,12 +782,33 @@
     if (I.url) { var ur = el("div", "row"); ur.appendChild(el("span", "", "📖 大会ルールのページ：")); var ua = el("a", "", "開く"); ua.href = I.url; ua.target = "_blank"; ua.rel = "noopener"; ur.appendChild(ua);
       var uc = el("button", "", "URLをコピー"); uc.type = "button"; uc.addEventListener("click", function () { try { navigator.clipboard.writeText(I.url); setResult("ok", "URLをコピーしました。"); } catch (e) { prompt("URL", I.url); } }); ur.appendChild(uc); top.appendChild(ur); }
     else top.appendChild(el("div", "note", "公開サイトの設定が無いため、大会ルールのページはまだありません。"));
-    if (I.empty && !RB_DIRTY) {
-      top.appendChild(el("div", "note", "まだ、大会ルールが書かれていません。見本（今のDiscordのルールを、タブとセクションに分けたもの）を入れて、直して使うこともできます。"));
-      var sb = el("button", "primary", "見本を入れる"); sb.type = "button";
-      sb.addEventListener("click", function () { var keepTheme = RB && RB.theme; RB = rbClone(I.sample || { tabs: [] }); RB.theme = keepTheme || {}; rbDirty(); renderRulebook(); setResult("ok", "見本を入れました。直してから「💾 大会ルールを保存」を押してください。"); });
-      top.appendChild(sb);
+    var tp = document.createElement("details"); tp.style.cssText = "margin-top:10px;border-top:1px solid var(--line);padding-top:8px"; tp.open = !!I.empty || !!RB_OPEN.tpl; tp.addEventListener("toggle", function () { RB_OPEN.tpl = tp.open; });
+    var tsm = document.createElement("summary"); tsm.style.cssText = "cursor:pointer;font-weight:800"; tsm.textContent = "📚 見本のルール（テンプレート）：いつでも呼び出せます"; tp.appendChild(tsm);
+    tp.appendChild(el("div", "note", "あくまで参考の見本です。呼び出すと、コピーが入って、そこから自由に直せます（見本そのものは、変わりません）。使わないページ・セクションは、「👁 表示中」を押して非表示にできます。すでに全く同じものがあるときは、重複して足しません。"));
+    var TPL = I.templates || [];
+    function rbHas(sec) { return RB.tabs.some(function (t) { return !t.builtin && (t.sections || []).some(function (x) { return x.title === sec.title && String(x.body || "").trim() === String(sec.body || "").trim(); }); }); }
+    function tplMissing(tt) { return (tt.sections || []).filter(function (x) { return !rbHas(x); }); }
+    function tplAdd(tt) {                                                           // 足したセクションの数（同じタブがあれば、そこに足りないものだけ。無ければ、新しいタブ）
+      var miss = tplMissing(tt); if (!miss.length) return 0;
+      var ex = RB.tabs.filter(function (t) { return !t.builtin && t.title === tt.title; })[0], cp = rbClone(miss);
+      if (ex) ex.sections = (ex.sections || []).concat(cp);
+      else { var at = -1; RB.tabs.forEach(function (t, i) { if (at < 0 && t.builtin) at = i; }); var nt = { title: tt.title, sections: cp }; if (at < 0) RB.tabs.push(nt); else RB.tabs.splice(at, 0, nt); }
+      return miss.length;
     }
+    TPL.forEach(function (tt) {
+      var row = el("div", "row"); row.style.alignItems = "center";
+      var miss = tplMissing(tt).length, lb = el("span", "", tt.title + "（" + (tt.sections || []).length + "個のセクション）"); lb.style.flex = "1"; row.appendChild(lb);
+      var ab = el("button", miss ? "primary" : "", miss ? "このページを足す" + (miss < (tt.sections || []).length ? "（足りない" + miss + "個）" : "") : "✓ 足し済み"); ab.type = "button"; ab.disabled = !miss;
+      ab.addEventListener("click", function () { var n = tplAdd(tt); rbDirty(); renderRulebook(); setResult("ok", "「" + tt.title + "」を" + n + "個足しました。画面の上の「💾 保存」で保存してください。"); });
+      row.appendChild(ab); tp.appendChild(row);
+    });
+    var allMiss = TPL.reduce(function (n, tt) { return n + tplMissing(tt).length; }, 0), rowA = el("div", "row");
+    var aa = el("button", allMiss ? "primary" : "", allMiss ? "見本をぜんぶ足す（重複は足しません）" : "✓ 見本は、ぜんぶ足し済み"); aa.type = "button"; aa.disabled = !allMiss;
+    aa.addEventListener("click", function () { var n = 0; TPL.forEach(function (tt) { n += tplAdd(tt); }); rbDirty(); renderRulebook(); setResult("ok", "見本を" + n + "個足しました。画面の上の「💾 保存」で保存してください。"); });
+    rowA.appendChild(aa); tp.appendChild(rowA);
+    var lg = el("div", "note"); lg.style.marginTop = "6px"; lg.appendChild(document.createTextNode("自動で入る言葉（本文に書くと、参加者のページでは、大会の設定から自動で入ります）："));
+    (I.auto_words || []).forEach(function (tk) { lg.appendChild(el("div", "", "　{{" + tk[0] + "}}　＝　" + tk[1])); });
+    tp.appendChild(lg); top.appendChild(tp);
     RB.theme = RB.theme || {};
     var th = el("div", ""); th.style.cssText = "margin-top:10px;padding-top:8px;border-top:1px solid var(--line)";
     th.appendChild(el("div", "", "🎨 ページの色（大会ルールのページ全体と、下の本文の欄に使います。決めなければ、いつもの色で、見る人がライト・ダークを選べます）"));
@@ -809,6 +843,9 @@
         var ti0 = el("input"); ti0.type = "text"; ti0.maxLength = L.title || 60; ti0.value = t.title || ""; ti0.placeholder = "タブの名前（例：🚫 禁止事項）"; ti0.style.flex = "1"; ti0.style.minWidth = "10em";
         ti0.addEventListener("input", function () { t.title = ti0.value; rbDirty(); }); hd.appendChild(ti0);
       }
+      c.style.opacity = t.hidden ? ".55" : "";
+      var hb = el("button", t.hidden ? "primary" : "", t.hidden ? "🙈 非表示中" : "👁 表示中"); hb.type = "button"; hb.title = "非表示にすると、参加者のページに出ません（中身は残ります）";
+      hb.addEventListener("click", function () { t.hidden = !t.hidden; rbDirty(); renderRulebook(); }); hd.appendChild(hb);
       var up = el("button", "", "↑"); up.type = "button"; up.title = "上へ"; up.disabled = ti === 0; up.addEventListener("click", function () { move(RB.tabs, ti, -1); }); hd.appendChild(up);
       var dw = el("button", "", "↓"); dw.type = "button"; dw.title = "下へ"; dw.disabled = ti === RB.tabs.length - 1; dw.addEventListener("click", function () { move(RB.tabs, ti, 1); }); hd.appendChild(dw);
       if (!t.builtin) { var dl = el("button", "", "🗑"); dl.type = "button"; dl.title = "このタブを消す"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("タブ「" + (t.title || "") + "」を、中のセクションごと消します。よろしいですか？")) { RB.tabs.splice(ti, 1); rbDirty(); renderRulebook(); } }); hd.appendChild(dl); }
@@ -825,6 +862,8 @@
         var sh = el("div", "row"); sh.style.alignItems = "center";
         var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1 1 100%"; st.style.minWidth = "10em"; st.style.fontSize = "16px"; st.style.padding = "10px";
         st.addEventListener("input", function () { sc.title = st.value; rbDirty(); }); sh.appendChild(st);
+        sbx.style.opacity = sc.hidden ? ".55" : "";
+        var shb = el("button", sc.hidden ? "primary" : "", sc.hidden ? "🙈 非表示中" : "👁 表示中"); shb.type = "button"; shb.addEventListener("click", function () { sc.hidden = !sc.hidden; rbDirty(); renderRulebook(); }); sh.appendChild(shb);
         var su = el("button", "", "↑"); su.type = "button"; su.disabled = si === 0; su.addEventListener("click", function () { move(t.sections, si, -1); }); sh.appendChild(su);
         var sd = el("button", "", "↓"); sd.type = "button"; sd.disabled = si === t.sections.length - 1; sd.addEventListener("click", function () { move(t.sections, si, 1); }); sh.appendChild(sd);
         var sx = el("button", "", "🗑"); sx.type = "button"; sx.style.color = "#ff7070"; sx.addEventListener("click", function () { if (confirm("セクション「" + (sc.title || "") + "」を消します。よろしいですか？")) { t.sections.splice(si, 1); rbDirty(); renderRulebook(); } }); sh.appendChild(sx);
@@ -1432,15 +1471,16 @@
   }
   function runOps(ops, busy) {                                                       // 署名をつけて、BOTへ送る（結果を待って、最新を読み込む）
     var n = (data.n || 0) + 1;
-    $("save").disabled = true; $("share").disabled = true; setResult("", busy);
+    SAVING = true; SAVE_MSG = null;
+    $("save").disabled = true; $("share").disabled = true; setResult("", busy); refreshDirty();
     hmac(AUTH, n + "|" + canon(ops)).then(function (mac) {
       return sendInbox({ type: "edit", n: n, ops: ops, mac: mac });
     }).then(waitResult).then(function (r) {
-      $("share").disabled = false;
-      if (!r) { setResult("ng", "BOTからの返事がありません。しばらくして「最新を読み込む」を押して、確かめてください。"); refreshDirty(); return; }
-      if (r.ok) { try { localStorage.removeItem(backupKey()); } catch (e2) { /* そのまま */ } setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); return load().then(function (d) { adopt(d); render(); }); }
-      setResult("ng", "⚠ " + (r.error || "保存できませんでした。")); refreshDirty();
-    }).catch(function (e) { $("share").disabled = false; setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
+      $("share").disabled = false; SAVING = false;
+      if (!r) { SAVE_MSG = { ok: false, text: "BOTからの返事がありません（保存できたか分かりません）。しばらくして「最新を読み込む」で確かめてください" }; setResult("ng", "BOTからの返事がありません。しばらくして「最新を読み込む」を押して、確かめてください。"); refreshDirty(); return; }
+      if (r.ok) { try { localStorage.removeItem(backupKey()); } catch (e2) { /* そのまま */ } setResult("ok", "✅ 保存しました。" + (r.msg ? "（" + r.msg + "）" : "")); SAVE_MSG = { ok: true, text: "✅ 保存しました" }; return load().then(function (d) { adopt(d); render(); }); }
+      SAVE_MSG = { ok: false, text: "保存できませんでした：" + (r.error || "（理由は分かりません）") + "（変更は残っています）" }; setResult("ng", "⚠ " + (r.error || "保存できませんでした。")); refreshDirty();
+    }).catch(function (e) { $("share").disabled = false; SAVING = false; SAVE_MSG = { ok: false, text: "保存できませんでした：" + (e.message || "つながりませんでした") + "（変更は残っています）" }; setResult("ng", "⚠ " + (e.message || "つながりませんでした。")); refreshDirty(); });
   }
   function setResult(cls, text) { var r = $("result"); r.className = cls; r.textContent = text; }
 
