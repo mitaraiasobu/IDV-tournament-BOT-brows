@@ -885,6 +885,17 @@
     bw.appendChild(rv); bw.appendChild(el("span", "note", RB_DIRTY ? "● 保存していない変更があります。画面の上の「💾 保存」を押してください。" : "")); box.appendChild(bw);
     if (Math.abs(window.scrollY - keep) > 2) window.scrollTo(0, keep);
   }
+  function fieldEditor(box, ED, F, onSave, label) {                                   // 追加した項目の、項目名・入力方式・選択肢・文字数・必須
+    function line(node, t) { var w = el("div", ""); w.style.margin = "4px 0"; w.appendChild(el("div", "note", t)); w.appendChild(node); box.appendChild(w); }
+    var ti = document.createElement("input"); ti.type = "text"; ti.maxLength = 40; ti.value = ED.title || ""; ti.style.width = "100%"; ti.addEventListener("input", function () { ED.title = ti.value; }); line(ti, "項目名");
+    var ty = document.createElement("select"); [["text", "自由記述"], ["number", "数字"], ["choice", "選択肢（独自に作成）"], ["chars", "選択肢（キャラ一覧から）"]].forEach(function (o) { var x = document.createElement("option"); x.value = o[0]; x.textContent = o[1]; if (o[0] === ED.type) x.selected = true; ty.appendChild(x); });
+    ty.addEventListener("change", function () { ED.type = ty.value; renderRules2(); }); line(ty, "入力方式");
+    if (ED.type === "choice") { var ch = document.createElement("input"); ch.type = "text"; ch.value = ED.choices || ""; ch.style.width = "100%"; ch.addEventListener("input", function () { ED.choices = ch.value; }); line(ch, "選択肢（「、」で区切る）"); }
+    if (ED.type === "chars") { var ck = document.createElement("select"); Object.keys(F.char_kinds || {}).forEach(function (k2) { var x = document.createElement("option"); x.value = k2; x.textContent = F.char_kinds[k2]; if (k2 === ED.char_kind) x.selected = true; ck.appendChild(x); }); ck.addEventListener("change", function () { ED.char_kind = ck.value; }); line(ck, "キャラの種類"); }
+    if (ED.type === "text") { var ml = document.createElement("select"); (F.lengths || [20, 30, 50, 100, 200]).forEach(function (n) { var x = document.createElement("option"); x.value = n; x.textContent = n + "文字まで"; if (Number(ED.max_length) === n) x.selected = true; ml.appendChild(x); }); ml.addEventListener("change", function () { ED.max_length = Number(ml.value); }); line(ml, "最大の文字数"); }
+    var rq = el("div", "row"), rc = document.createElement("input"); rc.type = "checkbox"; rc.checked = !!ED.required; rc.addEventListener("change", function () { ED.required = rc.checked; }); rq.appendChild(rc); rq.appendChild(el("span", "", "必須にする")); box.appendChild(rq);
+    var r = el("div", "row"), b = el("button", "primary", label); b.type = "button"; b.addEventListener("click", function () { if (!(ED.title || "").trim()) { setResult("ng", "⚠ 項目名を入れてください。"); return; } onSave(); }); r.appendChild(b); box.appendChild(r);
+  }
   // ───── 📋 ルール・登録項目 ─────
   var RL = {}, RLADD = { kind: "player", type: "text" };
   function renderRules2() {
@@ -912,23 +923,48 @@
         var rr = el("div", "row"), sv = el("button", "primary", "ルールを保存"); sv.type = "button";
         sv.addEventListener("click", function () { brSend([{ op: "rules_field", kind: kd[0], key: f.key, extra: !!f.extra, rule: RL[k] != null ? RL[k] : (f.rule || "") }], "ルールを保存しています…"); delete RL[k]; });
         rr.appendChild(sv);
-        if (f.custom && f.removable) { var dl = el("button", "", "🗑 この項目を消す"); dl.type = "button"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("項目「" + f.title + "」を消します。よろしいですか？")) brSend([{ op: "rules_remove", kind: kd[0], key: f.fkey }], "項目を消しています…"); }); rr.appendChild(dl); }
-        det.appendChild(rr); c.appendChild(det);
+        if (f.removable && !f.extra) { var dl = el("button", "", f.custom ? "🗑 この項目を消す" : "🚫 この質問を無効化（消す）"); dl.type = "button"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("項目「" + f.title + "」を消します（" + (f.custom ? "" : "標準の質問です。「標準フォームの内容にする」で戻せます。") + "）。よろしいですか？")) brSend([{ op: "rules_remove", kind: kd[0], key: f.fkey }], "項目を消しています…"); }); rr.appendChild(dl); }
+        det.appendChild(rr);
+        if (f.custom) {                                                                // 追加した項目を直す（Discordの「質問を直す」と同じ）
+          var ED = RL["ed_" + k] = RL["ed_" + k] || { title: f.title, type: f.type === "choice_custom" ? "choice" : f.type === "choice_chars" ? "chars" : f.type === "number" ? "number" : "text", choices: (f.choices || []).join("、"), char_kind: f.char_kind || "survivor", max_length: f.max_length || 100, required: !!f.required };
+          var ew = document.createElement("details"); ew.style.marginTop = "6px"; var es = document.createElement("summary"); es.textContent = "✏ この項目を直す（項目名・入力方式・必須）"; es.style.cursor = "pointer"; ew.appendChild(es);
+          fieldEditor(ew, ED, F, function () { brSend([{ op: "rules_edit", kind: kd[0], key: f.fkey, field: ED }], "項目を直しています…"); delete RL["ed_" + k]; }, "💾 項目を直す");
+          det.appendChild(ew);
+        }
+        c.appendChild(det);
       });
+      var sr = el("div", "row"), sb = el("button", "", "📋 標準フォームの内容にする"); sb.type = "button";
+      sb.addEventListener("click", function () { if (confirm((kd[0] === "team" ? "チーム" : "選手") + "登録フォームを、標準の内容にします（追加した項目と、項目のルールは消えます）。よろしいですか？")) brSend([{ op: "rules_standard", kind: kd[0] }], "標準に戻しています…"); });
+      sr.appendChild(sb); c.appendChild(sr);
+      if (kd[0] === "player" && F.nw) {                                                // 特定キャラの項目（例：夜の番人の使用歴など）
+        var nw = el("div", ""); nw.style.cssText = "border-top:1px solid var(--line);margin-top:8px;padding-top:8px";
+        nw.appendChild(el("div", "", "🎯 特定キャラの項目（そのキャラを使う選手に、追加で聞く）：" + (F.nw.on ? "使う（" + F.nw.name + "）" : "使わない")));
+        var nr = el("div", "row"), nt = el("button", F.nw.on ? "" : "primary", F.nw.on ? "特定キャラの項目を使わない" : "特定キャラの項目を使う"); nt.type = "button";
+        nt.addEventListener("click", function () { brSend([{ op: "rules_nw", kind: "player", on: !F.nw.on }], "変えています…"); }); nr.appendChild(nt);
+        if (F.nw.on) {
+          var ns = document.createElement("select"); ns.style.fontSize = "16px";
+          (F.nw.hunters || []).forEach(function (h) { var o = document.createElement("option"); o.value = h[0]; o.textContent = h[1]; if (h[0] === F.nw.char) o.selected = true; ns.appendChild(o); });
+          ns.addEventListener("change", function () { brSend([{ op: "rules_nw", kind: "player", char: ns.value }], "対象キャラを変えています…"); });
+          nr.appendChild(el("span", "note", "対象キャラ：")); nr.appendChild(ns);
+        }
+        nw.appendChild(nr); c.appendChild(nw);
+      }
       box.appendChild(c);
     });
     var ca = el("div", "card"); ca.style.marginTop = "10px";
     var ha = el("div", ""); ha.style.fontWeight = "800"; ha.textContent = "➕ 項目を増やす"; ca.appendChild(ha);
     function radio(name, opts) { var r = el("div", "row"); opts.forEach(function (o) { var b = el("button", RLADD[name] === o[0] ? "primary" : "", o[1]); b.type = "button"; b.addEventListener("click", function () { RLADD[name] = o[0]; renderRules2(); }); r.appendChild(b); }); return r; }
     ca.appendChild(radio("kind", [["player", "選手の項目"], ["team", "チームの項目"]]));
-    ca.appendChild(radio("type", [["text", "自由記述"], ["choice", "選択肢"]]));
+    ca.appendChild(radio("type", [["text", "自由記述"], ["number", "数字"], ["choice", "選択肢（独自に作成）"], ["chars", "選択肢（キャラ一覧から）"]]));
     function inp(key, ph) { var i = document.createElement("input"); i.type = "text"; i.placeholder = ph; i.style.width = "100%"; i.value = RLADD[key] || ""; i.addEventListener("input", function () { RLADD[key] = i.value; }); ca.appendChild(i); }
     inp("title", "項目名（例：VCで話せますか）");
     if (RLADD.type === "choice") inp("choices", "選択肢（「、」で区切る。例：はい、いいえ）");
+    if (RLADD.type === "chars") { RLADD.char_kind = RLADD.char_kind || "survivor"; ca.appendChild(radio("char_kind", Object.keys(F.char_kinds || { survivor: "サバイバー", hunter: "ハンター", map: "マップ" }).map(function (k2) { return [k2, (F.char_kinds || {})[k2] || k2]; }))); }
+    if (RLADD.type === "text") { RLADD.max_length = RLADD.max_length || 100; ca.appendChild(radio("max_length", (F.lengths || [20, 30, 50, 100, 200]).map(function (n) { return [n, n + "文字まで"]; }))); }
     var rq = el("div", "row"), rc2 = document.createElement("input"); rc2.type = "checkbox"; rc2.checked = !!RLADD.required; rc2.addEventListener("change", function () { RLADD.required = rc2.checked; }); rq.appendChild(rc2); rq.appendChild(el("span", "", "必須にする")); ca.appendChild(rq);
     var rt = document.createElement("textarea"); rt.rows = 3; rt.style.width = "100%"; rt.placeholder = "この項目のルール（任意）"; rt.value = RLADD.rule || ""; rt.addEventListener("input", function () { RLADD.rule = rt.value; }); ca.appendChild(rt);
     var ar = el("div", "row"), ab = el("button", "primary", "この項目を足す"); ab.type = "button";
-    ab.addEventListener("click", function () { if (!(RLADD.title || "").trim()) { setResult("ng", "⚠ 項目名を入れてください。"); return; } brSend([{ op: "rules_add", kind: RLADD.kind, field: { title: RLADD.title, type: RLADD.type, choices: RLADD.choices || "", required: !!RLADD.required, rule: RLADD.rule || "" } }], "項目を足しています…"); RLADD = { kind: RLADD.kind, type: "text" }; });
+    ab.addEventListener("click", function () { if (!(RLADD.title || "").trim()) { setResult("ng", "⚠ 項目名を入れてください。"); return; } brSend([{ op: "rules_add", kind: RLADD.kind, field: { title: RLADD.title, type: RLADD.type, choices: RLADD.choices || "", char_kind: RLADD.char_kind || "", max_length: RLADD.max_length || "", required: !!RLADD.required, rule: RLADD.rule || "" } }], "項目を足しています…"); RLADD = { kind: RLADD.kind, type: "text" }; });
     ar.appendChild(ab); ca.appendChild(ar); box.appendChild(ca);
   }
   // ───── 📣 メンバー募集：招待リンク・投稿の募集停止（再開）・削除 ─────
@@ -1503,7 +1539,7 @@
   $("tabrl").addEventListener("click", function () { showTab("rl"); });
   $("tabrb").addEventListener("click", function () { showTab("rb"); });
   // ───── 追加のタブ（editor_tabs.js）：賞品・ポイント／デザイン／BAN/PICKのルール設定 など。ボタンは、その場で保存する ─────
-  var CURX = null, XOPEN = {}, K = { open: function (k, v) { if (v === undefined) return !!XOPEN[k]; XOPEN[k] = !!v; return !!v; }, el: el, data: function () { return data; }, send: function (ops, busy) { brSend(ops, busy); }, msg: function (c, t) { setResult(c, t); }, redraw: function () { if (CURX) xrender(CURX); } };
+  var CURX = null, XOPEN = {}, XSTATE = {}, K = { state: function (k, init) { if (!XSTATE[k]) XSTATE[k] = init; return XSTATE[k]; }, open: function (k, v) { if (v === undefined) return !!XOPEN[k]; XOPEN[k] = !!v; return !!v; }, el: el, data: function () { return data; }, send: function (ops, busy) { brSend(ops, busy); }, msg: function (c, t) { setResult(c, t); }, redraw: function () { if (CURX) xrender(CURX); } };
   function xrender(id) {
     if (!XTAB[id]) return; var root = $("xbody-" + id), keep = window.scrollY; root.textContent = "";
     try { XTAB[id].render(root, K); } catch (e) { root.appendChild(el("div", "note", "⚠ このタブを表示できませんでした：" + e.message)); }

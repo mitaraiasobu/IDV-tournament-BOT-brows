@@ -156,7 +156,46 @@
         mc.appendChild(d);
       });
       root.appendChild(mc);
-      root.appendChild(el("div", "note", "キャラがPICKされたときに出す画像・動画（衣装の設定）は、まだブラウザでは設定できません（Discordの「🎨 ブラウザデザイン」→「👗 衣装の設定」）。"));
+      // 衣装
+      var CD = (K.data() || {}).costumes || {}, cs = box(el, "👗 衣装の設定（キャラごと）", "キャラがPICKされたあと、選手に、どの衣装かを聞きます（「⚙ 大会設定」の「使用する衣装を聞く」がオンのとき）。衣装ごとに、PICKされたときに画面いっぱいに出す画像・動画を決められます（無ければ、何も起こりません）。1キャラ" + (CD.max || 20) + "個まで。「その他」は、最後に自動で付きます。");
+      if (!CD.enabled) cs.appendChild(el("div", "note", "※ いまは、「使用する衣装を聞く」がオフです（衣装を登録しても、聞きません）。"));
+      (CD.chars || []).forEach(function (ch) {
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!K.open("cs:" + ch.char); d.addEventListener("toggle", function () { K.open("cs:" + ch.char, d.open); });
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = ch.name + "（衣装" + ch.costumes.length + "個）"; d.appendChild(sm);
+        ch.costumes.forEach(function (c) {
+          var w = el("div", ""); w.style.cssText = "border-top:1px dashed var(--line);padding-top:6px;margin-top:6px";
+          var h = el("div", "", "👗 " + c.name); h.style.fontWeight = "800"; w.appendChild(h);
+          mediaForm(el, K, w, c.media, "PICKされたときの画像・動画のURL（空＝何も起こらない）", "https://…",
+            function (u, s) { K.send([{ op: "costume_media", char: ch.char, id: c.id, url: u, start: s }], "演出を保存しています…"); },
+            function () { K.send([{ op: "costume_media", char: ch.char, id: c.id, url: "" }], "演出を消しています…"); });
+          var dl = el("button", "", "🗑 この衣装を消す"); dl.type = "button"; dl.style.color = "#ff7070";
+          dl.addEventListener("click", function () { if (confirm("衣装「" + c.name + "」を消します。よろしいですか？")) K.send([{ op: "costume_remove", char: ch.char, id: c.id }], "消しています…"); });
+          w.appendChild(dl); d.appendChild(w);
+        });
+        cs.appendChild(d);
+      });
+      var CA = K.state("costume", { char: "", name: "", url: "", start: "" }), ca = el("div", ""); ca.style.cssText = "border-top:1px solid var(--line);margin-top:10px;padding-top:8px";
+      ca.appendChild(el("div", "", "＋ 衣装を足す")).style.fontWeight = "800";
+      var copts = [["", "キャラを選ぶ"]].concat(((CD.pick || {}).survivor || []).map(function (c) { return [c[0], "サバイバー：" + c[1]]; })).concat(((CD.pick || {}).hunter || []).map(function (c) { return [c[0], "ハンター：" + c[1]]; }));
+      ca.appendChild(field(el, "キャラ", sel(el, copts, CA.char, function (v) { CA.char = v; })));
+      var ni = inp(el, CA.name, 30, "衣装の名前（例：初期衣装）"); ni.addEventListener("input", function () { CA.name = ni.value; }); ca.appendChild(field(el, "衣装の名前", ni));
+      var ui2 = inp(el, CA.url, 500, "https://…（空でもよい）"); ui2.addEventListener("input", function () { CA.url = ui2.value; }); ca.appendChild(field(el, "PICKされたときの画像・動画のURL（任意）", ui2));
+      var si2 = inp(el, CA.start, 12, "00:00:00"); si2.style.maxWidth = "14em"; si2.addEventListener("input", function () { CA.start = si2.value; }); ca.appendChild(field(el, "再生を始める位置（任意）", si2));
+      var car = el("div", "row"), cab = el("button", "primary", "＋ 衣装を足す"); cab.type = "button";
+      cab.addEventListener("click", function () { if (!CA.char || !CA.name.trim()) { K.msg("ng", "⚠ キャラと衣装の名前を入れてください。"); return; } var o = { op: "costume_add", char: CA.char, name: CA.name, url: CA.url, start: CA.start }; CA.name = ""; CA.url = ""; CA.start = ""; K.send([o], "衣装を足しています…"); });
+      car.appendChild(cab); ca.appendChild(car); cs.appendChild(ca);
+      if ((CD.sources || []).length) {
+        var cp = el("div", ""); cp.style.cssText = "border-top:1px solid var(--line);margin-top:10px;padding-top:8px";
+        cp.appendChild(el("div", "", "📥 ほかの大会から（同じDiscordサーバーの大会だけ。同じ名前の衣装は、いまのものを残します）")).style.fontWeight = "800";
+        var CP = K.state("costume_copy", { from: String(CD.sources[0].tid) });
+        cp.appendChild(field(el, "コピー元の大会", sel(el, CD.sources.map(function (x) { return [x.tid, x.name + "（" + x.chars + "キャラ）"]; }), CP.from, function (v) { CP.from = v; })));
+        var cr2 = el("div", "row"), cb1 = el("button", "", "📥 この大会の衣装を、全部コピー"); cb1.type = "button";
+        cb1.addEventListener("click", function () { K.send([{ op: "costume_copy", from: CP.from }], "コピーを頼んでいます…"); });
+        var cb2 = el("button", "", "📚 全大会の衣装を、統合して適用"); cb2.type = "button";
+        cb2.addEventListener("click", function () { if (confirm("このDiscordサーバーの、ほかの大会の衣装の設定を、すべて、この大会に足します。よろしいですか？")) K.send([{ op: "costume_merge" }], "統合を頼んでいます…"); });
+        cr2.appendChild(cb1); cr2.appendChild(cb2); cp.appendChild(cr2); cs.appendChild(cp);
+      }
+      root.appendChild(cs);
     }
   });
 
