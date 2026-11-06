@@ -160,7 +160,7 @@
     }).join("\n");
   }
   function inl(n) {                                                                   // 1つの要素の中身を、記号つきの文字に（改行は \n）
-    if (n.nodeType === 3) return n.nodeValue.replace(/ /g, " ").replace(/​/g, "").replace(/\r?\n/g, " ");
+    if (n.nodeType === 3) return n.nodeValue.replace(/ /g, " ").replace(/​/g, "").replace(/\r\n?/g, "\n");          // 編集欄の中の改行（貼りつけ・スマホの改行など）は、改行のまま（空白にすると、行がつながってしまう）
     if (n.nodeType !== 1) return "";
     var tg = n.tagName.toLowerCase();
     if (tg === "br") return "\n";
