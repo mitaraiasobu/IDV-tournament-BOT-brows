@@ -948,6 +948,10 @@
       });
       pn.appendChild(b);
     });
+    if (D && D.rulebook && /^[A-Za-z0-9]{12}$/.test(D.rulebook)) {                     // 大会ルール（ルールを全部まとめたページ）：別の画面で開く
+      var rbl = el("a", "", "📖 大会ルール（全部のルール） ↗"); rbl.href = "rulebook.html?t=" + D.rulebook; rbl.target = "_blank"; rbl.rel = "noopener";
+      rbl.style.cssText = "display:block;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;margin-top:4px"; pn.appendChild(rbl);
+    }
     document.body.appendChild(pn);
   }
   var KIND = "", APPLY_MSG = "", INQ_TEXT = "", INQ_URL = "";

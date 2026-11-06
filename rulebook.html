@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<!-- page-rev: 2026-11-06a -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大会ルール</title>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https:; frame-src 'self'; base-uri 'none'; form-action 'none'">
+<!--
+  大会ルールのページ（どの大会にも共通の1枚）。
+  ・URLの ?t=（公開用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 /rulebook.json（BOTが書いた、大会ルール）を読む。
+  ・タブは、右上の「☰ メニュー」の中。セクションは、読み終わったら折りたためる（どれを読んだかは、この端末に覚える。中身が変わったら、もう一度「未読」）。
+  ・BAN/PICK・トーナメント表のタブは、それぞれのページを、そのまま中に出す。
+  ・本文の [[タブの名前]] は、そのタブへのリンク。
+-->
+<style>
+  :root { color-scheme: dark; --bg: #12141b; --panel: #1b1e28; --panel2: #232838; --text: #e8eaf2; --sub: #9aa1b5; --line: #2c3142; --accent: #6f95ff; --ok: #45c07c; --ng: #ff7070; --link: #ffd54a; }
+  :root[data-theme="light"] { color-scheme: light; --bg: #f6f7fb; --panel: #ffffff; --panel2: #eef1f8; --text: #1d2130; --sub: #5e6478; --line: #dde1ec; --accent: #3b6ee8; --ok: #1f9d55; --ng: #d64545; --link: #1a56c4; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Noto Sans JP", system-ui, sans-serif; }
+  a { color: var(--link); font-weight: 700; }
+  button { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.go { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 800; }
+  header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .hd { max-width: 900px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .hd .tt { flex: 1; min-width: 0; }
+  .hd .tt .sm { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hd .tt .now { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hd .bt { display: flex; gap: 6px; flex: none; }
+  #themebtn { font-size: 16px; line-height: 1; }
+  @media (max-width: 480px) { #sharebtn .lb { display: none; } .hd { gap: 6px; padding: 8px 10px; } .hd .bt button { padding: 8px 10px; } }
+  main { max-width: 900px; margin: 0 auto; padding: 12px 16px 60px; }
+  .msg { color: var(--sub); padding: 30px 0; text-align: center; line-height: 1.7; }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 4px 0 12px; }
+  .tools .prog { color: var(--sub); font-size: 13px; margin-right: auto; }
+  details.sec { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; }
+  details.sec > summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  details.sec > summary .arw { flex: none; width: 1em; color: var(--sub); transition: transform .15s; }
+  details.sec[open] > summary .arw { transform: rotate(90deg); }
+  details.sec > summary .st { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  details.sec > summary .rd { flex: none; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+  .rd.ok { color: var(--ok); border-color: var(--ok); } .rd.new { color: var(--link); border-color: var(--link); }
+  details.sec.read > summary .st { color: var(--sub); }
+  .body { padding: 0 16px 14px; line-height: 1.8; font-size: 15px; overflow-wrap: anywhere; }
+  .body .done { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .md h3 { font-size: 17px; margin: 12px 0 4px; } .md h4 { font-size: 16px; margin: 10px 0 4px; } .md h5 { font-size: 15px; margin: 8px 0 2px; }
+  .md .li { padding-left: 1.2em; text-indent: -1.2em; } .md .li2 { padding-left: 2.4em; text-indent: -1.2em; }
+  .md .bq { border-left: 3px solid var(--line); padding-left: 10px; color: var(--sub); }
+  .frame { width: 100%; height: calc(100vh - 130px); min-height: 480px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  .openfull { font-size: 13px; color: var(--sub); margin: 0 0 8px; }
+  /* メニュー */
+  #menu { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.45); display: flex; justify-content: flex-end; }
+  #menu[hidden] { display: none; }
+  #menu .pn { width: min(360px, 92vw); height: 100%; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+  #menu .ph { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 800; }
+  #menu .tb { text-align: left; display: flex; align-items: center; gap: 8px; padding: 12px; font-size: 15px; }
+  #menu .tb .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  #menu .tb .c { flex: none; font-size: 12px; color: var(--sub); }
+  #menu .tb .c.all { color: var(--ok); font-weight: 800; }
+  #menu .tb.on { border-color: var(--accent); background: var(--panel2); box-shadow: inset 4px 0 0 var(--accent); }
+  #menu input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+  .hits { display: flex; flex-direction: column; gap: 4px; }
+  .hits button { text-align: left; font-size: 13px; }
+  .hits .w { color: var(--sub); font-size: 12px; }
+  #toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; z-index: 60; }
+  #toast[hidden] { display: none; }
+  .nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; }
+  .nav button { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "rulebook";</script>
+<header><div class="hd"><div class="tt"><div class="sm" id="title">大会ルール</div><div class="now" id="now"></div></div>
+  <div class="bt"><button type="button" id="sharebtn" hidden aria-label="共有">🔗<span class="lb"> 共有</span></button><button type="button" id="themebtn" aria-label="ライトモード・ダークモード" title="ライトモード・ダークモード">☀</button><button type="button" id="menubtn" hidden aria-label="メニュー">☰ メニュー</button></div></div></header>
+<main id="main"><div class="msg" id="msg">読み込んでいます…</div></main>
+<div id="menu" hidden></div>
+<div id="toast" hidden></div>
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(location.search), key = params.get("t") || "";
+  var D = null, TAB = 0, SIG = "", Q = "";
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } return null; }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function toast(t) { var b = document.getElementById("toast"); b.textContent = t; b.hidden = false; clearTimeout(toast.tm); toast.tm = setTimeout(function () { b.hidden = true; }, 3000); }
+
+  // ── ライト・ダーク ──
+  function applyTheme(t) { if (t === "light") document.documentElement.setAttribute("data-theme", "light"); else document.documentElement.removeAttribute("data-theme"); document.getElementById("themebtn").textContent = t === "light" ? "🌙" : "☀"; }
+  var THEME = store("rc_theme") === "light" ? "light" : "dark"; applyTheme(THEME);
+  document.getElementById("themebtn").addEventListener("click", function () { THEME = THEME === "light" ? "dark" : "light"; applyTheme(THEME); store("rc_theme", THEME); });
+
+  // ── 読んだ印（この端末に。中身が変わったら、もう一度未読） ──
+  function secId(s) { return "rb_read:" + key + ":" + hash((s.title || "") + "\n" + (s.body || "")); }
+  function isRead(s) { return store(secId(s)) === "1"; }
+  function setRead(s, v) { store(secId(s), v ? "1" : null); }
+  function tabs() { return (D && D.tabs) || []; }
+  function counts(t) { var n = 0, r = 0; (t.sections || []).forEach(function (s) { n++; if (isRead(s)) r++; }); return [r, n]; }
+
+  // ── 本文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~・> 引用）。HTMLは使わない ──
+  function goTabByName(name) {
+    var n = String(name).trim(), ts = tabs(), i;
+    for (i = 0; i < ts.length; i++) if (ts[i].title === n) return goTab(i);
+    for (i = 0; i < ts.length; i++) if (ts[i].title.indexOf(n) >= 0) return goTab(i);
+    toast("「" + n + "」のタブは見つかりません。");
+  }
+  function mdRender(text) {
+    var box = el("div", "md");
+    String(text || "").split("\n").forEach(function (line) {
+      var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
+      if (m) { node = el(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
+      else if (/^\s{2,}[-・*]\s+/.test(line)) { node = el("div", "li2"); line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
+      else if (/^\s*[-・*]\s+/.test(line)) { node = el("div", "li"); line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
+      else if (/^>\s?/.test(line)) { node = el("div", "bq"); line = line.replace(/^>\s?/, ""); }
+      else { node = el("div"); if (!line.trim()) node.style.height = ".6em"; }
+      var re = /(\[\[[^\]]+\]\]|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*]+\*|https?:\/\/[^\s　）)」]+)/g, last = 0, mm;
+      while ((mm = re.exec(line))) {
+        if (mm.index > last) node.appendChild(document.createTextNode(line.slice(last, mm.index)));
+        var t = mm[0], e2;
+        if (t.indexOf("[[") === 0) { e2 = (function (nm) { var a = el("a", "", "「" + nm + "」"); a.href = "#"; a.addEventListener("click", function (ev) { ev.preventDefault(); goTabByName(nm); }); return a; })(t.slice(2, -2)); }
+        else if (/^https?:/.test(t)) { e2 = el("a", "", t); e2.href = t; e2.target = "_blank"; e2.rel = "noopener noreferrer"; }
+        else { e2 = el(t.indexOf("**") === 0 ? "b" : t.indexOf("__") === 0 ? "u" : t.indexOf("~~") === 0 ? "s" : "i"); e2.textContent = t.replace(/^(\*\*|__|~~|\*)/, "").replace(/(\*\*|__|~~|\*)$/, ""); }
+        node.appendChild(e2); last = re.lastIndex;
+      }
+      if (last < line.length) node.appendChild(document.createTextNode(line.slice(last)));
+      box.appendChild(node);
+    });
+    return box;
+  }
+
+  // ── メニュー（タブ・検索） ──
+  function closeMenu() { document.getElementById("menu").hidden = true; }
+  function drawMenu() {
+    var mw = document.getElementById("menu"); mw.textContent = "";
+    var pn = el("div", "pn"), ph = el("div", "ph"); ph.appendChild(el("span", "", "☰ 大会ルールの目次"));
+    var x = el("button", "", "✕"); x.type = "button"; x.setAttribute("aria-label", "閉じる"); x.addEventListener("click", closeMenu); ph.appendChild(x); pn.appendChild(ph);
+    var q = el("input"); q.type = "search"; q.placeholder = "🔍 ルールを検索（例：遅刻、延長戦）"; q.value = Q; pn.appendChild(q);
+    var hits = el("div", "hits"); pn.appendChild(hits);
+    function search() {
+      hits.textContent = ""; var w = Q.trim(); if (!w) return;
+      var n = 0;
+      tabs().forEach(function (t, ti) {
+        (t.sections || []).forEach(function (s, si) {
+          var txt = (s.title || "") + "\n" + (s.body || ""), p = txt.indexOf(w);
+          if (p < 0 || n >= 30) return; n++;
+          var b = el("button"); b.type = "button"; b.appendChild(el("div", "", t.title + " ＞ " + s.title));
+          var a = Math.max(0, p - 20); b.appendChild(el("div", "w", (a > 0 ? "…" : "") + txt.slice(a, p + w.length + 30).replace(/\n/g, " ") + "…"));
+          b.addEventListener("click", function () { goTab(ti, si); }); hits.appendChild(b);
+        });
+      });
+      if (!n) hits.appendChild(el("div", "w", "見つかりませんでした（BAN/PICK・トーナメント表の中は、検索できません）。"));
+    }
+    q.addEventListener("input", function () { Q = q.value; search(); }); search();
+    tabs().forEach(function (t, i) {
+      var b = el("button", "tb" + (i === TAB ? " on" : "")); b.type = "button";
+      b.appendChild(el("span", "nm", t.title));
+      if (!t.builtin || t.sections) { var c = counts(t); if (c[1]) b.appendChild(el("span", "c" + (c[0] === c[1] ? " all" : ""), c[0] === c[1] ? "✓ 読んだ" : c[0] + "/" + c[1])); }
+      b.addEventListener("click", function () { goTab(i); }); pn.appendChild(b);
+    });
+    mw.appendChild(pn);
+  }
+  document.getElementById("menu").addEventListener("click", function (e) { if (e.target.id === "menu") closeMenu(); });
+  document.getElementById("menubtn").addEventListener("click", function () { drawMenu(); document.getElementById("menu").hidden = false; });
+  document.getElementById("sharebtn").addEventListener("click", function () {
+    var url = location.href.split("#")[0] + "#tab=" + TAB;
+    if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function () { /* やめた */ }); return; }
+    try { navigator.clipboard.writeText(url).then(function () { toast("このタブのURLをコピーしました。"); }, function () { prompt("このURLをコピーしてください", url); }); } catch (e) { prompt("このURLをコピーしてください", url); }
+  });
+
+  function goTab(i, si) {
+    closeMenu(); TAB = Math.max(0, Math.min(i, tabs().length - 1));
+    history.replaceState(null, "", location.pathname + location.search + "#tab=" + TAB);
+    render(si); window.scrollTo(0, 0);
+    if (si != null) { var t = document.getElementById("sec" + si); if (t) { t.open = true; t.scrollIntoView({ behavior: "smooth", block: "start" }); } }
+  }
+
+  // ── 表示 ──
+  function render(openIdx) {
+    var main = document.getElementById("main"), ts = tabs();
+    document.getElementById("title").textContent = (D.title ? D.title + "｜" : "") + "大会ルール";
+    document.title = (D.title ? D.title + "｜" : "") + "大会ルール";
+    document.getElementById("menubtn").hidden = false; document.getElementById("sharebtn").hidden = false;
+    main.textContent = "";
+    if (!ts.length) { main.appendChild(el("div", "msg", "まだ、大会ルールはありません。")); document.getElementById("now").textContent = ""; return; }
+    if (TAB >= ts.length) TAB = 0;
+    var t = ts[TAB];
+    document.getElementById("now").textContent = t.title;
+    if (t.builtin === "bp" || t.builtin === "bracket") {                             // BAN/PICK・トーナメント表：それぞれのページを、そのまま中に
+      var src = (t.builtin === "bp" ? "rules.html" : "index.html") + "?t=" + encodeURIComponent(key);
+      var of = el("div", "openfull"), a = el("a", "", "↗ 別の画面で大きく開く"); a.href = src; a.target = "_blank"; a.rel = "noopener"; of.appendChild(a); main.appendChild(of);
+      var f = el("iframe", "frame"); f.src = src; f.title = t.title; f.loading = "lazy"; main.appendChild(f);
+      navButtons(main); return;
+    }
+    var secs = t.sections || [], c = counts(t);
+    var tl = el("div", "tools"); tl.appendChild(el("span", "prog", secs.length ? (c[0] === c[1] ? "✓ このタブは全部読みました" : "読んだ：" + c[0] + " / " + c[1]) : ""));
+    var oa = el("button", "", "すべて開く"); oa.type = "button"; oa.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = true; }); });
+    var ca = el("button", "", "すべてたたむ"); ca.type = "button"; ca.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = false; }); });
+    tl.appendChild(oa); tl.appendChild(ca);
+    if (c[0]) { var rs = el("button", "", "未読に戻す"); rs.type = "button"; rs.addEventListener("click", function () { secs.forEach(function (s) { setRead(s, false); }); render(); }); tl.appendChild(rs); }
+    main.appendChild(tl);
+    if (!secs.length) main.appendChild(el("div", "msg", "このタブには、まだ何も書かれていません。"));
+    var firstUnread = -1; secs.forEach(function (s, i) { if (firstUnread < 0 && !isRead(s)) firstUnread = i; });
+    secs.forEach(function (s, i) {
+      var rd = isRead(s), d = el("details", "sec" + (rd ? " read" : "")); d.id = "sec" + i;
+      d.open = openIdx != null ? openIdx === i : (!rd && (secs.length <= 3 || i === firstUnread));   // 未読の最初の1つを開いておく（少なければ、未読は全部）
+      var sm = el("summary"); sm.appendChild(el("span", "arw", "▶")); sm.appendChild(el("span", "st", s.title));
+      sm.appendChild(el("span", "rd " + (rd ? "ok" : "new"), rd ? "✓ 読んだ" : "未読"));
+      d.appendChild(sm);
+      var bd = el("div", "body"); bd.appendChild(mdRender(s.body));
+      var dn = el("div", "done"), db = el("button", rd ? "" : "go", rd ? "たたむ" : "✓ 読み終わった（たたむ）"); db.type = "button";
+      db.addEventListener("click", function () {
+        setRead(s, true); var nx = -1; for (var j = i + 1; j < secs.length; j++) if (!isRead(secs[j])) { nx = j; break; }
+        render(nx >= 0 ? nx : -1);
+        var tgt = document.getElementById("sec" + (nx >= 0 ? nx : i)); if (tgt) tgt.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (nx < 0) { var c2 = counts(t); if (c2[0] === c2[1]) toast("✓ 「" + t.title + "」を全部読みました。"); }
+      });
+      dn.appendChild(db); bd.appendChild(dn); d.appendChild(bd); main.appendChild(d);
+    });
+    navButtons(main);
+  }
+  function navButtons(main) {                                                         // 前のタブ・次のタブ
+    var ts = tabs(), nv = el("div", "nav");
+    if (TAB > 0) { var p = el("button", "", "◀ " + ts[TAB - 1].title); p.type = "button"; p.addEventListener("click", function () { goTab(TAB - 1); }); nv.appendChild(p); } else nv.appendChild(el("span"));
+    if (TAB < ts.length - 1) { var n = el("button", "go", ts[TAB + 1].title + " ▶"); n.type = "button"; n.addEventListener("click", function () { goTab(TAB + 1); }); nv.appendChild(n); }
+    main.appendChild(nv);
+  }
+
+  // ── 読み込み（ときどき読み直す。変わったら、表示し直す） ──
+  var hm = /tab=(\d+)/.exec(location.hash); if (hm) TAB = parseInt(hm[1], 10) || 0;
+  function load() {
+    var base = window.TOURNAMENT_DATA_BASE;
+    if (!base) { document.getElementById("msg").textContent = "データの場所が設定されていません。"; return; }
+    if (!/^[A-Za-z0-9]{12}$/.test(key)) { document.getElementById("msg").textContent = "このページは、大会のURL（主催者から案内されたもの）から開いてください。"; return; }
+    function tick() {
+      fetch(base + key + "/rulebook.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.tabs) { if (!D) document.getElementById("msg").textContent = "まだ、大会ルールはありません。"; return; }
+        var sg = JSON.stringify(d); if (sg === SIG) return; SIG = sg;
+        var first = !D; D = d;
+        if (first || !document.getElementById("menu").hidden || !document.querySelector("iframe")) render();   // 中に出したページ（BAN/PICK・トーナメント表）は、開き直さない
+      }).catch(function () { if (!D) document.getElementById("msg").textContent = "データを読み込めませんでした。しばらくしてからもう一度開いてください。"; });
+    }
+    tick(); setInterval(tick, 60000);
+  }
+  if (window.RULEBOOK_DATA_EMBEDDED) { D = window.RULEBOOK_DATA_EMBEDDED; render(); } else load();
+})();
+</script>
+</body>
+</html>
