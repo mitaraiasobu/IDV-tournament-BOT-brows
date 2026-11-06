@@ -346,11 +346,42 @@
 
   // ───── 🎙 スタッフ・日程 ─────
   var SF = { dates: null, times: null };
+  // ───── 🎙 スタッフ・日程：管理者ロール・情報閲覧ロール・ロールの同期 ─────
+  function renderRoles(root, K) {
+    var el = K.el, R = (K.data() || {}).roles || {}, RS = K.state("roles", { a: null, v: null });
+    var c = box(el, "🛡 ロール", "Discordの「🎙 スタッフ設定→🛡 管理者ロール／🎙 情報閲覧ロール」「🎭 ロールの同期」と同じです。ロールの名前は、BOTが1分ごとにDiscordから読み直します（すでにあるロールから選びます）。");
+    if (!R.ready) c.appendChild(el("div", "note", "⏳ ロールの一覧は、まだ届いていません（BOTが動いていれば、1分ほどで届きます。開き直してください）。"));
+    var opts = [["", "（指定しない）"]].concat((R.roles || []).map(function (r) { return [r.t, "@" + r.name]; }));
+    function one(key, cur, label, note, op) {
+      var w = el("div", ""); w.style.margin = "8px 0";
+      w.appendChild(el("div", "", label + "：いま「" + (cur.name ? "@" + cur.name : "未設定") + "」"));
+      w.appendChild(el("div", "note", note));
+      var o = opts.slice(); if (cur.t && !opts.some(function (x) { return x[0] === cur.t; })) o.push([cur.t, cur.name]);
+      var row = el("div", "row"); row.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
+      row.appendChild(sel(el, o, RS[key] != null ? RS[key] : cur.t, function (v) { RS[key] = v; }));
+      var b = el("button", "primary", "保存"); b.type = "button";
+      b.addEventListener("click", function () { var v = RS[key] != null ? RS[key] : cur.t; if (v === cur.t) { K.msg("ok", "変わっていません。"); return; } if (confirm(label + "を「" + (v ? (o.filter(function (x) { return x[0] === v; })[0] || [0, ""])[1] : "指定しない") + "」にします。よろしいですか？")) { RS[key] = null; K.send([{ op: op, role: v }], "保存中…"); } });
+      row.appendChild(b); w.appendChild(row); c.appendChild(w);
+    }
+    one("a", R.admin || {}, "管理者ロール（この大会）", "このロールの人は、真の管理者と同じように、この大会の設定・運用ができます。キャスター・モデレーターの応募が来たときの、メンション先にもなります。変えると、BOTが「BOT管理」チャンネルに知らせます。", "role_admin_set");
+    one("v", R.viewer || {}, "情報閲覧ロール（全大会で共通）", "管理者のほかに、このロールの人が、選手・チームの情報を見られます。", "role_viewer_set");
+    var S = R.sync || {}, sw = el("div", ""); sw.style.marginTop = "10px";
+    sw.appendChild(el("div", "", "🎭 ロールの同期"));
+    sw.appendChild(el("div", "note", "大会・チームのロールを用意して、登録済みの全選手に付け直します（BOTが止まっていた間の抜けなどの補修）。"));
+    var sb = el("button", "", S.waiting ? "⏳ 同期しています…" : "🎭 ロールを同期する"); sb.type = "button"; sb.disabled = !!S.waiting;
+    sb.addEventListener("click", function () { K.send([{ op: "role_sync" }], "頼んでいます…"); });
+    sw.appendChild(sb);
+    if (S.text) { var at = S.at ? new Date(S.at * 1000) : null; sw.appendChild(el("div", "note", "前回の結果" + (at ? "（" + (at.getMonth() + 1) + "/" + at.getDate() + " " + ("0" + at.getHours()).slice(-2) + ":" + ("0" + at.getMinutes()).slice(-2) + "）" : "") + "：")); var pr = el("div", ""); pr.style.cssText = "white-space:pre-wrap;font-size:14px"; pr.textContent = String(S.text).replace(/\*\*/g, ""); sw.appendChild(pr); }
+    c.appendChild(sw);
+    root.appendChild(c);
+  }
+
   TABS.push({
     id: "sf", label: "🎙 スタッフ・日程",
     intro: "選手・キャスター・モデレーターの応募で聞く「参加できる日・時間帯」の候補と、キャスター・モデレーターの応募の一覧（採用・不採用）です。応募を受け付けるか・締切は、「⚙ 大会設定」で決めます。採用・不採用は、Discordのボタンと同じ処理（ロールの付与・お知らせ）を、BOTがします。",
     render: function (root, K) {
       var el = K.el, D = (K.data() || {}).staff || {};
+      renderRoles(root, K);
       // 候補日・時間帯
       var c = box(el, "📅 参加できる日・時間帯の候補", "1行に1つ（または「、」で区切る）。例：2026-12-05 ／ 夜（20時〜）。空にすると、聞きません。");
       function area(key, rows) {
