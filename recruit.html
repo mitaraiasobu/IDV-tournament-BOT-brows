@@ -419,7 +419,7 @@
     }
     if (TUT === "rules" && rulesOk()) { setTut("profile_intro"); tutStep(); return; }
     if (TUT === "rules" && rbGate()) {                                                // 読み終わるまで、大会ルールのページへ
-      tutPop(rbGate().loading ? "大会ルールを読み込んでいます…" : "まずは、大会ルールを読みましょう！\nすべて「既読」にすると、「エントリーできる状態になりました！」と表示されます。", rbGate().loading ? [] : [["大会ルールを開く", openRulebook]]);
+      tutPop(rbGate().loading ? "大会ルールを読み込んでいます…" : "まずは、大会ルールを読みましょう！\nすべて「既読」にすると、「エントリーできる状態になりました！」と表示されます。", rbGate().loading ? [["もう一度読み込む", function () { loadRulebook(true); }]] : [["大会ルールを開く", openRulebook]]);
       return;
     }
     if (TUT === "rules") {                                                            // まず、大会のルールを読む
@@ -496,16 +496,23 @@
   }
   var RBDOC = null, RBSTATE = "", RBSIG = "", RBAT = 0;                                           // 大会ルール（ルールを全部まとめたページ）：読み込み状態と中身
   function rbKey() { return (D && /^[A-Za-z0-9]{12}$/.test(D.rulebook || "")) ? D.rulebook : ""; }
-  function loadRulebook() {
-    var k = rbKey(); if (!k || RBSTATE === "loading") return;
+  var RBSEQ = 0;
+  function loadRulebook(force) {
+    var k = rbKey(); if (!k) return;
     if (me) { try { localStorage.setItem("rb_back:" + k, location.href); } catch (e) { /* そのまま */ } }       // 大会ルールのページから、ここに戻ってこられるように（行き来ボタン）
-    var first = RBSTATE === ""; if (!first && Date.now() - RBAT < 15000) return;                  // ルールの取得は、15秒おきまで（ページの更新は4秒おき）
-    RBAT = Date.now(); RBSTATE = "loading";
-    fetch(BASE + k + "/rulebook.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+    var first = RBSTATE === "";
+    if (!force && RBSTATE === "loading" && Date.now() - RBAT < 10000) return;                      // 読み込み中。10秒たっても返事がなければ、やり直す（止まったままにしない）
+    if (!force && !first && RBSTATE !== "loading" && Date.now() - RBAT < 15000) return;           // ルールの取得は、15秒おきまで（ページの更新は4秒おき）
+    RBAT = Date.now(); RBSTATE = "loading"; var my = ++RBSEQ;
+    var ctl = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
+    function fail() { clearTimeout(tm); if (my !== RBSEQ) return; RBSTATE = "done"; if (first && me) render(); }                  // 読み込めなかった：前の内容のまま（無ければ、前からの「同意して進む」）
+    fetch(BASE + k + "/rulebook.json?t=" + Date.now(), { cache: "no-store", signal: ctl ? ctl.signal : undefined }).then(function (r) { return r.json(); }).then(function (d) {
+      clearTimeout(tm); if (my !== RBSEQ) return;
       var doc = d && d.tabs ? d : null, sg = JSON.stringify(doc); RBDOC = doc; RBSTATE = "done";
-      if (first || sg !== RBSIG) { RBSIG = sg; if (me) render(); }
-    }).catch(function () { RBDOC = null; RBSTATE = "done"; });
+      if (first || sg !== RBSIG) { RBSIG = sg; if (me) { try { render(); } catch (e) { if (window.console) console.error(e); } } }
+    }, fail).catch(fail);
   }
+  window.addEventListener("pageshow", function (e) { if (e.persisted) { RBSTATE = ""; loadRulebook(true); } });       // 「戻る」で戻ってきたとき：止まった読み込みを、やり直す
   function rbGate() {                                                                  // 大会ルールを全部「既読」にしないと、エントリーできない。無ければ null（前からのルールの同意）
     if (!rbKey() || RBSTATE === "") return null;
     if (RBSTATE === "loading" && !RBDOC) return { loading: true, read: 0, total: 0 };
@@ -526,6 +533,7 @@
     var g = rbGate();
     if (g) {
       var c0 = el("div", "card"); c0.appendChild(el("h2", "", "📖 大会ルールを読んでください"));
+      if (g.loading) { var rr0 = el("div", "row"), rb1 = el("button", "", "もう一度読み込む"); rb1.type = "button"; rb1.addEventListener("click", function () { loadRulebook(true); }); rr0.appendChild(rb1); setTimeout(function () { c0.appendChild(rr0); }, 0); }
       c0.appendChild(el("div", "lead", g.loading ? "大会ルールを読み込んでいます…" : "エントリーするには、大会ルールをすべて読んで「既読」にする必要があります。すべて読み終わると、「エントリーできる状態になりました！」と表示されて、エントリーに進めます。"));
       if (!g.loading) {
         var pr = el("div", "msg", "読んだ：" + g.read + " / " + g.total); pr.style.fontWeight = "800"; c0.appendChild(pr);
