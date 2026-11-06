@@ -149,6 +149,7 @@
   <main>
     <div id="result"></div>
     <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 チームとメンバー募集</button><button type="button" id="tabrl">📋 ルール・登録項目</button><button type="button" id="tabrb">📖 大会ルール</button></div>
+    <div id="viewbar" class="row" style="justify-content:flex-end;margin-top:8px" hidden></div>
     <div id="tab-set">
       <div class="note" style="margin-top:10px">大会の設定を、ここでまとめて変えられます（変えた項目は、色が付きます）。「💾 保存」で、BOTに反映します。Discordの設定画面で変えても、同じ内容になります。</div>
       <div id="setform" class="sgrid"></div>
@@ -1216,9 +1217,20 @@
     if (Math.abs(window.scrollY - keepPage) > 2) window.scrollTo(0, keepPage);
   }
   var XTAB = {};                                                                     // 追加のタブ：{名前: {label, intro, render}}
+  // 各タブの「🔗 実際のページを見る」：[ページ, 大会ルールなら開くタブの名前（の一部）, ボタンの文]
+  var VIEW = { set: ["rulebook", "", "大会ルール"], bp: ["rulebook", "BAN/PICK", "大会ルールの「BAN/PICK」"], time: ["rulebook", "全体の流れ", "大会ルールの「全体の流れ」"],
+               br: ["rulebook", "トーナメント表", "大会ルールの「トーナメント表」"], rc: ["recruit", "", "エントリーのページ"], rl: ["rulebook", "エントリーのルール", "大会ルールの「エントリーのルール」"],
+               rb: ["rulebook", "", "大会ルール"], pz: ["rulebook", "賞品", "大会ルールの「賞品」"], dz: ["live", "", "配信の画面"], bz: ["rulebook", "BAN/PICK", "大会ルールの「BAN/PICK」"],
+               sf: ["recruit", "", "エントリーのページ"], lo: ["live", "", "配信の画面"] };
+  function viewBar(name) {
+    var bar = $("viewbar"), v = VIEW[name], pages = (data && data.pages) || {}, url = v && pages[v[0]];
+    bar.textContent = ""; bar.hidden = !url; if (!url) return;
+    var a = el("a", "", "🔗 実際のページを見る（" + v[2] + "）"); a.href = url + (v[1] ? "#name=" + encodeURIComponent(v[1]) : ""); a.target = "_blank"; a.rel = "noopener";
+    a.style.cssText = "font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none"; bar.appendChild(a);
+  }
   function showTab(name) {
     Object.keys(XTAB).forEach(function (id) { $("tab-" + id).hidden = name !== id; $("tab" + id).className = name === id ? "on" : ""; });        // 追加のタブ（editor_tabs.js）
-    CURX = XTAB[name] ? name : null; if (CURX) xrender(name);
+    CURX = XTAB[name] ? name : null; if (CURX) xrender(name); viewBar(name);
     $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br"; $("tab-rc").hidden = name !== "rc"; $("tab-rl").hidden = name !== "rl"; $("tab-rb").hidden = name !== "rb";
     $("tabrb").className = name === "rb" ? "on" : "";
     $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : ""; $("tabrc").className = name === "rc" ? "on" : ""; $("tabrl").className = name === "rl" ? "on" : "";
@@ -1453,6 +1465,7 @@
     adopt(data); render();
     var wantTab = new URLSearchParams(location.search).get("tab");                         // エントリーパネルの「🛠 募集の管理」から開いたとき：「📣 チームとメンバー募集」タブ
     if (wantTab && ({ set: 1, bp: 1, time: 1, br: 1, rc: 1, rl: 1, rb: 1 }[wantTab] || XTAB[wantTab])) showTab(wantTab);
+    else viewBar("set");
     var bk = null; try { bk = JSON.parse(localStorage.getItem(backupKey()) || "null"); } catch (e) { bk = null; }
     if (bk && bk.work && confirm("保存できなかった入力のバックアップがあります（" + new Date(bk.at).toLocaleString() + "）。戻しますか？\n（戻さないときは、バックアップを消します）")) {
       P = bk.work[0]; ROUNDS = bk.work[1]; DELETED = bk.work[2]; TM = bk.work[3]; ST = bk.work[4]; render();

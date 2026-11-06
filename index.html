@@ -359,6 +359,16 @@
   var POLL_MS = 3000, last = null;
   // 配信画面（live.html）が、最後のトーナメント表として、このページを埋め込むとき（?embed=1）：優勝チームの欄に、ロゴと全選手の名前を足す（選手名は、公開データには無いので、埋め込んだ側から、受け取る）
   var EMBED = params.get("embed") === "1", champPlayers = [];
+  // 大会ルールのページの「トーナメント表」タブに入れるとき（?inbook=1）：このページの高さを、外のページに知らせる（中でスクロールさせず、大きいまま見せる）
+  //   幅が広いとき：横長の表を、幅いっぱいに（高さ＝幅×1080/1920）。スマホ（幅が狭い）とき：縦に並べた表（高さ＝中身の高さ）。
+  var INBOOK = params.get("inbook") === "1" && window.parent !== window, INBOOK_H = 0;
+  function sendH(h) {
+    h = Math.ceil(h); if (!INBOOK || !h || Math.abs(h - INBOOK_H) < 2) return; INBOOK_H = h;
+    try { window.parent.postMessage({ type: "rb_height", h: h }, location.origin); } catch (e) { /* そのまま */ }
+  }
+  if (INBOOK) {
+    try { new ResizeObserver(function () { if (document.documentElement.className === "flow") sendH(document.documentElement.scrollHeight); }).observe(document.body); } catch (e) { /* fit で送る */ }
+  }
   if (EMBED) {
     window.addEventListener("message", function (e) {
       if (e.origin !== location.origin || !e.data || e.data.type !== "champion_players" || !Array.isArray(e.data.players)) return;
@@ -400,6 +410,16 @@
     if (DETAILS) return;
     var st = document.getElementById("stage");
     var W = window.innerWidth, H = window.innerHeight;
+    if (INBOOK) {                                                // 大会ルールのページの中：高さは、こちらから決める（外のページが、それに合わせる）
+      if (W >= 700) {
+        document.documentElement.className = "stage"; layoutButton(false, false);
+        var sw = W / 1920; st.style.transform = "scale(" + sw + ")"; st.style.left = "0px"; st.style.top = "0px"; sendH(1080 * sw);
+      } else {
+        document.documentElement.className = "flow"; layoutButton(false, true);
+        st.style.transform = ""; st.style.left = ""; st.style.top = ""; setTimeout(function () { sendH(document.documentElement.scrollHeight); }, 50);
+      }
+      return;
+    }
     var portrait = W / Math.max(1, H) < 1.25;
     var flowNow = portrait && getLayout() === "flow";
     document.documentElement.className = flowNow ? "flow" : portrait ? "stage rot" : "stage";        // rot＝スマホで表を90°回しているとき
