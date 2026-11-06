@@ -10,6 +10,26 @@
   "use strict";
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
+  // ───── 読んだ印（この端末に。大会ルールのページと、エントリーのページで共通。中身が変わったら、もう一度未読） ─────
+  var MEM = {};
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function readId(pub, s) { return "rb_read:" + pub + ":" + hash((s.title || "") + "\n" + (s.body || "")); }
+  function isRead(pub, s) { var k = readId(pub, s); if (MEM[k]) return true; try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } }
+  function setRead(pub, s, v) { var k = readId(pub, s); if (v) MEM[k] = 1; else delete MEM[k]; try { if (v) localStorage.setItem(k, "1"); else localStorage.removeItem(k); } catch (e) { /* そのまま */ } }
+  function progress(pub, doc) {                                                       // 全部のタブの、セクションの数と、読んだ数（BAN/PICK・トーナメント表のタブは、数えない）
+    var n = 0, r = 0;
+    ((doc && doc.tabs) || []).forEach(function (t) { (t.sections || []).forEach(function (s) { n++; if (isRead(pub, s)) r++; }); });
+    return { read: r, total: n };
+  }
+  function logoBox() {                                                                // ロゴのテンプレート画像と、ダウンロードボタン
+    var w = el("div", "logo-tpl"); w.style.cssText = "text-align:center;margin:10px 0";
+    if (!window.LOGO_TEMPLATE) return w;
+    var i = el("img"); i.src = window.LOGO_TEMPLATE; i.alt = "ロゴのテンプレート"; i.style.cssText = "width:160px;height:160px;background:#000;border-radius:10px;display:block;margin:0 auto 8px"; w.appendChild(i);
+    var a = el("a", "", "⬇ テンプレート画像をダウンロード"); a.href = window.LOGO_TEMPLATE; a.download = "logo_template.png";
+    a.style.cssText = "display:inline-block;padding:10px 16px;border-radius:8px;background:var(--accent,#6f95ff);color:var(--on-accent,#fff);text-decoration:none;font-weight:800"; w.appendChild(a);
+    return w;
+  }
+
   // ───── 記号 → 見た目 ─────
   function rx(re, build, pageOnly) {                                                  // 正規表現で見つける
     return { page: !!pageOnly, find: function (s) { var m = re.exec(s); return m ? { i: m.index, n: m[0].length, m: m, build: build } : null; } };
@@ -54,6 +74,7 @@
   function render(text, opts) {                                                       // 本文 → 見た目。opts.edit＝編集欄に入れる形（断片を返す）。opts.tabLink＝[[タブ名]]を押したとき
     var o = opts || {}, frag = document.createDocumentFragment();
     String(text || "").split("\n").forEach(function (line) {
+      if (!o.edit && line.trim() === "{{logo_template}}") { frag.appendChild(logoBox()); return; }       // ロゴのテンプレート画像とダウンロードボタン
       var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
       if (m) { node = el(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
       else if (/^\s{2,}[-・*]\s+/.test(line)) { node = el("div", o.edit ? "" : "li2"); line = (o.edit ? "  ・ " : "・") + line.replace(/^\s*[-・*]\s+/, ""); }
@@ -154,17 +175,26 @@
   function css() {
     if (document.getElementById("rbf-css")) return;
     var s = el("style"); s.id = "rbf-css";
-    s.textContent = ".rte{border:1px solid var(--rte-line,#3a4157);border-radius:10px;margin:6px 0;position:relative}" +
-      ".rte .tbar{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border-bottom:1px solid var(--rte-line,#3a4157);background:var(--rte-bar,#232838);border-radius:10px 10px 0 0}" +
-      ".rte .tbar button{min-width:34px;padding:5px 8px;font-size:13px;line-height:1.2;border-radius:6px;cursor:pointer}" +
+    s.textContent = ".rte{border:1px solid var(--rte-line,#3a4157);border-radius:10px;margin:8px 0;position:relative;background:var(--rte-bg,transparent)}" +
+      ".rte .tbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-bottom:1px solid var(--rte-line,#3a4157);background:var(--rte-bar,#232838);border-radius:10px 10px 0 0}" +
+      ".rte .tbar button{min-width:40px;min-height:40px;padding:6px 10px;font-size:15px;line-height:1.2;border-radius:8px;cursor:pointer;touch-action:manipulation}" +
       ".rte .tbar button.on{outline:2px solid var(--rte-ac,#6f95ff);background:var(--rte-ac,#6f95ff)!important;color:var(--rte-on,#fff)!important}" +
       ".rte .tbar .sep{width:1px;background:var(--rte-line,#3a4157);margin:0 2px}" +
-      ".rte .area{min-height:90px;padding:10px 12px;line-height:1.8;font-size:15px;outline:none;border-radius:0 0 10px 10px;white-space:pre-wrap;overflow-wrap:anywhere}" +
-      ".rte .area h3{font-size:20px;margin:6px 0 2px}.rte .area h4{font-size:17px;margin:4px 0 2px}.rte .area h5{font-size:15px;margin:2px 0}" +
+      ".rte .tbar .grow{flex:1}" +
+      ".rte .area{min-height:240px;padding:14px 16px;line-height:1.85;font-size:16px;outline:none;border-radius:0 0 10px 10px;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}" +
+      ".rte .area h3{font-size:21px;margin:8px 0 3px}.rte .area h4{font-size:18px;margin:6px 0 3px}.rte .area h5{font-size:16px;margin:4px 0}" +
       ".rte .area:empty:before{content:attr(data-ph);opacity:.5}.rte .area a{color:var(--rte-link,#ffd54a);text-decoration:underline}" +
-      ".rte .pal{position:absolute;z-index:10;background:var(--rte-bar,#232838);border:1px solid var(--rte-line,#3a4157);border-radius:10px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;max-width:300px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
-      ".rte .pal .sw{width:28px;height:28px;min-width:0;padding:0;border-radius:50%;border:2px solid rgba(128,128,128,.6);cursor:pointer}" +
-      ".rte .pal .row2{display:flex;gap:6px;align-items:center;width:100%;font-size:12px;color:var(--rte-tx,#e8eaf2)}";
+      ".rte .pal{position:absolute;z-index:10;background:var(--rte-bar,#232838);border:1px solid var(--rte-line,#3a4157);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
+      ".rte .pal .sw{width:36px;height:36px;min-width:0;min-height:0;padding:0;border-radius:50%;border:2px solid rgba(128,128,128,.6);cursor:pointer}" +
+      ".rte .pal .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;font-size:13px;color:var(--rte-tx,#e8eaf2)}" +
+      ".rte .ttl{display:none;align-self:center;font-weight:800;margin-right:6px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      ".rte.full{position:fixed;left:0;top:0;right:0;bottom:0;height:100vh;height:100dvh;z-index:1000;margin:0;border-radius:0;border:0;display:flex;flex-direction:column}" +
+      ".rte.full .ttl{display:block}" +
+      ".rte.full .tbar{border-radius:0;flex:none;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}" +
+      ".rte.full .tbar button{flex:none;white-space:nowrap}" +
+      ".rte.full .area{flex:1;min-height:0;overflow-y:auto;border-radius:0;font-size:17px;padding:16px 18px 40vh}" +
+      "@media (pointer:coarse){.rte .tbar button{min-width:44px;min-height:44px}.rte .pal .sw{width:42px;height:42px}}" +
+      "@media (max-width:640px){.rte .area{min-height:300px}}";
     document.head.appendChild(s);
   }
   function editor(value, onChange, opts) {
@@ -173,7 +203,7 @@
     area.contentEditable = "true"; area.spellcheck = false; area.setAttribute("data-ph", o.placeholder || "本文");
     area.appendChild(render(value, { edit: true }));
     if (String(value || "") === "") area.textContent = "";
-    var saved = null, pal = null, btns = {};
+    var saved = null, pal = null, btns = {}, full = false;
     function keep() { var s = window.getSelection(); if (s.rangeCount && area.contains(s.getRangeAt(0).commonAncestorContainer)) saved = s.getRangeAt(0).cloneRange(); }
     function back() { area.focus(); if (saved) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(saved); } }
     function changed() { onChange(serialize(area)); refresh(); }
@@ -185,6 +215,13 @@
       bar.appendChild(b); if (key) btns[key] = b; return b;
     }
     function sep() { bar.appendChild(el("span", "sep")); }
+    if (o.title) { var ttl = el("span", "ttl", "✏ " + o.title); bar.appendChild(ttl); }
+    function setFull(on) {                                                            // 画面いっぱいに広げる（スマホで書きやすい）。広げている間は、ページの動きを止める
+      full = on; wrap.classList.toggle("full", on); btns.full.textContent = on ? "✕ 閉じる" : "⤢ 広げる";
+      try { document.documentElement.style.overflow = on ? "hidden" : ""; } catch (e) { /* そのまま */ }
+      if (on) { bar.scrollLeft = 0; area.focus(); } else { try { wrap.scrollIntoView({ block: "nearest" }); } catch (e) { /* そのまま */ } }
+    }
+    var fb0 = bt("full", "⤢ 広げる", "画面いっぱいに広げて書く（もう一度押すと、もどる）", function () { setFull(!full); }, "font-weight:800");
     function block(tag) { back(); var cur = String(document.queryCommandValue("formatBlock") || "").toLowerCase(); cmd("formatBlock", cur === tag ? "<div>" : "<" + tag + ">"); }
     bt("h3", "大", "大きい見出し（もう一度押すと、ふつうの文字）", function () { block("h3"); }, "font-weight:800;font-size:15px");
     bt("h4", "中", "中くらいの見出し", function () { block("h4"); }, "font-weight:800");
@@ -255,10 +292,11 @@
     area.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("a")) e.preventDefault(); });
     document.addEventListener("selectionchange", function () { if (document.activeElement === area) refresh(); });
     document.addEventListener("mousedown", function (e) { if (pal && !pal.contains(e.target) && e.target !== cb) closePal(); });
+    document.addEventListener("keydown", function (e) { if (full && e.key === "Escape") setFull(false); });
     wrap.appendChild(bar); wrap.appendChild(area);
     wrap.setColors = function (th) {                                                    // 編集欄も、ページと同じ色で（無ければ、いつもの色）
       var t = theme(th) || theme({ bg: "#12141b", accent: "#6f95ff" });
-      area.style.background = t.vars["--bg"]; area.style.color = t.vars["--text"];
+      area.style.background = t.vars["--bg"]; area.style.color = t.vars["--text"]; wrap.style.setProperty("--rte-bg", t.vars["--bg"]);
       wrap.style.setProperty("--rte-bar", t.vars["--panel2"]); wrap.style.setProperty("--rte-line", t.vars["--line"]); wrap.style.setProperty("--rte-tx", t.vars["--text"]);
       wrap.style.setProperty("--rte-ac", t.vars["--accent"]); wrap.style.setProperty("--rte-on", t.vars["--on-accent"]);
       [].slice.call(bar.querySelectorAll("button")).forEach(function (b) { b.style.background = t.vars["--panel"]; b.style.color = t.vars["--text"]; b.style.border = "1px solid " + t.vars["--line"]; });
@@ -268,5 +306,5 @@
     return wrap;
   }
 
-  window.RBF = { render: render, serialize: serialize, editor: editor, theme: theme, applyTheme: applyTheme, COLORS: COLORS };
+  window.RBF = { render: render, serialize: serialize, editor: editor, theme: theme, applyTheme: applyTheme, COLORS: COLORS, isRead: isRead, setRead: setRead, progress: progress };
 })();

@@ -44,6 +44,7 @@
   .chips label.hit { border-color: var(--hit); box-shadow: 0 0 0 1px var(--hit); }
   details.more { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; } details.more summary { cursor: pointer; font-weight: 800; }
   details.more .frm { margin-top: 8px; }
+  .wantsbox { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; } .wantsbox .wl { font-weight: 800; } .wantsbox .frm { margin-top: 8px; }
   .chips.sm label { font-size: 12px; padding: 2px 8px; }
   .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
   .modes button { padding: 18px 12px; font-size: 17px; font-weight: 800; line-height: 1.5; } .modes button small { display: block; font-size: 12px; font-weight: 400; color: var(--sub); margin-top: 4px; }
@@ -147,6 +148,7 @@
   <div id="grid"></div>
   <div class="empty" id="empty" hidden>いま、メンバーを募集しているチームはありません。</div>
 </main>
+<script src="rbfmt.js"></script>
 <script>
 (function () {
   function applyTheme(t) {                                                            // 基本はダーク。ライトにもできる（この端末に覚える）
@@ -178,6 +180,7 @@
   var BASE = window.TOURNAMENT_DATA_BASE || "", DATA_URL = BASE + key + ".json", INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";
   var D = null, OPEN = null, BUSY = false, WAIT = null, ORDER = null, FORM = null;
   var FN = { survivor: "サバイバー", hunter: "ハンター", both: "両陣営" };
+  document.addEventListener("change", function (e) { var t = e.target; if (t && t.tagName === "SELECT" && t.blur) t.blur(); }, true);     // 選び終えたら、カーソルを外す（そうしないと、「書いている途中」と見なされて、描き直しが飛ばされる）
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function arr(x) { return Array.isArray(x) ? x : []; }                                // 空のリストは、データ置き場（Firebase）で消えて届かない
   function U() { return me && D && D.users ? D.users[me.mark] || null : null; }
@@ -217,8 +220,9 @@
     var sv = arr(w.sr), hu = [];
     var ex = t.state === "extra", ef = t.extra_faction || "both";
     var wantS = n[0] > 0 || (ex && ef !== "hunter"), wantH = n[1] > 0 || (ex && ef !== "survivor");
-    if (wantS || sv.length) lines.push(["サバイバー" + (n[0] ? n[0] + "人" : "")].concat(sv).join("／"));
-    if (wantH || hu.length) lines.push(["ハンター" + (n[1] ? n[1] + "人" : "")].concat(hu).join("／"));
+    var rkl = t.rkl || {};                                                              // 段位の制限は、陣営ごと（「6段Ⅴ〜」）
+    if (wantS || sv.length) lines.push(["サバイバー" + (n[0] ? n[0] + "人" : "")].concat(sv).concat(rkl.s ? [rkl.s] : []).join("／"));
+    if (wantH || hu.length) lines.push(["ハンター" + (n[1] ? n[1] + "人" : "")].concat(hu).concat(rkl.h ? [rkl.h] : []).join("／"));
     var cn = arr(w.ch).map(function (id) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; return x ? x[1] : ""; }).filter(Boolean);
     if (cn.length) lines.push("キャラ：" + cn.join("・"));
     var tps = arr(w.tp).filter(function (x) { return x !== "初心者歓迎"; });
@@ -258,23 +262,26 @@
     if (f === "any") return n[0] > 0 || n[1] > 0;                                      // どちらでも：片方だけの募集にも合う
     return (n[0] > 0 && f === "survivor") || (n[1] > 0 && f === "hunter");
   }
+  function rankOkFor(t, f, sr, hr) {                                                  // 段位の制限（陣営ごと：サバイバーの段位はサバイバーの制限、ハンターの段位はハンターの制限）に合うか
+    var rk = arr(t.rk), rh = t.rkh ? arr(t.rkh) : rk, items = [];
+    if (f === "survivor" || f === "both") items.push([sr, rk]);
+    if (f === "hunter" || f === "both") items.push([hr, rh]);
+    for (var i = 0; i < items.length; i++) {
+      var v = items[i][0], r = items[i][1];
+      if (r[0] == null && r[1] == null) continue;
+      if (v == null) return false;
+      if (r[0] != null && v < r[0]) return false;
+      if (r[1] != null && v > r[1]) return false;
+    }
+    return true;
+  }
   function limitsOk(t, f, sr, hr) {                                                   // 段位・閲歴の制限に合うか（陣営を変えたときにも使う）
     if (t.friends) return true;
-    var lv = arr(t.lv), rk = arr(t.rk);
+    var lv = arr(t.lv);
     if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
     if (lv[0] != null && me.lv < lv[0]) return false;
     if (lv[1] != null && me.lv > lv[1]) return false;
-    var mine = [];
-    if (f === "survivor" || f === "both") mine.push(sr);
-    if (f === "hunter" || f === "both") mine.push(hr);
-    if (rk[0] != null || rk[1] != null) {
-      for (var i = 0; i < mine.length; i++) {
-        if (mine[i] == null) return false;
-        if (rk[0] != null && mine[i] < rk[0]) return false;
-        if (rk[1] != null && mine[i] > rk[1]) return false;
-      }
-    }
-    return true;
+    return rankOkFor(t, f, sr, hr);
   }
   function fits(t) {                                                                   // 自分に合うか（段位・閲歴の制限・求めている陣営）
     if (t.state !== "open" && t.state !== "extra") return false;
@@ -283,21 +290,11 @@
     if (isMgr()) return !!t.locked;                                                     // マネージャー：応募パスワードのある募集だけ
     if (t.friends) return true;                                                        // 友達だけ：パスワードを知っていれば
     if (!factionOk(t, myF())) return false;
-    var lv = arr(t.lv), rk = arr(t.rk);
+    var lv = arr(t.lv);
     if ((lv[0] != null || lv[1] != null) && me.lv == null) return false;
     if (lv[0] != null && me.lv < lv[0]) return false;
     if (lv[1] != null && me.lv > lv[1]) return false;
-    var mine = [];
-    if (f === "survivor" || f === "both") mine.push(me.s);
-    if (f === "hunter" || f === "both") mine.push(me.h);
-    if (rk[0] != null || rk[1] != null) {
-      for (var i = 0; i < mine.length; i++) {
-        if (mine[i] == null) return false;
-        if (rk[0] != null && mine[i] < rk[0]) return false;
-        if (rk[1] != null && mine[i] > rk[1]) return false;
-      }
-    }
-    return true;
+    return rankOkFor(t, f, me.s, me.h);
   }
   function shareUrl() { return location.origin + location.pathname + "?t=" + encodeURIComponent(key) + "&inv=1"; }
   function sharePrompt() {                                                           // 共有用（Discordにまだ入っていない人向け）のURL
@@ -362,6 +359,7 @@
   function mdRender(text) {                                                          // ルールの文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~）を、安全に（HTMLは使わない）
     var box = document.createElement("div"); box.className = "md";
     String(text || "").split("\n").forEach(function (line) {
+      if (line.trim() === "{{logo_template}}") { box.appendChild(RBF.render(line)); return; }       // ロゴのテンプレート画像と、ダウンロードボタン
       var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
       if (m) { node = document.createElement(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
       else if (/^\s*[-・*]\s+/.test(line)) { node = document.createElement("div"); node.className = "li"; line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
@@ -413,10 +411,15 @@
     }
     if (TUT === "welcome") {
       tutPop("こんにちは！\nエントリーブラウザへようこそ！\nあなたは何にエントリーしたいですか？", [
-        ["🎮 選手", function () { setTut(rulesText().trim() && !rulesOk() ? "rules" : "profile_intro"); tutStep(); }],
+        ["🎮 選手", function () { setTut(!rulesOk() ? "rules" : "profile_intro"); var g0 = rbGate(); if (TUT === "rules" && g0 && !g0.loading) { openRulebook(); return; } tutStep(); }],     // ルールを全部読むまで、エントリーできない：まず、大会ルールを開く
         ["🧑‍💼 チームのマネージャー", function () { setTut("done"); PAGE = "manager"; render(); }, ""],
         ["🎙 キャスター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).caster) { SKIND = "caster"; SF = {}; } render(); }, ""],
         ["🛡 モデレーター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).moderator) { SKIND = "moderator"; SF = {}; } render(); }, ""]]);
+      return;
+    }
+    if (TUT === "rules" && rulesOk()) { setTut("profile_intro"); tutStep(); return; }
+    if (TUT === "rules" && rbGate()) {                                                // 読み終わるまで、大会ルールのページへ
+      tutPop(rbGate().loading ? "大会ルールを読み込んでいます…" : "まずは、大会ルールを読みましょう！\nすべて「既読」にすると、「エントリーできる状態になりました！」と表示されます。", rbGate().loading ? [] : [["大会ルールを開く", openRulebook]]);
       return;
     }
     if (TUT === "rules") {                                                            // まず、大会のルールを読む
@@ -465,12 +468,6 @@
       var hd0 = el("div", ""); hd0.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px";
       hd0.appendChild(el("div", "q", "📖 " + title + "のルール")); var x0 = el("button", "", "✕"); x0.type = "button"; x0.addEventListener("click", function () { w0.remove(); }); hd0.appendChild(x0); b0.appendChild(hd0);
       var rb0 = el("div", "rulebox"); rb0.appendChild(mdRender(dflt));
-      if (key === "team:logo" && window.LOGO_TEMPLATE) {                              // ロゴのテンプレート画像（保存できる）
-        var tp = el("div", ""); tp.style.cssText = "text-align:center;margin:8px 0";
-        var ti = el("img"); ti.src = window.LOGO_TEMPLATE; ti.alt = "ロゴのテンプレート"; ti.style.cssText = "width:160px;height:160px;background:#000;border-radius:10px"; tp.appendChild(ti);
-        var dl = el("a", "btnlink", "⬇ テンプレート画像を保存"); dl.href = window.LOGO_TEMPLATE; dl.download = "logo_template.png"; dl.style.cssText = "display:inline-block;margin-top:6px;font-size:14px;padding:8px 14px"; tp.appendChild(el("div", "")); tp.appendChild(dl);
-        rb0.appendChild(tp);
-      }
       if (text) { var hr = el("div", ""); hr.style.cssText = "border-top:2px solid var(--line);margin:12px 0 8px;padding-top:6px;font-weight:800;color:var(--sub);font-size:13px"; hr.textContent = "この大会のルール"; rb0.appendChild(hr); rb0.appendChild(mdRender(text)); }
       b0.appendChild(rb0); w0.addEventListener("click", function (e) { if (e.target === w0) w0.remove(); }); w0.appendChild(b0); document.body.appendChild(w0);
       return;
@@ -497,12 +494,43 @@
       var b = ruleBtn(hit[1], t.replace(/（.*$/, "")); if (b) lb.appendChild(b);
     });
   }
+  var RBDOC = null, RBSTATE = "", RBSIG = "", RBAT = 0;                                           // 大会ルール（ルールを全部まとめたページ）：読み込み状態と中身
+  function rbKey() { return (D && /^[A-Za-z0-9]{12}$/.test(D.rulebook || "")) ? D.rulebook : ""; }
+  function loadRulebook() {
+    var k = rbKey(); if (!k || RBSTATE === "loading") return;
+    var first = RBSTATE === ""; if (!first && Date.now() - RBAT < 15000) return;                  // ルールの取得は、15秒おきまで（ページの更新は4秒おき）
+    RBAT = Date.now(); RBSTATE = "loading";
+    fetch(BASE + k + "/rulebook.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var doc = d && d.tabs ? d : null, sg = JSON.stringify(doc); RBDOC = doc; RBSTATE = "done";
+      if (first || sg !== RBSIG) { RBSIG = sg; if (me) render(); }
+    }).catch(function () { RBDOC = null; RBSTATE = "done"; });
+  }
+  function rbGate() {                                                                  // 大会ルールを全部「既読」にしないと、エントリーできない。無ければ null（前からのルールの同意）
+    if (!rbKey() || RBSTATE === "") return null;
+    if (RBSTATE === "loading" && !RBDOC) return { loading: true, read: 0, total: 0 };
+    if (!RBDOC) return null;
+    var p = RBF.progress(rbKey(), RBDOC); return p.total ? p : null;
+  }
+  function openRulebook() {                                                            // 大会ルールのページへ（読み終わったら、ここに戻ってこられる）
+    var k = rbKey(); try { localStorage.setItem("rb_back:" + k, location.href); } catch (e) { /* そのまま */ }
+    location.href = "rulebook.html?t=" + k;
+  }
   function rulesText() { return ((D && D.rules) || {}).apply || ""; }
   function rulesKey() { var t = rulesText(), h = 0; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return "rc_rules:" + ((me && me.key) ? me.key.slice(0, 12) : "") + ":" + h; }
-  function rulesOk() { if (!rulesText().trim()) return true; try { return localStorage.getItem(rulesKey()) === "1"; } catch (e) { return !!RULES_MEM; } }
+  function rulesOk() { var g = rbGate(); if (g) return !g.loading && g.read >= g.total; if (!rulesText().trim()) return true; try { return localStorage.getItem(rulesKey()) === "1"; } catch (e) { return !!RULES_MEM; } }
   var RULES_MEM = false;
   function setRulesOk() { RULES_MEM = true; try { localStorage.setItem(rulesKey(), "1"); } catch (e) { /* そのまま */ } }
-  function rulesGate(box, then) {                                                    // 登録の前：入力欄が何も無い画面で、大会のルールを読んで「同意して進む」
+  function rulesGate(box, then) {                                                    // 登録の前：大会ルールを全部読んで「既読」に（ルールのページへ）。無い大会は、前からの「同意して進む」
+    var g = rbGate();
+    if (g) {
+      var c0 = el("div", "card"); c0.appendChild(el("h2", "", "📖 大会ルールを読んでください"));
+      c0.appendChild(el("div", "lead", g.loading ? "大会ルールを読み込んでいます…" : "エントリーするには、大会ルールをすべて読んで「既読」にする必要があります。すべて読み終わると、「エントリーできる状態になりました！」と表示されて、エントリーに進めます。"));
+      if (!g.loading) {
+        var pr = el("div", "msg", "読んだ：" + g.read + " / " + g.total); pr.style.fontWeight = "800"; c0.appendChild(pr);
+        var r0 = el("div", "row"), b0 = el("button", "go", g.read ? "続きを読む（大会ルール）" : "大会ルールを開く"); b0.type = "button"; b0.addEventListener("click", openRulebook); r0.appendChild(b0); c0.appendChild(r0);
+      }
+      box.appendChild(c0); return;
+    }
     var c = el("div", "card");
     c.appendChild(el("h2", "", "📖 大会のルール"));
     c.appendChild(el("div", "lead", "登録の前に、大会のルールを最後まで読んでください。同意すると、入力の画面に進みます。"));
@@ -605,7 +633,7 @@
     if (!FORM || FORM._team !== teamId) {
       FORM = { _team: teamId, title: cur.title || "", summary: cur.summary || "", need_s: cur.need_s || 0, need_h: cur.need_h || 0,
                extra: !!cur.extra, extra_faction: cur.extra_faction || "both", usepw: !!cur.lock, password: "",
-               level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "", mode: null,
+               level_min: cur.level_min || "", level_max: cur.level_max || "", rank_min: cur.rank_min || "", rank_max: cur.rank_max || "", rank_min_h: cur.rank_min_h || "", rank_max_h: cur.rank_max_h || "", mode: null,
                wants: { sr: arr((cur.wants || {}).sr).slice(), tp: arr((cur.wants || {}).tp).slice(), hs: arr((cur.wants || {}).hs).slice(), ch: arr((cur.wants || {}).ch).slice(), beg: !!(cur.wants || {}).beg } };
     }
     if (FORM.mode == null) FORM.mode = cur.first ? "" : (cur.friends ? "friends" : "open");
@@ -667,9 +695,9 @@
         ch.appendChild(l); });
       f.appendChild(ch);
     }
-    var mo = el("details", "more"); mo.open = WANTS_OPEN; mo.addEventListener("toggle", function () { WANTS_OPEN = mo.open; });
+    var mo = el("div", "wantsbox");                                                     // 折りたたまない（そのまま、見える）
     var nsel = FORM.wants.sr.length + FORM.wants.tp.length + FORM.wants.ch.length;
-    mo.appendChild(el("summary", "", "🎯 求める役割・チームの方針・キャラ（任意）" + (nsel ? "：" + nsel + "個選択中" : "")));
+    mo.appendChild(el("div", "wl", "🎯 求める役割・チームの方針・キャラ（任意）" + (nsel ? "：" + nsel + "個選択中" : "")));
     var outer = f; f = el("div", "frm"); mo.appendChild(f);
     var wc = el("details", "cau"); wc.style.gridColumn = "1 / -1"; wc.open = WCAU_OPEN; wc.addEventListener("toggle", function () { WCAU_OPEN = wc.open; });
     wc.appendChild(el("summary", "", "⚠ 指定するときの注意（必ず読んでください）"));
@@ -708,12 +736,16 @@
       lr.appendChild(i);
     });
     f.appendChild(lr);
-    lab("過去最高段位の下限"); f.appendChild(rankPick(FORM.rank_min, function (v) { FORM.rank_min = v; render(); }));
-    lab("過去最高段位の上限"); f.appendChild(rankPick(FORM.rank_max, function (v) { FORM.rank_max = v; render(); }));
+    hint("段位の制限は、サバイバーとハンターで別々に決められます（応募する人のその陣営の段位が見られます。一覧では「サバイバー2人／6段Ⅴ〜」のように出ます）。");
+    lab("サバイバーの過去最高段位の下限"); f.appendChild(rankPick(FORM.rank_min, function (v) { FORM.rank_min = v; render(); }));
+    lab("サバイバーの過去最高段位の上限"); f.appendChild(rankPick(FORM.rank_max, function (v) { FORM.rank_max = v; render(); }));
+    lab("ハンターの過去最高段位の下限"); f.appendChild(rankPick(FORM.rank_min_h, function (v) { FORM.rank_min_h = v; render(); }));
+    lab("ハンターの過去最高段位の上限"); f.appendChild(rankPick(FORM.rank_max_h, function (v) { FORM.rank_max_h = v; render(); }));
     var bad = [];
-    if (!rankOk(FORM.rank_min) || !rankOk(FORM.rank_max)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
-    var s1 = rankScore(FORM.rank_min), s2 = rankScore(FORM.rank_max);
-    if (s1 != null && s2 != null && s1 > s2) bad.push("段位の下限が、上限より高くなっています。");
+    if (!rankOk(FORM.rank_min) || !rankOk(FORM.rank_max) || !rankOk(FORM.rank_min_h) || !rankOk(FORM.rank_max_h)) bad.push("最高峰の★の数は、25以上の2〜3桁の数字にしてください。");
+    var s1 = rankScore(FORM.rank_min), s2 = rankScore(FORM.rank_max), h1 = rankScore(FORM.rank_min_h), h2 = rankScore(FORM.rank_max_h);
+    if (s1 != null && s2 != null && s1 > s2) bad.push("サバイバーの段位の下限が、上限より高くなっています。");
+    if (h1 != null && h2 != null && h1 > h2) bad.push("ハンターの段位の下限が、上限より高くなっています。");
     if (FORM.level_min && FORM.level_max && Number(FORM.level_min) > Number(FORM.level_max)) bad.push("閲歴の下限が、上限より大きくなっています。");
     lab("応募パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
     var pc = el("input"); pc.type = "checkbox"; pc.checked = FORM.usepw; pc.addEventListener("change", function () { FORM.usepw = pc.checked; render(); });
@@ -729,7 +761,7 @@
       if ((cur.first || cur.friends) && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
       if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ 応募パスワードは、4〜20文字の英数字にしてください。"); return; }
       var form = { friends: false, title: FORM.title, wanted: "", summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
-                   level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null, wants: FORM.wants };
+                   level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null, rank_min_h: FORM.rank_min_h || null, rank_max_h: FORM.rank_max_h || null, wants: FORM.wants };
       if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
       send({ act: "form", team: teamId, form: form }, "保存しています…");
     });
@@ -1462,7 +1494,7 @@
       c.appendChild(el("div", "title", t.title));
       c.appendChild(needBox(t, false));
       if (t.summary) c.appendChild(el("div", "sum", t.summary));
-      if (t.limits) c.appendChild(el("div", "lim", t.limits));
+      if (t.lvl) c.appendChild(el("div", "lim", t.lvl));                                  // 段位は、「求めている人材」の陣営ごとの行に出る
       if (t.stopped) c.appendChild(el("div", "tag ng", "⏸ 運営が募集を停止中"));
       else if (t.state === "closed") c.appendChild(el("div", "tag ng", "⏸ 募集締め切り"));
       else if (t.state === "full") c.appendChild(el("div", "tag ng", "満員"));
@@ -1644,10 +1676,11 @@
     d.appendChild(liveMsg());
     show();
   }
+  var LASTSIG = "";
   function load() {
     fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d) { document.getElementById("lead").textContent = "いまは、メンバー募集を受け付けていません（大会の設定・組み合わせの抽選のあとなど）。"; return; }
-      D = d;
+      D = d; loadRulebook();
       var r = d.result;
       if (WAIT && r && r.nonce === WAIT) {
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
@@ -1676,7 +1709,8 @@
         setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         return;
       }
-      unwrapProf().then(function (changed) { if ((changed || true) && !document.getElementById("ov") && !BUSY) render(); });   // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
+      var sg = JSON.stringify(d, function (k, v) { return k === "at" ? undefined : v; });             // 公開した時刻だけが変わっても、描き直さない
+      unwrapProf().then(function (changed) { if ((changed || sg !== LASTSIG) && !document.getElementById("ov") && !BUSY) { LASTSIG = sg; render(); } });   // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
     }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }

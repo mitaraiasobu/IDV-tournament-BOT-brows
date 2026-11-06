@@ -54,6 +54,7 @@
   #result { margin: 12px 0; } #result.ok { color: var(--ok); } #result.ng { color: var(--bad); }
   .note { color: var(--sub); font-size: 13px; }
   .tabs { display: flex; gap: 6px; margin-top: 4px; border-bottom: 1px solid var(--line); } .tabs button { border-radius: 8px 8px 0 0; border-bottom: 0; padding: 8px 18px; }
+  @media (max-width: 760px) { .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; } .tabs button { flex: none; white-space: nowrap; padding: 10px 14px; } }      /* スマホ：タブは横に並べて、横にスクロール（縦に潰れない） */
   .tabs button.on { background: var(--ac); border-color: var(--ac); color: #1a1200; font-weight: 700; }
   .trow { display: grid; grid-template-columns: 1fr 190px 1.2fr; gap: 10px; align-items: center; padding: 10px 4px; border-top: 1px solid var(--line); } .trow:first-child { border-top: 0; }
   @media (max-width: 760px) { .trow { grid-template-columns: 1fr; } }
@@ -727,6 +728,7 @@
   function mdRender(text) {                                                          // ルールの文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~）を、安全に（HTMLは使わない）
     var box = document.createElement("div"); box.className = "md";
     String(text || "").split("\n").forEach(function (line) {
+      if (line.trim() === "{{logo_template}}") { var ph = document.createElement("div"); ph.textContent = "🖼 （ここに、ロゴのテンプレート画像と、ダウンロードボタンが出ます）"; box.appendChild(ph); return; }
       var m = /^(#{1,3})\s+(.*)$/.exec(line), node;
       if (m) { node = document.createElement(m[1].length === 1 ? "h3" : m[1].length === 2 ? "h4" : "h5"); line = m[2]; }
       else if (/^\s*[-・*]\s+/.test(line)) { node = document.createElement("div"); node.className = "li"; line = "・" + line.replace(/^\s*[-・*]\s+/, ""); }
@@ -820,13 +822,13 @@
       t.sections.forEach(function (sc, si) {
         var sbx = el("div", ""); sbx.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0";
         var sh = el("div", "row"); sh.style.alignItems = "center";
-        var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1"; st.style.minWidth = "10em";
+        var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1 1 100%"; st.style.minWidth = "10em"; st.style.fontSize = "16px"; st.style.padding = "10px";
         st.addEventListener("input", function () { sc.title = st.value; rbDirty(); }); sh.appendChild(st);
         var su = el("button", "", "↑"); su.type = "button"; su.disabled = si === 0; su.addEventListener("click", function () { move(t.sections, si, -1); }); sh.appendChild(su);
         var sd = el("button", "", "↓"); sd.type = "button"; sd.disabled = si === t.sections.length - 1; sd.addEventListener("click", function () { move(t.sections, si, 1); }); sh.appendChild(sd);
         var sx = el("button", "", "🗑"); sx.type = "button"; sx.style.color = "#ff7070"; sx.addEventListener("click", function () { if (confirm("セクション「" + (sc.title || "") + "」を消します。よろしいですか？")) { t.sections.splice(si, 1); rbDirty(); renderRulebook(); } }); sh.appendChild(sx);
         sbx.appendChild(sh);
-        var rte = RBF.editor(sc.body || "", function (v) { sc.body = v; rbDirty(); }, { placeholder: "本文（上のボタンで、見出し・太字・斜体・下線・文字色・リンク）", theme: RB.theme });
+        var rte = RBF.editor(sc.body || "", function (v) { sc.body = v; rbDirty(); }, { placeholder: "本文（上のボタンで、見出し・太字・斜体・下線・文字色・リンク）", theme: RB.theme, title: sc.title || "セクション" });
         RTES.push(rte); sbx.appendChild(rte); det.appendChild(sbx);
       });
       var as = el("button", "", "＋ セクションを足す"); as.type = "button"; as.disabled = t.sections.length >= (L.sections || 40);
