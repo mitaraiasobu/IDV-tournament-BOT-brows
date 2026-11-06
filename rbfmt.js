@@ -176,7 +176,7 @@
     if (document.getElementById("rbf-css")) return;
     var s = el("style"); s.id = "rbf-css";
     s.textContent = ".rte{border:1px solid var(--rte-line,#3a4157);border-radius:10px;margin:8px 0;position:relative;background:var(--rte-bg,transparent)}" +
-      ".rte .tbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-bottom:1px solid var(--rte-line,#3a4157);background:var(--rte-bar,#232838);border-radius:10px 10px 0 0}" +
+      ".rte .tbar{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-bottom:1px solid var(--rte-line,#3a4157);background:var(--rte-bar,#232838);border-radius:10px 10px 0 0}" +
       ".rte .tbar button{min-width:40px;min-height:40px;padding:6px 10px;font-size:15px;line-height:1.2;border-radius:8px;cursor:pointer;touch-action:manipulation}" +
       ".rte .tbar button.on{outline:2px solid var(--rte-ac,#6f95ff);background:var(--rte-ac,#6f95ff)!important;color:var(--rte-on,#fff)!important}" +
       ".rte .tbar .sep{width:1px;background:var(--rte-line,#3a4157);margin:0 2px}" +
@@ -184,17 +184,17 @@
       ".rte .area{min-height:240px;padding:14px 16px;line-height:1.85;font-size:16px;outline:none;border-radius:0 0 10px 10px;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text}" +
       ".rte .area h3{font-size:21px;margin:8px 0 3px}.rte .area h4{font-size:18px;margin:6px 0 3px}.rte .area h5{font-size:16px;margin:4px 0}" +
       ".rte .area:empty:before{content:attr(data-ph);opacity:.5}.rte .area a{color:var(--rte-link,#ffd54a);text-decoration:underline}" +
-      ".rte .pal{position:absolute;z-index:10;background:var(--rte-bar,#232838);border:1px solid var(--rte-line,#3a4157);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
+      ".rte .pal{position:fixed;z-index:1100;background:var(--rte-bar,#232838);border:1px solid var(--rte-line,#3a4157);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
       ".rte .pal .sw{width:36px;height:36px;min-width:0;min-height:0;padding:0;border-radius:50%;border:2px solid rgba(128,128,128,.6);cursor:pointer}" +
       ".rte .pal .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;font-size:13px;color:var(--rte-tx,#e8eaf2)}" +
       ".rte .ttl{display:none;align-self:center;font-weight:800;margin-right:6px;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
       ".rte.full{position:fixed;left:0;top:0;right:0;bottom:0;height:100vh;height:100dvh;z-index:1000;margin:0;border-radius:0;border:0;display:flex;flex-direction:column}" +
       ".rte.full .ttl{display:block}" +
-      ".rte.full .tbar{border-radius:0;flex:none;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}" +
+      ".rte.full .tbar{position:static;border-radius:0;flex:none;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}" +
       ".rte.full .tbar button{flex:none;white-space:nowrap}" +
       ".rte.full .area{flex:1;min-height:0;overflow-y:auto;border-radius:0;font-size:17px;padding:16px 18px 40vh}" +
       "@media (pointer:coarse){.rte .tbar button{min-width:44px;min-height:44px}.rte .pal .sw{width:42px;height:42px}}" +
-      "@media (max-width:640px){.rte .area{min-height:300px}}";
+      "@media (max-width:640px){.rte .area{min-height:300px}.rte .tbar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 8px}.rte .tbar button{flex:none;white-space:nowrap}}";
     document.head.appendChild(s);
   }
   function editor(value, onChange, opts) {
@@ -204,6 +204,8 @@
     area.appendChild(render(value, { edit: true }));
     if (String(value || "") === "") area.textContent = "";
     var saved = null, pal = null, btns = {}, full = false;
+    function place() { bar.style.top = ((o.stickyTop ? o.stickyTop() : 0) || 0) + "px"; }                // 上に固定の見出しがあれば、その下に（長い文章をスクロールしても、ボタンが見える）
+    place(); window.addEventListener("resize", place); window.addEventListener("orientationchange", place);
     function keep() { var s = window.getSelection(); if (s.rangeCount && area.contains(s.getRangeAt(0).commonAncestorContainer)) saved = s.getRangeAt(0).cloneRange(); }
     function back() { area.focus(); if (saved) { var s = window.getSelection(); s.removeAllRanges(); s.addRange(saved); } }
     function changed() { onChange(serialize(area)); refresh(); }
@@ -249,7 +251,8 @@
     }
     var cb = bt("color", "A", "文字の色（押してから打つと、その色。選んでから押すと、その文字がその色に）", function () {
       if (pal) { closePal(); return; }
-      pal = el("div", "pal"); pal.style.top = (bar.offsetHeight + 2) + "px"; pal.style.left = Math.max(0, cb.offsetLeft - 40) + "px";
+      pal = el("div", "pal"); var br = bar.getBoundingClientRect(), cr = cb.getBoundingClientRect();           // 画面に固定（ツールバーが横にスクロールしても、切れない）
+      pal.style.top = Math.round(br.bottom + 2) + "px"; pal.style.left = Math.max(8, Math.min(Math.round(cr.left - 40), innerWidth - 336)) + "px";
       COLORS.forEach(function (c) {
         var sw = el("button", "sw"); sw.type = "button"; sw.title = c[0]; sw.style.background = c[1];
         sw.addEventListener("mousedown", function (e) { e.preventDefault(); });

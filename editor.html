@@ -828,7 +828,7 @@
         var sd = el("button", "", "↓"); sd.type = "button"; sd.disabled = si === t.sections.length - 1; sd.addEventListener("click", function () { move(t.sections, si, 1); }); sh.appendChild(sd);
         var sx = el("button", "", "🗑"); sx.type = "button"; sx.style.color = "#ff7070"; sx.addEventListener("click", function () { if (confirm("セクション「" + (sc.title || "") + "」を消します。よろしいですか？")) { t.sections.splice(si, 1); rbDirty(); renderRulebook(); } }); sh.appendChild(sx);
         sbx.appendChild(sh);
-        var rte = RBF.editor(sc.body || "", function (v) { sc.body = v; rbDirty(); }, { placeholder: "本文（上のボタンで、見出し・太字・斜体・下線・文字色・リンク）", theme: RB.theme, title: sc.title || "セクション" });
+        var rte = RBF.editor(sc.body || "", function (v) { sc.body = v; rbDirty(); }, { placeholder: "本文（上のボタンで、見出し・太字・斜体・下線・文字色・リンク）", theme: RB.theme, title: sc.title || "セクション", stickyTop: function () { var h = document.querySelector("header"); return h ? Math.round(h.getBoundingClientRect().height) : 0; } });
         RTES.push(rte); sbx.appendChild(rte); det.appendChild(sbx);
       });
       var as = el("button", "", "＋ セクションを足す"); as.type = "button"; as.disabled = t.sections.length >= (L.sections || 40);
