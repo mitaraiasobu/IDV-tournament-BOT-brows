@@ -248,7 +248,25 @@
         });
         var dl = el("button", "", "🗑 ローカル必須から外す"); dl.type = "button"; dl.style.color = "#ff7070"; dl.disabled = locked;
         dl.addEventListener("click", function () { if (confirm("「" + r.item + "」を、ローカル必須から外します。よろしいですか？")) K.send([{ op: "bpr_req_remove", id: r.id }], "外しています…"); });
-        br.appendChild(dl); row.appendChild(br); rc.appendChild(row);
+        br.appendChild(dl); row.appendChild(br);
+        var sd = document.createElement("details"); sd.style.marginTop = "6px"; sd.open = !!K.open("rq:" + r.id); sd.addEventListener("toggle", function () { K.open("rq:" + r.id, sd.open); });
+        var ss = document.createElement("summary"); ss.style.cursor = "pointer"; ss.textContent = "🔧 シーンごとに決める（必須・自由・組A〜E）"; sd.appendChild(ss);
+        sd.appendChild(el("div", "note", "組（A〜E）にしたシーンは、そのうち決めた回数だけ、使えばよくなります（例：組Aを3シーンにして、必要回数2＝3シーンのうち2回使う）。"));
+        var stOpts = [["free", "自由"], ["req", "必須"]].concat((D.letters || []).map(function (g) { return [g, "組" + g]; }));
+        (r.scenes || []).forEach(function (sc) {
+          var w = el("div", "row"); w.style.alignItems = "center";
+          var lb = el("span", "", sc.label); lb.style.cssText = "flex:1;min-width:9em"; w.appendChild(lb);
+          var sl = sel(el, stOpts, sc.state, function (v) { K.send([{ op: "bpr_req_scene", id: r.id, key: sc.key, state: v }], "シーンを変えています…"); }); sl.disabled = locked; w.appendChild(sl);
+          sd.appendChild(w);
+        });
+        (r.groups || []).forEach(function (g) {
+          var w = el("div", "row"); w.style.alignItems = "center";
+          w.appendChild(el("span", "", "組" + g + "の必要回数（" + ((r.sizes || {})[g] || 1) + "シーンのうち）"));
+          var opts = []; for (var n = 1; n <= ((r.sizes || {})[g] || 1); n++) opts.push([n, n + "回"]);
+          var gs = sel(el, opts, (r.counts || {})[g] || 1, function (v) { K.send([{ op: "bpr_req_group", id: r.id, letter: g, n: v }], "必要回数を変えています…"); }); gs.disabled = locked;
+          w.appendChild(gs); sd.appendChild(w);
+        });
+        row.appendChild(sd); rc.appendChild(row);
       });
       var rst = BZ.req, rrw = el("div", ""); rrw.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:8px";
       ["survivor", "hunter"].forEach(function (f) {
@@ -258,6 +276,32 @@
       var rr2 = el("div", "row"), rb = el("button", "primary", "＋ ローカル必須に足す"); rb.type = "button"; rb.disabled = locked;
       rb.addEventListener("click", function () { if (!rst.item) { K.msg("ng", "⚠ キャラを選んでください。"); return; } var o = { op: "bpr_req_add", item: rst.item }; rst.item = ""; rst.faction = ""; K.send([o], "足しています…"); });
       rr2.appendChild(rb); rc.appendChild(rr2); root.appendChild(rc);
+      // グローバルBAN（前のセットで使ったキャラを、あとのセットで使えない）
+      var gc = box(el, "🔁 グローバルBAN（前のセットで使ったキャラは、あとのセットで使えない）", "ラウンドごと・セットごとに、サバイバー・ハンターそれぞれ、オン／オフを決めます（第1セットは、前のセットが無いので、ありません）。「積み上がる上限」は、どのセットまでに使ったキャラを数えるかです。");
+      (D.norepeat || []).forEach(function (rd) {
+        var w = el("div", ""); w.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
+        var h = el("div", "", rd.name); h.style.fontWeight = "800"; w.appendChild(h);
+        (rd.slots || []).forEach(function (sl) {
+          var row = el("div", "row"); row.style.alignItems = "center";
+          var lb = el("span", "", sl.label); lb.style.cssText = "min-width:6em"; row.appendChild(lb);
+          [["survivor", "サバイバー"], ["hunter", "ハンター"]].forEach(function (t) {
+            var on = !!sl[t[0]], b = el("button", on ? "primary" : "", (on ? "🔒 " : "— ") + t[1]); b.type = "button"; b.disabled = locked;
+            b.title = on ? "押すと、オフにします" : "押すと、オンにします";
+            b.addEventListener("click", function () { K.send([{ op: "bpr_norepeat", round: rd.round, slot: sl.key, target: t[0], on: !on }], "変えています…"); });
+            row.appendChild(b);
+          });
+          w.appendChild(row);
+        });
+        var r2 = el("div", "row"); r2.style.alignItems = "center";
+        var bo = el("button", "", "このラウンドを全部オン"); bo.type = "button"; bo.disabled = locked; bo.addEventListener("click", function () { K.send([{ op: "bpr_norepeat_bulk", round: rd.round, on: true }], "変えています…"); });
+        var bf = el("button", "", "全部オフ"); bf.type = "button"; bf.disabled = locked; bf.addEventListener("click", function () { K.send([{ op: "bpr_norepeat_bulk", round: rd.round, on: false }], "変えています…"); });
+        r2.appendChild(bo); r2.appendChild(bf);
+        var uo = [["all", "延長戦まで全部"]]; for (var n = 1; n <= (rd.sets || 1); n++) uo.push([n, "第" + n + "セットまで"]);
+        r2.appendChild(el("span", "note", "積み上がる上限："));
+        var us = sel(el, uo, rd.until == null ? "all" : rd.until, function (v) { K.send([{ op: "bpr_until", round: rd.round, until: v }], "変えています…"); }); us.disabled = locked; r2.appendChild(us);
+        w.appendChild(r2); gc.appendChild(w);
+      });
+      root.appendChild(gc);
     }
   });
 
