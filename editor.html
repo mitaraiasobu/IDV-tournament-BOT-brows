@@ -834,6 +834,13 @@
     sw(); th.appendChild(pvw); top.appendChild(th);
     box.insertBefore(changesCard(), box.firstChild);
     box.appendChild(top);
+    if (I.about) {                                                                    // いつも一番上に出る、決まったタブ（消せない・隠せない・書き換えられない）
+      var ab = el("div", "card"); ab.style.marginTop = "10px";
+      var ah = el("div", "row"); ah.style.alignItems = "center"; ah.appendChild(el("b", "", "0.")); var an = el("b", "", "🔒 " + I.about.title); an.style.flex = "1"; ah.appendChild(an); ab.appendChild(ah);
+      ab.appendChild(el("div", "note", "参加者のページの、いつも一番上に出ます（消したり、非表示にしたり、書き換えたりはできません）。"));
+      (I.about.sections || []).forEach(function (sc) { var d = document.createElement("details"); var sm = el("summary", "", sc.title); sm.style.cursor = "pointer"; d.appendChild(sm); var pv = el("div", ""); pv.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; pv.textContent = sc.body; d.appendChild(pv); ab.appendChild(d); });
+      box.appendChild(ab);
+    }
     RB.tabs.forEach(function (t, ti) {
       var c = el("div", "card"); c.style.marginTop = "10px";
       var hd = el("div", "row"); hd.style.alignItems = "center";
@@ -855,6 +862,8 @@
         c.appendChild(el("div", "note", t.builtin === "entry" ? "「📋 ルール・登録項目」タブで書いたルール（デフォルトのルールも）が、そのまま出ます。" : t.builtin === "bp" ? (I.bp ? "BAN/PICKのルールのページ（BAN数・使用禁止キャラ・分配ポイントなど）が、そのまま出ます。" : "BAN/PICKを使わない大会なので、このタブは出ません。") : "トーナメント表のページが、そのまま出ます。"));
         box.appendChild(c); return;
       }
+      t.sections = t.sections || [];
+      if (I.ext_simul && t.sections.some(function (x) { return x.title === "勝利条件"; })) c.appendChild(el("div", "note", "⚔ 延長戦の同時実施を「⚙ 大会設定」でオンにすると、このタブの「勝利条件」のすぐ後ろに「" + I.ext_simul + "」が自動で出ます（実況解説のやり方に合った説明。書き換え・削除はできません）。"));
       t.sections = t.sections || [];
       var ok = "t" + ti, det = el("details"); det.open = RB_OPEN[ok] !== false; det.addEventListener("toggle", function () { RB_OPEN[ok] = det.open; });
       det.appendChild(el("summary", "", "セクション（" + t.sections.length + "）"));
