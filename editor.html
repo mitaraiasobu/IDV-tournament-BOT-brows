@@ -758,8 +758,12 @@
       var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = kd[1]; c.appendChild(h);
       (F[kd[0]] || []).forEach(function (f) {
         var k = kd[0] + ":" + f.key, det = document.createElement("details"); det.style.margin = "6px 0";
-        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = f.title + (f.custom ? "（追加した項目・" + (f.type === "choice_custom" ? "選択肢：" + f.choices.join("／") : "自由記述") + (f.required ? "・必須" : "") + "）" : "") + (f.rule ? "　📖 ルールあり" : "　（ルールなし）");
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = f.title + (f.custom ? "（追加した項目・" + (f.type === "choice_custom" ? "選択肢：" + f.choices.join("／") : "自由記述") + (f.required ? "・必須" : "") + "）" : "") + (f.rule ? "　📖 ルールあり" : "　（ルールなし）") + (f["default"] ? "　🔒 デフォルトのルールあり" : "");
         det.appendChild(sm); det.open = !!RL["open_" + k]; det.addEventListener("toggle", function () { RL["open_" + k] = det.open; });
+        if (f["default"]) {                                                             // デフォルトのルール（消すことも直すこともできない）
+          var dfb = el("div", "note"); dfb.style.cssText = "border:1px dashed var(--line);border-radius:8px;padding:8px;margin:6px 0;white-space:normal";
+          dfb.appendChild(el("div", "", "🔒 デフォルトのルール（消すことも直すこともできません。この下に、大会独自のルールが続きます）")); dfb.appendChild(mdRender(f["default"])); det.appendChild(dfb);
+        }
         var x = ta(k, f.rule, 4); det.appendChild(x[0]); det.appendChild(x[1]);
         var rr = el("div", "row"), sv = el("button", "primary", "ルールを保存"); sv.type = "button";
         sv.addEventListener("click", function () { brSend([{ op: "rules_field", kind: kd[0], key: f.key, extra: !!f.extra, rule: RL[k] != null ? RL[k] : (f.rule || "") }], "ルールを保存しています…"); delete RL[k]; });
