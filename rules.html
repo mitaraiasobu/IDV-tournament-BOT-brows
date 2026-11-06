@@ -190,14 +190,17 @@
     .rv .pill { white-space: normal; text-align: center; }
     .rv .pill.mode { margin-left: 0; }
     .rv .tabs button { padding: .3em .7em; }
-    .rv .row { display: block; padding: .35em 0; line-height: 1.5; }               /* スマホでは、見出しのすぐあとに内容を続ける（空いた行をつくらない） */
-    .rv .row .lb { min-width: 0; display: inline; margin-right: .5em; } .rv .row .tx { display: inline; }
   }
   .rv h2 { margin: 0 0 .35em; font-size: 1.1em; color: var(--accent); letter-spacing: .08em; border-bottom: 2px solid var(--line); padding-bottom: .15em; }
   .rv .sec { margin-bottom: .5em; }
   .rv .row { display: flex; gap: .8em; align-items: baseline; padding: .25em 0; line-height: 1.45; }
   .rv .row .lb { flex: none; min-width: 6.5em; font-weight: 800; color: var(--accent); }
   .rv .row .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  @media (max-width: 900px) {                                                       /* スマホ：見出しの下の行に、中身（横に並べると、中身が細く折れてしまう） */
+    .rv .row { display: block; padding: .4em 0; line-height: 1.5; }
+    .rv .row .lb { display: block; min-width: 0; margin-bottom: .1em; }
+    .rv .row .tx { display: block; padding-left: .8em; }
+  }
   .rv ol { margin: 0; padding: 0 0 0 1.6em; }
   .rv ol li { line-height: 1.55; }
   .rv .none { color: var(--sub); }
