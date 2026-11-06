@@ -290,8 +290,8 @@
   }
   function navButtons(main) {                                                         // 前のタブ・次のタブ
     var ts = tabs(), nv = el("div", "nav");
-    if (TAB > 0) { var p = el("button", "", "◀ " + ts[TAB - 1].title); p.type = "button"; p.addEventListener("click", function () { goTab(TAB - 1); }); nv.appendChild(p); } else nv.appendChild(el("span"));
-    if (TAB < ts.length - 1) { var n = el("button", "go", ts[TAB + 1].title + " ▶"); n.type = "button"; n.addEventListener("click", function () { goTab(TAB + 1); }); nv.appendChild(n); }
+    if (TAB > 0) { var p = el("button", "", "◀ 戻る"); p.title = ts[TAB - 1].title; p.type = "button"; p.addEventListener("click", function () { goTab(TAB - 1); }); nv.appendChild(p); } else nv.appendChild(el("span"));
+    if (TAB < ts.length - 1) { var n = el("button", "go", "次へ ▶"); n.title = ts[TAB + 1].title; n.type = "button"; n.addEventListener("click", function () { goTab(TAB + 1); }); nv.appendChild(n); }
     main.appendChild(nv);
   }
 
