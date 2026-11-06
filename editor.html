@@ -183,6 +183,7 @@
   </main>
 </div>
 <script src="rbfmt.js"></script>
+<script src="editor_tabs.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1169,7 +1170,10 @@
     v.appendChild(bkc);
     if (Math.abs(window.scrollY - keepPage) > 2) window.scrollTo(0, keepPage);
   }
+  var XTAB = {};                                                                     // 追加のタブ：{名前: {label, intro, render}}
   function showTab(name) {
+    Object.keys(XTAB).forEach(function (id) { $("tab-" + id).hidden = name !== id; $("tab" + id).className = name === id ? "on" : ""; });        // 追加のタブ（editor_tabs.js）
+    CURX = XTAB[name] ? name : null; if (CURX) xrender(name);
     $("tab-set").hidden = name !== "set"; $("tab-bp").hidden = name !== "bp"; $("tab-time").hidden = name !== "time"; $("tab-br").hidden = name !== "br"; $("tab-rc").hidden = name !== "rc"; $("tab-rl").hidden = name !== "rl"; $("tab-rb").hidden = name !== "rb";
     $("tabrb").className = name === "rb" ? "on" : "";
     $("tabset").className = name === "set" ? "on" : ""; $("tabbp").className = name === "bp" ? "on" : ""; $("tabtime").className = name === "time" ? "on" : ""; $("tabbr").className = name === "br" ? "on" : ""; $("tabrc").className = name === "rc" ? "on" : ""; $("tabrl").className = name === "rl" ? "on" : "";
@@ -1317,7 +1321,7 @@
       f.appendChild(card);
     });
   }
-  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); if (!$("tab-rl").hidden) renderRules2(); if (!$("tab-rb").hidden) renderRulebook(); refreshDirty(); }
+  function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); if (!$("tab-rl").hidden) renderRules2(); if (!$("tab-rb").hidden) renderRulebook(); if (CURX && !$("tab-" + CURX).hidden) xrender(CURX); refreshDirty(); }
 
   // ───── ルールの変更：履歴（変更前・変更後）・お知らせ（@everyone）に投稿・保存のあとの確認 ─────
   var CHG_SEEN = null;
@@ -1403,7 +1407,7 @@
     $("gate").hidden = true; $("app").hidden = false;
     adopt(data); render();
     var wantTab = new URLSearchParams(location.search).get("tab");                         // エントリーパネルの「🛠 募集の管理」から開いたとき：「📣 チームとメンバー募集」タブ
-    if (wantTab && { set: 1, bp: 1, time: 1, br: 1, rc: 1, rl: 1, rb: 1 }[wantTab]) showTab(wantTab);
+    if (wantTab && ({ set: 1, bp: 1, time: 1, br: 1, rc: 1, rl: 1, rb: 1 }[wantTab] || XTAB[wantTab])) showTab(wantTab);
     var bk = null; try { bk = JSON.parse(localStorage.getItem(backupKey()) || "null"); } catch (e) { bk = null; }
     if (bk && bk.work && confirm("保存できなかった入力のバックアップがあります（" + new Date(bk.at).toLocaleString() + "）。戻しますか？\n（戻さないときは、バックアップを消します）")) {
       P = bk.work[0]; ROUNDS = bk.work[1]; DELETED = bk.work[2]; TM = bk.work[3]; ST = bk.work[4]; render();
@@ -1498,6 +1502,22 @@
   $("tabrc").addEventListener("click", function () { showTab("rc"); });
   $("tabrl").addEventListener("click", function () { showTab("rl"); });
   $("tabrb").addEventListener("click", function () { showTab("rb"); });
+  // ───── 追加のタブ（editor_tabs.js）：賞品・ポイント／デザイン／BAN/PICKのルール設定 など。ボタンは、その場で保存する ─────
+  var CURX = null, K = { el: el, data: function () { return data; }, send: function (ops, busy) { brSend(ops, busy); }, msg: function (c, t) { setResult(c, t); }, redraw: function () { if (CURX) xrender(CURX); } };
+  function xrender(id) {
+    if (!XTAB[id]) return; var root = $("xbody-" + id), keep = window.scrollY; root.textContent = "";
+    try { XTAB[id].render(root, K); } catch (e) { root.appendChild(el("div", "note", "⚠ このタブを表示できませんでした：" + e.message)); }
+    if (Math.abs(window.scrollY - keep) > 2) window.scrollTo(0, keep);
+  }
+  (window.EDX || []).forEach(function (t) {
+    XTAB[t.id] = t;
+    var b = el("button", ""); b.type = "button"; b.id = "tab" + t.id; b.textContent = t.label; $("tabs").appendChild(b);
+    var c = el("div", ""); c.id = "tab-" + t.id; c.hidden = true;
+    var nt = el("div", "note", t.intro || ""); nt.style.marginTop = "10px"; c.appendChild(nt);
+    var body = el("div", ""); body.id = "xbody-" + t.id; c.appendChild(body);
+    $("tab-rb").parentNode.insertBefore(c, $("tab-rb").nextSibling);
+    b.addEventListener("click", function () { showTab(t.id); });
+  });
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("tabbr").addEventListener("click", function () { showTab("br"); });
   $("reload").addEventListener("click", function () {
