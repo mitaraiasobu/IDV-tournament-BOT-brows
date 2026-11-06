@@ -162,7 +162,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
-    <div id="tab-rb" hidden><div class="note" style="margin-top:10px">大会のルールを、ひとつのページ（大会ルール）にまとめます。タブ（ページの「☰ メニュー」の中）と、セクション（見出しと本文。読む人は、読み終わったら折りたためます）を自由に足せます。「🔒」のタブは、BOTが中身を作ります（エントリーのルール＝「📋 ルール・登録項目」タブの内容、BAN/PICK、トーナメント表）。消せませんが、並べ替えはできます。本文は、Discordと同じ書き方（# 見出し、**太字**、- 箇条書き、行の頭に空白2つで「- 」＝一段下の箇条書き）が使えます。[[タブの名前]] と書くと、そのタブへのリンクになります。</div><div id="rblist"></div></div>
+    <div id="tab-rb" hidden><div class="note" style="margin-top:10px">大会のルールを、ひとつのページ（大会ルール）にまとめます。タブ（ページの「☰ メニュー」の中）と、セクション（見出しと本文。読む人は、読み終わったら折りたためます）を自由に足せます。「🔒」のタブは、BOTが中身を作ります（エントリーのルール＝「📋 ルール・登録項目」タブの内容、BAN/PICK、トーナメント表）。消せませんが、並べ替えはできます。本文の欄は、見たままの形で書けます。上のボタン（大・中・小＝見出し、B＝太字、I＝斜体、U＝下線、S＝取り消し線、A＝文字色、🔗＝リンク）を押してから文字を打つと、その装飾が始まり、もう一度押すと終わります（文字を選んでから押すと、その文字だけ）。中身は、**あいうえお** のような記号で保存されるので、装飾の内側に、あとから文字を足しても、装飾は続きます。[[タブの名前]] と書くと、そのタブへのリンクになります。</div><div id="rblist"></div></div>
     <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
@@ -181,6 +181,7 @@
     </div>
   </main>
 </div>
+<script src="rbfmt.js"></script>
 <script>
 (function () {
   "use strict";
@@ -743,22 +744,23 @@
     return box;
   }
   // ───── 📖 大会ルール：タブ → セクション（見出し・本文）。全体をまとめて保存 ─────
-  var RB = null, RB_DIRTY = false, RB_OPEN = {};
+  var RB = null, RB_DIRTY = false, RB_OPEN = {}, RTES = [];
   function rbClone(o) { return JSON.parse(JSON.stringify(o)); }
   function rbNorm(d) {                                                               // BOTが保存する形（空白を落とす・空のセクションは消す）
     return { tabs: (d.tabs || []).map(function (t) {
       if (t.builtin) return { builtin: t.builtin };
       return { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim() }; })
         .filter(function (x) { return x.title || x.body; }).map(function (x) { return { title: x.title || "（見出しなし）", body: x.body }; }) };
-    }) };
+    }), theme: rbTheme(d.theme) };
   }
+  function rbTheme(t) { var o = {}; t = t || {}; ["bg", "accent"].forEach(function (k) { if (/^#[0-9a-fA-F]{6}$/.test(t[k] || "")) o[k] = t[k].toLowerCase(); }); return o; }
   function renderRulebook() {
     var box = $("rblist"); if (!box) return;
     var keep = window.scrollY;
     var I = (data && data.rulebook) || {}, BI = I.builtin || {}, L = I.limits || {};
     if (RB && RB_DIRTY && JSON.stringify(rbNorm(RB)) === JSON.stringify(rbNorm(I.doc || { tabs: [] }))) RB_DIRTY = false;
     if (!RB || !RB_DIRTY) RB = rbClone(I.doc || { tabs: [] });
-    box.textContent = "";
+    box.textContent = ""; RTES = [];
     function rbDirty() { RB_DIRTY = true; bar(); }
     function move(arr, i, d) { var j = i + d; if (j < 0 || j >= arr.length) return; var x = arr[i]; arr[i] = arr[j]; arr[j] = x; rbDirty(); renderRulebook(); }
     var top = el("div", "card"); top.style.marginTop = "10px";
@@ -768,9 +770,31 @@
     if (I.empty && !RB_DIRTY) {
       top.appendChild(el("div", "note", "まだ、大会ルールが書かれていません。見本（今のDiscordのルールを、タブとセクションに分けたもの）を入れて、直して使うこともできます。"));
       var sb = el("button", "primary", "見本を入れる"); sb.type = "button";
-      sb.addEventListener("click", function () { RB = rbClone(I.sample || { tabs: [] }); rbDirty(); renderRulebook(); setResult("ok", "見本を入れました。直してから「💾 大会ルールを保存」を押してください。"); });
+      sb.addEventListener("click", function () { var keepTheme = RB && RB.theme; RB = rbClone(I.sample || { tabs: [] }); RB.theme = keepTheme || {}; rbDirty(); renderRulebook(); setResult("ok", "見本を入れました。直してから「💾 大会ルールを保存」を押してください。"); });
       top.appendChild(sb);
     }
+    RB.theme = RB.theme || {};
+    var th = el("div", ""); th.style.cssText = "margin-top:10px;padding-top:8px;border-top:1px solid var(--line)";
+    th.appendChild(el("div", "", "🎨 ページの色（大会ルールのページ全体と、下の本文の欄に使います。決めなければ、いつもの色で、見る人がライト・ダークを選べます）"));
+    var thr = el("div", "row"); thr.style.cssText = "align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px";
+    function colorPick(key, label, dflt) {
+      var w = el("label", ""); w.style.cssText = "display:flex;align-items:center;gap:6px"; w.appendChild(el("span", "", label));
+      var ci = el("input"); ci.type = "color"; ci.value = RB.theme[key] || dflt; ci.style.cssText = "width:44px;height:30px;padding:0;border:none;background:none;cursor:pointer";
+      ci.addEventListener("input", function () { RB.theme[key] = ci.value; rbDirty(); RTES.forEach(function (r) { r.setColors(RB.theme); }); sw(); }); w.appendChild(ci); thr.appendChild(w);
+    }
+    colorPick("bg", "背景色", "#12141b"); colorPick("accent", "装飾色（ボタン・見出し・リンク）", "#6f95ff");
+    var rs = el("button", "", "いつもの色に戻す"); rs.type = "button";
+    rs.addEventListener("click", function () { RB.theme = {}; rbDirty(); renderRulebook(); }); thr.appendChild(rs);
+    th.appendChild(thr);
+    var pvw = el("div", ""); pvw.style.cssText = "margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line)";
+    function sw() {                                                                   // 色の見本（ページと同じ決め方で）
+      var t = RBF.theme(RB.theme) || RBF.theme({ bg: "#12141b", accent: "#6f95ff" }); pvw.textContent = "";
+      pvw.style.background = t.vars["--bg"]; pvw.style.color = t.vars["--text"]; pvw.style.borderColor = t.vars["--line"];
+      var b1 = el("span", "", "ボタン"); b1.style.cssText = "display:inline-block;padding:4px 12px;border-radius:8px;font-weight:800;margin-right:10px;background:" + t.vars["--accent"] + ";color:" + t.vars["--on-accent"];
+      var l1 = el("span", "", "リンクの色"); l1.style.cssText = "font-weight:700;text-decoration:underline;color:" + t.vars["--link"];
+      pvw.appendChild(el("span", "", "見本：　")); pvw.appendChild(b1); pvw.appendChild(l1);
+    }
+    sw(); th.appendChild(pvw); top.appendChild(th);
     box.appendChild(top);
     RB.tabs.forEach(function (t, ti) {
       var c = el("div", "card"); c.style.marginTop = "10px";
@@ -802,12 +826,8 @@
         var sd = el("button", "", "↓"); sd.type = "button"; sd.disabled = si === t.sections.length - 1; sd.addEventListener("click", function () { move(t.sections, si, 1); }); sh.appendChild(sd);
         var sx = el("button", "", "🗑"); sx.type = "button"; sx.style.color = "#ff7070"; sx.addEventListener("click", function () { if (confirm("セクション「" + (sc.title || "") + "」を消します。よろしいですか？")) { t.sections.splice(si, 1); rbDirty(); renderRulebook(); } }); sh.appendChild(sx);
         sbx.appendChild(sh);
-        var ta2 = document.createElement("textarea"); ta2.rows = Math.min(14, Math.max(4, String(sc.body || "").split("\n").length + 1)); ta2.style.width = "100%"; ta2.maxLength = L.body || 4000; ta2.value = sc.body || ""; ta2.placeholder = "本文";
-        var pk = ok + "s" + si, pv = el("details"); pv.open = !!RB_OPEN[pk]; pv.addEventListener("toggle", function () { RB_OPEN[pk] = pv.open; });
-        pv.appendChild(el("summary", "", "▼ 表示の見本")); var pvb = el("div", "note"); pv.appendChild(pvb);
-        function rbPrev() { pvb.textContent = ""; pvb.appendChild(mdRender(ta2.value)); }
-        ta2.addEventListener("input", function () { sc.body = ta2.value; rbDirty(); rbPrev(); }); rbPrev();
-        sbx.appendChild(ta2); sbx.appendChild(pv); det.appendChild(sbx);
+        var rte = RBF.editor(sc.body || "", function (v) { sc.body = v; rbDirty(); }, { placeholder: "本文（上のボタンで、見出し・太字・斜体・下線・文字色・リンク）", theme: RB.theme });
+        RTES.push(rte); sbx.appendChild(rte); det.appendChild(sbx);
       });
       var as = el("button", "", "＋ セクションを足す"); as.type = "button"; as.disabled = t.sections.length >= (L.sections || 40);
       as.addEventListener("click", function () { t.sections.push({ title: "", body: "" }); RB_OPEN[ok] = true; rbDirty(); renderRulebook(); });
