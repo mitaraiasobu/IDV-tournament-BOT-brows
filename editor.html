@@ -435,7 +435,7 @@
   }
   // ───────── ⏱ 時間管理（大会ごとに別。トーナメント表の時間は、ここでは変わらない）
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  var TLEV = [];
+  var TLEV = [], TLFLOW = [];
   function ymdhm(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + hhmm(d); }
   function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function hhmmss(d) { return hhmm(d) + ":" + pad(d.getSeconds()); }
@@ -551,8 +551,9 @@
       add(t8, "配信終了（予定）", "", "", { cat: "閉会", who: "" });
     } else note.appendChild(el("div", "", "試合の終了予定が出せないため、配信終了の時刻は、出ていません（⚙ 大会設定で、試合の想定時間を入れてください）。"));
     ev.sort(function (a, b) { return a.d - b.d; });
-    TLEV = [];                                                                         // 「共有」で送る、全体の流れ
-    ev.forEach(function (e) { (e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e]).forEach(function (c) { if (c.d) TLEV.push({ t: ymdhm(c.d), main: c.main, sub: c.sub || "" }); }); });
+    TLEV = []; TLFLOW = [];                                                            // 「共有」で送る、全体の流れ（文と、大会ルールのページに出す表の形）
+    ev.forEach(function (e) { (e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e]).forEach(function (c) { if (c.d) { TLEV.push({ t: ymdhm(c.d), main: c.main, sub: c.sub || "" });
+      TLFLOW.push({ t: ymdhm(c.d), main: c.main, sub: c.sub || "", cat: c.x.cat || "", who: c.x.who || "", dur: c.x.dur || "", off: !!c.x.off, g: !!e.lanes }); } }); });
     TLEV.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : 0; });
     renderFlow(ev, base);
   }
@@ -1525,7 +1526,7 @@
       if (!TM || TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、共有してください。";
       else { renderTimeline(); if (!TLEV.length) bad = bad || "共有する「全体の流れ」がありません（上の「配信開始」を入れてください）。"; }
       if (!bad && !confirm("保存して、全体の流れを、キャスターとモデレーターに共有します。よろしいですか？")) return;
-      if (!bad) ops.push({ op: "share_times", events: TLEV });
+      if (!bad) ops.push({ op: "share_times", events: TLEV, flow: TLFLOW });
     }
     if (bad) { setResult("ng", "⚠ " + bad); return; }
     if (!ops.length) { setResult("ok", "変更はありません。"); return; }

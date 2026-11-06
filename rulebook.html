@@ -112,6 +112,38 @@
   .bpw ol.steps li::before { content: counter(st); flex: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; background: var(--line); }
   .bpw ol.steps li.ban::before { background: #c94545; color: #fff; } .bpw ol.steps li.pick::before { background: var(--accent); color: var(--on-accent, #fff); }
   .bpw .none { color: var(--sub); }
+  /* 🎁 賞品（専用の見た目） */
+  .pzw { display: grid; gap: 12px; margin: 4px 0 14px; }
+  .pzc { position: relative; overflow: hidden; border-radius: 18px; padding: 16px 18px; border: 2px solid var(--pz); color: var(--text);
+         background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--pz) 38%, transparent) 0%, transparent 60%), var(--panel); }
+  .pzc::after { content: ""; position: absolute; inset: -40% -10% auto auto; width: 180px; height: 180px; border-radius: 50%; background: color-mix(in srgb, var(--pz) 18%, transparent); filter: blur(8px); pointer-events: none; }
+  .pzc .top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pzc .medal { flex: none; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;
+                background: radial-gradient(circle at 30% 30%, #fff8, transparent 60%), var(--pz); box-shadow: 0 4px 14px color-mix(in srgb, var(--pz) 55%, transparent); }
+  .pzc .lb { font-size: 22px; font-weight: 900; letter-spacing: .04em; }
+  .pzc .it { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-top: 8px; border-radius: 12px; background: color-mix(in srgb, var(--panel2) 80%, transparent); position: relative; z-index: 1; }
+  .pzc .it .who { font-size: 12px; color: var(--sub); font-weight: 800; } .pzc .it .gift { font-size: 17px; font-weight: 900; overflow-wrap: anywhere; }
+  .pzc .it .ic { flex: none; font-size: 26px; }
+  .pzc.k1 { --pz: #f5c542; } .pzc.k2 { --pz: #b8c4d6; } .pzc.kany { --pz: #6fc3ff; } .pzc.kmvp { --pz: #c48bff; }
+  .pzc .bpw-face { flex: none; }
+  .pzc .face { position: relative; width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 2px solid var(--pz); display: flex; align-items: center; justify-content: center; font-weight: 900; }
+  .pzc .face img { position: absolute; height: 100%; left: 50%; top: 0; transform: translateX(-50%); } .pzc .face img.fit { transform: none; }
+  @media (min-width: 700px) { .pzw { grid-template-columns: 1fr 1fr; } .pzc.k1 { grid-column: 1 / -1; } }
+  /* 🕐 全体の流れ（大会設定ブラウザの「⏱ 時間管理」と同じ表。閲覧専用） */
+  .flw .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 10px; } .flw .bar .sm { color: var(--sub); font-size: 13px; margin-right: auto; }
+  .flw .bar button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+  .flow.grid { display: grid; gap: 6px; overflow: auto; max-height: 78vh; align-items: start; border: 1px solid var(--line); border-radius: 12px; padding: 8px; background: var(--panel); }
+  .fhd { position: sticky; background: var(--panel); z-index: 1; font-size: 12px; color: var(--sub); padding: 4px 6px; border-radius: 6px; }
+  .flow.h .fhd.time, .flow.h .fhd.corner { top: 0; } .flow.h .fhd.lane, .flow.h .fhd.corner { left: 0; z-index: 2; }
+  .flow.v .fhd.lane, .flow.v .fhd.corner { top: 0; } .flow.v .fhd.time, .flow.v .fhd.corner { left: 0; z-index: 2; }
+  .fhd.lane, .fhd.time { font-weight: 700; color: var(--text); } .fhd.lane { align-self: stretch; }
+  .fcell { display: flex; flex-direction: column; gap: 6px; min-height: 30px; border-left: 1px dashed var(--line); padding-left: 4px; } .fcell.together { border-left: 2px solid var(--accent); }
+  .fref { font-size: 12px; color: var(--sub); border: 1px dashed var(--line); border-radius: 8px; padding: 4px 6px; }
+  .fcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; } .fcard.off { opacity: .6; }
+  .fcard .ftm { color: var(--accent); font-weight: 800; font-variant-numeric: tabular-nums; } .fcard .fcat { font-size: 11px; color: var(--sub); }
+  .fcard .fmain { font-weight: 700; font-size: 14px; } .fcard .fsub { color: var(--sub); font-size: 12px; white-space: pre-wrap; } .fcard .fdur { font-size: 13px; }
+  .fgtitle { color: var(--accent); font-size: 12px; font-weight: 700; }
+  .who { display: flex; gap: 4px; flex-wrap: wrap; } .who span { font-size: 11px; padding: 0 7px; border-radius: 999px; color: #fff; } .who .t { background: #2f6fd6; } .who .c { background: #8a4fd8; } .who .m { background: #1f9d6a; }
   .bkw iframe { width: 100%; border: 0; display: block; min-height: 420px; background: transparent; }
 
   .nav button { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -279,8 +311,8 @@
       .then(function (d) { BP = d || {}; }).catch(function () { BP = BP || {}; }).then(function () { BP_LOADING = false; done(); });
   }
   function imgUrl(p) { return String(p).split("/").map(encodeURIComponent).join("/"); }
-  function face(name) {
-    var f = el("div", "face"), img = ((BP && BP.faces) || {})[name];
+  function face(name, img0) {
+    var f = el("div", "face"), img = img0 || ((BP && BP.faces) || {})[name];
     if (!img) { f.textContent = String(name || "?").slice(0, 1); return f; }
     var im = new Image(); im.alt = name; im.draggable = false; im.loading = "lazy";
     im.onload = function () {
@@ -359,6 +391,62 @@
     var f = document.querySelector(".bkw iframe"); if (f) f.style.height = BK_H + "px";
   });
 
+  // ── 🎁 賞品：専用の見た目（メダルのカード）。「{{prizes}}」を書いたセクションに出す ──
+  function prizeCards() {
+    var list = (D && D.prizes) || [], w = el("div", "pzw");
+    if (!list.length) { w.appendChild(el("div", "msg", "賞品は、まだ決まっていません。")); return w; }
+    var MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟" };
+    list.forEach(function (g) {
+      var c = el("div", "pzc k" + g.kind), top = el("div", "top"); top.appendChild(el("div", "medal", MEDAL[g.kind] || "🎁")); top.appendChild(el("div", "lb", g.label)); c.appendChild(top);
+      (g.items || []).forEach(function (it) {
+        var r = el("div", "it");
+        if (it.char && it.char.img) r.appendChild(face(it.char.name, it.char.img));
+        else r.appendChild(el("div", "ic", "🎀"));
+        var tx = el("div"); tx.appendChild(el("div", "who", it.who)); tx.appendChild(el("div", "gift", it.text)); r.appendChild(tx); c.appendChild(r);
+      });
+      w.appendChild(c);
+    });
+    return w;
+  }
+
+  // ── 🕐 全体の流れ：大会設定ブラウザの「⏱ 時間管理」と同じ表（閲覧専用）。「📣 時間の設定を共有」を押した時点の内容 ──
+  var FLOWDIR = null;
+  function pad2(n) { return ("0" + n).slice(-2); }
+  function pLocal(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
+  function fhm(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+  function dayLb(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
+  var FLANES = [["c", "キャスター"], ["m", "モデレーター"], ["t", "チーム（選手）"], ["", "配信画面・日程"]];
+  function drawFlow(box, fl) {
+    if (FLOWDIR == null) FLOWDIR = window.innerWidth < 700 ? "v" : "h";
+    var bar = el("div", "bar"), at = pLocal(fl.at);
+    bar.appendChild(el("span", "sm", "大会の運営が「時間の設定を共有」したときの予定です" + (at ? "（" + (at.getMonth() + 1) + "/" + at.getDate() + " " + fhm(at) + " 時点）" : "") + "。時間は前後することがあります。"));
+    [["h", "横に並べる"], ["v", "縦に並べる"]].forEach(function (o) { var b = el("button", FLOWDIR === o[0] ? "on" : "", o[1]); b.type = "button"; b.addEventListener("click", function () { FLOWDIR = o[0]; render(); }); bar.appendChild(b); });
+    box.appendChild(bar);
+    var evs = (fl.events || []).map(function (e) { return { d: pLocal(e.t), e: e }; }).filter(function (x) { return x.d; });
+    if (!evs.length) { box.appendChild(el("div", "msg", "まだ、全体の流れはありません。")); return; }
+    var base = evs[0].d, cols = [], byTime = {};
+    evs.forEach(function (x) { var k = String(Math.floor(x.d.getTime() / 60000)); if (!byTime[k]) { byTime[k] = { d: x.d, cards: [], together: false }; cols.push(byTime[k]); } byTime[k].cards.push(x.e); if (x.e.g) byTime[k].together = true; });
+    var f = el("div", "flow grid " + FLOWDIR), H = FLOWDIR === "h";
+    f.style.gridTemplateColumns = H ? "110px repeat(" + cols.length + ", 230px)" : "70px repeat(" + FLANES.length + ", minmax(160px, 1fr))";
+    function placeAt(node, row, col) { node.style.gridRow = String(H ? row : col); node.style.gridColumn = String(H ? col : row); f.appendChild(node); }
+    placeAt(el("div", "fhd corner", H ? "時刻 →" : "↓"), 1, 1);
+    FLANES.forEach(function (ln, li) { placeAt(el("div", "fhd lane", ln[1]), li + 2, 1); });
+    function laneOf(w) { for (var i = 0; i < 3; i++) if ((w || "").indexOf("tcm"[i]) >= 0) return "tcm"[i]; return ""; }
+    cols.forEach(function (c, ci) {
+      var th = el("div", "fhd time", fhm(c.d) + dayLb(c.d, base)); if (c.together) th.appendChild(el("div", "fgtitle", "同時に進みます")); placeAt(th, 1, ci + 2);
+      var cells = {}; FLANES.forEach(function (ln, li) { var cell = el("div", "fcell" + (c.together ? " together" : "")); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
+      c.cards.forEach(function (e) {
+        var main = laneOf(e.who), card = el("div", "fcard" + (e.off ? " off" : ""));
+        card.appendChild(el("div", "ftm", fhm(c.d) + dayLb(c.d, base))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
+        card.appendChild(el("div", "fmain", e.main)); if (e.sub) card.appendChild(el("div", "fsub", e.sub)); if (e.dur) card.appendChild(el("div", "fdur", "⏱ " + e.dur));
+        var w = el("div", "who"); (e.who || "").split("").forEach(function (k) { w.appendChild(el("span", k, { t: "チーム", c: "キャスター", m: "モデレーター" }[k])); }); if (w.childNodes.length) card.appendChild(w);
+        cells[main].appendChild(card);
+        (e.who || "").split("").forEach(function (k) { if (k === main || !cells[k]) return; var ref = el("div", "fref"); ref.appendChild(el("b", "", fhm(c.d))); ref.appendChild(el("span", "", " " + e.main)); cells[k].appendChild(ref); });
+      });
+    });
+    box.appendChild(f);
+  }
+
   // ── 表示 ──
   function render(openIdx) {
     var main = document.getElementById("main"), ts = tabs();
@@ -369,7 +457,7 @@
     if (!ts.length) { main.appendChild(el("div", "msg", "まだ、大会ルールはありません。")); document.getElementById("now").textContent = ""; return; }
     if (TAB >= ts.length) TAB = 0;
     var t = ts[TAB];
-    main.style.maxWidth = t.builtin === "bracket" ? "1600px" : "";                     // トーナメント表は、横に広く（大きいまま）
+    main.style.maxWidth = t.builtin === "bracket" || t.builtin === "flow" ? "1600px" : "";                     // トーナメント表は、横に広く（大きいまま）
     document.getElementById("now").textContent = t.title;
     badge();
     main.appendChild(allBar());
@@ -383,6 +471,7 @@
       }
       navButtons(main); return;
     }
+    if (t.builtin === "flow") { var fw = el("div", "flw"); main.appendChild(fw); drawFlow(fw, t.flow || {}); navButtons(main); return; }
     var secs = t.sections || [], c = counts(t);
     var tl = el("div", "tools"); tl.appendChild(el("span", "prog", secs.length ? (c[0] === c[1] ? "✓ このタブは全部読みました" : "読んだ：" + c[0] + " / " + c[1]) : ""));
     var oa = el("button", "", "すべて開く"); oa.type = "button"; oa.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = true; }); });
@@ -400,7 +489,7 @@
       if (chg) sm.appendChild(el("span", "rd chgb", "❗ 変更あり"));
       sm.appendChild(el("span", "rd " + (rd ? "ok" : "new"), rd ? "✓ 読んだ" : "未読"));
       d.appendChild(sm);
-      var bd = el("div", "body"); bd.appendChild(mdRender(chg ? RBF.markChanges(chg.before, chg.after) : s.body));
+      var bd = el("div", "body"); if (s.prizes) bd.appendChild(prizeCards()); if (s.body || chg) bd.appendChild(mdRender(chg ? RBF.markChanges(chg.before, chg.after) : s.body));
       if (chg) {
         var bf = el("details", "chgitem"); bf.appendChild(el("summary", "", "📝 変更前の文章を見る（" + dateText(chg.at) + " に変更）"));
         var bb = el("div", "cb"); bb.appendChild(mdRender(chg.before || "（この見出しは、新しく足されました）")); bf.appendChild(bb); bd.appendChild(bf);
