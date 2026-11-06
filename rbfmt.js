@@ -21,6 +21,56 @@
     ((doc && doc.tabs) || []).forEach(function (t) { (t.sections || []).forEach(function (s) { n++; if (isRead(pub, s)) r++; }); });
     return { read: r, total: n };
   }
+  // ───── 変更前と変更後を比べて、変わったところに {chg}…{/chg} をつける（行ごとに比べて、変わった行は、前後で同じ頭と尻尾を除いた真ん中だけ） ─────
+  var LINE_PREFIX = /^(\s*(?:#{1,3}\s+|[-・*]\s+|>\s?)?)/;
+  function markLine(line, old) {
+    var pre = LINE_PREFIX.exec(line)[1], body = line.slice(pre.length);
+    if (!body.trim()) return line;
+    if (old == null) return pre + "{chg}" + body + "{/chg}";
+    var ob = old.slice(LINE_PREFIX.exec(old)[1].length), p = 0, q = 0, n = body.length, on = ob.length;
+    while (p < n && p < on && body[p] === ob[p]) p++;
+    while (q < n - p && q < on - p && body[n - 1 - q] === ob[on - 1 - q]) q++;
+    while (p > 0 && "*_~[]{}".indexOf(body[p - 1]) >= 0) p--;                          // 記号（太字など）を、途中で切らない
+    while (q > 0 && "*_~[]{}".indexOf(body[n - q]) >= 0) q--;
+    var mid = body.slice(p, n - q);
+    if (!mid.trim()) return line;                                                     // 消えただけ（足された文字が無い）
+    return pre + body.slice(0, p) + "{chg}" + mid + "{/chg}" + body.slice(n - q);
+  }
+  function markChanges(before, after) {
+    var A = String(before || "").split("\n"), B = String(after || "").split("\n"), n = A.length, m = B.length, i, j;
+    if (n * m > 60000) return B.map(function (l) { return markLine(l, null); }).join("\n");
+    var dp = []; for (i = 0; i <= n; i++) { dp.push(new Array(m + 1).fill(0)); }
+    for (i = n - 1; i >= 0; i--) for (j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    var out = [], gapA = [], gapB = [];
+    function flush() {                                                                 // 同じ行のあいだの、変わった行：前の文と後の文を、順に組にする（組が無い行は、行ぜんぶ）
+      for (var k = 0; k < gapB.length; k++) out.push(gapB[k].trim() ? markLine(gapB[k], k < gapA.length ? gapA[k] : null) : gapB[k]);
+      gapA = []; gapB = [];
+    }
+    i = 0; j = 0;
+    while (i < n || j < m) {
+      if (i < n && j < m && A[i] === B[j]) { flush(); out.push(B[j]); i++; j++; }
+      else if (j < m && (i >= n || dp[i][j + 1] >= dp[i + 1][j])) { gapB.push(B[j]); j++; }
+      else { gapA.push(A[i]); i++; }
+    }
+    flush();
+    return out.join("\n");
+  }
+  function norm(t) { return String(t || "").replace(/\r\n/g, "\n").trim(); }
+  function changeFor(doc, tab, sec) {                                                  // この見出しの、いまの文に合う、いちばん新しい変更（古い変更は、出さない）
+    var best = null, label = tab.builtin === "entry" ? sec.title : tab.title + "｜" + sec.title;
+    ((doc && doc.changes) || []).forEach(function (c) {
+      if (c.kind === (tab.builtin === "entry" ? "entry" : "rulebook") && c.label === label && norm(c.after) === norm(sec.body) && (!best || c.id > best.id)) best = c;
+    });
+    return best;
+  }
+  function seenId(pub, kind) { try { return parseInt(localStorage.getItem("rb_seen:" + pub + ":" + kind) || "0", 10) || 0; } catch (e) { return MEM["seen:" + kind] || 0; } }
+  function setSeen(pub, kind, id) { MEM["seen:" + kind] = id; try { localStorage.setItem("rb_seen:" + pub + ":" + kind, String(id)); } catch (e) { /* そのまま */ } }
+  function kindChanges(doc, kind) { return ((doc && doc.changes) || []).filter(function (c) { return c.kind === kind; }); }
+  function attention(pub, doc) {                                                       // ！を付ける数：まだ読んでいない（変わったところも）セクション・まだ見ていない BAN/PICK・トーナメント表の変更
+    var p = progress(pub, doc), kinds = {};
+    ["bp", "bracket"].forEach(function (k) { var seen = seenId(pub, k), n = kindChanges(doc, k).filter(function (c) { return c.id > seen; }).length; if (n) kinds[k] = n; });
+    return { unread: p.total - p.read, kinds: kinds, any: (p.total - p.read) > 0 || Object.keys(kinds).length > 0 };
+  }
   function logoBox() {                                                                // ロゴのテンプレート画像と、ダウンロードボタン
     var w = el("div", "logo-tpl"); w.style.cssText = "text-align:center;margin:10px 0";
     if (!window.LOGO_TEMPLATE) return w;
@@ -53,6 +103,10 @@
         inline(mm[2], e, o); return e; } };
     } },
     rx(/\[([^\[\]]+)\]\((https?:\/\/[^)\s]+)\)/, function (m, o) { var a = el("a"); a.href = m[2]; if (!o.edit) { a.target = "_blank"; a.rel = "noopener noreferrer"; } inline(m[1], a, o); return a; }),
+    rx(/\{chg\}([\s\S]*?)\{\/chg\}/, function (m, o) {                                  // 変わったところ：赤い下線
+      var e = el("span", "chg"); e.style.cssText = "text-decoration:underline;text-decoration-color:#ff4d4d;text-decoration-thickness:2px;text-underline-offset:3px;background:rgba(255,77,77,.12);border-radius:3px";
+      inline(m[1], e, o); return e;
+    }, true),
     rx(/\[\[([^\]]+)\]\]/, function (m, o) { var a = el("a", "", "「" + m[1] + "」"); a.href = "#"; a.addEventListener("click", function (e) { e.preventDefault(); if (o.tabLink) o.tabLink(m[1]); }); return a; }, true),
     rx(/https?:\/\/[^\s　）)」]+/, function (m) { var a = el("a", "", m[0]); a.href = m[0]; a.target = "_blank"; a.rel = "noopener noreferrer"; return a; }, true)
   ];
@@ -309,5 +363,6 @@
     return wrap;
   }
 
-  window.RBF = { render: render, serialize: serialize, editor: editor, theme: theme, applyTheme: applyTheme, COLORS: COLORS, isRead: isRead, setRead: setRead, progress: progress };
+  window.RBF = { render: render, serialize: serialize, editor: editor, theme: theme, applyTheme: applyTheme, COLORS: COLORS, isRead: isRead, setRead: setRead, progress: progress,
+                  markChanges: markChanges, changeFor: changeFor, seenId: seenId, setSeen: setSeen, kindChanges: kindChanges, attention: attention };
 })();

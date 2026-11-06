@@ -797,6 +797,7 @@
       pvw.appendChild(el("span", "", "見本：　")); pvw.appendChild(b1); pvw.appendChild(l1);
     }
     sw(); th.appendChild(pvw); top.appendChild(th);
+    box.insertBefore(changesCard(), box.firstChild);
     box.appendChild(top);
     RB.tabs.forEach(function (t, ti) {
       var c = el("div", "card"); c.style.marginTop = "10px";
@@ -1285,8 +1286,76 @@
   }
   function render() { renderList(); renderEdit(); renderRounds(); if (!$("tab-time").hidden) renderTimes(); if (!$("tab-set").hidden) renderSettings(); if (!$("tab-br").hidden) renderBracket(); if (!$("tab-rc").hidden) renderRecruit(); if (!$("tab-rl").hidden) renderRules2(); if (!$("tab-rb").hidden) renderRulebook(); refreshDirty(); }
 
+  // ───── ルールの変更：履歴（変更前・変更後）・お知らせ（@everyone）に投稿・保存のあとの確認 ─────
+  var CHG_SEEN = null;
+  function chgText(e) { return (e.queued ? "（投稿待ち）" : ""); }
+  function chgCompare(e, C) {                                                       // 変更前・変更後を、並べて見せる（変わったところに、赤い下線）
+    var w = el("div", ""); w.style.cssText = "margin-top:6px";
+    var lb = el("div", "note", "変更前"); w.appendChild(lb);
+    var b0 = el("div", ""); b0.style.cssText = "border-left:3px solid var(--line);padding:2px 10px;margin:2px 0 8px"; b0.appendChild(window.RBF ? RBF.render(e.before || "（なし）") : document.createTextNode(e.before)); w.appendChild(b0);
+    w.appendChild(el("div", "note", "変更後"));
+    var b1 = el("div", ""); b1.style.cssText = "border-left:3px solid #ff4d4d;padding:2px 10px;margin:2px 0"; b1.appendChild(window.RBF ? RBF.render(RBF.markChanges(e.before, e.after) || "（なくなりました）") : document.createTextNode(e.after)); w.appendChild(b1);
+    return w;
+  }
+  function chgItem(e, C, open) {
+    var d = document.createElement("details"); d.open = !!open; d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0";
+    var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = "## " + ((C.titles || {})[e.kind] || e.kind) + "｜" + e.label + " " + chgText(e); d.appendChild(sm);
+    d.appendChild(chgCompare(e, C)); return d;
+  }
+  function postChanges(ids, label) {                                                // お知らせに投稿（@everyone付き）。BOTが投稿する
+    if (!confirm("「お知らせ-大会名」チャンネルに、" + label + "を、@everyone付きで投稿します。よろしいですか？\n（チャンネルが無ければ、作ります）")) return;
+    runOps([{ op: "changes_post", ids: ids || [] }], "投稿をBOTに頼んでいます…");
+  }
+  function dismissChanges(ids, label) {
+    if (!confirm(label + "を、投稿しないで履歴から消します。よろしいですか？")) return;
+    runOps([{ op: "changes_dismiss", ids: ids || [] }], "履歴から消しています…");
+  }
+  function changesCard() {                                                          // 「📖 大会ルール」タブの上：まだお知らせしていない変更
+    var C = (data && data.changes) || {}, Pn = C.pending || [];
+    var c = el("div", "card"); c.style.cssText = "margin-top:10px;border:2px solid " + (Pn.length ? "#ff6b6b" : "var(--line)");
+    var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = "📣 まだお知らせしていないルールの変更：" + Pn.length + "件"; c.appendChild(h);
+    c.appendChild(el("div", "note", "大会ルール・エントリーのルール・BAN/PICKのルール・トーナメント表を直すと、ここに溜まります（どこで直しても）。「お知らせ-大会名」チャンネルに、@everyone付きで、変更前と変更後を投稿できます。投稿しなかった変更は、履歴に残って、次にまとめて投稿できます。"));
+    if (!Pn.length) { c.appendChild(el("div", "note", "（いまは、ありません）")); }
+    Pn.forEach(function (e) {
+      var d = chgItem(e, C, false), r = el("div", "row");
+      var b1 = el("button", "", "この変更だけ投稿"); b1.type = "button"; b1.disabled = !!e.queued; b1.addEventListener("click", function () { postChanges([e.id], "この変更（" + e.label + "）"); });
+      var b2 = el("button", "", "投稿しないで消す"); b2.type = "button"; b2.addEventListener("click", function () { dismissChanges([e.id], "この変更（" + e.label + "）"); });
+      r.appendChild(b1); r.appendChild(b2); d.appendChild(r); c.appendChild(d);
+    });
+    if (Pn.length) {
+      var rr = el("div", "row"), pa = el("button", "primary", "📣 まとめて投稿する（@everyone）"); pa.type = "button"; pa.addEventListener("click", function () { postChanges([], "溜まっている" + Pn.length + "件"); });
+      var da = el("button", "", "ぜんぶ、投稿しないで消す"); da.type = "button"; da.addEventListener("click", function () { dismissChanges([], "溜まっている" + Pn.length + "件"); });
+      rr.appendChild(pa); rr.appendChild(da); c.appendChild(rr);
+    }
+    var Po = C.posted || [];
+    if (Po.length) {
+      var d2 = document.createElement("details"); d2.style.marginTop = "8px"; var s2 = document.createElement("summary"); s2.textContent = "投稿した変更（最近" + Po.length + "件）"; d2.appendChild(s2);
+      Po.slice().reverse().forEach(function (e) { d2.appendChild(chgItem(e, C, false)); }); c.appendChild(d2);
+    }
+    return c;
+  }
+  function checkNewChanges(d) {                                                     // 保存のあと、ルールの変更が増えていたら、投稿するかを聞く（開いたときは、聞かない）
+    var Pn = ((d.changes || {}).pending) || [], cur = {};
+    Pn.forEach(function (e) { cur[e.id] = e.at; });
+    if (CHG_SEEN === null) { CHG_SEEN = cur; return; }
+    var fresh = Pn.filter(function (e) { return CHG_SEEN[e.id] !== e.at && !e.queued; });
+    CHG_SEEN = cur;
+    if (fresh.length) setTimeout(function () { showChangePrompt(fresh, d.changes || {}); }, 50);
+  }
+  function showChangePrompt(fresh, C) {
+    var old = document.getElementById("chgask"); if (old) old.remove();
+    var w = document.createElement("div"); w.id = "chgask"; w.className = "bigpop";
+    var b = document.createElement("div"); b.className = "bigpop-in"; b.style.cssText += ";border-color:#ff6b6b;max-height:90vh;overflow:auto;font-size:15px";
+    b.appendChild(el("div", "", "📣 ルールが変わりました。お知らせしますか？")).style.cssText = "font-size:18px;font-weight:800";
+    b.appendChild(el("div", "note", "「お知らせ-大会名」チャンネルに、@everyone付きで、変更前と変更後を投稿します。「あとで」にすると、履歴に残って、あとからまとめて投稿できます。"));
+    fresh.forEach(function (e) { b.appendChild(chgItem(e, C, fresh.length <= 2)); });
+    var r = el("div", "row"), y = el("button", "primary", "📣 投稿する（@everyone）"); y.type = "button";
+    y.addEventListener("click", function () { w.remove(); postChanges(fresh.map(function (e) { return e.id; }), "この変更" + fresh.length + "件"); });
+    var n = el("button", "", "あとで（履歴に残す）"); n.type = "button"; n.addEventListener("click", function () { w.remove(); });
+    r.appendChild(y); r.appendChild(n); b.appendChild(r); w.appendChild(b); document.body.appendChild(w);
+  }
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
-    data = d;
+    data = d; checkNewChanges(d);
     P = clone(d.patterns); ROUNDS = clone(d.rounds); DELETED = []; TM = d.times ? clone(d.times) : null;
     TM0 = TM ? clone(TM) : null;                                                                              // 変えたかどうかは、BOTに保存されている値と比べる
     if (TM && (TM.lead_min == null || TM.lead_min === "")) TM.lead_min = (TM.defaults || {}).lead;           // 決まっていないときは、標準（25分前）を画面に入れておく。BOTには、まだ保存されていないので、そのまま保存すると、保存される

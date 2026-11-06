@@ -498,6 +498,7 @@
   function rbKey() { return (D && /^[A-Za-z0-9]{12}$/.test(D.rulebook || "")) ? D.rulebook : ""; }
   function loadRulebook() {
     var k = rbKey(); if (!k || RBSTATE === "loading") return;
+    if (me) { try { localStorage.setItem("rb_back:" + k, location.href); } catch (e) { /* そのまま */ } }       // 大会ルールのページから、ここに戻ってこられるように（行き来ボタン）
     var first = RBSTATE === ""; if (!first && Date.now() - RBAT < 15000) return;                  // ルールの取得は、15秒おきまで（ページの更新は4秒おき）
     RBAT = Date.now(); RBSTATE = "loading";
     fetch(BASE + k + "/rulebook.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
@@ -511,6 +512,7 @@
     if (!RBDOC) return null;
     var p = RBF.progress(rbKey(), RBDOC); return p.total ? p : null;
   }
+  function rbAttention() { var k = rbKey(); return !!(k && RBDOC && RBF.attention(k, RBDOC).any); }        // 大会ルールに、読んでいない（変わった）ところ・まだ見ていない変更がある
   function openRulebook() {                                                            // 大会ルールのページへ（読み終わったら、ここに戻ってこられる）
     var k = rbKey(); try { localStorage.setItem("rb_back:" + k, location.href); } catch (e) { /* そのまま */ }
     location.href = "rulebook.html?t=" + k;
@@ -980,9 +982,11 @@
       });
       pn.appendChild(b);
     });
-    if (D && D.rulebook && /^[A-Za-z0-9]{12}$/.test(D.rulebook)) {                     // 大会ルール（ルールを全部まとめたページ）：別の画面で開く
-      var rbl = el("a", "", "📖 大会ルール（全部のルール） ↗"); rbl.href = "rulebook.html?t=" + D.rulebook; rbl.target = "_blank"; rbl.rel = "noopener";
-      rbl.style.cssText = "display:block;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;margin-top:4px"; pn.appendChild(rbl);
+    if (rbKey()) {                                                                     // 大会ルール（ルールを全部まとめたページ）へ。大会ルールに、読んでいない・変わったところがあれば、！
+      var rbl = el("button", "", ""); rbl.type = "button"; rbl.style.cssText = "text-align:left;margin-top:6px";
+      if (rbAttention()) { var bg = el("span", "", "❗ "); bg.style.color = "var(--ng)"; bg.style.fontWeight = "900"; rbl.appendChild(bg); rbl.style.borderColor = "var(--ng)"; }
+      rbl.appendChild(document.createTextNode("📖 大会ルールへ")); rbl.addEventListener("click", function () { openRulebook(); });
+      pn.appendChild(rbl);
     }
     document.body.appendChild(pn);
   }
@@ -1450,9 +1454,11 @@
     }
     var mb = document.getElementById("menubtn");                                      // ☰ メニュー（本人用のページだけ）
     if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN); };
-      mb.textContent = "☰ メニュー" + (needsAttention(u, "team") || needsAttention(u, "apps") ? " ❗" : "");
+      var attnMe = needsAttention(u, "team") || needsAttention(u, "apps"), attnAll = attnMe || rbAttention();
+      if (rbKey()) { try { localStorage.setItem("rc_attn:" + rbKey(), attnMe ? "1" : "0"); } catch (e) { /* そのまま */ } }       // 大会ルールのページの「エントリーのページへ」に、！をつけるため
+      mb.textContent = "☰ メニュー" + (attnAll ? " ❗" : "");
       mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN);                       /* チュートリアル：メニューのボタンを点滅 */
-      mb.style.color = needsAttention(u, "team") || needsAttention(u, "apps") ? "var(--ng)" : ""; }
+      mb.style.color = attnAll ? "var(--ng)" : ""; }
     drawMenu(u);
     if (me && UNLOCKED) setTimeout(tutStep, 0);                                        // チュートリアル
     document.getElementById("lead").textContent = !me && INV ? "募集中のチームを見られます（このページでは、応募・チーム作りはできません）。"

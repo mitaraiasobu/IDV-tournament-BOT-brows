@@ -67,6 +67,12 @@
   .hits .w { color: var(--sub); font-size: 12px; }
   #toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; z-index: 60; }
   #toast[hidden] { display: none; }
+  .bang { color: #ff4d4d; font-weight: 900; margin-right: 4px; }
+  .rd.chgb { color: #ff6b6b; border-color: #ff6b6b; background: rgba(255,77,77,.12); }
+  details.chgitem { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin: 8px 0; } details.chgitem summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+  .chgitem .cl { font-size: 12px; font-weight: 800; color: var(--sub); margin-top: 6px; } .chgitem .cb { border-left: 3px solid var(--line); padding-left: 10px; font-size: 14px; }
+  .chgbox { border: 2px solid #ff6b6b; border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; background: var(--panel); } .chgbox .t { font-weight: 800; margin-bottom: 4px; }
+  #menu .tb.entry { border-color: var(--accent); }
   .allbar { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; background: var(--panel); }
   .allbar .t { font-size: 14px; font-weight: 700; margin-bottom: 6px; line-height: 1.5; } .allbar .pb { height: 8px; border-radius: 99px; background: var(--panel2); overflow: hidden; } .allbar .pf { height: 100%; background: var(--accent); }
   .allbar.ok { border-color: var(--ok); } .allbar.ok .t { color: var(--ok); margin: 0 0 8px; }
@@ -105,6 +111,31 @@
   function isRead(s) { return RBF.isRead(key, s); }                                   // 読んだ印は、エントリーのページと共通（rbfmt.js）
   function setRead(s, v) { RBF.setRead(key, s, v); }
   function allProg() { return RBF.progress(key, D); }
+  function entryAttn() { try { return parseInt(localStorage.getItem("rc_attn:" + key) || "0", 10) || 0; } catch (e) { return 0; } }       // エントリーのページの！の数（エントリーのページが、書いておく）
+  function tabFlag(t) {                                                              // そのタブに！：読んでいない（変わった）セクション・まだ見ていない変更
+    if (t.builtin === "bp" || t.builtin === "bracket") return !!RBF.attention(key, D).kinds[t.builtin];
+    var c = counts(t); return c[1] > 0 && c[0] < c[1];
+  }
+  function badge() {                                                                 // 右上の「☰ メニュー」に！（どれかのタブ・エントリーのページに、見るものがある）
+    var any = D && (RBF.attention(key, D).any || entryAttn() > 0), b = document.getElementById("menubtn");
+    b.textContent = "☰ メニュー" + (any ? " ❗" : "");
+  }
+  function bang() { var e = el("span", "bang", "❗"); return e; }
+  function dateText(iso) { var d = new Date(iso); return isNaN(d) ? "" : (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function changeBox(kind, title) {                                                  // BAN/PICK・トーナメント表のタブ：最近の変更（変更前と変更後）。まだ見ていないものを、目立たせる
+    var list = RBF.kindChanges(D, kind), seen = RBF.seenId(key, kind), box = el("div", "chgbox");
+    if (!list.length) return null;
+    box.appendChild(el("div", "t", "📝 " + title + "の最近の変更"));
+    list.slice().reverse().forEach(function (c) {
+      var d = el("details", "chgitem"), isNew = c.id > seen; d.open = isNew;
+      var sm = el("summary"); if (isNew) sm.appendChild(bang()); sm.appendChild(el("span", "", " " + c.label + "　" + dateText(c.at)));
+      d.appendChild(sm);
+      d.appendChild(el("div", "cl", "変更前")); var b0 = el("div", "cb"); b0.appendChild(mdRender(c.before || "（なし）")); d.appendChild(b0);
+      d.appendChild(el("div", "cl", "変更後")); var b1 = el("div", "cb"); b1.appendChild(mdRender(RBF.markChanges(c.before, c.after) || "（なくなりました）")); d.appendChild(b1);
+      box.appendChild(d);
+    });
+    return box;
+  }
   function allRead() { var p = allProg(); return p.total > 0 && p.read >= p.total; }
   function backUrl() {                                                                // エントリーのページから来たとき：戻る先（同じサイトの、エントリーのページだけ）
     try { var b = localStorage.getItem("rb_back:" + key); if (!b) return ""; var u = new URL(b, location.href); return u.origin === location.origin && /\/recruit\.html$/.test(u.pathname) ? u.href : ""; } catch (e) { return ""; }
@@ -174,10 +205,17 @@
     q.addEventListener("input", function () { Q = q.value; search(); }); search();
     tabs().forEach(function (t, i) {
       var b = el("button", "tb" + (i === TAB ? " on" : "")); b.type = "button";
+      if (tabFlag(t)) b.appendChild(bang());
       b.appendChild(el("span", "nm", t.title));
       if (!t.builtin || t.sections) { var c = counts(t); if (c[1]) b.appendChild(el("span", "c" + (c[0] === c[1] ? " all" : ""), c[0] === c[1] ? "✓ 読んだ" : c[0] + "/" + c[1])); }
       b.addEventListener("click", function () { goTab(i); }); pn.appendChild(b);
     });
+    var bu = backUrl();                                                                // エントリーのページへ（行き来できる）。エントリーのページに、見るものがあれば！
+    if (bu) {
+      var eb = el("button", "tb entry"); eb.type = "button"; eb.style.marginTop = "10px";
+      if (entryAttn() > 0) eb.appendChild(bang());
+      eb.appendChild(el("span", "nm", "📝 エントリーのページへ")); eb.addEventListener("click", function () { location.href = bu; }); pn.appendChild(eb);
+    }
     mw.appendChild(pn);
   }
   document.getElementById("menu").addEventListener("click", function (e) { if (e.target.id === "menu") closeMenu(); });
@@ -206,10 +244,13 @@
     if (TAB >= ts.length) TAB = 0;
     var t = ts[TAB];
     document.getElementById("now").textContent = t.title;
+    badge();
     main.appendChild(allBar());
     if (t.builtin === "bp" || t.builtin === "bracket") {                             // BAN/PICK・トーナメント表：それぞれのページを、そのまま中に
       var src = (t.builtin === "bp" ? "rules.html" : "index.html") + "?t=" + encodeURIComponent(key);
       var of = el("div", "openfull"), a = el("a", "", "↗ 別の画面で大きく開く"); a.href = src; a.target = "_blank"; a.rel = "noopener"; of.appendChild(a); main.appendChild(of);
+      var cb = changeBox(t.builtin, t.builtin === "bp" ? "BAN/PICKのルール" : "トーナメント表"); if (cb) main.appendChild(cb);
+      var lastId = 0; RBF.kindChanges(D, t.builtin).forEach(function (c) { if (c.id > lastId) lastId = c.id; }); if (lastId) RBF.setSeen(key, t.builtin, lastId);          // 見たので、次からは！をつけない（この表示では、まだ目立つ）
       var f = el("iframe", "frame"); f.src = src; f.title = t.title; f.loading = "lazy"; main.appendChild(f);
       navButtons(main); return;
     }
@@ -224,11 +265,17 @@
     var firstUnread = -1; secs.forEach(function (s, i) { if (firstUnread < 0 && !isRead(s)) firstUnread = i; });
     secs.forEach(function (s, i) {
       var rd = isRead(s), d = el("details", "sec" + (rd ? " read" : "")); d.id = "sec" + i;
-      d.open = openIdx != null ? openIdx === i : (!rd && (secs.length <= 3 || i === firstUnread));   // 未読の最初の1つを開いておく（少なければ、未読は全部）
+      var chg = rd ? null : RBF.changeFor(D, t, s);                                       // 読んでいない・変わったところ：赤い下線と、変更前の文章
+      d.open = openIdx != null ? openIdx === i : (!rd && (secs.length <= 3 || i === firstUnread || !!chg));   // 未読の最初の1つ・変わったところを開いておく（少なければ、未読は全部）
       var sm = el("summary"); sm.appendChild(el("span", "arw", "▶")); sm.appendChild(el("span", "st", s.title));
+      if (chg) sm.appendChild(el("span", "rd chgb", "❗ 変更あり"));
       sm.appendChild(el("span", "rd " + (rd ? "ok" : "new"), rd ? "✓ 読んだ" : "未読"));
       d.appendChild(sm);
-      var bd = el("div", "body"); bd.appendChild(mdRender(s.body));
+      var bd = el("div", "body"); bd.appendChild(mdRender(chg ? RBF.markChanges(chg.before, chg.after) : s.body));
+      if (chg) {
+        var bf = el("details", "chgitem"); bf.appendChild(el("summary", "", "📝 変更前の文章を見る（" + dateText(chg.at) + " に変更）"));
+        var bb = el("div", "cb"); bb.appendChild(mdRender(chg.before || "（この見出しは、新しく足されました）")); bf.appendChild(bb); bd.appendChild(bf);
+      }
       var dn = el("div", "done"), db = el("button", rd ? "" : "go", rd ? "たたむ" : "✓ 読み終わった（たたむ）"); db.type = "button";
       db.addEventListener("click", function () {
         var wasAll = allRead(); setRead(s, true); var nx = -1; for (var j = i + 1; j < secs.length; j++) if (!isRead(secs[j])) { nx = j; break; }
@@ -264,7 +311,7 @@
     }
     tick(); setInterval(tick, 10000);                                                  // ルールを直したら、すぐ反映（10秒おき・変わった通知・開き直したとき）
     document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
-    window.addEventListener("focus", tick);
+    window.addEventListener("focus", function () { tick(); badge(); });
     try { var es = new EventSource(base + key + "/rulebook.json"); var nu = function () { tick(); }; es.addEventListener("put", nu); es.addEventListener("patch", nu); } catch (e) { /* 使えないときは、10秒おきだけ */ }
   }
   if (window.RULEBOOK_DATA_EMBEDDED) { D = window.RULEBOOK_DATA_EMBEDDED; paint(); render(); } else load();
