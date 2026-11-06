@@ -764,6 +764,32 @@
     }
   });
 
+  // ───── ⚠ やり直し・削除（取り返しがつかない操作） ─────
+  TABS.push({
+    id: "dg", label: "⚠ やり直し・削除",
+    intro: "Discordの「⚙ 基本設定」の「♻ 大会の試合をやり直す」「🗑 大会を削除」と同じです。取り消せないので、確認のため、大会名を入力してから押します。押すと、BOTが「BOT管理」チャンネルに知らせます。",
+    render: function (root, K) {
+      var el = K.el, X = (K.data() || {}).danger || {}, DS = K.state("dg", { r: "", d: "" });
+      function nameBox(key) { var i = inp(el, DS[key], 60, X.name); i.addEventListener("input", function () { DS[key] = i.value; }); return i; }
+      var rc = box(el, "♻ 大会の試合をやり直す（応募はそのまま）", "組み合わせ抽選・試合結果・BAN/PICKの進行を、すべて取り消して、抽選の前に戻します。登録済みのチーム" + (X.teams || 0) + "件・選手" + (X.players || 0) + "人は、そのまま残ります（応募し直す必要はありません）。対戦カードのチャンネルは削除します。開催日時・エントリー締切などの大会設定は、変わりません。");
+      if (!X.drawn) rc.appendChild(el("div", "note", "まだ抽選していないので、やり直す必要はありません。"));
+      else if (!X.resettable) rc.appendChild(el("div", "note", "チュートリアル大会は、Discordのチュートリアルの手順で進めてください。"));
+      else {
+        rc.appendChild(field(el, "確認のため、大会名「" + X.name + "」を入力", nameBox("r")));
+        rc.appendChild(btnx(el, "danger", "♻ 試合をやり直す（取り消せません）", function () { if (DS.r.trim() !== X.name) { K.msg("ng", "⚠ 大会名が一致しません。"); return; } if (confirm("「" + X.name + "」の試合を、すべてやり直します。取り消せません。よろしいですか？")) { K.send([{ op: "t_reset_matches", name: DS.r.trim() }], "やり直しています…"); DS.r = ""; } }));
+      }
+      root.appendChild(rc);
+      var dc = box(el, "🗑 大会を削除", "チーム" + (X.teams || 0) + "件・選手" + (X.players || 0) + "人・試合結果" + (X.results || 0) + "件を、すべて削除します。大会のロール・各チームのロール・この大会用に作ったチャンネルも削除します。取り消せません（念のため、控えのファイルを、BOTのパソコンに自動で保存します）。削除すると、このページは使えなくなります。");
+      if (X.deleting) dc.appendChild(el("div", "", "⏳ 削除をBOTに頼みました。1分ほどで終わります。"));
+      else if (!X.deletable) dc.appendChild(el("div", "note", "チュートリアル大会・開発者用大会は、削除できません。"));
+      else {
+        dc.appendChild(field(el, "確認のため、大会名「" + X.name + "」を入力", nameBox("d")));
+        dc.appendChild(btnx(el, "danger", "🗑 大会を削除する（取り消せません）", function () { if (DS.d.trim() !== X.name) { K.msg("ng", "⚠ 大会名が一致しません。"); return; } if (confirm("「" + X.name + "」を削除します。チーム・選手・試合結果・ロール・チャンネルもすべて削除されます。取り消せません。本当によろしいですか？")) { K.send([{ op: "t_delete", name: DS.d.trim() }], "頼んでいます…"); DS.d = ""; } }));
+      }
+      root.appendChild(dc);
+    }
+  });
+
   window.EDX = (window.EDX || []).concat(TABS);
   window.EDX_UI = { box: box, field: field, sel: sel, inp: inp };                  // ほかのタブ（あとで足すもの）が使う、小さな部品
 })();
