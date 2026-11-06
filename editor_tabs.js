@@ -764,6 +764,69 @@
     }
   });
 
+  // ───── 👥 選手・チーム ─────
+  TABS.push({
+    id: "pl", label: "👥 選手・チーム",
+    intro: "Discordの「📋 チーム・選手設定」の「👥 チーム内選手を一括表示」「🔀 まとめてチーム移動」「🗑 チーム・選手削除」と、管理者メニューの「📌 現在の大会を選ぶ」「🔀 大会の選び方」「🎙 選手・チーム情報」と同じです。ゲーム内IDとプロフィール画像は、Discordの「🎙 選手・チーム情報」で見てください（ブラウザには出しません）。1人ずつの移動は「📣 チームとメンバー募集」でもできます。",
+    render: function (root, K) {
+      var el = K.el, P = (K.data() || {}).players || {}, PS = K.state("pl", { from: "", to: "", pick: [], open: {} });
+      // 現在の大会・選び方
+      var ac = box(el, "📌 現在の大会・大会の選び方", "現在の大会：参加者の画面・配信画面に出る大会です（ニックネームは、切り替えても変わりません）。");
+      var cur = (P.tournaments || []).filter(function (t) { return t.active; })[0];
+      ac.appendChild(el("div", "", "いま：" + (cur ? cur.name : "（なし）")));
+      var ts = K.state("pl_act", { id: cur ? String(cur.id) : "" });
+      var ar = el("div", "row"); ar.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
+      ar.appendChild(sel(el, (P.tournaments || []).map(function (t) { return [String(t.id), (t.active ? "📌 " : "") + t.name + "（" + t.state + "）"]; }), ts.id, function (v) { ts.id = v; }));
+      ar.appendChild(btnx(el, "primary", "現在の大会にする", function () { if (cur && ts.id === String(cur.id)) { K.msg("ok", "もう現在の大会です。"); return; } K.send([{ op: "pl_active", id: ts.id }], "切り替えています…"); }));
+      ac.appendChild(ar);
+      ac.appendChild(el("div", "note", "大会の選び方：「管理者が選ぶ」＝管理者が切り替えた大会を、全員が使います。「参加者が自分で選ぶ」＝一部の画面で、対象の大会が複数あれば、そのつど選んでもらいます。"));
+      var mr = el("div", "row");
+      [["admin", "管理者が選ぶ"], ["self", "参加者が自分で選ぶ"]].forEach(function (m) { mr.appendChild(btnx(el, P.mode === m[0] ? "primary" : "", (P.mode === m[0] ? "✅ " : "") + m[1], function () { if (P.mode !== m[0]) K.send([{ op: "pl_select_mode", mode: m[0] }], "保存中…"); })); });
+      ac.appendChild(mr); root.appendChild(ac);
+      // 一覧
+      var T = P.teams || [], lc = box(el, "👥 チーム内選手を一括表示（" + T.length + "チーム）", "チームを押すと、選手の一覧が開きます。");
+      if (!T.length) lc.appendChild(el("div", "note", "まだチームが登録されていません。"));
+      T.forEach(function (t) {
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!PS.open[t.id];
+        d.addEventListener("toggle", function () { PS.open[t.id] = d.open; });
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = t.name + "（" + t.abbr + "）・" + t.players.length + "人"; d.appendChild(sm);
+        if (t.reading) d.appendChild(el("div", "note", "読み方：" + t.reading));
+        t.players.forEach(function (p) {
+          var w = el("div", ""); w.style.cssText = "margin:6px 0;padding-top:6px;border-top:1px dashed var(--line)";
+          var hd = el("div", "row"); hd.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
+          var nm = el("span", "", (p.leader ? "👑 " : "") + p.name + (p.reading ? "（" + p.reading + "）" : "") + "　" + p.faction + (p.pending ? "　※承認待ち" : "")); nm.style.cssText = "flex:1;font-weight:700"; hd.appendChild(nm);
+          if (!P.locked) hd.appendChild(btnx(el, "", "🗑 選手を削除", function () { if (confirm("「" + p.name + "」の登録を削除しますか？（ロールも外れます。取り消せません）")) K.send([{ op: "pl_player_delete", player: p.id }], "削除中…"); }));
+          w.appendChild(hd);
+          var inf = el("div", ""); inf.style.cssText = "white-space:pre-wrap;font-size:14px"; inf.textContent = p.info; w.appendChild(inf);
+          d.appendChild(w);
+        });
+        if (!t.players.length) d.appendChild(el("div", "note", "まだ選手がいません。"));
+        if (!P.locked && !P.drawn) { var db = btnx(el, "danger", "🗑 このチームを削除（抽選前のみ）", function () { if (confirm("「" + t.name + "」を削除します。所属選手" + t.players.length + "人の登録・チームのロール・専用チャンネルも削除されます。取り消せません。よろしいですか？")) K.send([{ op: "pl_team_delete", team: t.id }], "削除中…"); }); db.style.marginTop = "6px"; d.appendChild(db); }
+        lc.appendChild(d);
+      });
+      if (P.drawn) lc.appendChild(el("div", "note", "組み合わせを抽選したあとは、チームを削除できません（棄権などは「📊 当日・結果」の「失格」にします）。"));
+      root.appendChild(lc);
+      // まとめて移動
+      if (!P.locked) {
+        var mc = box(el, "🔀 まとめてチーム移動", "リーダーが含まれる場合、元のチームのリーダー権限は、残りのメンバーへ自動で移ります。全員が移動して元のチームが空になる場合は、そのチームを解散します（抽選前のみ）。");
+        var withP = T.filter(function (t) { return t.players.length; });
+        mc.appendChild(field(el, "① 元のチーム", sel(el, [["", "選んでください"]].concat(withP.map(function (t) { return [String(t.id), t.name + "（" + t.players.length + "人）"]; })), PS.from, function (v) { PS.from = v; PS.pick = []; K.redraw(); })));
+        var src = T.filter(function (t) { return String(t.id) === PS.from; })[0];
+        if (src) {
+          mc.appendChild(el("div", "note", "② 移動させる選手（押して選ぶ。複数選べます）"));
+          mc.appendChild(pickList(el, src.players.map(function (p) { return [p.id, p.name]; }), PS.pick, []));
+          mc.appendChild(field(el, "③ 移動先のチーム", sel(el, [["", "選んでください"]].concat(T.filter(function (t) { return t.id !== src.id; }).map(function (t) { return [String(t.id), t.name + "（" + t.players.length + "人）"]; })), PS.to, function (v) { PS.to = v; })));
+          mc.appendChild(btnx(el, "primary", "🔀 移動する", function () {
+            if (!PS.pick.length || !PS.to) { K.msg("ng", "⚠ 選手と移動先を選んでください。"); return; }
+            var dst = T.filter(function (t) { return String(t.id) === PS.to; })[0];
+            if (confirm(src.name + " → " + (dst ? dst.name : "") + "\n" + PS.pick.length + "人を移動します。よろしいですか？")) { K.send([{ op: "pl_bulk_move", from: src.id, to: PS.to, players: PS.pick.slice() }], "移動しています…"); PS.pick = []; PS.from = ""; PS.to = ""; }
+          }));
+        }
+        root.appendChild(mc);
+      }
+    }
+  });
+
   // ───── ⚠ やり直し・削除（取り返しがつかない操作） ─────
   TABS.push({
     id: "dg", label: "⚠ やり直し・削除",
