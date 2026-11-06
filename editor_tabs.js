@@ -525,6 +525,78 @@
     }
   });
 
+  // ───── 📊 当日・結果（集計・MVP・インタビュー・配信） ─────
+  function pre(el, text) { var p = el("div", ""); p.style.cssText = "white-space:pre-wrap;font-size:14px;line-height:1.6"; p.textContent = String(text || "").replace(/\*\*/g, ""); return p; }
+  function pickList(el, list, chosen, locked) {                                       // 押して選ぶ（複数）。locked の人は、外せない
+    var w = el("div", "row"); w.style.flexWrap = "wrap";
+    list.forEach(function (p) {
+      var on = chosen.indexOf(p[0]) >= 0, fixed = locked.indexOf(p[0]) >= 0, b = el("button", on ? "primary" : "", (on ? "✅ " : "") + p[1]); b.type = "button"; b.disabled = fixed;
+      if (fixed) b.title = "もう確認を送った人は、外せません";
+      b.addEventListener("click", function () { var k = chosen.indexOf(p[0]); if (k >= 0) chosen.splice(k, 1); else chosen.push(p[0]); b.className = chosen.indexOf(p[0]) >= 0 ? "primary" : ""; b.textContent = (chosen.indexOf(p[0]) >= 0 ? "✅ " : "") + p[1]; });
+      w.appendChild(b);
+    });
+    return w;
+  }
+  TABS.push({
+    id: "lo", label: "📊 当日・結果",
+    intro: "大会の当日や、終わったあとに押すもの（集計・MVP・インタビュー・配信）です。Discordの同じボタンと、同じ処理です（Discordでのお知らせは、BOTが送ります）。取り消せないものは、押す前に確認します。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).liveops || {};
+      // 配信
+      var S = D.stream || {}, sc = box(el, "📡 配信（ライブブラウザの演出）", "配信開始は1回だけ押せます（最初からやり直すことはできません）。");
+      var sr = el("div", "row");
+      var so = el("button", "primary", "▶ 配信開始"); so.type = "button"; so.disabled = !!S.open_started; so.addEventListener("click", function () { if (confirm("ライブブラウザで、開会の演出を始めます（1回だけ）。よろしいですか？")) K.send([{ op: "stream_open" }], "配信開始を頼んでいます…"); });
+      var sx = el("button", "", "⏹ 配信終了"); sx.type = "button"; sx.addEventListener("click", function () { if (confirm("閉会のごあいさつ →「大会終了」の画面 → 暗転、と進めます。よろしいですか？")) K.send([{ op: "stream_close" }], "配信終了を頼んでいます…"); });
+      var sz = el("button", "", "↺ 最初（真っ黒）に戻す"); sz.type = "button"; sz.addEventListener("click", function () { if (confirm("ライブブラウザを、真っ黒に戻します。よろしいですか？")) K.send([{ op: "stream_reset" }], "戻しています…"); });
+      sr.appendChild(so); sr.appendChild(sx); sr.appendChild(sz); sc.appendChild(sr);
+      sc.appendChild(el("div", "note", "いま：" + (S.close_started ? "配信終了の演出を始めました" : S.open_started ? "配信の演出が始まっています" : "まだ始めていません") + "。主催者名・決め台詞は「⚙ 大会設定」、配信開始の時刻は「⏱ 時間管理」で決めます。"));
+      root.appendChild(sc);
+      // MVP
+      var M = D.mvp || {}, mc = box(el, "🏆 MVP選出", M.enabled ? "チーム・選手のどちらでも、いくつでも選べます。確定すると取り消せません（大会名チャンネルに公開で通知し、本人（チームはリーダー）にもDMを送ります）。" : "MVP選出は「使わない」になっています（⚙ 大会設定で「使う」にできます）。");
+      (M.awards || []).forEach(function (a) { mc.appendChild(el("div", "", "🏆 " + (a.kind === "team" ? "チーム" : "選手") + "：" + a.name + (a.reason ? "（" + a.reason + "）" : "") + (a.announced ? "" : "　⚠ 未発表"))); });
+      if ((M.awards || []).some(function (a) { return !a.announced; })) { var ap = el("button", "primary", "📣 未発表のMVPを発表する"); ap.type = "button"; ap.addEventListener("click", function () { K.send([{ op: "mvp_announce_pending" }], "発表を頼んでいます…"); }); mc.appendChild(ap); }
+      if (M.enabled) {
+        var MV = K.state("mvp", { kind: "team", id: "", reason: "" });
+        mc.appendChild(field(el, "選ぶもの", sel(el, [["team", "チーム"], ["player", "選手"]], MV.kind, function (v) { MV.kind = v; MV.id = ""; K.redraw(); })));
+        var list = MV.kind === "team" ? (M.teams || []).map(function (t) { return [t[0], t[1]]; }) : (M.players || []).map(function (p) { var t = (M.teams || []).filter(function (x) { return x[0] === p[2]; })[0]; return [p[0], p[1] + (t ? "（" + t[1] + "）" : "")]; });
+        mc.appendChild(field(el, MV.kind === "team" ? "チーム" : "選手", sel(el, [["", "選んでください"]].concat(list), MV.id, function (v) { MV.id = v; })));
+        var ri = inp(el, MV.reason, 200, "選出理由（空でもよい）"); ri.addEventListener("input", function () { MV.reason = ri.value; }); mc.appendChild(field(el, "選出理由", ri));
+        var mb = el("button", "primary", "🏆 MVPを確定する（取り消せません）"); mb.type = "button";
+        mb.addEventListener("click", function () { if (!MV.id) { K.msg("ng", "⚠ 選んでください。"); return; } if (confirm("この内容で、MVPを確定します。確定すると取り消せません（大会名チャンネルに公開で通知し、DMも送ります）。よろしいですか？")) { var o = { op: "mvp_award", kind: MV.kind, id: MV.id, reason: MV.reason }; MV.id = ""; MV.reason = ""; K.send([o], "MVPを確定しています…"); } });
+        mc.appendChild(mb);
+      }
+      root.appendChild(mc);
+      // インタビュー
+      var I = D.interview || {}, ic = box(el, "🎤 インタビュー", I.enabled ? "選んだ選手には、チーム専用チャンネルで「インタビューを受けますか？」（受ける／受けない）を送ります。送ったあとは、運営側から取り消せません。" : "インタビューは「使わない」になっています（⚙ 大会設定で「使う」にできます）。");
+      if (I.enabled) {
+        if (I.champion) {
+          var CH = K.state("iv_ch", { ids: (I.chosen || []).slice() });
+          ic.appendChild(el("div", "", "優勝チーム：" + I.champion)); ic.appendChild(pickList(el, I.players || [], CH.ids, I.chosen || []));
+          var cb2 = el("button", "primary", "🎤 優勝チームのインタビュー選手に、確認を送る"); cb2.type = "button";
+          cb2.addEventListener("click", function () { if (!CH.ids.length) { K.msg("ng", "⚠ 選手を選んでください。"); return; } if (confirm("選んだ選手に、確認を送ります（取り消せません）。よろしいですか？")) K.send([{ op: "interview_pick", kind: "champion", ids: CH.ids.slice() }], "確認を頼んでいます…"); });
+          ic.appendChild(cb2);
+        } else ic.appendChild(el("div", "note", "優勝チームが決まると、ここで選べます。"));
+        if ((I.mvp_players || []).length) {
+          var MP = K.state("iv_mvp", { ids: (I.mvp_chosen || []).slice() });
+          ic.appendChild(el("div", "", "MVPインタビュー（MVPの選手・MVPチームのリーダー）")); ic.appendChild(pickList(el, I.mvp_players, MP.ids, I.mvp_chosen || []));
+          var mb2 = el("button", "primary", "🎤 MVPインタビュー選手に、確認を送る"); mb2.type = "button";
+          mb2.addEventListener("click", function () { if (!MP.ids.length) { K.msg("ng", "⚠ 選手を選んでください。"); return; } if (confirm("選んだ選手に、確認を送ります（取り消せません）。よろしいですか？")) K.send([{ op: "interview_pick", kind: "mvp", ids: MP.ids.slice() }], "確認を頼んでいます…"); });
+          ic.appendChild(mb2);
+        }
+      }
+      var fb = el("button", "", "🏁 最後のトーナメント表を映す"); fb.type = "button"; fb.disabled = !I.champion; fb.addEventListener("click", function () { K.send([{ op: "final_bracket" }], "切り替えています…"); }); ic.appendChild(fb);
+      root.appendChild(ic);
+      // 集計
+      var ST = D.stats || {}, stc = box(el, "📊 集計（BAN/PICKが完了した試合" + (ST.sessions || 0) + "件）", "Discordの「📊 集計」と同じ内容です（勝率の最低戦数は2戦・引き分けは勝ちに含む）。");
+      (ST.sections || []).forEach(function (s2) {
+        var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0";
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = s2[1]; d.appendChild(sm); d.appendChild(pre(el, s2[2])); stc.appendChild(d);
+      });
+      if (ST.csv) { var a = el("a", "", "📥 CSVで保存（BAN/PICKの記録。Excelなどで集計できます）"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent("\ufeff" + ST.csv); a.download = "banpick.csv"; stc.appendChild(a); }
+      root.appendChild(stc);
+    }
+  });
+
   window.EDX = (window.EDX || []).concat(TABS);
   window.EDX_UI = { box: box, field: field, sel: sel, inp: inp };                  // ほかのタブ（あとで足すもの）が使う、小さな部品
 })();
