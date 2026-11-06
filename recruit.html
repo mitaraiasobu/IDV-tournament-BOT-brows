@@ -1023,9 +1023,16 @@
     ov.addEventListener("click", function (e) { if (e.target === ov && !BUSY) close(); });
     d.appendChild(el("h2", "", (SKIND === "caster" ? "🎙 " : "🛡 ") + S.label));
     d.appendChild(el("div", "lead", "いまの" + S.label + "：" + (arr(S.names).length ? arr(S.names).join("、") : "（まだいません）")));
-    if (st) d.appendChild(el("div", "notice", "あなたは、もう応募しています（" + ({ pending: "審査中", adopted: "採用", rejected: "不採用" }[st] || st) + "）。内容を変えるときは、Discordのエントリーパネルの応募のボタンから変えられます。"));
-    else if (!S.open) d.appendChild(el("div", "msg ng", "応募の受付は、締め切りました。"));
+    var stLabel = { pending: "審査中", adopted: "採用", rejected: "不採用" }[st] || st;
+    if (st && !(u.sforms || {})[SKIND]) SF._pre = true;
+    if (st && !SF._pre) {                                                             // もう応募している：いまの応募の内容を、最初の入力に（変更できる）
+      var sfm = (u.sforms || {})[SKIND] || {};
+      SF = { role: sfm.role || "", sex: sfm.sex || "", message: sfm.message || "", dates: arr(sfm.dates).slice(), times: arr(sfm.times).slice(), exp: !!sfm.exp, exp_detail: sfm.exp_detail || "", rounds: arr(sfm.rounds).slice(), _pre: true };
+    }
+    if (st === "rejected") d.appendChild(el("div", "notice", "あなたの応募は、不採用になっているので、内容は変えられません。"));
+    else if (!st && !S.open) d.appendChild(el("div", "msg ng", "応募の受付は、締め切りました。"));
     else {
+      if (st) d.appendChild(el("div", "notice", "あなたは、もう応募しています（" + stLabel + "）。ここで内容を変えられます（締切のあとでも。" + (st === "adopted" ? "採用のままです）。" : "審査の状態は、そのままです）。")));
       var f = el("div", "frm");
       function lab(t) { f.appendChild(el("label", "", t)); }
       function sel(key, list) { var s0 = el("select"), o0 = el("option", "", "選んでください"); o0.value = ""; s0.appendChild(o0); arr(list).forEach(function (x) { var o = el("option", "", x[1]); o.value = x[0]; if (SF[key] === x[0]) o.selected = true; s0.appendChild(o); }); s0.addEventListener("change", function () { SF[key] = s0.value; }); f.appendChild(s0); }
@@ -1042,11 +1049,11 @@
       if (arr(S.dates).length) chips("dates", S.dates, "📅 参加できる日（すべて選んでください）");
       if (arr(S.times).length) chips("times", S.times, "🕒 参加できる時間帯（すべて選んでください）");
       d.appendChild(f);
-      var rr = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 送信中…" : "この内容で応募する"); go.type = "button"; go.disabled = BUSY;
+      var rr = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 送信中…" : (st ? "💾 内容を変更する" : "この内容で応募する")); go.type = "button"; go.disabled = BUSY;
       go.addEventListener("click", function () {
         if (SKIND === "caster" && (!SF.role || !SF.sex)) { setMsg("ng", "⚠ 希望と身体的性別を選んでください。"); return; }
         if (!(SF.message || "").trim()) { setMsg("ng", "⚠ 志望動機を入れてください。"); return; }
-        send({ act: "staff_apply", kind: SKIND, f: SF }, "応募しています…");
+        send({ act: "staff_apply", kind: SKIND, f: SF }, st ? "変更しています…" : "応募しています…");
       });
       rr.appendChild(go); d.appendChild(rr);
     }
