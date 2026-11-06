@@ -261,6 +261,54 @@
     }
   });
 
+  // ───── 🎙 スタッフ・日程 ─────
+  var SF = { dates: null, times: null };
+  TABS.push({
+    id: "sf", label: "🎙 スタッフ・日程",
+    intro: "選手・キャスター・モデレーターの応募で聞く「参加できる日・時間帯」の候補と、キャスター・モデレーターの応募の一覧（採用・不採用）です。応募を受け付けるか・締切は、「⚙ 大会設定」で決めます。採用・不採用は、Discordのボタンと同じ処理（ロールの付与・お知らせ）を、BOTがします。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).staff || {};
+      // 候補日・時間帯
+      var c = box(el, "📅 参加できる日・時間帯の候補", "1行に1つ（または「、」で区切る）。例：2026-12-05 ／ 夜（20時〜）。空にすると、聞きません。");
+      function area(key, rows) {
+        var t = document.createElement("textarea"); t.rows = rows; t.style.cssText = "width:100%;font-size:16px;padding:8px";
+        t.value = SF[key] != null ? SF[key] : (D[key] || []).join("\n"); t.addEventListener("input", function () { SF[key] = t.value; }); return t;
+      }
+      c.appendChild(field(el, "候補日", area("dates", 5))); c.appendChild(field(el, "候補の時間帯", area("times", 3)));
+      var r = el("div", "row"), sv = el("button", "primary", "💾 候補を保存"); sv.type = "button";
+      function split(t) { return String(t || "").split(/[\n、,]/).map(function (x) { return x.trim(); }).filter(Boolean); }
+      sv.addEventListener("click", function () {
+        var d = split(SF.dates != null ? SF.dates : (D.dates || []).join("\n")), t2 = split(SF.times != null ? SF.times : (D.times || []).join("\n"));
+        SF.dates = SF.times = null; K.send([{ op: "staff_calendar", dates: d, times: t2 }], "候補を保存しています…");
+      });
+      r.appendChild(sv); c.appendChild(r); root.appendChild(c);
+      // 応募
+      ["caster", "moderator"].forEach(function (kind) {
+        var k = (D.kinds || {})[kind]; if (!k) return;
+        var apps = k.apps || [], pend = apps.filter(function (a) { return a.status === "pending"; }).length;
+        var b = box(el, (kind === "caster" ? "🎙 " : "🛡 ") + k.label + "の応募（" + apps.length + "件・審査中" + pend + "件）", k.enabled ? "" : "※ いまは、「⚙ 大会設定」で、応募を受け付けていません。");
+        if (!apps.length) b.appendChild(el("div", "note", "（まだ応募はありません）"));
+        apps.forEach(function (a) {
+          var row = el("details", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; row.open = a.status === "pending";
+          var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = a.name + "　［" + ((D.status || {})[a.status] || a.status) + (a.queued ? "・処理待ち" : "") + "］"; row.appendChild(sm);
+          var lines = [];
+          if (a.role) lines.push("希望：" + a.role); if (a.sex) lines.push("身体的性別：" + a.sex);
+          lines.push("志望動機：" + (a.message || "（なし）")); lines.push("経験：" + (a.exp ? "あり" + (a.exp_detail ? "（" + a.exp_detail + "）" : "") : "なし"));
+          if ((a.dates || []).length) lines.push("参加できる日：" + a.dates.join("、")); if ((a.times || []).length) lines.push("時間帯：" + a.times.join("、"));
+          lines.forEach(function (t) { var d = el("div", "", t); d.style.cssText = "font-size:14px;margin:2px 0;white-space:pre-wrap"; row.appendChild(d); });
+          if (a.status === "pending") {
+            var br = el("div", "row"), ok = el("button", "primary", "✅ 採用する"), ng = el("button", "", "❌ 不採用にする"); ok.type = ng.type = "button"; ok.disabled = ng.disabled = !!a.queued;
+            ok.addEventListener("click", function () { if (confirm(a.name + " さんを採用します（ロールの付与・お知らせが、BOTから行われます）。よろしいですか？")) K.send([{ op: "staff_decide", app: a.id, adopt: true }], "採用を頼んでいます…"); });
+            ng.addEventListener("click", function () { if (confirm(a.name + " さんを不採用にします（DMでお知らせします）。よろしいですか？")) K.send([{ op: "staff_decide", app: a.id, adopt: false }], "不採用を頼んでいます…"); });
+            br.appendChild(ok); br.appendChild(ng); row.appendChild(br);
+          }
+          b.appendChild(row);
+        });
+        root.appendChild(b);
+      });
+    }
+  });
+
   window.EDX = (window.EDX || []).concat(TABS);
   window.EDX_UI = { box: box, field: field, sel: sel, inp: inp };                  // ほかのタブ（あとで足すもの）が使う、小さな部品
 })();
