@@ -717,6 +717,53 @@
     }
   });
 
+  // ───── 🔧 履歴・キャラ・マップ ─────
+  TABS.push({
+    id: "gm", label: "🔧 履歴・キャラ・マップ",
+    intro: "Discordの「🔧 BOT操作履歴・管理」の「📜 履歴」と「🎮 ゲームのアプデで追加されたキャラ・マップを登録」と同じです。キャラ・マップは、すべての大会に共通です（変えると、ほかの大会にも反映されます）。",
+    render: function (root, K) {
+      var el = K.el, G = (K.data() || {}).game || {}, GS = K.state("gm", { f: "survivor", q: "", edit: null, add: { name: "", reading: "", aliases: "", emoji: "" }, ed: {}, more: false });
+      // キャラ・マップ
+      var kinds = G.kinds || { survivor: "サバイバー", hunter: "ハンター", map: "マップ" };
+      var cc = box(el, "🎮 キャラ・マップ", "ゲームのアップデートでキャラやマップが増えたときは、ここから追加してください。消すことはできません（使わないものは「非表示」にします）。");
+      var fr = el("div", "row"); fr.style.flexWrap = "wrap";
+      Object.keys(kinds).forEach(function (f) { var n = ((G.chars || {})[f] || []).length; fr.appendChild(btnx(el, GS.f === f ? "primary" : "", kinds[f] + "（" + n + "）", function () { GS.f = f; GS.edit = null; K.redraw(); })); });
+      cc.appendChild(fr);
+      function four(o, onSave, label) {
+        var w = el("div", "");
+        [["name", "名前（30文字まで）", 30, ""], ["reading", "読み方（ひらがな。空でもよい）", 60, ""], ["aliases", "別名（「、」で区切って5つまで）", 160, "例：ナワーブ、傭兵"], ["emoji", "絵文字（1つ。空でもよい）", 8, ""]].forEach(function (x) {
+          var i = inp(el, o[x[0]], x[2], x[3]); i.addEventListener("input", function () { o[x[0]] = i.value; }); w.appendChild(field(el, x[1], i));
+        });
+        w.appendChild(btnx(el, "primary", label, onSave)); return w;
+      }
+      var add = el("div", "card"); add.style.marginTop = "8px"; add.appendChild(el("div", "", "➕ " + kinds[GS.f] + "を追加"));
+      add.appendChild(four(GS.add, function () { if (!GS.add.name.trim()) { K.msg("ng", "⚠ 名前を入れてください。"); return; } K.send([{ op: "char_add", faction: GS.f, name: GS.add.name, reading: GS.add.reading, aliases: GS.add.aliases, emoji: GS.add.emoji }], "追加しています…"); GS.add = { name: "", reading: "", aliases: "", emoji: "" }; }, "追加する"));
+      cc.appendChild(add);
+      var qi = inp(el, GS.q, 30, "名前・読み・別名で探す"); qi.addEventListener("input", function () { GS.q = qi.value; drawList(); }); cc.appendChild(field(el, "探す", qi));
+      var list = el("div", ""); cc.appendChild(list);
+      function drawList() {
+        list.textContent = "";
+        var q = GS.q.trim().toLowerCase();
+        ((G.chars || {})[GS.f] || []).filter(function (c) { return !q || (c.name + " " + c.reading + " " + c.aliases.join(" ")).toLowerCase().indexOf(q) >= 0; }).forEach(function (c) {
+          var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:3px 0;border-bottom:1px solid var(--line);padding-bottom:3px";
+          var lb = el("span", "", (c.emoji ? c.emoji + " " : "") + c.name + (c.reading ? "（" + c.reading + "）" : "") + (c.aliases.length ? "　別名：" + c.aliases.join("、") : "") + (c.active ? "" : "　※非表示")); lb.style.flex = "1"; if (!c.active) lb.style.opacity = ".6"; row.appendChild(lb);
+          row.appendChild(btnx(el, "", "✏ 編集", function () { GS.edit = c.id; GS.ed = { name: c.name, reading: c.reading, aliases: c.aliases.join("、"), emoji: c.emoji }; drawList(); }));
+          row.appendChild(btnx(el, c.active ? "" : "primary", c.active ? "🚫 非表示にする" : "👁 使えるように戻す", function () { if (!c.active || confirm("「" + c.name + "」を非表示にします（すべての大会の選択リストに出なくなります）。よろしいですか？")) K.send([{ op: "char_active", id: c.id, active: !c.active }], "保存中…"); }));
+          list.appendChild(row);
+          if (GS.edit === c.id) { var ec = el("div", "card"); ec.style.margin = "4px 0 8px 12px"; ec.appendChild(four(GS.ed, function () { K.send([{ op: "char_edit", id: c.id, name: GS.ed.name, reading: GS.ed.reading, aliases: GS.ed.aliases, emoji: GS.ed.emoji }], "保存中…"); GS.edit = null; }, "保存する")); ec.appendChild(btnx(el, "", "やめる", function () { GS.edit = null; drawList(); })); list.appendChild(ec); }
+        });
+      }
+      drawList();
+      root.appendChild(cc);
+      // 履歴
+      var H = G.history || [], hc = box(el, "📜 履歴（この大会）", "結果の登録・修正・失格・設定の変更などの記録です（新しい順）。");
+      if (!H.length) hc.appendChild(el("div", "note", "履歴はまだありません。"));
+      H.slice(0, GS.more ? H.length : 20).forEach(function (h) { var d = el("div", ""); d.style.cssText = "font-size:14px;margin:2px 0"; var t = el("span", "note", h[0] + "　"); d.appendChild(t); d.appendChild(document.createTextNode(h[1])); hc.appendChild(d); });
+      if (H.length > 20 && !GS.more) hc.appendChild(btnx(el, "", "もっと見る（" + H.length + "件まで）", function () { GS.more = true; K.redraw(); }));
+      root.appendChild(hc);
+    }
+  });
+
   window.EDX = (window.EDX || []).concat(TABS);
   window.EDX_UI = { box: box, field: field, sel: sel, inp: inp };                  // ほかのタブ（あとで足すもの）が使う、小さな部品
 })();
