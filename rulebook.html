@@ -85,7 +85,8 @@
   .bpw .rnds button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
   .bpw .hero { position: relative; overflow: hidden; border-radius: 16px; padding: 18px 18px 16px; margin-bottom: 12px; border: 1px solid var(--line);
                background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 34%, var(--panel)) 0%, var(--panel) 62%); }
-  .bpw .hero h2 { margin: 0 0 8px; font-size: 24px; letter-spacing: .02em; }
+  .bpw .hero .hl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; font-size: 20px; font-weight: 900; }
+  .bpw .hero .hi.live { color: #ff6b6b; }
   .bpw .pill { display: inline-block; font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 999px; margin: 0 6px 4px 0; background: var(--panel2); border: 1px solid var(--line); }
   .bpw .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 10px 0; }
   .bpw .card > h3 { margin: 0 0 10px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
@@ -128,11 +129,11 @@
   .pzc .it { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-top: 8px; border-radius: 12px; background: color-mix(in srgb, var(--panel2) 80%, transparent); position: relative; z-index: 1; }
   .pzc .it .who { font-size: 12px; color: var(--sub); font-weight: 800; } .pzc .it .gift { font-size: 17px; font-weight: 900; overflow-wrap: anywhere; }
   .pzc .it .ic { flex: none; font-size: 26px; }
-  .pzc.k1 { --pz: #f5c542; } .pzc.k2 { --pz: #b8c4d6; } .pzc.kany { --pz: #6fc3ff; } .pzc.kmvp { --pz: #c48bff; }
+  .pzc.k1 { --pz: #f5c542; } .pzc.k2 { --pz: #b8c4d6; } .pzc.kany { --pz: #6fc3ff; } .pzc.kmvp { --pz: #c48bff; } .pzc.kcond { --pz: #6fe0a0; }
   .pzc .bpw-face { flex: none; }
   .pzc .face { position: relative; width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 2px solid var(--pz); display: flex; align-items: center; justify-content: center; font-weight: 900; }
   .pzc .face img { position: absolute; height: 100%; left: 50%; top: 0; transform: translateX(-50%); } .pzc .face img.fit { transform: none; }
-  @media (min-width: 700px) { .pzw { grid-template-columns: 1fr 1fr; } .pzc.k1 { grid-column: 1 / -1; } }
+  @media (min-width: 700px) { .pzw { grid-template-columns: 1fr 1fr; } .pzc.k1, .pzc.wide { grid-column: 1 / -1; } }
   /* 🕐 全体の流れ（大会設定ブラウザの「⏱ 時間管理」と同じ表。閲覧専用） */
   .flw .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 10px; } .flw .bar .sm { color: var(--sub); font-size: 13px; margin-right: auto; }
   .flw .bar button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
@@ -395,17 +396,16 @@
     if (!rounds.length && !(r.global_rows || []).length) { box.appendChild(el("div", "msg", "BAN/PICKのルールは、まだありません。")); return; }
     if (BP_ROUND == null || !rounds.some(function (x) { return x.no === BP_ROUND; })) BP_ROUND = r.round_no || (rounds[0] && rounds[0].no);
     var cur = rounds.filter(function (x) { return x.no === BP_ROUND; })[0] || r;
+    box.appendChild(rowsCard("全試合に共通のルール", "🌐", r.global_rows, chg.global));                // ラウンドに関係なく、全試合に共通（ラウンドの外）
     if (rounds.length > 1) {
       var rb = el("div", "rnds");
       rounds.forEach(function (x) { var b = el("button", x.no === BP_ROUND ? "on" : "", x.name); b.type = "button"; b.addEventListener("click", function () { BP_ROUND = x.no; render(); }); rb.appendChild(b); });
       box.appendChild(rb);
     }
-    var hero = el("div", "hero"); hero.appendChild(el("h2", "", "🎯 " + (cur.name || r.round || "BAN/PICK")));
-    if (cur.format) hero.appendChild(el("span", "pill", cur.format));
-    if (cur.mode) hero.appendChild(el("span", "pill", cur.mode === "sequential" ? "順番進行（1試合ずつ）" : "同時進行"));
-    if (cur.matches) hero.appendChild(el("span", "pill", cur.matches + "試合"));
-    box.appendChild(hero);
-    box.appendChild(rowsCard("全試合に共通のルール", "🌐", r.global_rows, chg.global));
+    var hero = el("div", "hero"), hl = el("div", "hl");                               // 🎯 ラウンド名・形式・進め方・試合数・生配信（同じ大きさで横並び）
+    [["🎯 " + (cur.name || r.round || "BAN/PICK"), "nm"], [cur.format, ""], [cur.mode ? (cur.mode === "sequential" ? "順番進行" : "同時進行") : "", ""],
+     [cur.matches ? cur.matches + "試合" : "", ""], [cur.stream == null ? "" : (cur.stream ? "📺 生配信あり" : "生配信なし"), cur.stream ? "live" : ""]].forEach(function (x) { if (x[0]) hl.appendChild(el("span", "hi " + x[1], x[0])); });
+    hero.appendChild(hl); box.appendChild(hero);
     box.appendChild(rowsCard("このラウンドのルール", "📌", cur.round_rows, (chg.rounds || {})[cur.no] || chg.global));
     var steps = cur.steps || [];
     if (steps.length) {
@@ -424,7 +424,7 @@
   function prizeCards() {
     var list = (D && D.prizes) || [], w = el("div", "pzw");
     if (!list.length) { w.appendChild(el("div", "msg", "賞品は、まだ決まっていません。")); return w; }
-    var MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟" };
+    var MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟", cond: "🧩" };
     list.forEach(function (g) {
       var c = el("div", "pzc k" + g.kind), top = el("div", "top"); top.appendChild(el("div", "medal", MEDAL[g.kind] || "🎁")); top.appendChild(el("div", "lb", g.label)); c.appendChild(top);
       (g.items || []).forEach(function (it) {
@@ -435,6 +435,8 @@
       });
       w.appendChild(c);
     });
+    var rest = [].slice.call(w.children).filter(function (c) { return !c.classList.contains("k1"); });    // 優勝の下に並ぶカードが奇数なら、最後の1枚を横いっぱいに（1枚だけ細くならないように）
+    if (rest.length % 2 === 1) rest[rest.length - 1].classList.add("wide");
     return w;
   }
 
@@ -491,7 +493,6 @@
     badge();
     main.appendChild(allBar());
     if (t.builtin === "bp" || t.builtin === "bracket") {                             // BAN/PICK（このページの中に描く）・トーナメント表（大きいまま、枠なしで中に）
-      var cb = changeBox(t.builtin, t.builtin === "bp" ? "BAN/PICKのルール" : "トーナメント表"); if (cb) main.appendChild(cb);
       var lastId = 0; RBF.kindChanges(D, t.builtin).forEach(function (c) { if (c.id > lastId) lastId = c.id; }); if (lastId) RBF.setSeen(key, t.builtin, lastId);          // 見たので、次からは！をつけない（この表示では、まだ目立つ）
       if (t.builtin === "bp") { var bw = el("div", "bpw"); main.appendChild(bw); drawBp(bw); }
       else {
@@ -510,7 +511,7 @@
     var oa = el("button", "", "すべて開く"); oa.type = "button"; oa.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = true; }); });
     var ca = el("button", "", "すべてたたむ"); ca.type = "button"; ca.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = false; }); });
     tl.appendChild(oa); tl.appendChild(ca);
-    if (c[0]) { var rs = el("button", "", "未読に戻す"); rs.type = "button"; rs.addEventListener("click", function () { secs.forEach(function (s) { setRead(s, false); }); render(); }); tl.appendChild(rs); }
+    if (c[0]) { var rs = el("button", "", "未読に戻す"); rs.type = "button"; rs.addEventListener("click", function () { if (!confirm("このタブのルールを、すべて未読に戻しますか？")) return; secs.forEach(function (s) { setRead(s, false); }); render(); }); tl.appendChild(rs); }
     main.appendChild(tl);
     if (!secs.length) main.appendChild(el("div", "msg", "このタブには、まだ何も書かれていません。"));
     var firstUnread = -1; secs.forEach(function (s, i) { if (firstUnread < 0 && !isRead(s)) firstUnread = i; });

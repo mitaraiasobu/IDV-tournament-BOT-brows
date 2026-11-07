@@ -668,7 +668,7 @@
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -771,7 +771,7 @@
       return o;
     }), theme: rbTheme(d.theme) };
   }
-  function rbTheme(t) { var o = {}; t = t || {}; ["bg", "accent"].forEach(function (k) { if (/^#[0-9a-fA-F]{6}$/.test(t[k] || "")) o[k] = t[k].toLowerCase(); }); return o; }
+  function rbTheme(t) { var o = {}; t = t || {}; ["bg", "accent", "link"].forEach(function (k) { if (/^#[0-9a-fA-F]{6}$/.test(t[k] || "")) o[k] = t[k].toLowerCase(); }); return o; }
   function renderRulebook() {
     var box = $("rblist"); if (!box) return;
     var keep = window.scrollY;
@@ -832,7 +832,7 @@
       var ci = el("input"); ci.type = "color"; ci.value = RB.theme[key] || dflt; ci.style.cssText = "width:44px;height:30px;padding:0;border:none;background:none;cursor:pointer";
       ci.addEventListener("input", function () { RB.theme[key] = ci.value; rbDirty(); RTES.forEach(function (r) { r.setColors(RB.theme); }); sw(); }); w.appendChild(ci); thr.appendChild(w);
     }
-    colorPick("bg", "背景色", "#12141b"); colorPick("accent", "装飾色（ボタン・見出し・リンク）", "#6f95ff");
+    colorPick("bg", "背景色", "#12141b"); colorPick("accent", "装飾色（ボタン・見出し）", "#6f95ff"); colorPick("link", "リンクの色", "#ffd54a");
     var rs = el("button", "", "いつもの色に戻す"); rs.type = "button";
     rs.addEventListener("click", function () { RB.theme = {}; rbDirty(); renderRulebook(); }); thr.appendChild(rs);
     th.appendChild(thr);
@@ -867,6 +867,12 @@
       var dw = el("button", "", "↓"); dw.type = "button"; dw.title = "下へ"; dw.disabled = ti === RB.tabs.length - 1; dw.addEventListener("click", function () { move(RB.tabs, ti, 1); }); hd.appendChild(dw);
       if (!t.builtin) { var dl = el("button", "", "🗑"); dl.type = "button"; dl.title = "このタブを消す"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("タブ「" + (t.title || "") + "」を、中のセクションごと消します。よろしいですか？")) { RB.tabs.splice(ti, 1); rbDirty(); renderRulebook(); } }); hd.appendChild(dl); }
       c.appendChild(hd);
+      if (t.builtin === "ext") {
+        var es = I.ext_state || {}, et = (I.ext_texts || {})[es.mode || "record"] || "";
+        c.appendChild(el("div", "note", "🔒 BOTが決めた内容です（書き換え・削除・非表示はできません。↑↓で並べ替えはできます）。" + (es.enabled ? "いまは延長戦の同時実施が「オン」なので、参加者のページに出ています（" + (es.mode === "live" ? "同時実況" : "録画方式") + "の説明）。" : "延長戦の同時実施が「オフ」なので、参加者のページには出ません（「⚙ 大会設定」でオンにすると出ます）。")));
+        var ed2 = document.createElement("details"); ed2.appendChild(el("summary", "", "延長戦のルールの追加")); var ep = el("div", ""); ep.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; ep.textContent = et.replace(/\*\*/g, ""); ed2.appendChild(ep); c.appendChild(ed2);
+        box.appendChild(c); return;
+      }
       if (t.builtin === "about") {
         c.appendChild(el("div", "note", "🔒 BOTが決めた内容です（書き換え・削除・非表示はできません。↑↓で並べ替えはできます）。"));
         ((I.about || {}).sections || []).forEach(function (sc) { var d = document.createElement("details"); var sm = el("summary", "", sc.title); sm.style.cursor = "pointer"; d.appendChild(sm); var pv = el("div", ""); pv.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; pv.textContent = sc.body; d.appendChild(pv); c.appendChild(d); });
@@ -881,14 +887,7 @@
       var ok = "t" + ti, det = el("details"); det.open = RB_OPEN[ok] !== false; det.addEventListener("toggle", function () { RB_OPEN[ok] = det.open; });
       det.appendChild(el("summary", "", "セクション（" + t.sections.length + "）"));
       t.sections.forEach(function (sc, si) {
-        if (sc.builtin) {                                                               // 🔒 延長戦のルールの追加：中身はBOTが決める（オンのときだけ出る）
-          var lb = el("div", ""); lb.style.cssText = "border:1px dashed var(--line);border-radius:8px;padding:8px;margin:8px 0";
-          var lh = el("div", "row"); lh.style.alignItems = "center"; var ln = el("b", "", "🔒 " + (I.ext_simul || "延長戦のルールの追加")); ln.style.flex = "1"; lh.appendChild(ln);
-          var lu = el("button", "", "↑"); lu.type = "button"; lu.disabled = si === 0; lu.addEventListener("click", function () { move(t.sections, si, -1); }); lh.appendChild(lu);
-          var ld = el("button", "", "↓"); ld.type = "button"; ld.disabled = si === t.sections.length - 1; ld.addEventListener("click", function () { move(t.sections, si, 1); }); lh.appendChild(ld);
-          lb.appendChild(lh); lb.appendChild(el("div", "note", "「⚙ 大会設定」で延長戦の同時実施をオンにしたときだけ、ここに出ます（録画方式／同時実況に合った文。書き換え・削除はできません）。"));
-          det.appendChild(lb); return;
-        }
+        if (sc.builtin) return;                                                         // 以前の決まったセクション（いまはタブ）
         var sbx = el("div", ""); sbx.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0";
         var sh = el("div", "row"); sh.style.alignItems = "center";
         var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1 1 100%"; st.style.minWidth = "10em"; st.style.fontSize = "16px"; st.style.padding = "10px";
@@ -1083,6 +1082,7 @@
     st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
     Object.keys(st.fmts || {}).forEach(function (r) { ops.push({ op: "set_round_format", round: Number(r), fmt: st.fmts[r] }); });     // 試合形式（抽選の前だけ）
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
+    Object.keys(st.streams || {}).forEach(function (r) { ops.push({ op: "set_round_stream", round: Number(r), on: st.streams[r] }); });
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
     if (st.breaks !== null) ops.push({ op: "set_breaks", items: st.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: (b.label || "休憩").trim() || "休憩" }; }) });
@@ -1166,6 +1166,11 @@
       } else col.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
       col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"]], conc ? "1" : "0", function (x) {
         var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; renderBracket();
+      }));
+      st.streams = st.streams || {};
+      var strm = st.streams[r.no] != null ? st.streams[r.no] : r.stream;              // 生配信あり／なし（大会ルールの「BAN/PICK」タブに出る）
+      col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
+        var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
       var cur = st.starts[r.no] !== undefined ? st.starts[r.no] : (r.no === 1 ? B.start_at : r.override);
       var dt = el("input"); dt.type = "datetime-local"; dt.value = cur || ""; dt.title = r.no === 1 ? "大会日時（ラウンド1の開始）" : "日を分けるときの、このラウンドの開始（空＝前のラウンドから自動）";

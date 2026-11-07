@@ -217,7 +217,7 @@
         r1.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_edit", id: t.id, name: ni.value, color: cs.v }], "保存中…"); }));
         r1.appendChild(btnx(el, "", "🗑", function () { if (confirm("称号「" + t.name + "」を消します。持っている人からも外れます。よろしいですか？")) K.send([{ op: "title_delete", id: t.id }], "消しています…"); }));
         row.appendChild(r1);
-        row.appendChild(el("div", "note", "持っている人（" + t.holders.length + "人）：" + (t.holders.join("、") || "まだいません")));
+        row.appendChild(el("div", "note", "持っている人（" + (t.holders || []).length + "人）：" + ((t.holders || []).join("、") || "まだいません")));
         tc2.appendChild(row);
       });
       if (CL.length) {
@@ -398,7 +398,7 @@
       banBlock("allow", "✅ ローカル許可（いつでも使えて、BANもされない）", "BANされたくない（いつでも使いたい）キャラ・マップを指定します。", D.allow || []);
       // 組み合わせ
       var cc = box(el, "🧩 組み合わせローカルBAN（サバイバーの組み合わせを禁止）", "2〜4キャラ。「部分一致」は、指定したキャラが全員そろったらだめ。「完全一致」は、指定した組み合わせと全く同じ編成だけだめ（3キャラ以上のとき）。ハンターは、1人しか出ないので、指定できません。");
-      listRows(el, K, cc, D.combo || [], function (r) { return r.items.join("・") + "　（" + (r.mode === "exact" ? "完全一致" : "部分一致") + "／" + r.scope + "）"; }, function (r) { return { op: "bpr_combo_remove", id: r.id }; }, locked);
+      listRows(el, K, cc, D.combo || [], function (r) { return (r.items || []).join("・") + "　（" + (r.mode === "exact" ? "完全一致" : "部分一致") + "／" + r.scope + "）"; }, function (r) { return { op: "bpr_combo_remove", id: r.id }; }, locked);
       var st = BZ.combo;
       for (var i = 0; i < st.items.length; i++) (function (i) {
         cc.appendChild(field(el, (i + 1) + "人目", chooser(el, D, "survivor", st.items[i], function (v) { st.items[i] = v; }, "サバイバーを選ぶ")));
@@ -729,8 +729,8 @@
     if (m) {
       var teams = [["", "選んでください"], [String(m.a[0]), m.a[1] + "がハンター"], [String(m.b[0]), m.b[1] + "がハンター"]];
       rc.appendChild(el("div", "", "いま：" + m.status_text + (m.winner ? "（勝者：" + m.winner + (m.by_dq ? "・相手チームの失格" : "") + "）" : "") + (m.next_label && m.status !== "finished" && m.status !== "undecided" ? "　次の入力：" + m.next_label : "")));
-      if (!m.entries.length) rc.appendChild(el("div", "note", "まだ登録された結果はありません。"));
-      m.entries.forEach(function (e) {
+      if (!(m.entries || []).length) rc.appendChild(el("div", "note", "まだ登録された結果はありません。"));
+      (m.entries || []).forEach(function (e) {
         var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0";
         row.appendChild(el("span", "", "・" + e.label + (e.time ? "（" + e.time + "）" : "")));
         row.appendChild(btnx(el, "", "✏ 修正", function () { SM.edit = e.id; SM.h = String(e.hunter); SM.n = String(e.hangs); SM.t = e.time; K.redraw(); }));
@@ -748,11 +748,11 @@
           ed.appendChild(r2); rc.appendChild(ed);
         }
       });
-      if (m.need_time.length) {
+      if ((m.need_time || []).length) {
         var tc = el("div", "card"); tc.style.marginTop = "8px";
         tc.appendChild(el("div", "", "⏱ 時間勝負：吊り人数が同数のため、延長戦の前半戦・後半戦の試合時間で決めます。"));
-        m.need_time.forEach(function (id, k) { var t2 = inp(el, SM.times[id] || "", 8, "例：05:07"); t2.addEventListener("input", function () { SM.times[id] = t2.value; }); tc.appendChild(field(el, (k ? "後半戦" : "前半戦") + "の試合時間", t2)); });
-        tc.appendChild(btnx(el, "primary", "試合時間を登録する", function () { var t = {}; m.need_time.forEach(function (id) { t[String(id)] = SM.times[id] || ""; }); K.send([{ op: "res_times", match: m.id, times: t }], "保存中…"); }));
+        (m.need_time || []).forEach(function (id, k) { var t2 = inp(el, SM.times[id] || "", 8, "例：05:07"); t2.addEventListener("input", function () { SM.times[id] = t2.value; }); tc.appendChild(field(el, (k ? "後半戦" : "前半戦") + "の試合時間", t2)); });
+        tc.appendChild(btnx(el, "primary", "試合時間を登録する", function () { var t = {}; (m.need_time || []).forEach(function (id) { t[String(id)] = SM.times[id] || ""; }); K.send([{ op: "res_times", match: m.id, times: t }], "保存中…"); }));
         rc.appendChild(tc);
       } else if (m.next && m.status !== "finished" && m.status !== "undecided") {
         var ac = el("div", "card"); ac.style.marginTop = "8px";
@@ -772,7 +772,7 @@
         dc.appendChild(dr); rc.appendChild(dc);
       }
       var r3 = el("div", "row"); r3.style.marginTop = "8px";
-      if (m.entries.length || m.status === "undecided") r3.appendChild(btnx(el, "", "♻ 試合結果をリセット", function () { if (confirm("この試合の登録済みの結果を、すべて取り消します（履歴には残ります）。よろしいですか？")) K.send([{ op: "res_reset", match: m.id }], "保存中…"); }));
+      if ((m.entries || []).length || m.status === "undecided") r3.appendChild(btnx(el, "", "♻ 試合結果をリセット", function () { if (confirm("この試合の登録済みの結果を、すべて取り消します（履歴には残ります）。よろしいですか？")) K.send([{ op: "res_reset", match: m.id }], "保存中…"); }));
       if (m.resettable) r3.appendChild(btnx(el, "", "🔄 試合開始のやり直し", function () { if (confirm("この枠（" + m.next_label + "）の試合開始を、なかったことにします。\n先攻ハンターの抽選もBAN/PICKも取り消され、もう一度「試合開始」の抽選からやり直せます。入力済みの試合結果は、そのままです。よろしいですか？")) K.send([{ op: "bp_reset", match: m.id }], "保存中…"); }));
       if (r3.childNodes.length) rc.appendChild(r3);
     }
@@ -816,8 +816,8 @@
           var pw = el("div", ""); pw.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
           pw.appendChild(el("div", "", "🎁 " + p.who + "へ：" + p.text));
           pw.appendChild(el("div", "note", p.state === "announced" ? "✅ お知らせしました" : p.decided ? "当てはまる人が決まっています（優勝・MVPが決まったら、お知らせします）" : "❔ 選んでほしい選手がいます"));
-          if (p.yes.length) pw.appendChild(el("div", "note", "当てはまる：" + p.yes.map(function (x) { return x[1]; }).join("、")));
-          if (p.unknown.length && p.state !== "announced") {
+          if ((p.yes || []).length) pw.appendChild(el("div", "note", "当てはまる：" + (p.yes || []).map(function (x) { return x[1]; }).join("、")));
+          if ((p.unknown || []).length && p.state !== "announced") {
             var CK = K.state("cp_" + p.id, { ids: (p.picked || []).slice() });
             pw.appendChild(el("div", "note", "BOTに分からない選手（当てはまる人を押して選ぶ）："));
             pw.appendChild(pickList(el, p.unknown, CK.ids, []));
@@ -909,10 +909,10 @@
       function drawList() {
         list.textContent = "";
         var q = GS.q.trim().toLowerCase();
-        ((G.chars || {})[GS.f] || []).filter(function (c) { return !q || (c.name + " " + c.reading + " " + c.aliases.join(" ")).toLowerCase().indexOf(q) >= 0; }).forEach(function (c) {
+        ((G.chars || {})[GS.f] || []).filter(function (c) { return !q || (c.name + " " + c.reading + " " + (c.aliases || []).join(" ")).toLowerCase().indexOf(q) >= 0; }).forEach(function (c) {
           var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:3px 0;border-bottom:1px solid var(--line);padding-bottom:3px";
-          var lb = el("span", "", (c.emoji ? c.emoji + " " : "") + c.name + (c.reading ? "（" + c.reading + "）" : "") + (c.aliases.length ? "　別名：" + c.aliases.join("、") : "") + (c.active ? "" : "　※非表示")); lb.style.flex = "1"; if (!c.active) lb.style.opacity = ".6"; row.appendChild(lb);
-          row.appendChild(btnx(el, "", "✏ 編集", function () { GS.edit = c.id; GS.ed = { name: c.name, reading: c.reading, aliases: c.aliases.join("、"), emoji: c.emoji }; drawList(); }));
+          var lb = el("span", "", (c.emoji ? c.emoji + " " : "") + c.name + (c.reading ? "（" + c.reading + "）" : "") + ((c.aliases || []).length ? "　別名：" + (c.aliases || []).join("、") : "") + (c.active ? "" : "　※非表示")); lb.style.flex = "1"; if (!c.active) lb.style.opacity = ".6"; row.appendChild(lb);
+          row.appendChild(btnx(el, "", "✏ 編集", function () { GS.edit = c.id; GS.ed = { name: c.name, reading: c.reading, aliases: (c.aliases || []).join("、"), emoji: c.emoji }; drawList(); }));
           row.appendChild(btnx(el, c.active ? "" : "primary", c.active ? "🚫 非表示にする" : "👁 使えるように戻す", function () { if (!c.active || confirm("「" + c.name + "」を非表示にします（すべての大会の選択リストに出なくなります）。よろしいですか？")) K.send([{ op: "char_active", id: c.id, active: !c.active }], "保存中…"); }));
           list.appendChild(row);
           if (GS.edit === c.id) { var ec = el("div", "card"); ec.style.margin = "4px 0 8px 12px"; ec.appendChild(four(GS.ed, function () { K.send([{ op: "char_edit", id: c.id, name: GS.ed.name, reading: GS.ed.reading, aliases: GS.ed.aliases, emoji: GS.ed.emoji }], "保存中…"); GS.edit = null; }, "保存する")); ec.appendChild(btnx(el, "", "やめる", function () { GS.edit = null; drawList(); })); list.appendChild(ec); }
@@ -954,9 +954,9 @@
       T.forEach(function (t) {
         var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!PS.open[t.id];
         d.addEventListener("toggle", function () { PS.open[t.id] = d.open; });
-        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = t.name + "（" + t.abbr + "）・" + t.players.length + "人"; d.appendChild(sm);
+        var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = t.name + "（" + t.abbr + "）・" + (t.players || []).length + "人"; d.appendChild(sm);
         if (t.reading) d.appendChild(el("div", "note", "読み方：" + t.reading));
-        t.players.forEach(function (p) {
+        (t.players || []).forEach(function (p) {
           var w = el("div", ""); w.style.cssText = "margin:6px 0;padding-top:6px;border-top:1px dashed var(--line)";
           var hd = el("div", "row"); hd.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
           var nm = el("span", "", (p.leader ? "👑 " : "") + p.name + (p.reading ? "（" + p.reading + "）" : "") + "　" + p.faction + (p.pending ? "　※承認待ち" : "")); nm.style.cssText = "flex:1;font-weight:700"; hd.appendChild(nm);
@@ -965,8 +965,8 @@
           var inf = el("div", ""); inf.style.cssText = "white-space:pre-wrap;font-size:14px"; inf.textContent = p.info; w.appendChild(inf);
           d.appendChild(w);
         });
-        if (!t.players.length) d.appendChild(el("div", "note", "まだ選手がいません。"));
-        if (!P.locked && !P.drawn) { var db = btnx(el, "danger", "🗑 このチームを削除（抽選前のみ）", function () { if (confirm("「" + t.name + "」を削除します。所属選手" + t.players.length + "人の登録・チームのロール・専用チャンネルも削除されます。取り消せません。よろしいですか？")) K.send([{ op: "pl_team_delete", team: t.id }], "削除中…"); }); db.style.marginTop = "6px"; d.appendChild(db); }
+        if (!(t.players || []).length) d.appendChild(el("div", "note", "まだ選手がいません。"));
+        if (!P.locked && !P.drawn) { var db = btnx(el, "danger", "🗑 このチームを削除（抽選前のみ）", function () { if (confirm("「" + t.name + "」を削除します。所属選手" + (t.players || []).length + "人の登録・チームのロール・専用チャンネルも削除されます。取り消せません。よろしいですか？")) K.send([{ op: "pl_team_delete", team: t.id }], "削除中…"); }); db.style.marginTop = "6px"; d.appendChild(db); }
         lc.appendChild(d);
       });
       if (P.drawn) lc.appendChild(el("div", "note", "組み合わせを抽選したあとは、チームを削除できません（棄権などは「📊 当日・結果」の「失格」にします）。"));
@@ -974,13 +974,13 @@
       // まとめて移動
       if (!P.locked) {
         var mc = box(el, "🔀 まとめてチーム移動", "リーダーが含まれる場合、元のチームのリーダー権限は、残りのメンバーへ自動で移ります。全員が移動して元のチームが空になる場合は、そのチームを解散します（抽選前のみ）。");
-        var withP = T.filter(function (t) { return t.players.length; });
-        mc.appendChild(field(el, "① 元のチーム", sel(el, [["", "選んでください"]].concat(withP.map(function (t) { return [String(t.id), t.name + "（" + t.players.length + "人）"]; })), PS.from, function (v) { PS.from = v; PS.pick = []; K.redraw(); })));
+        var withP = T.filter(function (t) { return (t.players || []).length; });
+        mc.appendChild(field(el, "① 元のチーム", sel(el, [["", "選んでください"]].concat(withP.map(function (t) { return [String(t.id), t.name + "（" + (t.players || []).length + "人）"]; })), PS.from, function (v) { PS.from = v; PS.pick = []; K.redraw(); })));
         var src = T.filter(function (t) { return String(t.id) === PS.from; })[0];
         if (src) {
           mc.appendChild(el("div", "note", "② 移動させる選手（押して選ぶ。複数選べます）"));
           mc.appendChild(pickList(el, src.players.map(function (p) { return [p.id, p.name]; }), PS.pick, []));
-          mc.appendChild(field(el, "③ 移動先のチーム", sel(el, [["", "選んでください"]].concat(T.filter(function (t) { return t.id !== src.id; }).map(function (t) { return [String(t.id), t.name + "（" + t.players.length + "人）"]; })), PS.to, function (v) { PS.to = v; })));
+          mc.appendChild(field(el, "③ 移動先のチーム", sel(el, [["", "選んでください"]].concat(T.filter(function (t) { return t.id !== src.id; }).map(function (t) { return [String(t.id), t.name + "（" + (t.players || []).length + "人）"]; })), PS.to, function (v) { PS.to = v; })));
           mc.appendChild(btnx(el, "primary", "🔀 移動する", function () {
             if (!PS.pick.length || !PS.to) { K.msg("ng", "⚠ 選手と移動先を選んでください。"); return; }
             var dst = T.filter(function (t) { return String(t.id) === PS.to; })[0];

@@ -209,11 +209,11 @@
   var HEX = /^#[0-9a-fA-F]{6}$/;
   function theme(th) {                                                                // 無ければ null（いつもの色）
     th = th || {};
-    if (!HEX.test(th.bg || "") && !HEX.test(th.accent || "")) return null;
+    if (!HEX.test(th.bg || "") && !HEX.test(th.accent || "") && !HEX.test(th.link || "")) return null;
     var bg = HEX.test(th.bg || "") ? th.bg.toLowerCase() : "#12141b", ac = HEX.test(th.accent || "") ? th.accent.toLowerCase() : "#6f95ff";
     var dark = lum(bg) < 0.4, toward = dark ? "#ffffff" : "#000000", text = dark ? "#e8eaf2" : "#1d2130";
     return { dark: dark, vars: { "--bg": bg, "--panel": mix(bg, toward, 0.06), "--panel2": mix(bg, toward, 0.11), "--line": mix(bg, toward, 0.2),
-      "--text": text, "--sub": mix(text, bg, 0.35), "--accent": ac, "--link": contrast(ac, bg) >= 3 ? ac : (dark ? "#ffd54a" : "#1a56c4"),
+      "--text": text, "--sub": mix(text, bg, 0.35), "--accent": ac, "--link": HEX.test(th.link || "") ? th.link.toLowerCase() : (contrast(ac, bg) >= 3 ? ac : (dark ? "#ffd54a" : "#1a56c4")),
       "--on-accent": lum(ac) > 0.45 ? "#111111" : "#ffffff" } };
   }
   var VARS = ["--bg", "--panel", "--panel2", "--line", "--text", "--sub", "--accent", "--link", "--on-accent"];
