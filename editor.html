@@ -765,8 +765,8 @@
   function rbNorm(d) {                                                               // BOTが保存する形（空白を落とす・空のセクションは消す。非表示は、残す）
     return { tabs: (d.tabs || []).map(function (t) {
       if (t.builtin) return t.hidden ? { builtin: t.builtin, hidden: true } : { builtin: t.builtin };
-      var o = { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim(), hidden: !!x.hidden }; })
-        .filter(function (x) { return x.title || x.body; }).map(function (x) { var y = { title: x.title || "（見出しなし）", body: x.body }; if (x.hidden) y.hidden = true; return y; }) };
+      var o = { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return x.builtin ? { builtin: x.builtin } : { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim(), hidden: !!x.hidden }; })
+        .filter(function (x) { return x.builtin || x.title || x.body; }).map(function (x) { if (x.builtin) return x; var y = { title: x.title || "（見出しなし）", body: x.body }; if (x.hidden) y.hidden = true; return y; }) };
       if (t.hidden) o.hidden = true;
       return o;
     }), theme: rbTheme(d.theme) };
@@ -789,13 +789,24 @@
     var tsm = document.createElement("summary"); tsm.style.cssText = "cursor:pointer;font-weight:800"; tsm.textContent = "📚 見本のルール（テンプレート）：いつでも呼び出せます"; tp.appendChild(tsm);
     tp.appendChild(el("div", "note", "あくまで参考の見本です。呼び出すと、コピーが入って、そこから自由に直せます（見本そのものは、変わりません）。使わないページ・セクションは、「👁 表示中」を押して非表示にできます。すでに全く同じものがあるときは、重複して足しません。"));
     var TPL = I.templates || [];
-    function rbHas(sec) { return RB.tabs.some(function (t) { return !t.builtin && (t.sections || []).some(function (x) { return x.title === sec.title && String(x.body || "").trim() === String(sec.body || "").trim(); }); }); }
+    function rbHas(sec) { return RB.tabs.some(function (t) { return !t.builtin && (t.sections || []).some(function (x) { return sec.builtin ? x.builtin === sec.builtin : (!x.builtin && x.title === sec.title && String(x.body || "").trim() === String(sec.body || "").trim()); }); }); }
+    var ORD = I.order || [];
+    function ordOf(t) { var k = t.builtin || t.title, i = ORD.indexOf(k); return i; }
+    function rbSortByOrder() {                                                      // 見本をぜんぶ入れたとき：決まった順番に並べる（順番の表に無いタブは、すぐ前のタブのあとに）
+      var last = -1, keyed = RB.tabs.map(function (t, i) { var o = ordOf(t); if (o >= 0) last = o; return { t: t, o: o >= 0 ? o : last + 0.5, i: i }; });
+      keyed.sort(function (a, b) { return a.o - b.o || a.i - b.i; }); RB.tabs = keyed.map(function (x) { return x.t; });
+    }
     function tplMissing(tt) { return (tt.sections || []).filter(function (x) { return !rbHas(x); }); }
     function tplAdd(tt) {                                                           // 足したセクションの数（同じタブがあれば、そこに足りないものだけ。無ければ、新しいタブ）
       var miss = tplMissing(tt); if (!miss.length) return 0;
       var ex = RB.tabs.filter(function (t) { return !t.builtin && t.title === tt.title; })[0], cp = rbClone(miss);
       if (ex) ex.sections = (ex.sections || []).concat(cp);
-      else { var at = -1; RB.tabs.forEach(function (t, i) { if (at < 0 && t.builtin) at = i; }); var nt = { title: tt.title, sections: cp }; if (at < 0) RB.tabs.push(nt); else RB.tabs.splice(at, 0, nt); }
+      else {                                                                          // 新しいタブ：決まった順番の位置に（順番の表に無ければ、最後の決まったタブの前）
+        var nt = { title: tt.title, sections: cp }, mo = ordOf(nt), at = -1;
+        if (mo >= 0) RB.tabs.forEach(function (t, i) { var o = ordOf(t); if (at < 0 && o > mo) at = i; });
+        else RB.tabs.forEach(function (t, i) { if (at < 0 && t.builtin) at = i; });
+        if (at < 0) RB.tabs.push(nt); else RB.tabs.splice(at, 0, nt);
+      }
       return miss.length;
     }
     TPL.forEach(function (tt) {
@@ -807,7 +818,7 @@
     });
     var allMiss = TPL.reduce(function (n, tt) { return n + tplMissing(tt).length; }, 0), rowA = el("div", "row");
     var aa = el("button", allMiss ? "primary" : "", allMiss ? "見本をぜんぶ足す（重複は足しません）" : "✓ 見本は、ぜんぶ足し済み"); aa.type = "button"; aa.disabled = !allMiss;
-    aa.addEventListener("click", function () { var n = 0; TPL.forEach(function (tt) { n += tplAdd(tt); }); rbDirty(); renderRulebook(); setResult("ok", "見本を" + n + "個足しました。画面の上の「💾 保存」で保存してください。"); });
+    aa.addEventListener("click", function () { var n = 0; TPL.forEach(function (tt) { n += tplAdd(tt); }); rbSortByOrder(); rbDirty(); renderRulebook(); setResult("ok", "見本を" + n + "個足しました。画面の上の「💾 保存」で保存してください。"); });
     rowA.appendChild(aa); tp.appendChild(rowA);
     var lg = el("div", "note"); lg.style.marginTop = "6px"; lg.appendChild(document.createTextNode("自動で入る言葉（本文に書くと、参加者のページでは、大会の設定から自動で入ります）："));
     (I.auto_words || []).forEach(function (tk) { lg.appendChild(el("div", "", "　{{" + tk[0] + "}}　＝　" + tk[1])); });
@@ -836,13 +847,6 @@
     sw(); th.appendChild(pvw); top.appendChild(th);
     box.insertBefore(changesCard(), box.firstChild);
     box.appendChild(top);
-    if (I.about) {                                                                    // いつも一番上に出る、決まったタブ（消せない・隠せない・書き換えられない）
-      var ab = el("div", "card"); ab.style.marginTop = "10px";
-      var ah = el("div", "row"); ah.style.alignItems = "center"; ah.appendChild(el("b", "", "0.")); var an = el("b", "", "🔒 " + I.about.title); an.style.flex = "1"; ah.appendChild(an); ab.appendChild(ah);
-      ab.appendChild(el("div", "note", "参加者のページの、いつも一番上に出ます（消したり、非表示にしたり、書き換えたりはできません）。"));
-      (I.about.sections || []).forEach(function (sc) { var d = document.createElement("details"); var sm = el("summary", "", sc.title); sm.style.cursor = "pointer"; d.appendChild(sm); var pv = el("div", ""); pv.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; pv.textContent = sc.body; d.appendChild(pv); ab.appendChild(d); });
-      box.appendChild(ab);
-    }
     RB.tabs.forEach(function (t, ti) {
       var c = el("div", "card"); c.style.marginTop = "10px";
       var hd = el("div", "row"); hd.style.alignItems = "center";
@@ -854,22 +858,37 @@
         ti0.addEventListener("input", function () { t.title = ti0.value; rbDirty(); }); hd.appendChild(ti0);
       }
       c.style.opacity = t.hidden ? ".55" : "";
-      var hb = el("button", t.hidden ? "primary" : "", t.hidden ? "🙈 非表示中" : "👁 表示中"); hb.type = "button"; hb.title = "非表示にすると、参加者のページに出ません（中身は残ります）";
-      hb.addEventListener("click", function () { t.hidden = !t.hidden; rbDirty(); renderRulebook(); }); hd.appendChild(hb);
+      var locked = t.builtin && (I.locked || []).indexOf(t.builtin) >= 0;
+      if (!locked) {
+        var hb = el("button", t.hidden ? "primary" : "", t.hidden ? "🙈 非表示中" : "👁 表示中"); hb.type = "button"; hb.title = "非表示にすると、参加者のページに出ません（中身は残ります）";
+        hb.addEventListener("click", function () { t.hidden = !t.hidden; rbDirty(); renderRulebook(); }); hd.appendChild(hb);
+      }
       var up = el("button", "", "↑"); up.type = "button"; up.title = "上へ"; up.disabled = ti === 0; up.addEventListener("click", function () { move(RB.tabs, ti, -1); }); hd.appendChild(up);
       var dw = el("button", "", "↓"); dw.type = "button"; dw.title = "下へ"; dw.disabled = ti === RB.tabs.length - 1; dw.addEventListener("click", function () { move(RB.tabs, ti, 1); }); hd.appendChild(dw);
       if (!t.builtin) { var dl = el("button", "", "🗑"); dl.type = "button"; dl.title = "このタブを消す"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("タブ「" + (t.title || "") + "」を、中のセクションごと消します。よろしいですか？")) { RB.tabs.splice(ti, 1); rbDirty(); renderRulebook(); } }); hd.appendChild(dl); }
       c.appendChild(hd);
+      if (t.builtin === "about") {
+        c.appendChild(el("div", "note", "🔒 BOTが決めた内容です（書き換え・削除・非表示はできません。↑↓で並べ替えはできます）。"));
+        ((I.about || {}).sections || []).forEach(function (sc) { var d = document.createElement("details"); var sm = el("summary", "", sc.title); sm.style.cursor = "pointer"; d.appendChild(sm); var pv = el("div", ""); pv.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; pv.textContent = sc.body; d.appendChild(pv); c.appendChild(d); });
+        box.appendChild(c); return;
+      }
       if (t.builtin) {
         c.appendChild(el("div", "note", t.builtin === "entry" ? "「📋 ルール・登録項目」タブで書いたルール（デフォルトのルールも）が、そのまま出ます。" : t.builtin === "bp" ? (I.bp ? "BAN/PICKのルールのページ（BAN数・使用禁止キャラ・分配ポイントなど）が、そのまま出ます。" : "BAN/PICKを使わない大会なので、このタブは出ません。") : "トーナメント表のページが、そのまま出ます。"));
         box.appendChild(c); return;
       }
       t.sections = t.sections || [];
-      if (I.ext_simul && t.sections.some(function (x) { return x.title === "勝利条件"; })) c.appendChild(el("div", "note", "⚔ 延長戦の同時実施を「⚙ 大会設定」でオンにすると、このタブの「勝利条件」のすぐ後ろに「" + I.ext_simul + "」が自動で出ます（実況解説のやり方に合った説明。書き換え・削除はできません）。"));
       t.sections = t.sections || [];
       var ok = "t" + ti, det = el("details"); det.open = RB_OPEN[ok] !== false; det.addEventListener("toggle", function () { RB_OPEN[ok] = det.open; });
       det.appendChild(el("summary", "", "セクション（" + t.sections.length + "）"));
       t.sections.forEach(function (sc, si) {
+        if (sc.builtin) {                                                               // 🔒 延長戦のルールの追加：中身はBOTが決める（オンのときだけ出る）
+          var lb = el("div", ""); lb.style.cssText = "border:1px dashed var(--line);border-radius:8px;padding:8px;margin:8px 0";
+          var lh = el("div", "row"); lh.style.alignItems = "center"; var ln = el("b", "", "🔒 " + (I.ext_simul || "延長戦のルールの追加")); ln.style.flex = "1"; lh.appendChild(ln);
+          var lu = el("button", "", "↑"); lu.type = "button"; lu.disabled = si === 0; lu.addEventListener("click", function () { move(t.sections, si, -1); }); lh.appendChild(lu);
+          var ld = el("button", "", "↓"); ld.type = "button"; ld.disabled = si === t.sections.length - 1; ld.addEventListener("click", function () { move(t.sections, si, 1); }); lh.appendChild(ld);
+          lb.appendChild(lh); lb.appendChild(el("div", "note", "「⚙ 大会設定」で延長戦の同時実施をオンにしたときだけ、ここに出ます（録画方式／同時実況に合った文。書き換え・削除はできません）。"));
+          det.appendChild(lb); return;
+        }
         var sbx = el("div", ""); sbx.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0";
         var sh = el("div", "row"); sh.style.alignItems = "center";
         var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1 1 100%"; st.style.minWidth = "10em"; st.style.fontSize = "16px"; st.style.padding = "10px";
@@ -984,7 +1003,7 @@
     var box = $("rclist"); if (!box) return; box.textContent = "";
     var inv = (data && data.recruit_invite) || {};                                     // Discordの招待リンク（招待用の募集ページ）
     var ic = el("div", "card"); ic.style.marginTop = "10px";
-    var ih = el("div", ""); ih.style.fontWeight = "800"; ih.textContent = "🔗 Discordサーバーへの招待リンク（招待用の募集ページ）"; ic.appendChild(ih);
+    var ih = el("div", ""); ih.style.fontWeight = "800"; ih.textContent = "🔗 Discordサーバーへの招待リンク"; ic.appendChild(ih);
     ic.appendChild(el("div", "note", inv.help || ""));
     var ir = el("div", "row"), ii = el("input"); ii.type = "text"; ii.maxLength = 200; ii.placeholder = "https://discord.gg/…"; ii.value = RCINV != null ? RCINV : (inv.link || ""); ii.style.flex = "1"; ii.style.minWidth = "16em";
     ii.addEventListener("input", function () { RCINV = ii.value; });
@@ -1371,8 +1390,8 @@
           right.appendChild(inp);
           if (it.warn3 && v != null && String(v).length >= 3) right.appendChild(el("div", "swarn", "⚠ " + it.warn3));        // 3桁以上
         }
-        var on = it.type === "bool" ? !!v : it.type === "tri" ? true : it.type === "choice" ? String(v) === "live" : false;     // 警告：オン（非推奨）のとき・未設定を選ばせる設定・非推奨の選択肢
-        if (it.warn && (on || it.type === "tri")) right.appendChild(el("div", "swarn", "⚠ " + it.warn.replace(/^⚠\s*/, "")));
+        var on = it.type === "bool" ? !!v : it.type === "tri" ? (v == null || v === "") : it.type === "choice" ? String(v) === "live" : false;     // 警告：オン（非推奨）のとき・未設定を選ばせる設定・非推奨の選択肢
+        if (it.warn && on) right.appendChild(el("div", "swarn", "⚠ " + it.warn.replace(/^⚠\s*/, "")));
         if (off) Array.prototype.forEach.call([right], function (r) { r.style.pointerEvents = "none"; });
         row.appendChild(left); row.appendChild(right); card.appendChild(row);
       });
