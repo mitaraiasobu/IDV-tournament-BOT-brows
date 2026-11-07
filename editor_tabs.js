@@ -24,8 +24,86 @@
     var i = document.createElement("input"); i.type = "text"; i.maxLength = max || 200; i.value = value || ""; i.placeholder = ph || ""; i.style.cssText = "width:100%;font-size:16px;padding:8px"; return i;
   }
 
+  // ───── 🧩 条件の組み立て（かつ・または・ではない。入れ子で、いくつでも）。賞品・称号で使う ─────
+  var COND_LEAVES = [["place1", "優勝チームの選手"], ["place2", "準優勝チームの選手"], ["mvp", "MVPの選手"], ["mvp_team", "MVPチームの選手"], ["leader", "チームリーダー"],
+                     ["played_hunter", "ハンターをプレイした"], ["played_survivor", "サバイバーをプレイした"], ["played_any", "試合に出場した"], ["used", "キャラを使った"], ["free", "自由記述（モデレーターが選ぶ）"]];
+  function condKey(n) { return n.t === "place" ? "place" + n.rank : n.t === "played" ? "played_" + n.side : n.t; }
+  function condFromKey(k, old) {
+    if (k === "place1" || k === "place2") return { t: "place", rank: k.slice(-1) };
+    if (k.indexOf("played_") === 0) return { t: "played", side: k.slice(7) };
+    if (k === "used") return { t: "used", char: (old && old.char) || "" };
+    if (k === "free") return { t: "free", text: (old && old.text) || "", neg: (old && old.neg) || "" };
+    return { t: k };
+  }
+  function condCharName(D, id) { var all = (D.hunters || []).concat(D.survivors || []); var c = all.filter(function (x) { return String(x[0]) === String(id); })[0]; return c ? c[1] : "（キャラ）"; }
+  function condLeafText(D, n) {                                                       // サーバーの文と同じ言い方（「ではない」は、自然な日本語で）
+    var ng = !!n.not, S = { hunter: "ハンター", survivor: "サバイバー" };
+    if (n.t === "place") { var tm = n.rank === "1" ? "優勝チーム" : "準優勝チーム"; return ng ? tm + "以外の選手" : tm + "の選手"; }
+    if (n.t === "mvp") return ng ? "MVP以外の選手" : "MVPの選手";
+    if (n.t === "mvp_team") return ng ? "MVPチーム以外の選手" : "MVPチームの選手";
+    if (n.t === "leader") return ng ? "チームリーダー以外の選手" : "チームリーダー";
+    if (n.t === "played") return n.side === "any" ? (ng ? "試合に出場しなかった" : "試合に出場した") : S[n.side] + (ng ? "をプレイしなかった" : "をプレイした");
+    if (n.t === "used") return condCharName(D, n.char) + (ng ? "を使わなかった" : "を使った");
+    if (n.t === "free") return ng ? (n.neg || "「" + (n.text || "…") + "」に当てはまらない") : (n.text || "…");
+    return "？";
+  }
+  function condGroupText(D, g, top) {
+    var parts = (g.items || []).map(function (x) { return x.op ? condGroupText(D, x, false) : condLeafText(D, x); }), s = parts.join(g.op === "and" ? "、かつ、" : "、または、");
+    if (g.not) return "「" + s + "」に当てはまらない";
+    return top ? s : "（" + s + "）";
+  }
+  function condDescribe(D, tree) {
+    var items = (tree && tree.items) || []; if (!items.length) return "（条件を足してください）";
+    function endS(b) { return /(選手|チームリーダー)$/.test(b) ? b : b + "選手"; }
+    if (tree.op === "and" && !tree.not) {
+      var SUB = { place: 1, mvp: 1, mvp_team: 1, leader: 1 }, subj = items.filter(function (x) { return !x.op && SUB[x.t]; }), rest = items.filter(function (x) { return subj.indexOf(x) < 0; });
+      var head = subj.map(function (x) { return condLeafText(D, x); }).join("、かつ、");
+      if (!rest.length) return head;
+      return (head ? head + "のうち、" : "") + endS(condGroupText(D, { op: "and", items: rest }, true));
+    }
+    return endS(condGroupText(D, tree, true));
+  }
+  function condEditor(el, K, D, root) {                                               // root：{op, items}（入れ子のグループ）。中身を直接書き換える
+    var w = el("div", "");
+    function group(g, depth, parentArr, idx) {
+      var gb = el("div", ""); gb.style.cssText = "border:1px solid var(--line);border-left:4px solid " + (g.op === "and" ? "#3b7be8" : "#d98a2b") + ";border-radius:8px;padding:8px;margin:6px 0 6px " + (depth ? 10 : 0) + "px";
+      var hd = el("div", "row"); hd.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
+      hd.appendChild(sel(el, [["and", "すべて当てはまる（かつ）"], ["or", "どれかが当てはまる（または）"]], g.op, function (v) { g.op = v; K.redraw(); }));
+      if (depth) {
+        hd.appendChild(btnx(el, g.not ? "primary" : "", g.not ? "このグループに当てはまらない" : "このグループに当てはまる", function () { g.not = !g.not; K.redraw(); }));
+        hd.appendChild(btnx(el, "", "🗑", function () { parentArr.splice(idx, 1); K.redraw(); }));
+      }
+      gb.appendChild(hd);
+      (g.items || []).forEach(function (n, i) {
+        if (n.op) { gb.appendChild(group(n, depth + 1, g.items, i)); return; }
+        var row = el("div", "row"); row.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0";
+        row.appendChild(sel(el, COND_LEAVES, condKey(n), function (v) { var nn = condFromKey(v, n); nn.not = n.not; g.items[i] = nn; K.redraw(); }));
+        if (n.t === "used") {
+          var opts = [["", "キャラを選ぶ"]].concat((D.hunters || []).map(function (c) { return [c[0], "ハンター：" + c[1]]; }), (D.survivors || []).map(function (c) { return [c[0], "サバイバー：" + c[1]]; }));
+          row.appendChild(sel(el, opts, n.char, function (v) { n.char = v; K.redraw(); }));
+        }
+        if (n.t === "free") {
+          var ft = inp(el, n.text, 60, "例：一番盛り上げた"); ft.style.maxWidth = "16em"; ft.addEventListener("change", function () { n.text = ft.value; K.redraw(); }); row.appendChild(ft);
+          if (n.not) { var fn = inp(el, n.neg, 60, "当てはまらないときの言い方（空ならBOTが作る）"); fn.style.maxWidth = "18em"; fn.addEventListener("change", function () { n.neg = fn.value; K.redraw(); }); row.appendChild(fn); }
+        }
+        row.appendChild(btnx(el, n.not ? "primary" : "", n.not ? "当てはまらない（ではない）" : "当てはまる", function () { n.not = !n.not; K.redraw(); }));
+        row.appendChild(btnx(el, "", "🗑", function () { g.items.splice(i, 1); K.redraw(); }));
+        gb.appendChild(row);
+      });
+      var ad = el("div", "row"); ad.style.gap = "6px";
+      ad.appendChild(btnx(el, "", "＋ 条件", function () { g.items.push({ t: "place", rank: "1" }); K.redraw(); }));
+      if (depth < 3) ad.appendChild(btnx(el, "", "＋ グループ（かつ／または のまとまり）", function () { g.items.push({ op: g.op === "and" ? "or" : "and", items: [{ t: "played", side: "hunter" }] }); K.redraw(); }));
+      gb.appendChild(ad);
+      return gb;
+    }
+    w.appendChild(group(root, 0, null, 0));
+    var pv = el("div", ""); pv.style.cssText = "margin-top:6px;padding:8px 10px;border-radius:8px;background:var(--panel2);font-weight:700"; pv.textContent = "👀 " + condDescribe(D, root); w.appendChild(pv);
+    w.appendChild(el("div", "note", "「自由記述」やサバイバーのキャラなど、BOTに分からない条件があるときは、優勝（とMVP）が決まったあとに、モデレーターが当てはまる人を選びます（Discordと「📊 当日・結果」から）。"));
+    return w;
+  }
+
   // ───── 🎁 賞品・ポイント ─────
-  var PZ = { rank: "1", target: "", character: "", text: "" };
+  var PZ = { rank: "1", target: "", character: "", text: "", mode: "rank", cond: { op: "and", items: [{ t: "place", rank: "1" }] } };
   TABS.push({
     id: "pz", label: "🎁 賞品・ポイント",
     intro: "賞品（どのチーム・どの選手に、何を渡すか）と、吊り・逃げのポイント表を決めます。Discordの「⚙ 基本設定→🎁 賞品設定」「吊/逃ポイント」と同じものです。ここで押したボタンは、その場で保存されます。賞品は、大会ルールの「🎁 賞品」ページに、自動で入ります。",
@@ -36,14 +114,14 @@
       var c = box(el, "🎁 賞品", "順位・対象を変えたいときは、消して、足し直します（内容の文だけは、その場で直せます）。");
       var rows = D.rows || [];
       if (!rows.length) c.appendChild(el("div", "note", "（賞品は、まだありません）"));
-      ["1", "2", "any", ""].forEach(function (rk) {
-        var list = rows.filter(function (r) { return (r.rank || "") === rk; });
+      ["1", "2", "any", "", "cond"].forEach(function (rk) {
+        var list = rows.filter(function (r) { return rk === "cond" ? r.kind === "cond" : (r.kind !== "cond" && (r.rank || "") === rk); });
         if (!list.length) return;
-        var title = rk ? (D.ranks || {})[rk] : "🏆 MVP";
+        var title = rk === "cond" ? "🧩 条件で決める" : rk ? (D.ranks || {})[rk] : "🏆 MVP";
         var h = el("div", ""); h.style.cssText = "font-weight:800;margin-top:10px"; h.textContent = title; c.appendChild(h);
         list.forEach(function (r) {
           var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
-          var who = r.kind === "rank_character" ? (r.character_name || "指定のキャラ") + "を使用した選手" : ((D.targets || {})[r.kind] || r.kind);
+          var who = r.kind === "cond" ? (r.who || "") : r.kind === "rank_character" ? (r.character_name || "指定のキャラ") + "を使用した選手" : ((D.targets || {})[r.kind] || r.kind);
           row.appendChild(el("div", "note", "受け取り：" + who));
           var ti = inp(el, r.text, D.text_max || 200); ti.disabled = locked; row.appendChild(ti);
           var br = el("div", "row");
@@ -57,10 +135,25 @@
       root.appendChild(c);
       // 賞品を足す
       var a = box(el, "＋ 賞品を足す");
+      a.appendChild(field(el, "受け取る人の決め方", sel(el, [["rank", "順位と受け取り方で決める（これまでどおり）"], ["cond", "🧩 条件で決める（かつ・または・ではない）"]], PZ.mode, function (v) { PZ.mode = v; K.redraw(); })));
+      if (PZ.mode === "cond") {
+        a.appendChild(condEditor(el, K, D, PZ.cond));
+        var tc = inp(el, PZ.text, D.text_max || 200, "例：限定衣装パック"); tc.addEventListener("input", function () { PZ.text = tc.value; });
+        a.appendChild(field(el, "賞品の内容（自由記述・" + (D.text_max || 200) + "字まで）", tc));
+        var cb = el("button", "primary", "＋ 賞品を足す"); cb.type = "button"; cb.disabled = locked;
+        cb.addEventListener("click", function () {
+          if (!PZ.text.trim()) { K.msg("ng", "⚠ 賞品の内容を入れてください。"); return; }
+          if (!(PZ.cond.items || []).length) { K.msg("ng", "⚠ 条件を足してください。"); return; }
+          var op = { op: "prize_add", target: "cond", text: PZ.text, cond: JSON.parse(JSON.stringify(PZ.cond)) };
+          PZ.text = ""; PZ.cond = { op: "and", items: [{ t: "place", rank: "1" }] }; K.send([op], "賞品を足しています…");
+        });
+        a.appendChild(cb); root.appendChild(a);
+        a = box(el, "（これまでどおりの決め方は、上で「順位と受け取り方で決める」を選ぶと出ます）"); a.hidden = true;
+      }
       var ranks = Object.keys(D.ranks || {}).map(function (k) { return [k, D.ranks[k]]; });
       if (D.mvp) ranks.push(["mvp", "🏆 MVP"]);
       var isMvp = PZ.rank === "mvp";
-      var targets = Object.keys(D.targets || {}).filter(function (k) { return isMvp ? k.indexOf("mvp_") === 0 : k.indexOf("rank_") === 0; }).map(function (k) { return [k, D.targets[k]]; });
+      var targets = Object.keys(D.targets || {}).filter(function (k) { return k !== "cond" && (isMvp ? k.indexOf("mvp_") === 0 : k.indexOf("rank_") === 0); }).map(function (k) { return [k, D.targets[k]]; });
       if (!targets.some(function (t) { return t[0] === PZ.target; })) PZ.target = targets.length ? targets[0][0] : "";
       a.appendChild(field(el, "どのチーム（MVP）への賞品か", sel(el, ranks, PZ.rank, function (v) { PZ.rank = v; PZ.target = ""; K.redraw(); })));
       a.appendChild(field(el, "どんな受け取り方か", sel(el, targets, PZ.target, function (v) { PZ.target = v; K.redraw(); })));
@@ -662,6 +755,24 @@
     render: function (root, K) {
       var el = K.el, D = (K.data() || {}).liveops || {};
       renderResults(root, K);
+      var CP = D.cond_prizes || [];
+      if (CP.length) {
+        var cpc = box(el, "🎁 条件で決める賞品", "優勝（MVPの条件があればMVP）が決まると、BOTが当てはまる選手にお知らせします。BOTに分からない選手は、ここ（またはDiscordの「当てはまる人を選ぶ」）で選んでください。");
+        CP.forEach(function (p) {
+          var pw = el("div", ""); pw.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
+          pw.appendChild(el("div", "", "🎁 " + p.who + "へ：" + p.text));
+          pw.appendChild(el("div", "note", p.state === "announced" ? "✅ お知らせしました" : p.decided ? "当てはまる人が決まっています（優勝・MVPが決まったら、お知らせします）" : "❔ 選んでほしい選手がいます"));
+          if (p.yes.length) pw.appendChild(el("div", "note", "当てはまる：" + p.yes.map(function (x) { return x[1]; }).join("、")));
+          if (p.unknown.length && p.state !== "announced") {
+            var CK = K.state("cp_" + p.id, { ids: (p.picked || []).slice() });
+            pw.appendChild(el("div", "note", "BOTに分からない選手（当てはまる人を押して選ぶ）："));
+            pw.appendChild(pickList(el, p.unknown, CK.ids, []));
+            pw.appendChild(btnx(el, "primary", "この内容で決める", function () { if (confirm("当てはまる選手を、" + (CK.ids.length ? CK.ids.length + "人" : "いない") + "で決めます。よろしいですか？")) K.send([{ op: "prize_cond_decide", id: p.id, yes: CK.ids.slice() }], "保存中…"); }));
+          }
+          cpc.appendChild(pw);
+        });
+        root.appendChild(cpc);
+      }
       // 配信
       var S = D.stream || {}, sc = box(el, "📡 配信（ライブブラウザの演出）", "配信開始は1回だけ押せます（最初からやり直すことはできません）。");
       var sr = el("div", "row");
