@@ -103,7 +103,21 @@
   }
 
   // ───── 🎁 賞品・ポイント ─────
-  var PZ = { rank: "1", target: "", character: "", text: "", mode: "rank", cond: { op: "and", items: [{ t: "place", rank: "1" }] } };
+  var PZ = { rank: "1", target: "", character: "", text: "", mode: "rank", cond: { op: "and", items: [{ t: "place", rank: "1" }] }, kind: "text", title: "" };
+  function prizeContent(el, K, D, a) {                                               // 賞品の内容：文で書く／称号を渡す
+    var TT = (D.titles || {}).titles || [];
+    a.appendChild(field(el, "賞品の内容", sel(el, [["text", "📝 文で書く（自由記述）"], ["title", "🎖 称号を渡す（Discordのロール）"]], PZ.kind, function (v) { PZ.kind = v; K.redraw(); })));
+    if (PZ.kind === "title") {
+      if (!TT.length) { a.appendChild(el("div", "note", "称号が、まだありません。下の「🎖 称号と色」で、先に称号を作ってください。")); return; }
+      if (!PZ.title) PZ.title = String(TT[0].id);
+      a.appendChild(field(el, "渡す称号", sel(el, TT.map(function (t) { return [String(t.id), "🎖 " + t.name]; }), PZ.title, function (v) { PZ.title = v; })));
+      return;
+    }
+    var tx = inp(el, PZ.text, D.text_max || 200, "例：限定衣装パック"); tx.addEventListener("input", function () { PZ.text = tx.value; });
+    a.appendChild(field(el, "（自由記述・" + (D.text_max || 200) + "字まで）", tx));
+  }
+  function prizeOk(K) { if (PZ.kind === "title") { if (!PZ.title) { K.msg("ng", "⚠ 渡す称号を選んでください。"); return false; } return true; } if (!PZ.text.trim()) { K.msg("ng", "⚠ 賞品の内容を入れてください。"); return false; } return true; }
+  function prizeFill(op) { if (PZ.kind === "title") { op.title = PZ.title; op.text = ""; } PZ.text = ""; return op; }
   TABS.push({
     id: "pz", label: "🎁 賞品・ポイント",
     intro: "賞品（どのチーム・どの選手に、何を渡すか）と、吊り・逃げのポイント表を決めます。Discordの「⚙ 基本設定→🎁 賞品設定」「吊/逃ポイント」と同じものです。ここで押したボタンは、その場で保存されます。賞品は、大会ルールの「🎁 賞品」ページに、自動で入ります。",
@@ -122,7 +136,7 @@
         list.forEach(function (r) {
           var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
           var who = r.kind === "cond" ? (r.who || "") : r.kind === "rank_character" ? (r.character_name || "指定のキャラ") + "を使用した選手" : ((D.targets || {})[r.kind] || r.kind);
-          row.appendChild(el("div", "note", "受け取り：" + who));
+          row.appendChild(el("div", "note", "受け取り：" + who + (r.title ? "　🎖 称号を渡す賞品" : "")));
           var ti = inp(el, r.text, D.text_max || 200); ti.disabled = locked; row.appendChild(ti);
           var br = el("div", "row");
           var sv = el("button", "primary", "💾 内容を直す"); sv.type = "button"; sv.disabled = locked;
@@ -138,14 +152,13 @@
       a.appendChild(field(el, "受け取る人の決め方", sel(el, [["rank", "順位と受け取り方で決める（これまでどおり）"], ["cond", "🧩 条件で決める（かつ・または・ではない）"]], PZ.mode, function (v) { PZ.mode = v; K.redraw(); })));
       if (PZ.mode === "cond") {
         a.appendChild(condEditor(el, K, D, PZ.cond));
-        var tc = inp(el, PZ.text, D.text_max || 200, "例：限定衣装パック"); tc.addEventListener("input", function () { PZ.text = tc.value; });
-        a.appendChild(field(el, "賞品の内容（自由記述・" + (D.text_max || 200) + "字まで）", tc));
+        prizeContent(el, K, D, a);
         var cb = el("button", "primary", "＋ 賞品を足す"); cb.type = "button"; cb.disabled = locked;
         cb.addEventListener("click", function () {
-          if (!PZ.text.trim()) { K.msg("ng", "⚠ 賞品の内容を入れてください。"); return; }
+          if (!prizeOk(K)) return;
           if (!(PZ.cond.items || []).length) { K.msg("ng", "⚠ 条件を足してください。"); return; }
-          var op = { op: "prize_add", target: "cond", text: PZ.text, cond: JSON.parse(JSON.stringify(PZ.cond)) };
-          PZ.text = ""; PZ.cond = { op: "and", items: [{ t: "place", rank: "1" }] }; K.send([op], "賞品を足しています…");
+          var op = prizeFill({ op: "prize_add", target: "cond", text: PZ.text, cond: JSON.parse(JSON.stringify(PZ.cond)) });
+          PZ.cond = { op: "and", items: [{ t: "place", rank: "1" }] }; K.send([op], "賞品を足しています…");
         });
         a.appendChild(cb); root.appendChild(a);
         a = box(el, "（これまでどおりの決め方は、上で「順位と受け取り方で決める」を選ぶと出ます）"); a.hidden = true;
@@ -162,19 +175,60 @@
         if (!PZ.character && hs.length) PZ.character = hs[0][0];
         a.appendChild(field(el, "対象のハンターキャラ", sel(el, hs, PZ.character, function (v) { PZ.character = v; })));
       }
-      var ti2 = inp(el, PZ.text, D.text_max || 200, "例：イタカe-sportsパック"); ti2.addEventListener("input", function () { PZ.text = ti2.value; });
-      a.appendChild(field(el, "賞品の内容（自由記述・" + (D.text_max || 200) + "字まで）", ti2));
+      prizeContent(el, K, D, a);
       var ar = el("div", "row"), ab = el("button", "primary", "＋ 賞品を足す"); ab.type = "button"; ab.disabled = locked;
       ab.addEventListener("click", function () {
-        if (!PZ.text.trim()) { K.msg("ng", "⚠ 賞品の内容を入れてください。"); return; }
-        var op = { op: "prize_add", target: PZ.target, text: PZ.text };
+        if (!prizeOk(K)) return;
+        var op = prizeFill({ op: "prize_add", target: PZ.target, text: PZ.text });
         if (PZ.rank !== "mvp") op.rank = PZ.rank;
         if (PZ.target === "rank_character") op.character = PZ.character;
-        PZ.text = ""; K.send([op], "賞品を足しています…");
+        K.send([op], "賞品を足しています…");
       });
       ar.appendChild(ab); a.appendChild(ar);
       if (!D.mvp) a.appendChild(el("div", "note", "MVPへの賞品を決めるには、「⚙ 大会設定」で、MVPを「使う」にしてください。"));
       root.appendChild(a);
+      // 🎖 称号と色
+      var TV = D.titles || {}, CL = TV.colors || [], TT2 = TV.titles || [], TS = K.state("titles", { cname: "", chex: "#e74c3c", tname: "", tcolor: "" });
+      var tc2 = box(el, "🎖 称号と色（すべての大会に共通）", "称号は、賞品として渡せるDiscordのロールです。称号ごとに色なしのロール、色ごとに色つきのロールをBOTが作ります。持っている人には称号ロールが全部付き、名前の色は、本人が持っている称号の色から1つ選びます（選手基本情報の「🎖 称号・名前の色」）。何人が持っても、ロールは「称号の数＋色の数」しか増えません。");
+      tc2.appendChild(el("div", "", "🎨 色"));
+      if (!CL.length) tc2.appendChild(el("div", "note", "色が、まだありません。"));
+      CL.forEach(function (c) {
+        var row = el("div", "row"); row.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0";
+        var ni = inp(el, c.name, 30); ni.style.maxWidth = "10em"; var ci = document.createElement("input"); ci.type = "color"; ci.value = c.hex;
+        row.appendChild(ni); row.appendChild(ci);
+        row.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_color_edit", id: c.id, name: ni.value, hex: ci.value }], "保存中…"); }));
+        row.appendChild(btnx(el, "", "🗑", function () { if (confirm("色「" + c.name + "」を消します。よろしいですか？")) K.send([{ op: "title_color_delete", id: c.id }], "消しています…"); }));
+        tc2.appendChild(row);
+      });
+      var cr = el("div", "row"); cr.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0";
+      var cn = inp(el, TS.cname, 30, "色の名前（例：赤）"); cn.style.maxWidth = "12em"; cn.addEventListener("input", function () { TS.cname = cn.value; });
+      var ch = document.createElement("input"); ch.type = "color"; ch.value = TS.chex; ch.addEventListener("input", function () { TS.chex = ch.value; });
+      cr.appendChild(cn); cr.appendChild(ch);
+      cr.appendChild(btnx(el, "primary", "＋ 色を足す", function () { if (!TS.cname.trim()) { K.msg("ng", "⚠ 色の名前を入れてください。"); return; } K.send([{ op: "title_color_add", name: TS.cname, hex: TS.chex }], "保存中…"); TS.cname = ""; }));
+      tc2.appendChild(cr);
+      tc2.appendChild(el("div", "", "🎖 称号"));
+      var copts = CL.map(function (c) { return [String(c.id), c.name]; });
+      if (!TT2.length) tc2.appendChild(el("div", "note", "称号が、まだありません。"));
+      TT2.forEach(function (t) {
+        var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin:4px 0";
+        var r1 = el("div", "row"); r1.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
+        var ni = inp(el, t.name, 30); ni.style.maxWidth = "12em"; var cs = { v: String(t.color) };
+        r1.appendChild(ni); r1.appendChild(sel(el, copts, cs.v, function (v) { cs.v = v; }));
+        r1.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_edit", id: t.id, name: ni.value, color: cs.v }], "保存中…"); }));
+        r1.appendChild(btnx(el, "", "🗑", function () { if (confirm("称号「" + t.name + "」を消します。持っている人からも外れます。よろしいですか？")) K.send([{ op: "title_delete", id: t.id }], "消しています…"); }));
+        row.appendChild(r1);
+        row.appendChild(el("div", "note", "持っている人（" + t.holders.length + "人）：" + (t.holders.join("、") || "まだいません")));
+        tc2.appendChild(row);
+      });
+      if (CL.length) {
+        var tr = el("div", "row"); tr.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0";
+        var tn = inp(el, TS.tname, 30, "称号の名前（例：夜の番人マスター）"); tn.style.maxWidth = "16em"; tn.addEventListener("input", function () { TS.tname = tn.value; });
+        if (!TS.tcolor) TS.tcolor = String(CL[0].id);
+        tr.appendChild(tn); tr.appendChild(sel(el, copts, TS.tcolor, function (v) { TS.tcolor = v; }));
+        tr.appendChild(btnx(el, "primary", "＋ 称号を足す", function () { if (!TS.tname.trim()) { K.msg("ng", "⚠ 称号の名前を入れてください。"); return; } K.send([{ op: "title_add", name: TS.tname, color: TS.tcolor }], "保存中…"); TS.tname = ""; }));
+        tc2.appendChild(tr);
+      } else tc2.appendChild(el("div", "note", "称号を作るには、先に色を足してください。"));
+      root.appendChild(tc2);
       // 吊/逃ポイント
       var p = D.points || { table: {}, default: {} };
       var pc = box(el, "🏁 吊り・逃げのポイント", "サバイバーは逃げた人数、ハンターは吊った人数で、もらえるポイントが決まります（全セットのポイントの合計で、勝ち負けを決めます）。" + (p.is_default ? "いまは、標準の表です。" : "いまは、この大会で決めた表です。"));
