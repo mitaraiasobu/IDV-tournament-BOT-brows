@@ -361,10 +361,10 @@
   var EMBED = params.get("embed") === "1", champPlayers = [];
   // 大会ルールのページの「トーナメント表」タブに入れるとき（?inbook=1）：このページの高さを、外のページに知らせる（中でスクロールさせず、大きいまま見せる）
   //   幅が広いとき：横長の表を、幅いっぱいに（高さ＝幅×1080/1920）。スマホ（幅が狭い）とき：縦に並べた表（高さ＝中身の高さ）。
-  var INBOOK = params.get("inbook") === "1" && window.parent !== window, INBOOK_H = 0;
+  var INBOOK = params.get("inbook") === "1" && window.parent !== window, INBOOK_H = 0, INBOOK_PH = null;
   function sendH(h) {
-    h = Math.ceil(h); if (!INBOOK || !h || Math.abs(h - INBOOK_H) < 2) return; INBOOK_H = h;
-    try { window.parent.postMessage({ type: "rb_height", h: h }, location.origin); } catch (e) { /* そのまま */ }
+    h = Math.ceil(h); if (!INBOOK || !h || (Math.abs(h - INBOOK_H) < 2 && INBOOK_PH === (curData && curData.phase))) return; INBOOK_H = h; INBOOK_PH = curData && curData.phase;
+    try { window.parent.postMessage({ type: "rb_height", h: h, fid: params.get("fid") || "", phase: (curData && curData.phase) || "" }, location.origin); } catch (e) { /* そのまま */ }
   }
   if (INBOOK) {
     try { new ResizeObserver(function () { if (document.documentElement.className === "flow") sendH(document.documentElement.scrollHeight); }).observe(document.body); } catch (e) { /* fit で送る */ }
@@ -414,9 +414,15 @@
       if (W >= 700) {
         document.documentElement.className = "stage"; layoutButton(false, false);
         var sw = W / 1920; st.style.transform = "scale(" + sw + ")"; st.style.left = "0px"; st.style.top = "0px"; sendH(1080 * sw);
-      } else {
-        document.documentElement.className = "flow"; layoutButton(false, true);
+      } else if (getLayout() === "flow") {                     // スマホで「縦に並べて見る」を選んだとき
+        document.documentElement.className = "flow"; layoutButton(true, true);
         st.style.transform = ""; st.style.left = ""; st.style.top = ""; setTimeout(function () { sendH(document.documentElement.scrollHeight); }, 50);
+      } else {                                                 // スマホ：これまでのページと同じく、表を90°回して横向きで見る（高さ＝幅×1920/1080）
+        var rr = W / 1080, HH = 1920 * rr;
+        document.documentElement.className = "stage rot"; layoutButton(true, false);
+        st.style.left = "0px"; st.style.top = "0px";
+        st.style.transform = "translate(" + (1080 * rr) + "px,0px) rotate(90deg) scale(" + rr + ")";
+        sendH(HH);
       }
       return;
     }
@@ -793,7 +799,7 @@
   function renderTabs(data) {
     var box = document.getElementById("tabs");
     box.replaceChildren();
-    if (data.phase !== "registration") { box.className = "tabs hidden"; return; }
+    if (data.phase !== "registration" || INBOOK) { box.className = "tabs hidden"; if (INBOOK) setTimeout(fit, 0); return; }     // 大会ルールのページの中では、タブにせず、上下に2つ並べる（外のページが並べる）
     box.className = "tabs";
     [["reg", "👥 登録状況"], ["plan", "📋 予定のトーナメント表"]].forEach(function (p) {
       var b = el("button", p[0] === tab ? "on" : "", p[1]);
@@ -816,7 +822,7 @@
   }
   window.addEventListener("resize", placeMusicBar);
   function updateMusic(data) {
-    if (!window.MusicPlayer || EMBED || params.get("music") === "0") return;
+    if (!window.MusicPlayer || EMBED || INBOOK || params.get("music") === "0") return;
     if (!musicInit) { musicInit = true; MusicPlayer.init({ ui: true, volume: 0.2 }); setInterval(function () { if (curData) updateMusic(curData); }, 5000); setInterval(placeMusicBar, 1000); }
     var m = data.music, until = m && m.until ? Date.parse(m.until) : NaN;
     var on = m && m.pre && !(until && Date.now() > until) && !(isNaN(until) && data.phase === "finished");
@@ -830,7 +836,7 @@
     curData = data;
     lastRendered = data;
     updateMusic(data);
-    if (window.Changelog && !EMBED) window.Changelog.update(data.changes);                 // ✏ 更新履歴
+    if (window.Changelog && !EMBED && !INBOOK) window.Changelog.update(data.changes);                 // ✏ 更新履歴
     ensureLogos(data.logos);
     var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
     if (sig === last) return;

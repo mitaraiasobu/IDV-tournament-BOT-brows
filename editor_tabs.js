@@ -829,7 +829,7 @@
 
   // ───── ⚠ やり直し・削除（取り返しがつかない操作） ─────
   TABS.push({
-    id: "dg", label: "⚠ やり直し・削除",
+    id: "dg", label: "⚠ やり直し・削除・URL",
     intro: "Discordの「⚙ 基本設定」の「♻ 大会の試合をやり直す」「🗑 大会を削除」と同じです。取り消せないので、確認のため、大会名を入力してから押します。押すと、BOTが「BOT管理」チャンネルに知らせます。",
     render: function (root, K) {
       var el = K.el, X = (K.data() || {}).danger || {}, DS = K.state("dg", { r: "", d: "" });
@@ -850,6 +850,9 @@
         dc.appendChild(btnx(el, "danger", "🗑 大会を削除する（取り消せません）", function () { if (DS.d.trim() !== X.name) { K.msg("ng", "⚠ 大会名が一致しません。"); return; } if (confirm("「" + X.name + "」を削除します。チーム・選手・試合結果・ロール・チャンネルもすべて削除されます。取り消せません。本当によろしいですか？")) { K.send([{ op: "t_delete", name: DS.d.trim() }], "頼んでいます…"); DS.d = ""; } }));
       }
       root.appendChild(dc);
+      var uc = box(el, "🔄 このページのURLを作り直す（漏れたとき）", "Discordの「🖥 大会設定用ブラウザ」の「🔄 URLを作り直す」と同じです。いまのURLは使えなくなり、パスワードも決め直しになります。新しいURLは、Discordの管理者メニューの「🖥 大会設定用ブラウザ」から出してください。");
+      uc.appendChild(btnx(el, "danger", "🔄 URLを作り直す", function () { if (confirm("このページのURLを作り直します。いまのURLは使えなくなります（このページも閉じることになります）。よろしいですか？")) K.send([{ op: "editor_regen" }], "頼んでいます…"); }));
+      root.appendChild(uc);
     }
   });
 

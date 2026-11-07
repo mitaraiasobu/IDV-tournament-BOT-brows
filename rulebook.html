@@ -89,13 +89,17 @@
   .bpw .pill { display: inline-block; font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 999px; margin: 0 6px 4px 0; background: var(--panel2); border: 1px solid var(--line); }
   .bpw .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 10px 0; }
   .bpw .card > h3 { margin: 0 0 10px; font-size: 17px; display: flex; align-items: center; gap: 8px; }
-  .bpw .rw { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed var(--line); }
-  .bpw .rw:first-of-type { border-top: none; }
-  .bpw .rw .lb { flex: none; font-size: 12px; font-weight: 900; padding: 4px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); min-width: 6.5em; text-align: center; }
-  .bpw .rw .lb.ban { color: #ff7a7a; border-color: #ff7a7a; } .bpw .rw .lb.allow { color: #6fe0a0; border-color: #6fe0a0; } .bpw .rw .lb.req { color: #ffd54a; border-color: #ffd54a; } .bpw .rw .lb.combo { color: #ff9f5a; border-color: #ff9f5a; }
-  .bpw .rw .tx { flex: 1; min-width: 0; line-height: 1.7; overflow-wrap: anywhere; } .bpw .rw .tx.chg { text-decoration: underline 2px #ff6b6b; text-underline-offset: 4px; }
+  .bpw .rw { padding: 8px 0; border-top: 1px dashed var(--line); } .bpw .card > .rw:first-of-type { border-top: none; }
+  .bpw .lb { display: inline-block; font-size: 12px; font-weight: 900; padding: 3px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); margin-bottom: 6px; }
+  .bpw .lb.ban { color: #ff7a7a; border-color: #ff7a7a; } .bpw .lb.allow { color: #6fe0a0; border-color: #6fe0a0; } .bpw .lb.req { color: #ffd54a; border-color: #ffd54a; } .bpw .lb.combo { color: #ff9f5a; border-color: #ff9f5a; }
+  .bpw .tx { line-height: 1.7; overflow-wrap: anywhere; } .bpw .chg { text-decoration: underline 2px #ff6b6b; text-underline-offset: 4px; }
+  .bpw .bangrid { display: grid; grid-template-columns: max-content repeat(3, max-content); gap: 6px 22px; align-items: baseline; padding: 6px 0 10px; }
+  .bpw .bangrid .bl { font-size: 13px; font-weight: 800; color: var(--sub); }
+  .bpw .bangrid .bc { white-space: nowrap; } .bpw .bangrid .bc .k { font-size: 13px; } .bpw .bangrid .bc b { display: inline-block; min-width: 1.4em; text-align: right; font-size: 20px; margin: 0 2px 0 6px; } .bpw .bangrid .bc .u { font-size: 12px; font-weight: 800; color: #ff7a7a; }
+  @media (max-width: 600px) { .bpw .bangrid { grid-template-columns: repeat(3, max-content); gap: 2px 14px; } .bpw .bangrid .bl { grid-column: 1 / -1; margin-top: 6px; } }
+  .bpw .cgrp { display: flex; flex-wrap: wrap; gap: 14px 28px; padding: 8px 0; border-top: 1px dashed var(--line); } .bpw .card > .cgrp:first-of-type { border-top: none; }
+  .bpw .cblk { min-width: 0; max-width: 100%; }
   .bpw .chips { display: flex; flex-wrap: wrap; gap: 10px 12px; }
-  @media (max-width: 600px) { .bpw .rw { flex-direction: column; gap: 6px; } .bpw .rw .lb { min-width: 0; } .bpw .chip { width: 70px; } }
   .bpw .chip { width: 76px; text-align: center; font-size: 12px; line-height: 1.35; }
   .bpw .chip .nm { font-weight: 800; margin-top: 4px; overflow-wrap: anywhere; } .bpw .chip .cp { color: var(--sub); font-size: 11px; }
   .bpw .face { position: relative; width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 2px solid var(--line);
@@ -105,12 +109,12 @@
   .bpw .ban .face { border-color: #ff7a7a; } .bpw .ban .face::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 46%, rgba(255,90,90,.9) 47%, rgba(255,90,90,.9) 53%, transparent 54%); }
   .bpw .ban .face img { filter: grayscale(.7) brightness(.8); }
   .bpw .allow .face { border-color: #6fe0a0; } .bpw .req .face { border-color: #ffd54a; box-shadow: 0 0 12px rgba(255,213,74,.45); }
-  .bpw .combo { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #ff9f5a; border-radius: 14px; background: color-mix(in srgb, #ff9f5a 10%, transparent); }
+  .bpw .combo { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 14px; background: color-mix(in srgb, #ff9f5a 12%, transparent); }
   .bpw .combo .plus { font-weight: 900; color: #ff9f5a; } .bpw .combo .cp { font-size: 11px; color: var(--sub); margin-left: 4px; }
   .bpw ol.steps { list-style: none; counter-reset: st; margin: 0; padding: 0; display: grid; gap: 6px; }
   .bpw ol.steps li { counter-increment: st; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; background: var(--panel2); font-weight: 700; }
   .bpw ol.steps li::before { content: counter(st); flex: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; background: var(--line); }
-  .bpw ol.steps li.ban::before { background: #c94545; color: #fff; } .bpw ol.steps li.pick::before { background: var(--accent); color: var(--on-accent, #fff); }
+  .bpw ol.steps li.h::before { background: #d64545; color: #fff; } .bpw ol.steps li.s::before { background: #3b7be8; color: #fff; }
   .bpw .none { color: var(--sub); }
   /* 🎁 賞品（専用の見た目） */
   .pzw { display: grid; gap: 12px; margin: 4px 0 14px; }
@@ -144,7 +148,7 @@
   .fcard .fmain { font-weight: 700; font-size: 14px; } .fcard .fsub { color: var(--sub); font-size: 12px; white-space: pre-wrap; } .fcard .fdur { font-size: 13px; }
   .fgtitle { color: var(--accent); font-size: 12px; font-weight: 700; }
   .who { display: flex; gap: 4px; flex-wrap: wrap; } .who span { font-size: 11px; padding: 0 7px; border-radius: 999px; color: #fff; } .who .t { background: #2f6fd6; } .who .c { background: #8a4fd8; } .who .m { background: #1f9d6a; }
-  .bkw iframe { width: 100%; border: 0; display: block; min-height: 420px; background: transparent; }
+  .bkw iframe { width: 100%; border: 0; display: block; min-height: 300px; background: transparent; } .bkw iframe + iframe { margin-top: 14px; }
 
   .nav button { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
@@ -299,7 +303,7 @@
   }
 
   // ── 🎯 BAN/PICK：公開の rules.json（BAN人数・ローカルBANなど）を、キャラの顔つきで描く ──
-  var BP = null, BP_LOADING = false, BP_ROUND = null, FACES = null, BK_H = 0;
+  var BP = null, BP_LOADING = false, BP_ROUND = null, FACES = null, BK_H = {}, BK_PH = null;
   function loadFaces() {
     if (FACES) return Promise.resolve(FACES);
     function get(u) { return fetch(u, { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
@@ -350,14 +354,38 @@
     items.forEach(function (x) { w.appendChild(chip(x[0], x[1], kind)); }); return w;
   }
   function recent(iso) { var t = Date.parse(iso || ""); return !isNaN(t) && Date.now() - t <= 3 * 24 * 60 * 60 * 1000; }
+  var BAN_RE = /^(サバイバー|ハンター|マップ)(\d+)BAN$/;
+  function banParts(text) {                                                         // 「サバイバー4BAN / ハンター1BAN」→ {サバイバー: 4, ハンター: 1}（それ以外の形なら null）
+    var out = {}, ok = true;
+    String(text || "").split(" / ").forEach(function (p) { var m = BAN_RE.exec(p.trim()); if (m) out[m[1]] = m[2]; else ok = false; });
+    return ok && Object.keys(out).length ? out : null;
+  }
   function rowsCard(title, icon, list, changedIso) {
     var c = el("div", "card"), h = el("h3"); h.appendChild(el("span", "", icon)); h.appendChild(el("span", "", title)); c.appendChild(h);
     list = list || []; if (!list.length) c.appendChild(el("div", "none", "特別なルールはありません"));
+    var hot = recent(changedIso), grid = null, cgrp = null;
     list.forEach(function (x) {
-      var r = el("div", "rw"), kind = CHAR_ROWS[x.label] || ""; r.appendChild(el("span", "lb " + kind, x.label || ""));
-      var body = charRow(x.label, x.text || ""), tx = el("div", "tx" + (recent(changedIso) ? " chg" : ""));
-      if (body) { body.className += " " + kind; tx.appendChild(body); } else tx.textContent = x.text || "";
-      r.appendChild(tx); c.appendChild(r);
+      var bans = banParts(x.text), kind = CHAR_ROWS[x.label] || "", body = kind ? charRow(x.label, x.text || "") : null;
+      if (bans) {                                                                     // BAN人数：表にして、文字の位置をそろえる
+        cgrp = null;
+        if (!grid) { grid = el("div", "bangrid"); c.appendChild(grid); }
+        grid.appendChild(el("div", "bl", x.label === "BAN人数" ? "BAN人数" : x.label));
+        ["サバイバー", "ハンター", "マップ"].forEach(function (k) {
+          var cell = el("div", "bc" + (hot ? " chg" : ""));
+          if (bans[k] != null) { cell.appendChild(el("span", "k", k)); cell.appendChild(el("b", "", bans[k])); cell.appendChild(el("span", "u", "BAN")); }
+          grid.appendChild(cell);
+        });
+        return;
+      }
+      grid = null;
+      if (body) {                                                                     // キャラの顔：見出しの下に並べる。少なければ、横に並べる
+        if (!cgrp) { cgrp = el("div", "cgrp"); c.appendChild(cgrp); }
+        var b = el("div", "cblk"); b.appendChild(el("div", "lb " + kind, x.label)); body.className += " " + kind; b.appendChild(body); cgrp.appendChild(b);
+        return;
+      }
+      cgrp = null;
+      var r = el("div", "rw"); r.appendChild(el("div", "lb", x.label || ""));
+      var tx = el("div", "tx" + (hot ? " chg" : "")); tx.textContent = x.text || ""; r.appendChild(tx); c.appendChild(r);
     });
     return c;
   }
@@ -382,13 +410,14 @@
     var steps = cur.steps || [];
     if (steps.length) {
       var sc = el("div", "card"), h = el("h3"); h.appendChild(el("span", "", "🔁")); h.appendChild(el("span", "", "BAN/PICKの手順")); sc.appendChild(h);
-      var ol = el("ol", "steps"); steps.forEach(function (t) { ol.appendChild(el("li", /BAN/.test(t) ? "ban" : /PICK/.test(t) ? "pick" : "", t)); }); sc.appendChild(ol); box.appendChild(sc);
+      var ol = el("ol", "steps"); steps.forEach(function (t) { ol.appendChild(el("li", /^ハンター/.test(t) ? "h" : /^サバイバー/.test(t) ? "s" : "", t)); }); sc.appendChild(ol); box.appendChild(sc);
     }
   }
   window.addEventListener("message", function (e) {                               // トーナメント表：中のページの高さに合わせる（中でスクロールさせない）
     if (e.origin !== location.origin || !e.data || e.data.type !== "rb_height") return;
-    BK_H = Math.max(420, Math.min(20000, Number(e.data.h) || 0));
-    var f = document.querySelector(".bkw iframe"); if (f) f.style.height = BK_H + "px";
+    var fid = e.data.fid === "b" ? "b" : "a"; BK_H[fid] = Math.max(300, Math.min(20000, Number(e.data.h) || 0)); if (e.data.phase) BK_PH = e.data.phase;
+    var f = document.querySelector('.bkw iframe[data-fid="' + fid + '"]'); if (f) f.style.height = BK_H[fid] + "px";
+    var fb = document.querySelector('.bkw iframe[data-fid="b"]'); if (fb) fb.style.display = BK_PH && BK_PH !== "registration" ? "none" : "";       // 抽選のあとは、予定の表（＝トーナメント表）だけ
   });
 
   // ── 🎁 賞品：専用の見た目（メダルのカード）。「{{prizes}}」を書いたセクションに出す ──
@@ -466,8 +495,12 @@
       var lastId = 0; RBF.kindChanges(D, t.builtin).forEach(function (c) { if (c.id > lastId) lastId = c.id; }); if (lastId) RBF.setSeen(key, t.builtin, lastId);          // 見たので、次からは！をつけない（この表示では、まだ目立つ）
       if (t.builtin === "bp") { var bw = el("div", "bpw"); main.appendChild(bw); drawBp(bw); }
       else {
-        var kw = el("div", "bkw"), f = el("iframe"); f.src = "index.html?t=" + encodeURIComponent(key) + "&inbook=1"; f.title = t.title; f.setAttribute("scrolling", "no");
-        f.style.height = (BK_H || 600) + "px"; kw.appendChild(f); main.appendChild(kw);
+        var kw = el("div", "bkw");                                                     // 上：予定の表／下：登録状況（チーム登録受付中だけ。タブにせず、上下に並べる）
+        [["a", "plan", "📋 予定の表"], ["b", "reg", "👥 登録状況"]].forEach(function (x) {
+          var f = el("iframe"); f.src = "index.html?t=" + encodeURIComponent(key) + "&inbook=1&tab=" + x[1] + "&fid=" + x[0]; f.title = x[2]; f.setAttribute("scrolling", "no");
+          f.setAttribute("data-fid", x[0]); f.style.height = (BK_H[x[0]] || 600) + "px"; if (x[0] === "b" && BK_PH && BK_PH !== "registration") f.style.display = "none"; kw.appendChild(f);
+        });
+        main.appendChild(kw);
       }
       navButtons(main); return;
     }
