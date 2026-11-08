@@ -997,28 +997,32 @@
     rd.readAsDataURL(file);
   }
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
-  var PAGE = /^[a-z_]{1,20}$/.test(params.get("p") || "") ? params.get("p") : (params.get("go") === "cs") ? "caster" : "home", MENU_OPEN = false;      // ?p=caster：そのタブを直接開く（URLの # は、本人用のしるしに使っているので、?p= にする）       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
+  var PAGE = /^[a-z_]{1,20}$/.test(params.get("p") || "") ? (params.get("p") === "apps" ? "recruit" : params.get("p")) : (params.get("go") === "cs") ? "caster" : "home", MENU_OPEN = false;      // ?p=caster：そのタブを直接開く（URLの # は、本人用のしるしに使っているので、?p= にする）       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
+  var POPPING = false;
+  window.addEventListener("popstate", function () {                                    // ブラウザの「戻る」「進む」：ひとつ前のタブに戻る（前に開いていた別のサイトには戻らない）
+    var p0 = new URLSearchParams(location.search).get("p") || "home"; PAGE = /^[a-z_]{1,20}$/.test(p0) ? (p0 === "apps" ? "recruit" : p0) : "home"; MENU_OPEN = false; POPPING = true; window.scrollTo(0, 0); render();
+  });
   function pages(u) {                                                                // ☰ メニュー：だれにも同じ項目。いま使えないページは、暗くして押せない（4つ目＝使えない理由）
     var lead = !!(u && u.leader), member = !!(u && u.team), mgr = !!(u && u.mteam), ok = !!(me && me.prof && u && u.pf_ok);
     var pend = u && u.leader ? arr(u.apps).filter(function (a) { return a.status === "pending"; }).length : 0;
-    return [
+    var inTeam = lead || member;                                                      // チームに入っている：チーム情報／まだ：チーム作成（どちらか一方だけ）
+    var out = [
+      ["profile", "🪪 あなたの選手情報", true],
       ["home", "🏠 チームへ応募", true],
-      ["create", "🆕 チーム作成", ok && !lead && !member && !mgr && !isMgr(), lead || member ? "もうチームに入っています" : "先に「🪪 あなたの選手情報」を登録してください"],
-      ["team", "🏷 チーム情報", lead || member, "チームに入ると使えます"],
-      ["recruit", "📝 募集投稿", lead, "チームのリーダーだけが使えます"],
-      ["apps", "📨 届いた応募" + (pend ? "（" + pend + "）" : ""), lead, "チームのリーダーだけが使えます"],
-      ["wishes", "📨 あなたの応募", !!(u && arr(u.wishes).length), "まだ、どのチームにも応募していません"],
+      inTeam ? ["team", "🏷 チーム情報", true] : ["create", "🆕 チーム作成", ok && !mgr && !isMgr(), "先に「🪪 あなたの選手情報」を登録してください"]];
+    out.push(lead ? ["recruit", "📝 募集投稿・届いた応募" + (pend ? "（" + pend + "）" : ""), true]            // リーダー：募集投稿（届いた応募も、ここ）／そうでない人：あなたの応募
+                  : ["wishes", "📨 あなたの応募", !!(u && arr(u.wishes).length), "まだ、どのチームにも応募していません"]);
+    return out.concat([
       ["manager", "🧑‍💼 マネージャー登録", !lead && !member, "チームのリーダー・選手は、マネージャーになれません"],
       ["caster", "🎙 キャスター", !!(D && D.staff && D.staff.caster), "この大会では、いま募集していません"],
       ["moderator", "🛡 モデレーター", !!(D && D.staff && D.staff.moderator), "この大会では、いま募集していません"],
-      ["profile", "🪪 あなたの選手情報", true],
       ["inquiry", "💬 お問い合わせ", true],
-    ];
+    ]);
   }
   function needsAttention(u, key) {                                                  // メニューの赤い❗：チーム情報に未登録のものがある／返事待ちの応募が届いている
     if (!u) return false;
     if (key === "team") return !!(u.leader && ((D.logo_on && u.logo === "no") || !u.color));
-    if (key === "apps") return !!(u.leader && arr(u.apps).some(function (a) { return a.status === "pending"; }));
+    if (key === "recruit") return !!(u.leader && arr(u.apps).some(function (a) { return a.status === "pending"; }));
     return false;
   }
   function drawMenu(u) {
@@ -1163,8 +1167,8 @@
     // ── 上：説明（見ている人で切り替え）と、管理者だけの名札の一覧 ──
     var pal = el("div", "cs-pal");
     pal.appendChild(el("div", "cs-hint", CS_ADM
-      ? "【管理者】名札の一覧から名札を押して選び、置きたい試合（またはセットの欄）を押します。選んだ名札は、もう一度その名札を押すまで、何度でも置けます（PCは、つまんで落としてもOK）。名札の右上の×でも消せます。置いた名札を押すと、押（黄）→実（赤）→解（水色）の順にマークが変わり、長押しすると消せます。"
-      : "【キャスター】参加できる試合を押すと、あなたの名札が置かれます（最初は押＝黄色）。置いた名札を押すと、実（赤）＝実況、解（水色）＝解説、押（黄）の順に変わります。長押しか、右上の×で消せます。"));
+      ? "【管理者】名札の一覧から名札を押して選び置きたい試合を押します。置いた名札を押すと実況か解説かマークできます。"
+      : "【キャスター】参加できる試合を押すとあなたの名札が置かれます。置いた名札を押すと実況か解説かマークできます。"));
     if (CS_ADM) {
       var pr = el("div", "cs-tags cs-scroll");
       arr(d.cs).forEach(function (x) {
@@ -1306,6 +1310,14 @@
         send({ act: "staff_apply", kind: SKIND, f: SF }, st ? "変更しています…" : "応募しています…");
       });
       rr.appendChild(go); d.appendChild(rr);
+    }
+    if (st) {                                                                         // 退任（応募の取り下げ）
+      var rt = el("div", "row"), rb0 = el("button", "danger", st === "adopted" ? "退任する" : "応募を取り下げる"); rb0.type = "button"; rb0.disabled = BUSY;
+      rb0.addEventListener("click", function () {
+        if (!confirm(st === "adopted" ? S.label + "を退任しますか？（担当の割り当てや、日程の名札も外れます）" : "応募を取り下げますか？")) return;
+        SF = {}; send({ act: "staff_retire", kind: SKIND }, "手続きしています…");
+      });
+      rt.appendChild(rb0); d.appendChild(rt);
     }
     if (!inl) { var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close); var cr = el("div", "row"); cr.appendChild(cl); d.appendChild(cr); }
     d.appendChild(liveMsg());
@@ -1656,12 +1668,11 @@
       mine.appendChild(el("div", "subwarn", "⚠ 短い間に加入・脱退をくり返したため、クールタイム中です（あと約" + Math.floor(lm / 60) + "時間" + (lm % 60) + "分）。そのあいだは、応募・チーム作りはできません。"));
     }
     if (me && !pages(u).some(function (pg) { return pg[0] === PAGE && pg[2]; })) PAGE = "home";        // そのページが無くなった（チームを抜けた など）：最初のページへ
-    var PG = me ? PAGE : "home";
-    try { var su = new URL(location.href); if (PG === "home") su.searchParams.delete("p"); else su.searchParams.set("p", PG); su.searchParams.delete("go"); if (su.href !== location.href) history.replaceState(null, "", su.href); } catch (e) { /* そのまま */ }          // いま開いているタブを、URLに残す（?p=caster）
+    var PG = me ? PAGE : "home"; var params0 = new URLSearchParams(location.search);
+    try { var su = new URL(location.href); if (PG === "home") su.searchParams.delete("p"); else su.searchParams.set("p", PG); su.searchParams.delete("go"); if (su.href !== location.href) { if (su.searchParams.get("p") !== params0.get("p") && !POPPING) history.pushState(null, "", su.href); else history.replaceState(null, "", su.href); } POPPING = false; } catch (e) { /* そのまま */ }          // いま開いているタブを、URLに残す（?p=caster）
     var pgName = (pages(u).filter(function (pg) { return pg[0] === PG; })[0] || [])[1];
     if (PG === "team") { if (u && u.leader) teamInfoView(mine, u); else if (u && u.team) memberView(mine, u); }
-    if (PG === "recruit" && u && u.leader) leaderView(mine, u.leader);
-    if (PG === "apps" && u && u.leader) appsView(mine, u);
+    if (PG === "recruit" && u && u.leader) { leaderView(mine, u.leader); appsView(mine, u); }          // 募集投稿に、届いた応募を合体
     if (PG === "caster" || PG === "moderator") {                                  // 応募は、ポップアップにしないで、そのまま表示（キャスターは、その下に日程）
       SKIND = PG; var scd = el("div", "card"); staffDialog(scd); mine.appendChild(scd);
       if (PG === "caster" && D.cs) csView(mine, u);
@@ -1675,7 +1686,7 @@
       else createTeamView(mine);
     }
     if (me && PG === "home" && u && u.leader && arr(u.apps).some(function (a) { return a.status === "pending"; })) {     // リーダー：返事待ちの応募があれば、最初のページで知らせる
-      var na = el("button", "go", "📨 返事待ちの応募があります（届いた応募を見る）"); na.type = "button"; na.addEventListener("click", function () { PAGE = "apps"; render(); });
+      var na = el("button", "go", "📨 返事待ちの応募があります（届いた応募を見る）"); na.type = "button"; na.addEventListener("click", function () { PAGE = "recruit"; render(); });
       var nr0 = el("div", "row"); nr0.appendChild(na); mine.appendChild(nr0);
     }
     if (PG === "inquiry") {                                                           // お問い合わせ：内容を書いて送る → Discordの問い合わせのスレッドに届く
@@ -1712,7 +1723,7 @@
     }
     var mb = document.getElementById("menubtn");                                      // ☰ メニュー（本人用のページだけ）
     if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN); };
-      var attnMe = needsAttention(u, "team") || needsAttention(u, "apps"), attnAll = attnMe || rbAttention();
+      var attnMe = needsAttention(u, "team") || needsAttention(u, "recruit"), attnAll = attnMe || rbAttention();
       if (rbKey()) { try { localStorage.setItem("rc_attn:" + rbKey(), attnMe ? "1" : "0"); } catch (e) { /* そのまま */ } }       // 大会ルールのページの「エントリーのページへ」に、！をつけるため
       mb.textContent = "☰ メニュー" + (attnAll ? " ❗" : "");
       mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN);                       /* チュートリアル：メニューのボタンを点滅 */

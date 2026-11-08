@@ -164,7 +164,7 @@
     <div class="card"><table class="rounds" id="rounds"></table><div class="note" style="margin-top:8px">各ラウンドで使う手順を選びます。セット・延長戦ごとに変えるときは、その下の欄で選びます（「ラウンドと同じ」なら、ラウンドの手順を使います）。Discordの「🎯 BAN/PICK」で変えても、同じ設定です。</div></div>
     </div>
     <div id="bigpop" class="bigpop" hidden></div>
-    <div id="tab-rb" hidden><div class="note" style="margin-top:10px">大会のルールを、ひとつのページ（大会ルール）にまとめます。タブ（ページの「☰ メニュー」の中）と、セクション（見出しと本文。読む人は、読み終わったら折りたためます）を自由に足せます。「🔒」のタブは、BOTが中身を作ります（エントリーのルール＝「📋 ルール・登録項目」タブの内容、BAN/PICK、トーナメント表）。消せませんが、並べ替えはできます。本文の欄は、見たままの形で書けます。上のボタン（大・中・小＝見出し、B＝太字、I＝斜体、U＝下線、S＝取り消し線、A＝文字色、🔗＝リンク）を押してから文字を打つと、その装飾が始まり、もう一度押すと終わります（文字を選んでから押すと、その文字だけ）。中身は、**あいうえお** のような記号で保存されるので、装飾の内側に、あとから文字を足しても、装飾は続きます。[[タブの名前]] と書くと、そのタブへのリンクになります。直したあとは、画面の上の「💾 保存」を押してください（ほかのタブと同じです）。</div><div id="rblist"></div></div>
+    <div id="tab-rb" hidden><div class="note" style="margin-top:10px"></div><div id="rblist"></div></div>
     <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
@@ -858,14 +858,15 @@
         ti0.addEventListener("input", function () { t.title = ti0.value; rbDirty(); }); hd.appendChild(ti0);
       }
       c.style.opacity = t.hidden ? ".55" : "";
-      var locked = t.builtin && (I.locked || []).indexOf(t.builtin) >= 0;
+      var hasFixed = !t.builtin && (t.sections || []).some(function (x) { return x.fixed; });          // 賞品の欄があるタブは、非表示にも削除にもできない
+      var locked = (t.builtin && (I.locked || []).indexOf(t.builtin) >= 0) || hasFixed;
       if (!locked) {
         var hb = el("button", t.hidden ? "primary" : "", t.hidden ? "🙈 非表示中" : "👁 表示中"); hb.type = "button"; hb.title = "非表示にすると、参加者のページに出ません（中身は残ります）";
         hb.addEventListener("click", function () { t.hidden = !t.hidden; rbDirty(); renderRulebook(); }); hd.appendChild(hb);
       }
       var up = el("button", "", "↑"); up.type = "button"; up.title = "上へ"; up.disabled = ti === 0; up.addEventListener("click", function () { move(RB.tabs, ti, -1); }); hd.appendChild(up);
       var dw = el("button", "", "↓"); dw.type = "button"; dw.title = "下へ"; dw.disabled = ti === RB.tabs.length - 1; dw.addEventListener("click", function () { move(RB.tabs, ti, 1); }); hd.appendChild(dw);
-      if (!t.builtin) { var dl = el("button", "", "🗑"); dl.type = "button"; dl.title = "このタブを消す"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("タブ「" + (t.title || "") + "」を、中のセクションごと消します。よろしいですか？")) { RB.tabs.splice(ti, 1); rbDirty(); renderRulebook(); } }); hd.appendChild(dl); }
+      if (!t.builtin && !hasFixed) { var dl = el("button", "", "🗑"); dl.type = "button"; dl.title = "このタブを消す"; dl.style.color = "#ff7070"; dl.addEventListener("click", function () { if (confirm("タブ「" + (t.title || "") + "」を、中のセクションごと消します。よろしいですか？")) { RB.tabs.splice(ti, 1); rbDirty(); renderRulebook(); } }); hd.appendChild(dl); }
       c.appendChild(hd);
       if (t.builtin === "ext") {
         var es = I.ext_state || {}, et = (I.ext_texts || {})[es.mode || "record"] || "";
@@ -888,6 +889,9 @@
       det.appendChild(el("summary", "", "セクション（" + t.sections.length + "）"));
       t.sections.forEach(function (sc, si) {
         if (sc.builtin) return;                                                         // 以前の決まったセクション（いまはタブ）
+        if (sc.fixed) {                                                                 // 賞品の欄：固定（書き足せない・非表示にも削除にもできない）
+          var fb = el("div", ""); fb.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;font-weight:800"; fb.textContent = "🔒 賞品（賞品設定から、自動で入ります）"; det.appendChild(fb); return;
+        }
         var sbx = el("div", ""); sbx.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:8px 0";
         var sh = el("div", "row"); sh.style.alignItems = "center";
         var st = el("input"); st.type = "text"; st.maxLength = L.title || 60; st.value = sc.title || ""; st.placeholder = "見出し（例：演繹停止について）"; st.style.flex = "1 1 100%"; st.style.minWidth = "10em"; st.style.fontSize = "16px"; st.style.padding = "10px";
@@ -1435,6 +1439,10 @@
     var c = el("div", "card"); c.style.cssText = "margin-top:10px;border:2px solid " + (Pn.length ? "#ff6b6b" : "var(--line)");
     var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = "📣 まだお知らせしていないルールの変更：" + Pn.length + "件"; c.appendChild(h);
     c.appendChild(el("div", "note", "大会ルール・エントリーのルール・BAN/PICKのルール・トーナメント表を直すと、ここに溜まります（どこで直しても）。「お知らせ-大会名」チャンネルに、@everyone付きで、変更前と変更後を投稿できます。投稿しなかった変更は、履歴に残って、次にまとめて投稿できます。"));
+    var nt = el("ul", "note"); nt.style.margin = "4px 0 0 18px";
+    ["編集履歴を投稿すると「大切な変更点」としてDiscordサーバーの全員に通知されます。ルールは未読に戻り、文字に赤い下線が引かれます。大切な変更点は必ず投稿してください。",
+     "編集履歴を削除すると何も起こりません（投稿しないので、ルールは未読に戻らず、赤い下線も引かれません）。些細なニュアンスの変更や誤字修正などの履歴は削除してください。"].forEach(function (t) { nt.appendChild(el("li", "", t)); });
+    c.appendChild(nt);
     if (!Pn.length) { c.appendChild(el("div", "note", "（いまは、ありません）")); }
     Pn.forEach(function (e) {
       var d = chgItem(e, C, false), r = el("div", "row");
@@ -1444,7 +1452,7 @@
     });
     if (Pn.length) {
       var rr = el("div", "row"), pa = el("button", "primary", "📣 まとめて投稿する（@everyone）"); pa.type = "button"; pa.addEventListener("click", function () { postChanges([], "溜まっている" + Pn.length + "件"); });
-      var da = el("button", "", "ぜんぶ、投稿しないで消す"); da.type = "button"; da.addEventListener("click", function () { dismissChanges([], "溜まっている" + Pn.length + "件"); });
+      var da = el("button", "", "全て投稿せず消す"); da.type = "button"; da.addEventListener("click", function () { dismissChanges([], "溜まっている" + Pn.length + "件"); });
       rr.appendChild(pa); rr.appendChild(da); c.appendChild(rr);
     }
     var Po = C.posted || [];
@@ -1468,11 +1476,16 @@
     var b = document.createElement("div"); b.className = "bigpop-in"; b.style.cssText += ";border-color:#ff6b6b;max-height:90vh;overflow:auto;font-size:15px";
     b.appendChild(el("div", "", "📣 ルールが変わりました。お知らせしますか？")).style.cssText = "font-size:18px;font-weight:800";
     b.appendChild(el("div", "note", "「お知らせ-大会名」チャンネルに、@everyone付きで、変更前と変更後を投稿します。「あとで」にすると、履歴に残って、あとからまとめて投稿できます。"));
+    var nt2 = el("ul", "note"); nt2.style.margin = "4px 0 0 18px";
+    ["投稿すると「大切な変更点」として全員に通知され、ルールは未読に戻り、文字に赤い下線が引かれます。大切な変更点は必ず投稿してください。",
+     "投稿せずに消すと、何も起こりません（ルールは未読に戻りません）。誤字修正などの些細な変更は、消してください。"].forEach(function (t) { nt2.appendChild(el("li", "", t)); });
+    b.appendChild(nt2);
     fresh.forEach(function (e) { b.appendChild(chgItem(e, C, fresh.length <= 2)); });
     var r = el("div", "row"), y = el("button", "primary", "📣 投稿する（@everyone）"); y.type = "button";
     y.addEventListener("click", function () { w.remove(); postChanges(fresh.map(function (e) { return e.id; }), "この変更" + fresh.length + "件"); });
     var n = el("button", "", "あとで（履歴に残す）"); n.type = "button"; n.addEventListener("click", function () { w.remove(); });
-    r.appendChild(y); r.appendChild(n); b.appendChild(r); w.appendChild(b); document.body.appendChild(w);
+    var ds = el("button", "", "投稿しないで消す"); ds.type = "button"; ds.addEventListener("click", function () { w.remove(); dismissChanges(fresh.map(function (e) { return e.id; }), "この変更" + fresh.length + "件"); });
+    r.appendChild(y); r.appendChild(n); r.appendChild(ds); b.appendChild(r); w.appendChild(b); document.body.appendChild(w);
   }
   function adopt(d) {                                   // BOTのデータを、作業中の内容にする
     data = d; checkNewChanges(d); RB = null; RB_DIRTY = false;

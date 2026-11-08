@@ -14,8 +14,11 @@
   var MEM = {};
   function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
   function readId(pub, s) { return "rb_read:" + pub + ":" + hash((s.title || "") + "\n" + (s.body || "")); }
-  function isRead(pub, s) { var k = readId(pub, s); if (MEM[k]) return true; try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } }
-  function setRead(pub, s, v) { var k = readId(pub, s); if (v) MEM[k] = 1; else delete MEM[k]; try { if (v) localStorage.setItem(k, "1"); else localStorage.removeItem(k); } catch (e) { /* そのまま */ } }
+  function keysOf(pub, s) {                                                           // この文の読んだ印。投稿しないで消した変更の前の文（s.same）を読んでいれば、読んだまま（変わったことは、お知らせしていないので）
+    var ks = [readId(pub, s)]; (s.same || []).forEach(function (b) { ks.push(readId(pub, { title: s.title, body: b })); }); return ks;
+  }
+  function isRead(pub, s) { return keysOf(pub, s).some(function (k) { if (MEM[k]) return true; try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } }); }
+  function setRead(pub, s, v) { keysOf(pub, s).forEach(function (k, i) { if (v) { if (i === 0) { MEM[k] = 1; try { localStorage.setItem(k, "1"); } catch (e) { /* そのまま */ } } } else { delete MEM[k]; try { localStorage.removeItem(k); } catch (e) { /* そのまま */ } } }); }
   function progress(pub, doc) {                                                       // 全部のタブの、セクションの数と、読んだ数（BAN/PICK・トーナメント表のタブは、数えない）
     var n = 0, r = 0;
     ((doc && doc.tabs) || []).forEach(function (t) { (t.sections || []).forEach(function (s) { n++; if (isRead(pub, s)) r++; }); });
