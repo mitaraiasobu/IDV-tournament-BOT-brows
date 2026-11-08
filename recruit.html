@@ -626,6 +626,7 @@
     if (BUSY || !me) return;
     BUSY = true; setMsg("", busyText || "送信中…（BOTが確認します。数秒かかります）"); redraw();
     var nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    if (body.act === "profile_image") IMG_SENT_AT = Date.now();
     WAIT = nonce; body.uid = me.uid; body.ph = PH;
     fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: nonce, at: Date.now(), assignments: { _rc: body } }) })
       .then(function (r) {
@@ -834,6 +835,7 @@
   }
 
   // ───── あなたの選手情報（応募に要る、すべての情報と、プロフィール画像） ─────
+  var IMG_SENT_AT = 0;
   var PF = null, PEND = null, IMG = null, IMG_AFTER = false, IMG_SET_AT = 0, SAVE_FN = null, CAU_OPEN = false, IMG_FAIL = false, IMG_AUTO = false;
   function imgExpired(u) { var m = /[?&]ex=([0-9a-f]+)/.exec(u || ""); return !!m && parseInt(m[1], 16) * 1000 < Date.now(); }   // DiscordのURLは期限つき
   function curImage(box, small) {                                                     // 登録済みのプロフィール画像（見られないときは、見られる場所を教える）
@@ -1387,8 +1389,8 @@
   function entryInputs(box, E) {                                                     // この大会の選手登録の項目（Discordの選手登録と同じ）
     var v = D.entry || {};
     box.appendChild(el("label", "", "一言メッセージ（任意）"));
-    box.appendChild(el("div", "hint", "⚠ 一言メッセージは、キャスターが読み上げる可能性があります。"));
     var ta = el("textarea"); ta.maxLength = v.msg_max || 200; ta.value = E.message || ""; ta.addEventListener("input", function () { E.message = ta.value; }); box.appendChild(ta);
+    box.appendChild(el("div", "hint", "⚠ 一言メッセージは、キャスターが読み上げる可能性があります。"));          // 表（左：項目名／右：入力欄）なので、注意書きは入力欄のあと（先に置くと、あとの入力欄が、狭い左の列に入ってしまう）
     if (v.nw) {
       [["nw_trigger", v.nw + "を使い始めたキッカケ（使う人だけ・任意）", 400], ["nw_history", v.nw + "のプレイ歴（例：2年・約500試合）", 200], ["nw_badges", v.nw + "のバッジ履歴（例：最高峰バッジ○個）", 200]].forEach(function (x) {
         box.appendChild(el("label", "", x[1])); var i = el("input"); i.type = "text"; i.maxLength = x[2]; i.value = E[x[0]] || ""; i.addEventListener("input", function () { E[x[0]] = i.value; }); box.appendChild(i);
@@ -2001,7 +2003,11 @@
         return;
       }
       var sg = JSON.stringify(d, function (k, v) { return k === "at" ? undefined : v; });             // 公開した時刻だけが変わっても、描き直さない
-      unwrapProf().then(function (changed) { if ((changed || sg !== LASTSIG) && !document.getElementById("ov") && !BUSY) { LASTSIG = sg; render(); } });   // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
+      unwrapProf().then(function (changed) {
+        if (WAIT && PEND && PEND.kind === "img" && me && me.prof && me.prof.img && Date.now() - IMG_SENT_AT > 4000) {     // 返事が届かなくても、公開データに画像が出ていたら、届いている
+          BUSY = false; WAIT = null; PEND = null; IMG = null; IMG_SET_AT = Date.now(); IMG_FAIL = false; render(); setMsg("ok", "✅ プロフィール画像を登録しました。"); return;
+        }
+        if ((changed || sg !== LASTSIG) && !document.getElementById("ov") && !BUSY) { LASTSIG = sg; render(); } });   // ダイアログを開いている間は、描き直さない（書いている途中を消さない）
     }).catch(function () { if (!D) document.getElementById("empty").hidden = false; });
   }
   if (!/^[A-Za-z0-9]{12}$/.test(key) || !BASE) { document.getElementById("lead").textContent = "このページは、大会のURL（エントリーパネルにあるリンク）から開いてください。"; return; }
