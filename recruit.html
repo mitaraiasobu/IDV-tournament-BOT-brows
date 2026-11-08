@@ -100,6 +100,9 @@
   button.danger { border-color: var(--ng); color: var(--ng); font-weight: 800; }
   button:disabled { opacity: .5; cursor: default; }
   .msg { font-size: 13px; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+  .cs-scroll { max-height: 140px; overflow-y: auto; padding: 4px 2px; }
+  .cs-mk { display: inline-block; min-width: 1.5em; text-align: center; border-radius: 6px; padding: 0 4px; font-size: 12px; }
+  .cs-tag { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .cs-pal { position: sticky; top: 0; z-index: 5; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
   .cs-hint { font-size: 12px; color: var(--sub); margin-bottom: 6px; } .cs-tags { display: flex; flex-wrap: wrap; gap: 8px; }
   .cs-tag { display: inline-block; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--panel2); font-weight: 800; font-size: 14px; cursor: grab; user-select: none; touch-action: manipulation; }
@@ -1085,17 +1088,18 @@
   }
   function csInit() {
     var d = D.cs || {};
-    CS = { sig: JSON.stringify([d.av, d.se]), mine: {}, av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), who: "" };
+    CS = { sig: JSON.stringify([d.av, d.se, d.mk]), mine: {}, av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), mk: JSON.parse(JSON.stringify(d.mk || {})), sel: "" };
     var me0 = (U() || {}).cs_me || "";
     arr(d.ms).forEach(function (m) { if (arr((d.av || {})[m.id]).indexOf(me0) >= 0) CS.mine[m.id] = true; });
   }
   function csName(a) { var c = arr((D.cs || {}).cs).filter(function (x) { return x.a === a; })[0]; return c ? c.n : "?"; }
-  function csMatchTitle(m) {                                                          // 「1/1 16:20 試合開始～18:00 試合終了」
+  function csMatchTitle(m) {                                                          // 「1/1 16:20試合開始～18:00試合終了」
     function md(s) { var x = /^\d{4}-(\d{2})-(\d{2})[T ](\d{2}:\d{2})/.exec(s || ""); return x ? [(+x[1]) + "/" + (+x[2]), x[3]] : null; }
     var a = md(m.t), b = md(m.te);
     if (!a) return "日時未定";
-    return a[0] + " " + a[1] + " 試合開始" + (b ? "～" + (b[0] !== a[0] ? b[0] + " " : "") + b[1] + " 試合終了" : "");
+    return a[0] + " " + a[1] + "試合開始" + (b ? "～" + (b[0] !== a[0] ? b[0] + " " : "") + b[1] + "試合終了" : "");
   }
+  var CS_MK = { "": ["押", "#e6b800", "#111"], j: ["実", "#e04848", "#fff"], k: ["解", "#35b6e8", "#05212d"] };          // 押（黄）→実（赤）→解（水色）→押…
   function csView(box, u) {
     var d = D.cs, c = el("div", "card");
     c.appendChild(el("h2", "", "📅 キャスター日程"));
@@ -1103,10 +1107,11 @@
     if (!d) { c.appendChild(el("div", "lead", "この大会では、キャスター日程は使いません。")); box.appendChild(c); return; }
     var mineApp = (u || {}).cs_me || "";
     admInit();
-    if (!mineApp && !CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "キャスターに応募した人だけが使えます（応募は「🎙 キャスター・🛡 モデレーター」から）。")); box.appendChild(c); return; }
-    if (!CS || (CS.sig !== JSON.stringify([d.av, d.se]) && !CS.dirty)) csInit();
+    if (!mineApp && !CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "キャスターに応募した人だけが使えます（応募は「🎙 キャスター」から）。")); box.appendChild(c); return; }
+    if (!CS || (CS.sig !== JSON.stringify([d.av, d.se, d.mk]) && !CS.dirty)) csInit();
     var ms = arr(d.ms);
     function dirty() { CS.dirty = true; render(); }
+    function mkOf(mid, a) { return ((CS.mk[mid] || {})[a]) || ""; }
     function place(mid, sk, a) {
       if (!a) return;
       if (!CS_ADM) { if (a === mineApp) CS.mine[mid] = true; }
@@ -1115,40 +1120,64 @@
       CS.sel = ""; dirty();
     }
     function takeOff(mid, sk, a) {
-      if (!CS_ADM) { if (a === mineApp) delete CS.mine[mid]; }
+      if (!CS_ADM) { if (a === mineApp) { delete CS.mine[mid]; if (CS.mk[mid]) delete CS.mk[mid][a]; } }
       else if (sk) { var p2 = (CS.se[mid] || {})[sk] || []; var k = p2.indexOf(a); if (k >= 0) p2.splice(k, 1); }
-      else { var l = arr(CS.av[mid]), k2 = l.indexOf(a); if (k2 >= 0) l.splice(k2, 1); }
+      else { var l = arr(CS.av[mid]), k2 = l.indexOf(a); if (k2 >= 0) l.splice(k2, 1); if (CS.mk[mid]) delete CS.mk[mid][a]; }
       dirty();
     }
-    function target(node, mid, sk) {                                                 // 名札を置ける場所：PCはつまんで落とす／スマホは名札を押してから、ここを押す
+    function cycle(mid, a) { var cur = mkOf(mid, a), nx = cur === "" ? "j" : cur === "j" ? "k" : ""; CS.mk[mid] = CS.mk[mid] || {}; if (nx) CS.mk[mid][a] = nx; else delete CS.mk[mid][a]; dirty(); }
+    function target(node, mid, sk) {                                                 // 置ける場所：スマホ・PCとも、押す。管理者は、つまんで落とすのも、名札を選んでから押すのもできる
       node.classList.add("cs-drop");
       node.addEventListener("dragover", function (e) { e.preventDefault(); node.classList.add("over"); });
       node.addEventListener("dragleave", function () { node.classList.remove("over"); });
       node.addEventListener("drop", function (e) { e.preventDefault(); node.classList.remove("over"); place(mid, sk, e.dataTransfer.getData("text/plain")); });
-      node.addEventListener("click", function (e) { if (CS.sel && !e.target.closest(".cs-tag")) place(mid, sk, CS.sel); });
+      node.addEventListener("click", function (e) { if (e.target.closest(".cs-tag")) return; if (!CS_ADM) place(mid, sk, mineApp); else if (CS.sel) place(mid, sk, CS.sel); });
     }
-    function tag(a, mid, sk, removable) {
-      var t = el("span", "cs-tag" + (!mid && CS.sel === a ? " sel" : ""), "🏷 " + csName(a) + (removable ? " ✖" : ""));
-      if (removable) { t.addEventListener("click", function (e) { e.stopPropagation(); takeOff(mid, sk, a); }); return t; }
-      if (!mid) {
-        t.draggable = true;
-        t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", a); CS.sel = ""; });
-        t.addEventListener("click", function () { CS.sel = CS.sel === a ? "" : a; render(); });
-      }
+    function badge(v) { var m = CS_MK[v || ""]; var b = el("b", "cs-mk", m[0]); b.style.background = m[1]; b.style.color = m[2]; return b; }
+    function placed(a, mid, sk, canEdit) {                                           // 置いた名札：押す＝マークが変わる／長押し＝消す（「消しますか？」）
+      var t = el("span", "cs-tag" + (canEdit ? "" : " other"));
+      if (!sk) t.appendChild(badge(mkOf(mid, a)));
+      t.appendChild(document.createTextNode(" " + csName(a)));
+      if (!canEdit) return t;
+      var timer = null, long = false;
+      function clear() { clearTimeout(timer); }
+      t.addEventListener("pointerdown", function () { long = false; timer = setTimeout(function () { long = true; if (confirm("消しますか？")) takeOff(mid, sk, a); }, 650); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) { t.addEventListener(ev, clear); });
+      t.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      t.addEventListener("click", function (e) { e.stopPropagation(); if (long) { long = false; return; } if (!sk) cycle(mid, a); });
       return t;
     }
-    // ── 上：名札の一覧（動かせる名札） ──
+    // ── 上：説明（見ている人で切り替え）と、管理者だけの名札の一覧 ──
     var pal = el("div", "cs-pal");
-    pal.appendChild(el("div", "cs-hint", CS_ADM ? "名札を、試合に置いてください（PC：つまんで試合へ／スマホ：名札を押してから、置きたい場所を押す）。セットごとの欄にも置けます。" : "自分の名札を、参加できる試合に置いてください（PC：つまんで試合へ／スマホ：名札を押してから、試合を押す）。"));
-    var pr = el("div", "cs-tags");
-    (CS_ADM ? arr(d.cs) : arr(d.cs).filter(function (x) { return x.a === mineApp; })).forEach(function (x) { pr.appendChild(tag(x.a, "", "", false)); });
-    pal.appendChild(pr);
-    if (!CS_ADM) {
-      var br = el("div", "row"), all = el("button", "go", "参加可能な試合全てに名札を入れる"); all.type = "button";
-      all.addEventListener("click", function () { ms.forEach(function (m) { CS.mine[m.id] = true; }); dirty(); });
-      var none = el("button", "", "全部外す"); none.type = "button"; none.addEventListener("click", function () { CS.mine = {}; dirty(); });
-      br.appendChild(all); br.appendChild(none); pal.appendChild(br);
+    pal.appendChild(el("div", "cs-hint", CS_ADM
+      ? "【管理者】名札の一覧から名札を押して選び、置きたい試合（またはセットの欄）を押します（PCは、つまんで落としてもOK）。置いた名札を押すと、押（黄）→実（赤）→解（水色）の順にマークが変わり、長押しすると消せます。"
+      : "【キャスター】参加できる試合を押すと、あなたの名札が置かれます（最初は押＝黄色）。置いた名札を押すと、実（赤）＝実況、解（水色）＝解説、押（黄）の順に変わります。長押しすると消せます。"));
+    if (CS_ADM) {
+      var pr = el("div", "cs-tags cs-scroll");
+      arr(d.cs).forEach(function (x) {
+        var t = el("span", "cs-tag" + (CS.sel === x.a ? " sel" : ""), "🏷 " + x.n); t.draggable = true;
+        t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", x.a); CS.sel = ""; });
+        t.addEventListener("click", function () { CS.sel = CS.sel === x.a ? "" : x.a; render(); });
+        pr.appendChild(t);
+      });
+      pal.appendChild(pr);
     }
+    var br = el("div", "row");
+    if (!CS_ADM) { var all = el("button", "go", "参加可能な試合全てに名札を入れる"); all.type = "button"; all.addEventListener("click", function () { ms.forEach(function (m) { CS.mine[m.id] = true; }); dirty(); }); br.appendChild(all); }
+    var none = el("button", "", "全消し"); none.type = "button";
+    none.addEventListener("click", function () {
+      if (!confirm("自分の名札を、全部消しますか？")) return;
+      ms.forEach(function (m) {
+        if (!CS_ADM) { delete CS.mine[m.id]; if (CS.mk[m.id]) delete CS.mk[m.id][mineApp]; return; }
+        if (!mineApp) return;
+        CS.av[m.id] = arr(CS.av[m.id]).filter(function (x) { return x !== mineApp; }); if (CS.mk[m.id]) delete CS.mk[m.id][mineApp];
+        var per = CS.se[m.id] || {}; Object.keys(per).forEach(function (k) { per[k] = arr(per[k]).filter(function (x) { return x !== mineApp; }); });
+      });
+      dirty();
+    });
+    br.appendChild(none);
+    if (CS_ADM) { var wipe = el("button", "danger", "白紙に戻す"); wipe.type = "button"; wipe.addEventListener("click", function () { if (confirm("全員の名札を、全部消して、白紙に戻しますか？")) { CS.av = {}; CS.se = {}; CS.mk = {}; CS.mine = {}; dirty(); } }); br.appendChild(wipe); }
+    pal.appendChild(br);
     c.appendChild(pal);
     if (!ms.length) c.appendChild(el("div", "lead", "いま、名札を入れられる試合（生配信ありの試合）は、ありません。"));
     // ── トーナメント表：ラウンドごとの列に、試合のカード ──
@@ -1163,17 +1192,17 @@
         card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）"));
         var slot = el("div", "cs-slot"); target(slot, m.id, "");
         slot.appendChild(el("div", "cs-sl", CS_ADM ? "名札" : "キャスター"));
-        if (CS_ADM) arr(CS.av[m.id]).forEach(function (a) { slot.appendChild(tag(a, m.id, "", true)); });
+        if (CS_ADM) arr(CS.av[m.id]).forEach(function (a) { slot.appendChild(placed(a, m.id, "", true)); });
         else {
-          if (CS.mine[m.id]) slot.appendChild(tag(mineApp, m.id, "", true));
-          arr(d.av[m.id]).filter(function (a) { return a !== mineApp; }).forEach(function (a) { slot.appendChild(el("span", "cs-tag other", "🏷 " + csName(a))); });
+          if (CS.mine[m.id]) slot.appendChild(placed(mineApp, m.id, "", true));
+          arr(d.av[m.id]).filter(function (a) { return a !== mineApp; }).forEach(function (a) { slot.appendChild(placed(a, m.id, "", false)); });
         }
-        if (!slot.querySelector(".cs-tag")) slot.appendChild(el("span", "cs-empty", "ここに置く"));
+        if (!slot.querySelector(".cs-tag")) slot.appendChild(el("span", "cs-empty", CS_ADM ? "ここに置く" : "押すと、名札を置く"));
         card.appendChild(slot);
         if (CS_ADM) arr(m.sets).forEach(function (sk) {
           var ss = el("div", "cs-slot sub"); target(ss, m.id, sk);
-          ss.appendChild(el("div", "cs-sl", { s1: "第一セット", s2: "第二セット", s3: "第三セット", ext: "延長戦" }[sk] || sk));
-          arr((CS.se[m.id] || {})[sk]).forEach(function (a) { ss.appendChild(tag(a, m.id, sk, true)); });
+          ss.appendChild(el("div", "cs-sl", { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" }[sk] || sk));
+          arr((CS.se[m.id] || {})[sk]).forEach(function (a) { ss.appendChild(placed(a, m.id, sk, true)); });
           card.appendChild(ss);
         });
         col.appendChild(card);
@@ -1181,11 +1210,12 @@
       bk.appendChild(col);
     });
     c.appendChild(bk);
+    function mineMarks() { var o = {}; Object.keys(CS.mine).forEach(function (mid) { var v = mkOf(mid, mineApp); if (v) o[mid] = {}, o[mid][mineApp] = v; }); return o; }
     var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 名札を保存"); sv.type = "button"; sv.disabled = BUSY || !CS.dirty;
     sv.addEventListener("click", function () {
       PEND = { kind: "cs" };
-      if (CS_ADM) send({ act: "cs_admin", av: CS.av, se: CS.se }, "保存しています…");
-      else send({ act: "cs_mine", ms: Object.keys(CS.mine) }, "保存しています…");
+      if (CS_ADM) send({ act: "cs_admin", av: CS.av, se: CS.se, mk: CS.mk }, "保存しています…");
+      else send({ act: "cs_mine", ms: Object.keys(CS.mine), mk: mineMarks() }, "保存しています…");
     });
     var r = el("div", "row"); r.appendChild(sv);
     if (CS_ADM) {
