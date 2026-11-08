@@ -91,7 +91,7 @@
   var BASE = window.TOURNAMENT_DATA_BASE || "";
   var DATA_URL = BASE + key + ".json";                                      // BOTが書いた、割り当て用のデータ
   var INBOX_URL = BASE.replace(/\/?$/, "") + "_inbox/" + key + ".json";       // 「確定」の依頼を書く受け箱
-  var SET_LABEL = { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" };
+  var SET_LABEL = { s1: "第一セット", s2: "第二セット", s3: "第三セット", ext: "延長戦" };
   var data = null;                 // サーバーから読んだ内容
   var state = {};                  // 作業中の割り当て（全セット共通の試合）：{試合ID: [キャスターID…]}
   var sstate = {};                 // 作業中の割り当て（セットごとに決めた試合）：{試合ID: {セットのキー: [キャスターID…]}}

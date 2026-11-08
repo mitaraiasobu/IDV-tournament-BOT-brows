@@ -1072,7 +1072,17 @@
     c.appendChild(r); box.appendChild(c);
   }
   // ───── 📅 キャスター日程（名札）：自分が参加できる試合に、名札を入れる。管理者は、だれの名札も（セットごとにも）動かして、「確定」で担当を決める ─────
-  var CS = null, CS_ADM = null, CS_ASKED = false;
+  var CS = null, CS_ADM = null, CS_ASKED = false, ADM_WAIT = null;
+  function admKey() { return "rc_adm:" + (me ? me.uid : "") + ":" + key; }
+  function admInit() {                                                                // 管理者かどうかは、開いた瞬間に1回だけ問い合わせて、この端末に覚える（次からは問い合わせない。操作は、BOTが毎回確かめる）
+    if (CS_ADM !== null || !me || ADM_WAIT) return;
+    try { var v = localStorage.getItem(admKey()); if (v === "1" || v === "0") { CS_ADM = v === "1"; return; } } catch (e) { /* そのまま */ }
+    if (!PH || CS_ASKED) return;
+    CS_ASKED = true; ADM_WAIT = "adm" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    fetch(INBOX_URL, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nonce: ADM_WAIT, at: Date.now(), assignments: { _rc: { uid: me.uid, ph: PH, act: "cs_whoami" } } }) })
+      .then(function (r) { if (!r.ok) { ADM_WAIT = null; CS_ASKED = false; } }, function () { ADM_WAIT = null; CS_ASKED = false; });
+    setTimeout(function () { if (ADM_WAIT) { ADM_WAIT = null; CS_ASKED = false; } }, 30000);
+  }
   function csInit() {
     var d = D.cs || {};
     CS = { sig: JSON.stringify([d.av, d.se]), mine: {}, av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), who: "" };
@@ -1092,7 +1102,7 @@
     var big = el("div", "subwarn", "⚠ " + (d && d.note || "日時は希望ではなく可能なところを全て選んでください。")); big.style.fontSize = "1.15em"; big.style.fontWeight = "800"; c.appendChild(big);
     if (!d) { c.appendChild(el("div", "lead", "この大会では、キャスター日程は使いません。")); box.appendChild(c); return; }
     var mineApp = (u || {}).cs_me || "";
-    if (CS_ADM === null && !CS_ASKED && !BUSY) { CS_ASKED = true; setTimeout(function () { if (!BUSY) { PEND = { kind: "csw" }; send({ act: "cs_whoami" }, "確かめています…"); } }, 0); }
+    admInit();
     if (!mineApp && !CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "キャスターに応募した人だけが使えます（応募は「🎙 キャスター・🛡 モデレーター」から）。")); box.appendChild(c); return; }
     if (!CS || (CS.sig !== JSON.stringify([d.av, d.se]) && !CS.dirty)) csInit();
     var ms = arr(d.ms);
@@ -1162,7 +1172,7 @@
         card.appendChild(slot);
         if (CS_ADM) arr(m.sets).forEach(function (sk) {
           var ss = el("div", "cs-slot sub"); target(ss, m.id, sk);
-          ss.appendChild(el("div", "cs-sl", { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" }[sk] || sk));
+          ss.appendChild(el("div", "cs-sl", { s1: "第一セット", s2: "第二セット", s3: "第三セット", ext: "延長戦" }[sk] || sk));
           arr((CS.se[m.id] || {})[sk]).forEach(function (a) { ss.appendChild(tag(a, m.id, sk, true)); });
           card.appendChild(ss);
         });
@@ -1879,8 +1889,13 @@
   function load() {
     fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d) { document.getElementById("lead").textContent = "いまは、メンバー募集を受け付けていません（大会の設定・組み合わせの抽選のあとなど）。"; return; }
-      D = d; loadRulebook();
+      D = d; loadRulebook(); if (me && d.cs) admInit();
       var r = d.result;
+      if (ADM_WAIT && r && r.nonce === ADM_WAIT) {                                    // 管理者かどうかの返事（静かに受け取る）
+        ADM_WAIT = null; CS_ADM = !!(r.ok && r.adm);
+        if (r.ok) { try { localStorage.setItem(admKey(), CS_ADM ? "1" : "0"); } catch (e) { /* そのまま */ } }
+        render();
+      }
       if (WAIT && r && r.nonce === WAIT) {
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
         var WASPROF = !!(PEND && PEND.kind === "prof");
