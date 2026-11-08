@@ -147,42 +147,69 @@
         });
       });
       root.appendChild(c);
-      // 賞品を足す
-      var a = box(el, "＋ 賞品を足す");
-      a.appendChild(field(el, "受け取る人の決め方", sel(el, [["rank", "順位と受け取り方で決める（これまでどおり）"], ["cond", "🧩 条件で決める（かつ・または・ではない）"]], PZ.mode, function (v) { PZ.mode = v; K.redraw(); })));
-      if (PZ.mode === "cond") {
-        a.appendChild(condEditor(el, K, D, PZ.cond));
-        prizeContent(el, K, D, a);
-        var cb = el("button", "primary", "＋ 賞品を足す"); cb.type = "button"; cb.disabled = locked;
-        cb.addEventListener("click", function () {
-          if (!prizeOk(K)) return;
-          if (!(PZ.cond.items || []).length) { K.msg("ng", "⚠ 条件を足してください。"); return; }
-          var op = prizeFill({ op: "prize_add", target: "cond", text: PZ.text, cond: JSON.parse(JSON.stringify(PZ.cond)) });
-          PZ.cond = { op: "and", items: [{ t: "place", rank: "1" }] }; K.send([op], "賞品を足しています…");
-        });
-        a.appendChild(cb); root.appendChild(a);
-        a = box(el, "（これまでどおりの決め方は、上で「順位と受け取り方で決める」を選ぶと出ます）"); a.hidden = true;
-      }
-      var ranks = Object.keys(D.ranks || {}).map(function (k) { return [k, D.ranks[k]]; });
-      if (D.mvp) ranks.push(["mvp", "🏆 MVP"]);
-      var isMvp = PZ.rank === "mvp";
-      var targets = Object.keys(D.targets || {}).filter(function (k) { return k !== "cond" && (isMvp ? k.indexOf("mvp_") === 0 : k.indexOf("rank_") === 0); }).map(function (k) { return [k, D.targets[k]]; });
-      if (!targets.some(function (t) { return t[0] === PZ.target; })) PZ.target = targets.length ? targets[0][0] : "";
-      a.appendChild(field(el, "どのチーム（MVP）への賞品か", sel(el, ranks, PZ.rank, function (v) { PZ.rank = v; PZ.target = ""; K.redraw(); })));
-      a.appendChild(field(el, "どんな受け取り方か", sel(el, targets, PZ.target, function (v) { PZ.target = v; K.redraw(); })));
-      if (PZ.target === "rank_character") {
-        var hs = (D.hunters || []).map(function (h) { return [h[0], h[1]]; });
-        if (!PZ.character && hs.length) PZ.character = hs[0][0];
-        a.appendChild(field(el, "対象のハンターキャラ", sel(el, hs, PZ.character, function (v) { PZ.character = v; })));
-      }
+      // 賞品を足す：「チーム」の「どんな人」（＋で条件を増やせる）に「なに」
+      var a = box(el, "＋ 賞品を足す", "「チーム」の「どんな人」に「なに」を渡す、という文の、「」のところを選びます。「＋」を押すと、「かつ・または・ではない」で、条件を増やせます。");
+      var TEAMS = [["1", "優勝チーム"], ["2", "準優勝チーム"], ["any", "順位を問わず"]];
+      if (D.mvp) TEAMS = TEAMS.concat([["mvp", "MVP（選手）"], ["mvp_team", "MVPのチーム"]]);
+      var WHO = [["", "（指定なし）"], ["all", "チーム全体"], ["each", "チームの全員（1人ずつ）"], ["leader", "チームリーダー"], ["hunter", "ハンターをプレイした選手"], ["survivor", "サバイバーをプレイした選手"],
+                 ["played", "試合に出場した選手"], ["used", "特定キャラを使用した選手"], ["free", "自由記述（モデレーターが選ぶ）"]];
+      var CONN = [["and", "かつ"], ["or", "または"], ["and_not", "かつ（ではない）"], ["or_not", "または（ではない）"]];
+      if (!PZ.team) PZ.team = "1";
+      if (!PZ.people) PZ.people = [{ who: "", char: "", text: "" }];
+      var line = el("div", "row"); line.style.cssText = "align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;margin:6px 0";
+      line.appendChild(sel(el, TEAMS, PZ.team, function (v) { PZ.team = v; K.redraw(); }));
+      line.appendChild(el("span", "", "の"));
+      var chars = [["", "キャラを選ぶ"]].concat((D.hunters || []).map(function (c) { return [c[0], "ハンター：" + c[1]]; }), (D.survivors || []).map(function (c) { return [c[0], "サバイバー：" + c[1]]; }));
+      PZ.people.forEach(function (pp, i) {
+        if (i > 0) line.appendChild(sel(el, CONN, pp.conn || "and", function (v) { pp.conn = v; K.redraw(); }));
+        line.appendChild(sel(el, WHO, pp.who, function (v) { pp.who = v; K.redraw(); }));
+        if (pp.who === "used") line.appendChild(sel(el, chars, pp.char, function (v) { pp.char = v; K.redraw(); }));            // 「特定キャラ」が、さらに選択肢に
+        if (pp.who === "free") { var ft = inp(el, pp.text, 60, "例：一番盛り上げた"); ft.style.maxWidth = "13em"; ft.addEventListener("change", function () { pp.text = ft.value; }); line.appendChild(ft); }
+        if (i > 0) line.appendChild(btnx(el, "", "🗑", function () { PZ.people.splice(i, 1); K.redraw(); }));
+      });
+      if (PZ.people.length < 5) line.appendChild(btnx(el, "", "＋", function () { PZ.people.push({ conn: "and", who: "", char: "", text: "" }); K.redraw(); }));
+      line.appendChild(el("span", "", "に"));
+      a.appendChild(line);
       prizeContent(el, K, D, a);
       var ar = el("div", "row"), ab = el("button", "primary", "＋ 賞品を足す"); ab.type = "button"; ab.disabled = locked;
+      function leaf(pp) {
+        if (pp.who === "played") return { t: "played", side: "any" };
+        if (pp.who === "hunter" || pp.who === "survivor") return { t: "played", side: pp.who };
+        if (pp.who === "leader") return { t: "leader" };
+        if (pp.who === "used") return { t: "used", char: pp.char };
+        if (pp.who === "free") return { t: "free", text: pp.text || "" };
+        return null;
+      }
       ab.addEventListener("click", function () {
         if (!prizeOk(K)) return;
-        var op = prizeFill({ op: "prize_add", target: PZ.target, text: PZ.text });
-        if (PZ.rank !== "mvp") op.rank = PZ.rank;
-        if (PZ.target === "rank_character") op.character = PZ.character;
-        K.send([op], "賞品を足しています…");
+        var ps = PZ.people, one = ps.length === 1 && !(ps[0].conn || "").indexOf("x");
+        for (var q = 0; q < ps.length; q++) {
+          if (ps[q].who === "used" && !ps[q].char) { K.msg("ng", "⚠ 使用したキャラを選んでください。"); return; }
+          if (ps[q].who === "free" && !(ps[q].text || "").trim()) { K.msg("ng", "⚠ 自由記述の条件に、文を入れてください。"); return; }
+          if (ps[q].who === "" && ps.length > 1) { K.msg("ng", "⚠ 「どんな人」を選んでください（指定なしは、1つだけのときです）。"); return; }
+        }
+        var op;
+        var simple = ps.length === 1 && ["", "all", "each", "leader", "hunter", "survivor"].indexOf(ps[0].who) >= 0;
+        if (simple && (PZ.team === "mvp" || PZ.team === "mvp_team") && ps[0].who === "") op = { op: "prize_add", target: PZ.team === "mvp" ? "mvp_player" : "mvp_team", text: PZ.text };
+        else if (simple && PZ.team !== "mvp" && PZ.team !== "mvp_team" && ps[0].who !== "") {
+          var T = { all: "rank_team_all", each: "rank_team_each", leader: "rank_team_leader", hunter: "rank_hunter", survivor: "rank_survivor" }[ps[0].who];
+          op = { op: "prize_add", target: T, text: PZ.text, rank: PZ.team };
+        } else {                                                                      // それ以外（キャラ・自由記述・かつ/または/ではない）は、条件で決める賞品
+          var acc = null;
+          ps.forEach(function (pp, i) {
+            var lf = leaf(pp), cn = pp.conn || "and";
+            if (pp.who === "all" || pp.who === "each") lf = null;
+            if (!lf) return;
+            if (i > 0 && /_not$/.test(cn)) lf.not = true;
+            acc = acc ? { op: /^or/.test(cn) ? "or" : "and", items: [acc, lf] } : lf;
+          });
+          var subj = PZ.team === "1" || PZ.team === "2" ? { t: "place", rank: PZ.team } : PZ.team === "mvp" ? { t: "mvp" } : PZ.team === "mvp_team" ? { t: "mvp_team" } : null;
+          var items = (subj ? [subj] : []).concat(acc ? [acc] : []);
+          if (!items.length) { K.msg("ng", "⚠ 条件を選んでください。"); return; }
+          op = { op: "prize_add", target: "cond", text: PZ.text, cond: { op: "and", items: items } };
+        }
+        K.send([prizeFill(op)], "賞品を足しています…");
+        PZ.people = [{ who: "", char: "", text: "" }];
       });
       ar.appendChild(ab); a.appendChild(ar);
       if (!D.mvp) a.appendChild(el("div", "note", "MVPへの賞品を決めるには、「⚙ 大会設定」で、MVPを「使う」にしてください。"));
@@ -190,44 +217,49 @@
       // 🎖 称号と色
       var TV = D.titles || {}, CL = TV.colors || [], TT2 = TV.titles || [], TS = K.state("titles", { cname: "", chex: "#e74c3c", tname: "", tcolor: "" });
       var tc2 = box(el, "🎖 称号と色（すべての大会に共通）", "称号は、賞品として渡せるDiscordのロールです。称号ごとに色なしのロール、色ごとに色つきのロールをBOTが作ります。持っている人には称号ロールが全部付き、名前の色は、本人が持っている称号の色から1つ選びます（選手基本情報の「🎖 称号・名前の色」）。何人が持っても、ロールは「称号の数＋色の数」しか増えません。");
+      var GRID = "display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:8px 0", CARD = "border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--panel2,transparent)";
+      function gal() { var g = el("div", ""); g.style.cssText = GRID; return g; }
+      function crd() { var c = el("div", ""); c.style.cssText = CARD; return c; }
       tc2.appendChild(el("div", "", "🎨 色"));
-      if (!CL.length) tc2.appendChild(el("div", "note", "色が、まだありません。"));
+      var cg = gal();
       CL.forEach(function (c) {
-        var row = el("div", "row"); row.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0";
-        var ni = inp(el, c.name, 30); ni.style.maxWidth = "10em"; var ci = document.createElement("input"); ci.type = "color"; ci.value = c.hex;
-        row.appendChild(ni); row.appendChild(ci);
-        row.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_color_edit", id: c.id, name: ni.value, hex: ci.value }], "保存中…"); }));
-        row.appendChild(btnx(el, "", "🗑", function () { if (confirm("色「" + c.name + "」を消します。よろしいですか？")) K.send([{ op: "title_color_delete", id: c.id }], "消しています…"); }));
-        tc2.appendChild(row);
+        var card = crd(), sw = el("div", ""); sw.style.cssText = "height:46px;border-radius:8px;border:1px solid var(--line);background:" + c.hex;
+        var ni = inp(el, c.name, 30); ni.style.maxWidth = "100%"; var ci = document.createElement("input"); ci.type = "color"; ci.value = c.hex;
+        ci.addEventListener("input", function () { sw.style.background = ci.value; });
+        var br = el("div", "row"); br.style.cssText = "gap:6px;margin:0";
+        br.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_color_edit", id: c.id, name: ni.value, hex: ci.value }], "保存中…"); }));
+        br.appendChild(btnx(el, "", "🗑", function () { if (confirm("色「" + c.name + "」を消します。よろしいですか？")) K.send([{ op: "title_color_delete", id: c.id }], "消しています…"); }));
+        card.appendChild(sw); card.appendChild(ni); card.appendChild(ci); card.appendChild(br); cg.appendChild(card);
       });
-      var cr = el("div", "row"); cr.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0";
-      var cn = inp(el, TS.cname, 30, "色の名前（例：赤）"); cn.style.maxWidth = "12em"; cn.addEventListener("input", function () { TS.cname = cn.value; });
-      var ch = document.createElement("input"); ch.type = "color"; ch.value = TS.chex; ch.addEventListener("input", function () { TS.chex = ch.value; });
-      cr.appendChild(cn); cr.appendChild(ch);
-      cr.appendChild(btnx(el, "primary", "＋ 色を足す", function () { if (!TS.cname.trim()) { K.msg("ng", "⚠ 色の名前を入れてください。"); return; } K.send([{ op: "title_color_add", name: TS.cname, hex: TS.chex }], "保存中…"); TS.cname = ""; }));
-      tc2.appendChild(cr);
+      var nc = crd(); nc.style.borderStyle = "dashed";
+      var csw = el("div", ""); csw.style.cssText = "height:46px;border-radius:8px;border:1px solid var(--line);background:" + TS.chex;
+      var cn = inp(el, TS.cname, 30, "色の名前（例：赤）"); cn.style.maxWidth = "100%"; cn.addEventListener("input", function () { TS.cname = cn.value; });
+      var ch = document.createElement("input"); ch.type = "color"; ch.value = TS.chex; ch.addEventListener("input", function () { TS.chex = ch.value; csw.style.background = ch.value; });
+      nc.appendChild(csw); nc.appendChild(cn); nc.appendChild(ch);
+      nc.appendChild(btnx(el, "primary", "＋ 色を足す", function () { if (!TS.cname.trim()) { K.msg("ng", "⚠ 色の名前を入れてください。"); return; } K.send([{ op: "title_color_add", name: TS.cname, hex: TS.chex }], "保存中…"); TS.cname = ""; }));
+      cg.appendChild(nc); tc2.appendChild(cg);
       tc2.appendChild(el("div", "", "🎖 称号"));
-      var copts = CL.map(function (c) { return [String(c.id), c.name]; });
-      if (!TT2.length) tc2.appendChild(el("div", "note", "称号が、まだありません。"));
+      var copts = [["none", "色なし"]].concat(CL.map(function (c) { return [String(c.id), c.name]; })), colHex = {}; CL.forEach(function (c) { colHex[String(c.id)] = c.hex; });
+      var tg = gal();
       TT2.forEach(function (t) {
-        var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin:4px 0";
-        var r1 = el("div", "row"); r1.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap";
-        var ni = inp(el, t.name, 30); ni.style.maxWidth = "12em"; var cs = { v: String(t.color) };
-        r1.appendChild(ni); r1.appendChild(sel(el, copts, cs.v, function (v) { cs.v = v; }));
-        r1.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_edit", id: t.id, name: ni.value, color: cs.v }], "保存中…"); }));
-        r1.appendChild(btnx(el, "", "🗑", function () { if (confirm("称号「" + t.name + "」を消します。持っている人からも外れます。よろしいですか？")) K.send([{ op: "title_delete", id: t.id }], "消しています…"); }));
-        row.appendChild(r1);
-        row.appendChild(el("div", "note", "持っている人（" + (t.holders || []).length + "人）：" + ((t.holders || []).join("、") || "まだいません")));
-        tc2.appendChild(row);
+        var card = crd(), cs = { v: t.color ? String(t.color) : "none" };
+        var bd = el("div", ""); bd.style.cssText = "height:46px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800;color:" + (colHex[cs.v] || "inherit");
+        bd.textContent = "🎖 " + t.name; card.appendChild(bd);
+        var ni = inp(el, t.name, 30); ni.style.maxWidth = "100%";
+        var se = sel(el, copts, cs.v, function (v) { cs.v = v; bd.style.color = colHex[v] || "inherit"; });
+        var br = el("div", "row"); br.style.cssText = "gap:6px;margin:0";
+        br.appendChild(btnx(el, "", "💾 直す", function () { K.send([{ op: "title_edit", id: t.id, name: ni.value, color: cs.v }], "保存中…"); }));
+        br.appendChild(btnx(el, "", "🗑", function () { if (confirm("称号「" + t.name + "」を消します。持っている人からも外れます。よろしいですか？")) K.send([{ op: "title_delete", id: t.id }], "消しています…"); }));
+        card.appendChild(ni); card.appendChild(se); card.appendChild(br);
+        card.appendChild(el("div", "note", "持っている人（" + (t.holders || []).length + "人）：" + ((t.holders || []).join("、") || "まだいません")));
+        tg.appendChild(card);
       });
-      if (CL.length) {
-        var tr = el("div", "row"); tr.style.cssText = "align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0";
-        var tn = inp(el, TS.tname, 30, "称号の名前（例：夜の番人マスター）"); tn.style.maxWidth = "16em"; tn.addEventListener("input", function () { TS.tname = tn.value; });
-        if (!TS.tcolor) TS.tcolor = String(CL[0].id);
-        tr.appendChild(tn); tr.appendChild(sel(el, copts, TS.tcolor, function (v) { TS.tcolor = v; }));
-        tr.appendChild(btnx(el, "primary", "＋ 称号を足す", function () { if (!TS.tname.trim()) { K.msg("ng", "⚠ 称号の名前を入れてください。"); return; } K.send([{ op: "title_add", name: TS.tname, color: TS.tcolor }], "保存中…"); TS.tname = ""; }));
-        tc2.appendChild(tr);
-      } else tc2.appendChild(el("div", "note", "称号を作るには、先に色を足してください。"));
+      var nt = crd(); nt.style.borderStyle = "dashed";
+      var tn = inp(el, TS.tname, 30, "称号の名前（例：夜の番人マスター）"); tn.style.maxWidth = "100%"; tn.addEventListener("input", function () { TS.tname = tn.value; });
+      if (!TS.tcolor) TS.tcolor = "none";
+      nt.appendChild(tn); nt.appendChild(sel(el, copts, TS.tcolor, function (v) { TS.tcolor = v; }));
+      nt.appendChild(btnx(el, "primary", "＋ 称号を足す", function () { if (!TS.tname.trim()) { K.msg("ng", "⚠ 称号の名前を入れてください。"); return; } K.send([{ op: "title_add", name: TS.tname, color: TS.tcolor }], "保存中…"); TS.tname = ""; }));
+      tg.appendChild(nt); tc2.appendChild(tg);
       root.appendChild(tc2);
       // 吊/逃ポイント
       var p = D.points || { table: {}, default: {} };

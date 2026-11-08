@@ -428,8 +428,8 @@
       tutPop("こんにちは！\nエントリーブラウザへようこそ！\nあなたは何にエントリーしたいですか？", [
         ["🎮 選手", function () { setTut(!rulesOk() ? "rules" : "profile_intro"); var g0 = rbGate(); if (TUT === "rules" && g0 && !g0.loading) { openRulebook(); return; } tutStep(); }],     // ルールを全部読むまで、エントリーできない：まず、大会ルールを開く
         ["🧑‍💼 チームのマネージャー", function () { setTut("done"); PAGE = "manager"; render(); }, ""],
-        ["🎙 キャスター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).caster) { SKIND = "caster"; SF = {}; } render(); }, ""],
-        ["🛡 モデレーター", function () { setTut("done"); PAGE = "staff"; if ((D.staff || {}).moderator) { SKIND = "moderator"; SF = {}; } render(); }, ""]]);
+        ["🎙 キャスター", function () { setTut("done"); PAGE = "caster"; SKIND = "caster"; SF = {}; render(); }, ""],
+        ["🛡 モデレーター", function () { setTut("done"); PAGE = "moderator"; SKIND = "moderator"; SF = {}; render(); }, ""]]);
       return;
     }
     if (TUT === "rules" && rulesOk()) { setTut("profile_intro"); tutStep(); return; }
@@ -988,7 +988,7 @@
     rd.readAsDataURL(file);
   }
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
-  var PAGE = (params.get("go") === "cs") ? "castsched" : "home", MENU_OPEN = false;       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
+  var PAGE = (params.get("go") === "cs") ? "caster" : "home", MENU_OPEN = false;       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
   function pages(u) {                                                                // ☰ メニュー：だれにも同じ項目。いま使えないページは、暗くして押せない（4つ目＝使えない理由）
     var lead = !!(u && u.leader), member = !!(u && u.team), mgr = !!(u && u.mteam), ok = !!(me && me.prof && u && u.pf_ok);
     var pend = u && u.leader ? arr(u.apps).filter(function (a) { return a.status === "pending"; }).length : 0;
@@ -1000,8 +1000,8 @@
       ["apps", "📨 届いた応募" + (pend ? "（" + pend + "）" : ""), lead, "チームのリーダーだけが使えます"],
       ["wishes", "📨 あなたの応募", !!(u && arr(u.wishes).length), "まだ、どのチームにも応募していません"],
       ["manager", "🧑‍💼 マネージャー登録", !lead && !member, "チームのリーダー・選手は、マネージャーになれません"],
-      ["staff", "🎙 キャスター・🛡 モデレーター", !!(D && D.staff && (D.staff.caster || D.staff.moderator)), "この大会では、いま募集していません"],
-      ["castsched", "📅 キャスター日程", !!(D && D.cs), "この大会では、使いません"],
+      ["caster", "🎙 キャスター", !!(D && D.staff && D.staff.caster), "この大会では、いま募集していません"],
+      ["moderator", "🛡 モデレーター", !!(D && D.staff && D.staff.moderator), "この大会では、いま募集していません"],
       ["profile", "🪪 あなたの選手情報", true],
       ["inquiry", "💬 お問い合わせ", true],
     ];
@@ -1183,11 +1183,12 @@
     c.appendChild(liveMsg());
     box.appendChild(c);
   }
-  function staffDialog() {                                                            // その役のページ：いまのメンバーの名前と、応募（Discordと同じ項目）
-    var old = document.getElementById("ov"); if (old) old.remove();
+  function staffDialog(inl) {                                                         // その役のページ：いまのメンバーの名前と、応募（Discordと同じ項目）。inl があれば、そこに直接（ポップアップにしない）
+    if (!inl) { var old = document.getElementById("ov"); if (old) old.remove(); }
     var S = (D.staff || {})[SKIND]; if (!S) return;
     var u = U() || {}, st = (u.sapps || {})[SKIND];
-    var ov = el("div", "ov"); ov.id = "ov"; var d = el("div", "dlg");
+    var ov = inl ? { addEventListener: function () { }, remove: function () { } } : el("div", "ov"); if (!inl) ov.id = "ov"; var d = inl || el("div", "dlg");
+    var again = function () { if (inl) render(); else staffDialog(); };
     function close() { SKIND = null; ov.remove(); }
     ov.addEventListener("click", function (e) { if (e.target === ov && !BUSY) close(); });
     d.appendChild(el("h2", "", (SKIND === "caster" ? "🎙 " : "🛡 ") + S.label));
@@ -1216,9 +1217,9 @@
           ds.addEventListener("change", function () { SF.deco = ds.value; }); f.appendChild(ds); }
         // 参加できるラウンド（1つ以上）は、キャスター日程ブラウザができるまで、聞かない（機能は残してある）
       }
-      lab("志望動機（" + (S.max || 200) + "字以内）"); if (SKIND === "caster") f.appendChild(el("div", "hint", "生配信に映ります。")); var ta = el("textarea"); ta.maxLength = S.max || 200; ta.value = SF.message || ""; ta.addEventListener("input", function () { SF.message = ta.value; }); f.appendChild(ta);
-      lab("経験"); var er = el("div", "row"); er.style.marginTop = "0"; var ec = el("input"); ec.type = "checkbox"; ec.checked = !!SF.exp; ec.addEventListener("change", function () { SF.exp = ec.checked; staffDialog(); }); er.appendChild(ec); er.appendChild(el("span", "", "経験がある")); f.appendChild(er);
-      if (SF.exp) { lab("経験の詳細"); var ed = el("textarea"); ed.maxLength = S.max || 200; ed.value = SF.exp_detail || ""; ed.addEventListener("input", function () { SF.exp_detail = ed.value; }); f.appendChild(ed); }
+      lab("志望動機（" + (S.max || 200) + "字以内）"); if (SKIND === "caster") f.appendChild(el("div", "hint", "生配信に映ります。")); var ta = el("textarea"); ta.maxLength = S.max || 200; ta.rows = 6; ta.style.cssText = "width:100%;min-height:9em;grid-column:1 / -1;white-space:pre-wrap;resize:vertical"; ta.value = SF.message || ""; ta.addEventListener("input", function () { SF.message = ta.value; }); f.appendChild(ta);
+      lab("経験"); var er = el("div", "row"); er.style.marginTop = "0"; var ec = el("input"); ec.type = "checkbox"; ec.checked = !!SF.exp; ec.addEventListener("change", function () { SF.exp = ec.checked; again(); }); er.appendChild(ec); er.appendChild(el("span", "", "経験がある")); f.appendChild(er);
+      if (SF.exp) { lab("経験の詳細"); var ed = el("textarea"); ed.maxLength = S.max || 200; ed.rows = 4; ed.style.cssText = "width:100%;min-height:6em;grid-column:1 / -1;white-space:pre-wrap;resize:vertical"; ed.value = SF.exp_detail || ""; ed.addEventListener("input", function () { SF.exp_detail = ed.value; }); f.appendChild(ed); }
       if (arr(S.dates).length) chips("dates", S.dates, "📅 参加できる日（すべて選んでください）");
       if (arr(S.times).length) chips("times", S.times, "🕒 参加できる時間帯（すべて選んでください）");
       d.appendChild(f);
@@ -1230,9 +1231,9 @@
       });
       rr.appendChild(go); d.appendChild(rr);
     }
-    var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close); var cr = el("div", "row"); cr.appendChild(cl); d.appendChild(cr);
+    if (!inl) { var cl = el("button", "", "閉じる"); cl.type = "button"; cl.addEventListener("click", close); var cr = el("div", "row"); cr.appendChild(cl); d.appendChild(cr); }
     d.appendChild(liveMsg());
-    ov.appendChild(d); document.body.appendChild(ov);
+    if (!inl) { ov.appendChild(d); document.body.appendChild(ov); }
   }
   function openProfile() {
     var st = keepScroll();
@@ -1584,8 +1585,10 @@
     if (PG === "team") { if (u && u.leader) teamInfoView(mine, u); else if (u && u.team) memberView(mine, u); }
     if (PG === "recruit" && u && u.leader) leaderView(mine, u.leader);
     if (PG === "apps" && u && u.leader) appsView(mine, u);
-    if (PG === "staff") staffCard(mine, u);
-    if (PG === "castsched") csView(mine, u);
+    if (PG === "caster" || PG === "moderator") {                                  // 応募は、ポップアップにしないで、そのまま表示（キャスターは、その下に日程）
+      SKIND = PG; var scd = el("div", "card"); staffDialog(scd); mine.appendChild(scd);
+      if (PG === "caster" && D.cs) csView(mine, u);
+    } else if (SKIND && !document.getElementById("ov")) SKIND = null;
     if (PG === "profile") { var pfw = el("div"); if ((KIND || (u || {}).kind) === "manager") mgrForm(pfw); else profForm(pfw, false);
       if (!(u || {}).leader && !(u || {}).team && !(u || {}).mteam) { var swm2 = el("button", "", (KIND || (u || {}).kind) === "manager" ? "🎮 選手として登録する に切り替える" : "🧑‍💼 マネージャーとして登録する に切り替える"); swm2.type = "button"; swm2.addEventListener("click", function () { KIND = (KIND || (u || {}).kind) === "manager" ? "player" : "manager"; PF = null; render(); }); var swr2 = el("div", "row"); swr2.appendChild(swm2); pfw.appendChild(swr2); }
       mine.appendChild(pfw); }
@@ -1695,7 +1698,7 @@
       c.addEventListener("click", function () { OPEN = t.id; dialog(); });
       grid.appendChild(c);
     });
-    if (SKIND && !document.getElementById("ov")) staffDialog();
+    if (SKIND && PAGE !== SKIND && !document.getElementById("ov")) staffDialog();
     if (OPEN != null) dialog(DSTEP);
     else if (PROFOPEN) openProfile();
   }
@@ -1895,7 +1898,7 @@
           PF = null;
         }
         PEND = null;
-        if (r.ok && SKIND) { SKIND = null; SF = {}; var so = document.getElementById("ov"); if (so) so.remove(); }
+        if (r.ok && SKIND) { if (PAGE !== SKIND) SKIND = null; SF = {}; var so = document.getElementById("ov"); if (so) so.remove(); }
         if (r.ok && OPEN != null && !((DSTEP === "confirm" || DSTEP === "extra") && WASPROF)) { OPEN = null; DSTEP = null; var o = document.getElementById("ov"); if (o) o.remove(); }
         IMG_FAIL = false;
         render();
