@@ -100,6 +100,9 @@
   button.danger { border-color: var(--ng); color: var(--ng); font-weight: 800; }
   button:disabled { opacity: .5; cursor: default; }
   .msg { font-size: 13px; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+  .cs-bad { border-color: #e04848; box-shadow: 0 0 0 2px rgba(224,72,72,.55); } .cs-berr { color: #ff7070; font-size: 12px; font-weight: 800; margin: 4px 0; }
+  .cs-x { position: relative; border-color: #e04848; } .cs-x::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 6px; background: linear-gradient(to top right, transparent calc(50% - 1.5px), #e04848 calc(50% - 1.5px), #e04848 calc(50% + 1.5px), transparent calc(50% + 1.5px)); }
+  .cs-x .cs-tag { background: rgba(224,72,72,.2); }
   .cs-scroll { max-height: 140px; overflow-y: auto; padding: 4px 2px; }
   .cs-mk { display: inline-block; min-width: 1.5em; text-align: center; border-radius: 6px; padding: 0 4px; font-size: 12px; }
   .cs-tag { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -1111,6 +1114,8 @@
     if (!CS || (CS.sig !== JSON.stringify([d.av, d.se, d.mk]) && !CS.dirty)) csInit();
     var ms = arr(d.ms);
     function dirty() { CS.dirty = true; render(); }
+    function bad() { var o = {}; ms.forEach(function (m) { if (arr(CS.av[m.id]).length && Object.keys(CS.se[m.id] || {}).some(function (k) { return arr(CS.se[m.id][k]).length; })) o[m.id] = true; }); return o; }
+    var BAD = CS.showErr ? bad() : {};
     function mkOf(mid, a) { return ((CS.mk[mid] || {})[a]) || ""; }
     function place(mid, sk, a) {
       if (!a) return;
@@ -1179,6 +1184,20 @@
     if (CS_ADM) { var wipe = el("button", "danger", "白紙に戻す"); wipe.type = "button"; wipe.addEventListener("click", function () { if (confirm("全員の名札を、全部消して、白紙に戻しますか？")) { CS.av = {}; CS.se = {}; CS.mk = {}; CS.mine = {}; dirty(); } }); br.appendChild(wipe); }
     pal.appendChild(br);
     c.appendChild(pal);
+    if (CS.showErr && Object.keys(BAD).length) {
+      var eb = el("div", "subwarn", "❗ 今のままでは保存できません。セットごとの担当者がいる場合は、その試合ではキャスターをセットごとに割り当ててください。"); eb.style.marginTop = "8px";
+      var fx = el("button", "go", "自動でエラー部分を直す"); fx.type = "button"; fx.style.marginLeft = "10px";
+      fx.addEventListener("click", function () {                                      // 試合全体の名札の人を、全セットに割り振って、全体からは消す
+        ms.forEach(function (m) {
+          if (!BAD[m.id]) return;
+          var per = (CS.se[m.id] = CS.se[m.id] || {});
+          arr(m.sets).forEach(function (sk) { per[sk] = arr(per[sk]); arr(CS.av[m.id]).forEach(function (a) { if (per[sk].indexOf(a) < 0) per[sk].push(a); }); });
+          CS.av[m.id] = []; delete CS.mk[m.id];
+        });
+        CS.showErr = false; dirty();
+      });
+      eb.appendChild(fx); c.appendChild(eb);
+    } else if (CS.showErr) CS.showErr = false;
     if (!ms.length) c.appendChild(el("div", "lead", "いま、名札を入れられる試合（生配信ありの試合）は、ありません。"));
     // ── トーナメント表：ラウンドごとの列に、試合のカード ──
     var rounds = [], byR = {};
@@ -1187,10 +1206,11 @@
     rounds.forEach(function (r) {
       var col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.name || "ラウンド"));
       r.list.forEach(function (m) {
-        var card = el("div", "cs-m"); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
+        var card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : "")); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
+        if (BAD[m.id]) card.appendChild(el("div", "cs-berr", "セットごとの担当者がいる場合は、その試合ではキャスターをセットごとに割り当ててください。"));
         var tm = arr(m.tm);
         card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）"));
-        var slot = el("div", "cs-slot"); target(slot, m.id, "");
+        var slot = el("div", "cs-slot" + (BAD[m.id] ? " cs-x" : "")); target(slot, m.id, "");
         slot.appendChild(el("div", "cs-sl", CS_ADM ? "名札" : "キャスター"));
         if (CS_ADM) arr(CS.av[m.id]).forEach(function (a) { slot.appendChild(placed(a, m.id, "", true)); });
         else {
@@ -1220,7 +1240,7 @@
     var r = el("div", "row"); r.appendChild(sv);
     if (CS_ADM) {
       var fin = el("button", "danger", "✅ 確定（いまの名札で、試合の担当を決める）"); fin.type = "button"; fin.disabled = BUSY || !!CS.dirty;
-      fin.addEventListener("click", function () { if (confirm("いまの名札で、試合のキャスターの担当を確定します（これまでの割り当ては置き換わります）。よろしいですか？")) { PEND = { kind: "cs" }; send({ act: "cs_final" }, "確定しています…"); } });
+      fin.addEventListener("click", function () { if (Object.keys(bad()).length) { CS.showErr = true; render(); return; } if (confirm("いまの名札で、試合のキャスターの担当を確定します（これまでの割り当ては置き換わります）。よろしいですか？")) { PEND = { kind: "cs" }; send({ act: "cs_final" }, "確定しています…"); } });
       r.appendChild(fin);
       if (CS.dirty) c.appendChild(el("div", "hint", "名札を変えたら、先に「💾 名札を保存」を押してください（保存してから、確定できます）。"));
     }
