@@ -152,6 +152,24 @@
   .bkw iframe { width: 100%; border: 0; display: block; min-height: 300px; background: transparent; } .bkw iframe + iframe { margin-top: 14px; }
 
   .nav button { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── 🏠 ホーム ── */
+  .hm { text-align: center; padding: 18px 0 8px; }
+  .hm-title { font-size: clamp(28px, 7vw, 58px); font-weight: 900; line-height: 1.2; letter-spacing: .04em; margin: 8px 0 4px; text-shadow: 0 0 24px color-mix(in srgb, var(--accent, #7aa2ff) 55%, transparent); }
+  .hm-title span { display: inline-block; opacity: 0; transform: translateY(.6em) scale(.9); animation: hmIn .7s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes hmIn { to { opacity: 1; transform: none; } }
+  .hm-line { height: 3px; width: min(280px, 60%); margin: 10px auto 18px; background: linear-gradient(90deg, transparent, var(--accent, #7aa2ff), transparent); transform: scaleX(0); animation: hmLine 1s .5s ease forwards; }
+  @keyframes hmLine { to { transform: scaleX(1); } }
+  .hm-text { max-width: 760px; margin: 0 auto 20px; text-align: left; line-height: 1.8; opacity: 0; animation: hmIn .8s .6s ease forwards; }
+  .hm-go { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; max-width: 880px; margin: 0 auto 18px; }
+  .hm-go button { padding: 14px 10px; font-size: 1em; font-weight: 800; border-radius: 12px; border: 1px solid var(--line, #3a4a7a); background: color-mix(in srgb, var(--accent, #7aa2ff) 14%, transparent); color: inherit; cursor: pointer; transition: transform .15s, background .15s; }
+  .hm-go button:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--accent, #7aa2ff) 28%, transparent); }
+  .hm-go button.on { background: color-mix(in srgb, var(--accent, #7aa2ff) 38%, transparent); }
+  .hm-panel { max-width: 880px; margin: 0 auto 14px; text-align: left; border: 1px solid var(--line, #3a4a7a); border-radius: 14px; padding: 14px 16px; background: color-mix(in srgb, var(--accent, #7aa2ff) 7%, transparent); }
+  .hm-panel h3 { margin: 0 0 8px; }
+  .hm-panel dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 8px 0; }
+  .hm-panel dt { font-weight: 800; opacity: .85; } .hm-panel dd { margin: 0; white-space: pre-wrap; }
+  .hm-panel .go { display: inline-block; margin-top: 10px; padding: 10px 18px; font-weight: 800; border-radius: 10px; background: var(--accent, #7aa2ff); color: #0b0e1a; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -296,6 +314,54 @@
     try { navigator.clipboard.writeText(url).then(function () { toast("このタブのURLをコピーしました。"); }, function () { prompt("このURLをコピーしてください", url); }); } catch (e) { prompt("このURLをコピーしてください", url); }
   });
 
+  // ── 🏠 ホーム：大会のタイトル（動く）・大会の詳細・各ページへのボタン・エントリー/メンバー募集の要項・大会日時 ──
+  var HOME_OPEN = "";
+  function homeFmt(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s || ""); return m ? m[1] + "年" + (+m[2]) + "月" + (+m[3]) + "日 " + m[4] + ":" + m[5] : ""; }
+  function drawHome(box, h) {
+    h = h || {};
+    var w = el("div", "hm"), tt = el("div", "hm-title");
+    var name = D.title || "大会";
+    Array.from(name).forEach(function (ch, i) { var sp = el("span", "", ch === " " ? "\u00a0" : ch); sp.style.animationDelay = (i * 0.045) + "s"; tt.appendChild(sp); });
+    w.appendChild(tt); w.appendChild(el("div", "hm-line"));
+    if (h.text) { var tx = el("div", "hm-text"); tx.appendChild(mdRender(h.text)); w.appendChild(tx); }
+    var go = el("div", "hm-go"), panel = el("div");
+    function show(k) { HOME_OPEN = HOME_OPEN === k ? "" : k; goTab(TAB); }
+    var e = h.entry || {}, L = h.links || {};
+    var b1 = el("button", HOME_OPEN === "entry" ? "on" : "", "📝 エントリー/メンバー募集"); b1.type = "button"; b1.addEventListener("click", function () { show("entry"); }); go.appendChild(b1);
+    if (arr0(h.dates).length) { var b2 = el("button", HOME_OPEN === "dates" ? "on" : "", "🗓 大会日時"); b2.type = "button"; b2.addEventListener("click", function () { show("dates"); }); go.appendChild(b2); }
+    tabs().forEach(function (t, i) {
+      if (t.builtin === "home") return;
+      var b = el("button", "", t.title); b.type = "button"; b.addEventListener("click", function () { goTab(i); }); go.appendChild(b);
+    });
+    if (L.bracket && !tabs().some(function (t) { return t.builtin === "bracket"; })) { var bb = el("button", "", "🏆 トーナメント表"); bb.type = "button"; bb.addEventListener("click", function () { location.href = L.bracket; }); go.appendChild(bb); }
+    w.appendChild(go);
+    if (HOME_OPEN === "entry") {
+      var p = el("div", "hm-panel"); p.appendChild(el("h3", "", "📝 エントリー/メンバー募集"));
+      var dl = el("dl");
+      function row(k, v) { if (!v) return; dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); }
+      row("募集チーム数", e.max ? e.max + "チーム（いま " + (e.now || 0) + "チームがエントリー済み" + (e.recruiting ? "、メンバーを募集中のチーム " + e.recruiting + "チーム" : "") + "）" : "");
+      row("チームの人数", (e.min_players || e.max_players) ? (e.min_players ? e.min_players + "人以上" : "") + (e.min_players && e.max_players ? "〜" : "") + (e.max_players ? e.max_players + "人まで" : "") : "");
+      row("エントリー締め切り", homeFmt(e.deadline));
+      row("エントリー条件", e.cond);
+      var st = h.staff || {};
+      [["caster", "🎙 キャスター"], ["moderator", "🛡 モデレーター"]].forEach(function (k) {
+        var s = st[k[0]]; if (!s) return;
+        row(k[1] + "の募集", s.open ? "募集しています" + (s.deadline ? "（" + homeFmt(s.deadline) + "まで）" : "") : "締め切りました");
+        row(k[1] + "の条件", s.cond);
+      });
+      p.appendChild(dl);
+      if (L.entry) { var a = el("a", "go", "エントリーのページへ"); a.href = L.entry; p.appendChild(a); }
+      w.appendChild(p);
+    }
+    if (HOME_OPEN === "dates") {
+      var p2 = el("div", "hm-panel"); p2.appendChild(el("h3", "", "🗓 大会日時"));
+      var d2 = el("dl"); arr0(h.dates).forEach(function (x) { d2.appendChild(el("dt", "", x.label)); d2.appendChild(el("dd", "", homeFmt(x.at))); });
+      p2.appendChild(d2); w.appendChild(p2);
+    }
+    box.appendChild(w);
+  }
+  function arr0(x) { return Array.isArray(x) ? x : []; }
+
   function goTab(i, si) {
     closeMenu(); TAB = Math.max(0, Math.min(i, tabs().length - 1));
     history.replaceState(null, "", location.pathname + location.search + "#tab=" + TAB);
@@ -429,9 +495,12 @@
       var c = el("div", "pzc k" + g.kind), top = el("div", "top"); top.appendChild(el("div", "medal", MEDAL[g.kind] || "🎁")); top.appendChild(el("div", "lb", g.label)); c.appendChild(top);
       (g.items || []).forEach(function (it) {
         var r = el("div", "it");
-        if (it.char && it.char.img) r.appendChild(face(it.char.name, it.char.img));
+        var faces = (it.chars && it.chars.length ? it.chars : (it.char ? [it.char] : [])).filter(function (x) { return x && x.img; });
+        if (faces.length) faces.forEach(function (x) { r.appendChild(face(x.name, x.img)); });
         else r.appendChild(el("div", "ic", "🎀"));
-        var tx = el("div"); tx.appendChild(el("div", "who", it.who)); tx.appendChild(el("div", "gift", it.text)); r.appendChild(tx); c.appendChild(r);
+        var tx = el("div"); tx.appendChild(el("div", "who", it.who));
+        (it.texts && it.texts.length ? it.texts : [it.text]).forEach(function (g2) { tx.appendChild(el("div", "gift", g2)); });
+        r.appendChild(tx); c.appendChild(r);
       });
       w.appendChild(c);
     });
@@ -505,6 +574,7 @@
       }
       navButtons(main); return;
     }
+    if (t.builtin === "home") { drawHome(main, t.home); return; }
     if (t.builtin === "flow") { var fw = el("div", "flw"); main.appendChild(fw); drawFlow(fw, t.flow || {}); navButtons(main); return; }
     var secs = t.sections || [], c = counts(t);
     var tl = el("div", "tools"); tl.appendChild(el("span", "prog", secs.length ? (c[0] === c[1] ? "✓ このタブは全部読みました" : "読んだ：" + c[0] + " / " + c[1]) : ""));
