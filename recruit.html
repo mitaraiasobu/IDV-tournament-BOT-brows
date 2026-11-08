@@ -104,6 +104,8 @@
   .cs-x { position: relative; border-color: #e04848; } .cs-x::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 6px; background: linear-gradient(to top right, transparent calc(50% - 1.5px), #e04848 calc(50% - 1.5px), #e04848 calc(50% + 1.5px), transparent calc(50% + 1.5px)); }
   .cs-x .cs-tag { background: rgba(224,72,72,.2); }
   .cs-not2 { border-color: rgba(224,72,72,.55); box-shadow: 0 0 0 1px rgba(224,72,72,.35); }
+  .cs-tag { position: relative; } .cs-slot .cs-tag { margin: 4px 6px 4px 2px; }
+  .cs-x-btn { position: absolute; top: -7px; right: -7px; width: 18px; height: 18px; line-height: 16px; text-align: center; border-radius: 50%; background: #e04848; color: #111; font-size: 13px; font-weight: 900; cursor: pointer; border: 1px solid var(--panel); }
   .cs-scroll { max-height: 140px; overflow-y: auto; padding: 4px 2px; }
   .cs-mk { display: inline-block; min-width: 1.5em; text-align: center; border-radius: 6px; padding: 0 4px; font-size: 12px; }
   .cs-tag { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -995,7 +997,7 @@
     rd.readAsDataURL(file);
   }
   function keepScroll() { var o = document.getElementById("ov"), d0 = o && o.querySelector(".dlg"); return d0 ? d0.scrollTop : 0; }
-  var PAGE = (params.get("go") === "cs") ? "caster" : "home", MENU_OPEN = false;       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
+  var PAGE = /^[a-z_]{1,20}$/.test(params.get("p") || "") ? params.get("p") : (params.get("go") === "cs") ? "caster" : "home", MENU_OPEN = false;      // ?p=caster：そのタブを直接開く（URLの # は、本人用のしるしに使っているので、?p= にする）       // go=cs：キャスター日程を直接開く（キャスターチャンネルのボタンから）
   function pages(u) {                                                                // ☰ メニュー：だれにも同じ項目。いま使えないページは、暗くして押せない（4つ目＝使えない理由）
     var lead = !!(u && u.leader), member = !!(u && u.team), mgr = !!(u && u.mteam), ok = !!(me && me.prof && u && u.pf_ok);
     var pend = u && u.leader ? arr(u.apps).filter(function (a) { return a.status === "pending"; }).length : 0;
@@ -1103,7 +1105,7 @@
     if (!a) return "日時未定";
     return a[0] + " " + a[1] + "試合開始" + (b ? "～" + (b[0] !== a[0] ? b[0] + " " : "") + b[1] + "試合終了" : "");
   }
-  var CS_MK = { "": ["押", "#e6b800", "#111"], j: ["実", "#e04848", "#fff"], k: ["解", "#35b6e8", "#05212d"] };          // 押（黄）→実（赤）→解（水色）→押…
+  var CS_MK = { "": ["押", "#e6b800", "#111"], j: ["実", "#e04848", "#111"], k: ["解", "#35b6e8", "#05212d"] };          // 押（黄）→実（赤）→解（水色）→押…
   function csView(box, u) {
     var d = D.cs, c = el("div", "card");
     c.appendChild(el("h2", "", "📅 キャスター日程"));
@@ -1124,7 +1126,7 @@
       if (!CS_ADM) { if (a === mineApp) CS.mine[mid] = true; }
       else if (sk) { var per = (CS.se[mid] = CS.se[mid] || {}); per[sk] = per[sk] || []; if (per[sk].indexOf(a) < 0) per[sk].push(a); }
       else { CS.av[mid] = arr(CS.av[mid]); if (CS.av[mid].indexOf(a) < 0) CS.av[mid].push(a); }
-      CS.sel = ""; dirty();
+      dirty();                                                                          // 管理者の名札の選択は、そのまま（もう一度名札を押して外すまで、何度でも置ける）
     }
     function takeOff(mid, sk, a) {
       if (!CS_ADM) { if (a === mineApp) { delete CS.mine[mid]; if (CS.mk[mid]) delete CS.mk[mid][a]; } }
@@ -1146,6 +1148,10 @@
       if (!sk) t.appendChild(badge(mkOf(mid, a)));
       t.appendChild(document.createTextNode(" " + csName(a)));
       if (!canEdit) return t;
+      var xb = el("span", "cs-x-btn", "×"); xb.title = "消す"; xb.setAttribute("role", "button"); xb.setAttribute("aria-label", "この名札を消す");
+      ["pointerdown", "pointerup"].forEach(function (ev) { xb.addEventListener(ev, function (e) { e.stopPropagation(); }); });
+      xb.addEventListener("click", function (e) { e.stopPropagation(); takeOff(mid, sk, a); });
+      t.appendChild(xb);
       var timer = null, long = false;
       function clear() { clearTimeout(timer); }
       t.addEventListener("pointerdown", function () { long = false; timer = setTimeout(function () { long = true; if (confirm("消しますか？")) takeOff(mid, sk, a); }, 650); });
@@ -1157,8 +1163,8 @@
     // ── 上：説明（見ている人で切り替え）と、管理者だけの名札の一覧 ──
     var pal = el("div", "cs-pal");
     pal.appendChild(el("div", "cs-hint", CS_ADM
-      ? "【管理者】名札の一覧から名札を押して選び、置きたい試合（またはセットの欄）を押します（PCは、つまんで落としてもOK）。置いた名札を押すと、押（黄）→実（赤）→解（水色）の順にマークが変わり、長押しすると消せます。"
-      : "【キャスター】参加できる試合を押すと、あなたの名札が置かれます（最初は押＝黄色）。置いた名札を押すと、実（赤）＝実況、解（水色）＝解説、押（黄）の順に変わります。長押しすると消せます。"));
+      ? "【管理者】名札の一覧から名札を押して選び、置きたい試合（またはセットの欄）を押します。選んだ名札は、もう一度その名札を押すまで、何度でも置けます（PCは、つまんで落としてもOK）。名札の右上の×でも消せます。置いた名札を押すと、押（黄）→実（赤）→解（水色）の順にマークが変わり、長押しすると消せます。"
+      : "【キャスター】参加できる試合を押すと、あなたの名札が置かれます（最初は押＝黄色）。置いた名札を押すと、実（赤）＝実況、解（水色）＝解説、押（黄）の順に変わります。長押しか、右上の×で消せます。"));
     if (CS_ADM) {
       var pr = el("div", "cs-tags cs-scroll");
       arr(d.cs).forEach(function (x) {
@@ -1651,6 +1657,7 @@
     }
     if (me && !pages(u).some(function (pg) { return pg[0] === PAGE && pg[2]; })) PAGE = "home";        // そのページが無くなった（チームを抜けた など）：最初のページへ
     var PG = me ? PAGE : "home";
+    try { var su = new URL(location.href); if (PG === "home") su.searchParams.delete("p"); else su.searchParams.set("p", PG); su.searchParams.delete("go"); if (su.href !== location.href) history.replaceState(null, "", su.href); } catch (e) { /* そのまま */ }          // いま開いているタブを、URLに残す（?p=caster）
     var pgName = (pages(u).filter(function (pg) { return pg[0] === PG; })[0] || [])[1];
     if (PG === "team") { if (u && u.leader) teamInfoView(mine, u); else if (u && u.team) memberView(mine, u); }
     if (PG === "recruit" && u && u.leader) leaderView(mine, u.leader);
