@@ -1094,7 +1094,7 @@
   }
   function csInit() {
     var d = D.cs || {};
-    CS = { sig: JSON.stringify([d.av, d.se, d.mk]), mine: {}, av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), mk: JSON.parse(JSON.stringify(d.mk || {})), sel: "" };
+    CS = { sig: JSON.stringify([d.av, d.se, d.mk]), mine: {}, av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), mk: JSON.parse(JSON.stringify(d.mk || {})), sel: "", base: { av: JSON.parse(JSON.stringify(d.av || {})), se: JSON.parse(JSON.stringify(d.se || {})), mk: JSON.parse(JSON.stringify(d.mk || {})) } };
     var me0 = (U() || {}).cs_me || "";
     arr(d.ms).forEach(function (m) { if (arr((d.av || {})[m.id]).indexOf(me0) >= 0) CS.mine[m.id] = true; });
   }
@@ -1245,7 +1245,7 @@
     var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 名札を保存"); sv.type = "button"; sv.disabled = BUSY || !CS.dirty;
     sv.addEventListener("click", function () {
       PEND = { kind: "cs" };
-      if (CS_ADM) send({ act: "cs_admin", av: CS.av, se: CS.se, mk: CS.mk }, "保存しています…");
+      if (CS_ADM) send({ act: "cs_admin", av: CS.av, se: CS.se, mk: CS.mk, base: CS.base }, "保存しています…");
       else send({ act: "cs_mine", ms: Object.keys(CS.mine), mk: mineMarks() }, "保存しています…");
     });
     var r = el("div", "row"); r.appendChild(sv);
