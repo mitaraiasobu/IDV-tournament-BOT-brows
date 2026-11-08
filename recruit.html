@@ -100,6 +100,19 @@
   button.danger { border-color: var(--ng); color: var(--ng); font-weight: 800; }
   button:disabled { opacity: .5; cursor: default; }
   .msg { font-size: 13px; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.ng { color: var(--ng); }
+  .cs-pal { position: sticky; top: 0; z-index: 5; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+  .cs-hint { font-size: 12px; color: var(--sub); margin-bottom: 6px; } .cs-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cs-tag { display: inline-block; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--panel2); font-weight: 800; font-size: 14px; cursor: grab; user-select: none; touch-action: manipulation; }
+  .cs-tag.sel { background: var(--accent); color: var(--on-accent, #111); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .cs-tag.other { cursor: default; border-style: dashed; opacity: .75; font-weight: 600; }
+  .cs-br { display: flex; gap: 16px; overflow-x: auto; padding: 6px 2px 14px; align-items: flex-start; }
+  .cs-rd { min-width: 230px; flex: 0 0 230px; } .cs-rd h3 { margin: 0 0 8px; text-align: center; letter-spacing: .08em; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
+  .cs-m { border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 10px; background: var(--panel2); padding: 8px 10px; margin-bottom: 12px; }
+  .cs-mh { font-size: 12px; color: var(--sub); font-weight: 700; margin-bottom: 4px; } .cs-t { font-weight: 800; padding: 3px 6px; background: var(--panel); border-radius: 6px; } .cs-vs { text-align: center; font-size: 11px; color: var(--sub); }
+  .cs-slot { margin-top: 8px; min-height: 42px; padding: 6px; border: 2px dashed var(--line); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .cs-slot.sub { margin-top: 5px; min-height: 34px; } .cs-slot.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .cs-sl { width: 100%; font-size: 11px; color: var(--sub); font-weight: 700; } .cs-empty { color: var(--sub); font-size: 12px; }
+  .cs-slot .cs-tag { cursor: pointer; font-size: 13px; padding: 4px 9px; }
   .wish { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
   .wish b { min-width: 4.5em; } .wish .st { font-size: 13px; color: var(--sub); flex: 1; }
   .frm { display: grid; grid-template-columns: 180px 1fr; gap: 10px 14px; align-items: center; }
@@ -1067,7 +1080,7 @@
     arr(d.ms).forEach(function (m) { if (arr((d.av || {})[m.id]).indexOf(me0) >= 0) CS.mine[m.id] = true; });
   }
   function csName(a) { var c = arr((D.cs || {}).cs).filter(function (x) { return x.a === a; })[0]; return c ? c.n : "?"; }
-  function csMatchTitle(m) { return m.id + "｜" + (m.rn || "") + (m.t ? "｜" + m.t.replace("T", " ").slice(5, 16) : "") + (arr(m.tm).length ? "｜" + arr(m.tm).join(" vs ") : ""); }
+  function csMatchTitle(m) { return m.id + (m.t ? "　" + m.t.replace("T", " ").slice(5, 16) : ""); }
   function csView(box, u) {
     var d = D.cs, c = el("div", "card");
     c.appendChild(el("h2", "", "📅 キャスター日程"));
@@ -1078,46 +1091,81 @@
     if (!mineApp && !CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "キャスターに応募した人だけが使えます（応募は「🎙 キャスター・🛡 モデレーター」から）。")); box.appendChild(c); return; }
     if (!CS || (CS.sig !== JSON.stringify([d.av, d.se]) && !CS.dirty)) csInit();
     var ms = arr(d.ms);
-    if (!ms.length) c.appendChild(el("div", "lead", "いま、名札を入れられる試合（生配信ありの試合）は、ありません。"));
     function dirty() { CS.dirty = true; render(); }
-    if (CS_ADM) c.appendChild(el("div", "hint", "あなたは管理者です。だれの名札も動かせます。セットごと（延長戦も）の名札も置けます。調整が終わったら、いちばん下の「✅ 確定」を押してください。"));
-    else c.appendChild(el("div", "hint", "動かせるのは、自分の名札（" + csName(mineApp) + "）だけです。人数の制限はありません。"));
-    if (!CS_ADM && ms.length) {
+    function place(mid, sk, a) {
+      if (!a) return;
+      if (!CS_ADM) { if (a === mineApp) CS.mine[mid] = true; }
+      else if (sk) { var per = (CS.se[mid] = CS.se[mid] || {}); per[sk] = per[sk] || []; if (per[sk].indexOf(a) < 0) per[sk].push(a); }
+      else { CS.av[mid] = arr(CS.av[mid]); if (CS.av[mid].indexOf(a) < 0) CS.av[mid].push(a); }
+      CS.sel = ""; dirty();
+    }
+    function takeOff(mid, sk, a) {
+      if (!CS_ADM) { if (a === mineApp) delete CS.mine[mid]; }
+      else if (sk) { var p2 = (CS.se[mid] || {})[sk] || []; var k = p2.indexOf(a); if (k >= 0) p2.splice(k, 1); }
+      else { var l = arr(CS.av[mid]), k2 = l.indexOf(a); if (k2 >= 0) l.splice(k2, 1); }
+      dirty();
+    }
+    function target(node, mid, sk) {                                                 // 名札を置ける場所：PCはつまんで落とす／スマホは名札を押してから、ここを押す
+      node.classList.add("cs-drop");
+      node.addEventListener("dragover", function (e) { e.preventDefault(); node.classList.add("over"); });
+      node.addEventListener("dragleave", function () { node.classList.remove("over"); });
+      node.addEventListener("drop", function (e) { e.preventDefault(); node.classList.remove("over"); place(mid, sk, e.dataTransfer.getData("text/plain")); });
+      node.addEventListener("click", function (e) { if (CS.sel && !e.target.closest(".cs-tag")) place(mid, sk, CS.sel); });
+    }
+    function tag(a, mid, sk, removable) {
+      var t = el("span", "cs-tag" + (!mid && CS.sel === a ? " sel" : ""), "🏷 " + csName(a) + (removable ? " ✖" : ""));
+      if (removable) { t.addEventListener("click", function (e) { e.stopPropagation(); takeOff(mid, sk, a); }); return t; }
+      if (!mid) {
+        t.draggable = true;
+        t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", a); CS.sel = ""; });
+        t.addEventListener("click", function () { CS.sel = CS.sel === a ? "" : a; render(); });
+      }
+      return t;
+    }
+    // ── 上：名札の一覧（動かせる名札） ──
+    var pal = el("div", "cs-pal");
+    pal.appendChild(el("div", "cs-hint", CS_ADM ? "名札を、試合に置いてください（PC：つまんで試合へ／スマホ：名札を押してから、置きたい場所を押す）。セットごとの欄にも置けます。" : "自分の名札を、参加できる試合に置いてください（PC：つまんで試合へ／スマホ：名札を押してから、試合を押す）。"));
+    var pr = el("div", "cs-tags");
+    (CS_ADM ? arr(d.cs) : arr(d.cs).filter(function (x) { return x.a === mineApp; })).forEach(function (x) { pr.appendChild(tag(x.a, "", "", false)); });
+    pal.appendChild(pr);
+    if (!CS_ADM) {
       var br = el("div", "row"), all = el("button", "go", "参加可能な試合全てに名札を入れる"); all.type = "button";
       all.addEventListener("click", function () { ms.forEach(function (m) { CS.mine[m.id] = true; }); dirty(); });
       var none = el("button", "", "全部外す"); none.type = "button"; none.addEventListener("click", function () { CS.mine = {}; dirty(); });
-      br.appendChild(all); br.appendChild(none); c.appendChild(br);
+      br.appendChild(all); br.appendChild(none); pal.appendChild(br);
     }
-    ms.forEach(function (m) {
-      var row = el("div", "wish"), top = el("div", "row"); top.style.marginTop = "0"; top.style.alignItems = "center";
-      top.appendChild(el("b", "", csMatchTitle(m)));
-      row.appendChild(top);
-      var tags = el("div", "chips");
-      if (CS_ADM) {
-        arr(CS.av[m.id]).forEach(function (a, k) { var l = el("label", "on", "🏷 " + csName(a) + " ✖"); l.addEventListener("click", function () { CS.av[m.id].splice(k, 1); dirty(); }); tags.appendChild(l); });
-        row.appendChild(tags);
-        var ad = el("select"), o0 = el("option", "", "＋ 名札を足す"); o0.value = ""; ad.appendChild(o0);
-        arr(d.cs).filter(function (x) { return arr(CS.av[m.id]).indexOf(x.a) < 0; }).forEach(function (x) { var o = el("option", "", x.n); o.value = x.a; ad.appendChild(o); });
-        ad.addEventListener("change", function () { if (ad.value) { CS.av[m.id] = arr(CS.av[m.id]).concat([ad.value]); dirty(); } });
-        row.appendChild(ad);
-        arr(m.sets).forEach(function (sk) {
-          var sr = el("div", "row"); sr.style.marginTop = "4px"; sr.appendChild(el("span", "lim", { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" }[sk] || sk));
-          var per = (CS.se[m.id] = CS.se[m.id] || {}); per[sk] = per[sk] || [];
-          per[sk].forEach(function (a, k) { var l = el("label", "on", "🏷 " + csName(a) + " ✖"); l.addEventListener("click", function () { per[sk].splice(k, 1); dirty(); }); sr.appendChild(l); });
-          var sa = el("select"), s0 = el("option", "", "＋"); s0.value = ""; sa.appendChild(s0);
-          arr(d.cs).filter(function (x) { return per[sk].indexOf(x.a) < 0; }).forEach(function (x) { var o = el("option", "", x.n); o.value = x.a; sa.appendChild(o); });
-          sa.addEventListener("change", function () { if (sa.value) { per[sk].push(sa.value); dirty(); } });
-          sr.appendChild(sa); row.appendChild(sr);
+    c.appendChild(pal);
+    if (!ms.length) c.appendChild(el("div", "lead", "いま、名札を入れられる試合（生配信ありの試合）は、ありません。"));
+    // ── トーナメント表：ラウンドごとの列に、試合のカード ──
+    var rounds = [], byR = {};
+    ms.forEach(function (m) { if (!byR[m.rn]) { byR[m.rn] = { name: m.rn, list: [] }; rounds.push(byR[m.rn]); } byR[m.rn].list.push(m); });
+    var bk = el("div", "cs-br");
+    rounds.forEach(function (r) {
+      var col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.name || "ラウンド"));
+      r.list.forEach(function (m) {
+        var card = el("div", "cs-m"); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
+        var tm = arr(m.tm);
+        card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）"));
+        var slot = el("div", "cs-slot"); target(slot, m.id, "");
+        slot.appendChild(el("div", "cs-sl", CS_ADM ? "名札" : "キャスター"));
+        if (CS_ADM) arr(CS.av[m.id]).forEach(function (a) { slot.appendChild(tag(a, m.id, "", true)); });
+        else {
+          if (CS.mine[m.id]) slot.appendChild(tag(mineApp, m.id, "", true));
+          arr(d.av[m.id]).filter(function (a) { return a !== mineApp; }).forEach(function (a) { slot.appendChild(el("span", "cs-tag other", "🏷 " + csName(a))); });
+        }
+        if (!slot.querySelector(".cs-tag")) slot.appendChild(el("span", "cs-empty", "ここに置く"));
+        card.appendChild(slot);
+        if (CS_ADM) arr(m.sets).forEach(function (sk) {
+          var ss = el("div", "cs-slot sub"); target(ss, m.id, sk);
+          ss.appendChild(el("div", "cs-sl", { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" }[sk] || sk));
+          arr((CS.se[m.id] || {})[sk]).forEach(function (a) { ss.appendChild(tag(a, m.id, sk, true)); });
+          card.appendChild(ss);
         });
-      } else {
-        var me = !!CS.mine[m.id], l2 = el("label", me ? "on" : "", (me ? "✅ " : "⬜ ") + "参加できる（わたしの名札）");
-        l2.addEventListener("click", function () { if (CS.mine[m.id]) delete CS.mine[m.id]; else CS.mine[m.id] = true; dirty(); });
-        tags.appendChild(l2);
-        arr(d.av[m.id]).filter(function (a) { return a !== mineApp; }).forEach(function (a) { tags.appendChild(el("label", "", "🏷 " + csName(a))); });
-        row.appendChild(tags);
-      }
-      c.appendChild(row);
+        col.appendChild(card);
+      });
+      bk.appendChild(col);
     });
+    c.appendChild(bk);
     var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 名札を保存"); sv.type = "button"; sv.disabled = BUSY || !CS.dirty;
     sv.addEventListener("click", function () {
       PEND = { kind: "cs" };
