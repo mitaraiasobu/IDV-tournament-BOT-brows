@@ -576,7 +576,8 @@
     var head = el("div", "mhead");
     var label = m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1);
     if (m.time && !m.bye) {                                                                       // 開始予定の時間（大きく）。遅れ・繰り上げのときは、もとの予定の時間に、ずれた先の時刻を足す
-      var tspan = mark(el("span", "mtimebig", fmtDT(m.time_base || m.time)), (m.chg || {}).time);       // 開始時間が変わったら、時間に
+      var te0 = m.time_end_base || m.time_end, ts0 = m.time_base || m.time;
+      var tspan = mark(el("span", "mtimebig", fmtDT(ts0) + " 試合開始" + (te0 ? "～" + (te0.slice(0, 10) !== String(ts0).slice(0, 10) ? fmtDT(te0) : String(te0).slice(11, 16)) + " 試合終了" : "")), (m.chg || {}).time);       // 開始時間が変わったら、時間に
       var tag = m.time_base ? shiftTag(m.time_base, m.time, m.shift) : "";
       if (tag) tspan.appendChild(el("small", "shifttag" + (m.shift > 0 ? " late" : " early"), tag));
       head.appendChild(tspan);

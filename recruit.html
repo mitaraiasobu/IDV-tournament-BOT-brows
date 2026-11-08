@@ -1080,7 +1080,12 @@
     arr(d.ms).forEach(function (m) { if (arr((d.av || {})[m.id]).indexOf(me0) >= 0) CS.mine[m.id] = true; });
   }
   function csName(a) { var c = arr((D.cs || {}).cs).filter(function (x) { return x.a === a; })[0]; return c ? c.n : "?"; }
-  function csMatchTitle(m) { return m.id + (m.t ? "　" + m.t.replace("T", " ").slice(5, 16) : ""); }
+  function csMatchTitle(m) {                                                          // 「1/1 16:20 試合開始～18:00 試合終了」
+    function md(s) { var x = /^\d{4}-(\d{2})-(\d{2})[T ](\d{2}:\d{2})/.exec(s || ""); return x ? [(+x[1]) + "/" + (+x[2]), x[3]] : null; }
+    var a = md(m.t), b = md(m.te);
+    if (!a) return "日時未定";
+    return a[0] + " " + a[1] + " 試合開始" + (b ? "～" + (b[0] !== a[0] ? b[0] + " " : "") + b[1] + " 試合終了" : "");
+  }
   function csView(box, u) {
     var d = D.cs, c = el("div", "card");
     c.appendChild(el("h2", "", "📅 キャスター日程"));
@@ -1648,7 +1653,7 @@
       : u && u.leader ? "あなたはチームリーダーです。"
       : u && u.team ? "あなたは、もうチームに入っています。下は、いま募集しているチームの一覧です（応募するときは、先に脱退してください）。"
       : "あなたに合うチームを、上に並べています。カードを押して、内容を見てから応募してください（同時に" + (D.max_wishes || 3) + "チームまで）。";
-    if (me && PG !== "home") { document.getElementById("empty").hidden = true; document.getElementById("lead").textContent = ""; if (OPEN != null) dialog(DSTEP); else if (SKIND && !document.getElementById("ov")) staffDialog(); else if (PROFOPEN) openProfile(); return; }   // ほかのページ：チームの一覧は出さない
+    if (me && PG !== "home") { document.getElementById("empty").hidden = true; document.getElementById("lead").textContent = ""; if (OPEN != null) dialog(DSTEP); else if (SKIND && PAGE !== SKIND && !document.getElementById("ov")) staffDialog(); else if (PROFOPEN) openProfile(); return; }   // ほかのページ：チームの一覧は出さない
     var teams = arr(D.teams).slice();
     var rank = { open: 0, extra: 1, done: 2, full: 2, closed: 3 };
     teams.forEach(function (t) { t._fit = fits(t); });

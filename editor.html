@@ -1191,7 +1191,8 @@
           if (pairs && pairs[k]) { a = pairs[k].a; b = pairs[k].b; swap = !B.locked; }
           else if (!pairs) { a = { name: "（保存したときに決まります）" }; b = { name: "（保存したときに決まります）" }; }
         } else if (st.draw || st.swaps.length) { a = { name: "（未定）" }; b = { name: "（未定）" }; }
-        var head = m.bye ? "シード" : (m.play ? fmtDT(m.play) + " 試合開始" : "時間未定");
+        var pe = parseLocal(m.play), pend = pe && half ? new Date(pe.getTime() + est * 60000) : null;
+        var head = m.bye ? "シード" : (m.play ? fmtDT(m.play) + " 試合開始" + (pend ? "～" + (pend.getDate() !== pe.getDate() ? (pend.getMonth() + 1) + "/" + pend.getDate() + " " : "") + hhmm(pend) + " 試合終了" : "") : "時間未定");
         return brMatch(m, head, a, b, swap, brks.filter(function (x) { return x.after === m.mid; }));
       });
       if (r.no === R) cards.forEach(function (c) { var sl2 = el("div", "bslot"); sl2.appendChild(c); body.appendChild(sl2); });
