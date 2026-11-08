@@ -103,6 +103,7 @@
   .cs-bad { border-color: #e04848; box-shadow: 0 0 0 2px rgba(224,72,72,.55); } .cs-berr { color: #ff7070; font-size: 12px; font-weight: 800; margin: 4px 0; }
   .cs-x { position: relative; border-color: #e04848; } .cs-x::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 6px; background: linear-gradient(to top right, transparent calc(50% - 1.5px), #e04848 calc(50% - 1.5px), #e04848 calc(50% + 1.5px), transparent calc(50% + 1.5px)); }
   .cs-x .cs-tag { background: rgba(224,72,72,.2); }
+  .cs-not2 { border-color: rgba(224,72,72,.55); box-shadow: 0 0 0 1px rgba(224,72,72,.35); }
   .cs-scroll { max-height: 140px; overflow-y: auto; padding: 4px 2px; }
   .cs-mk { display: inline-block; min-width: 1.5em; text-align: center; border-radius: 6px; padding: 0 4px; font-size: 12px; }
   .cs-tag { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -1116,6 +1117,7 @@
     function dirty() { CS.dirty = true; render(); }
     function bad() { var o = {}; ms.forEach(function (m) { if (arr(CS.av[m.id]).length && Object.keys(CS.se[m.id] || {}).some(function (k) { return arr(CS.se[m.id][k]).length; })) o[m.id] = true; }); return o; }
     var BAD = CS.showErr ? bad() : {};
+    function cnt(m) { var per = CS.se[m.id] || {}, useSets = Object.keys(per).some(function (k) { return arr(per[k]).length; }); return useSets ? null : (CS_ADM ? arr(CS.av[m.id]).length : arr(d.av[m.id]).filter(function (a) { return a !== mineApp; }).length + (CS.mine[m.id] ? 1 : 0)); }
     function mkOf(mid, a) { return ((CS.mk[mid] || {})[a]) || ""; }
     function place(mid, sk, a) {
       if (!a) return;
@@ -1181,6 +1183,9 @@
       dirty();
     });
     br.appendChild(none);
+    if (CS_ADM) { var au = el("button", "go", "自動で割り振る"); au.type = "button"; au.disabled = BUSY || !!CS.dirty;
+      au.addEventListener("click", function () { if (confirm("参加できる名札をもとに、試合ごとに、実況＋解説の2人（できるだけ同性同士）を自動で割り振ります。試合全体の名札は置き換わります（セットごとの名札は、そのままです）。よろしいですか？")) { PEND = { kind: "cs" }; send({ act: "cs_auto" }, "割り振っています…"); } });
+      br.appendChild(au); }
     if (CS_ADM) { var wipe = el("button", "danger", "白紙に戻す"); wipe.type = "button"; wipe.addEventListener("click", function () { if (confirm("全員の名札を、全部消して、白紙に戻しますか？")) { CS.av = {}; CS.se = {}; CS.mk = {}; CS.mine = {}; dirty(); } }); br.appendChild(wipe); }
     pal.appendChild(br);
     c.appendChild(pal);
@@ -1206,7 +1211,7 @@
     rounds.forEach(function (r) {
       var col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.name || "ラウンド"));
       r.list.forEach(function (m) {
-        var card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : "")); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
+        var nn = cnt(m), card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : (nn !== null && nn !== 2 ? " cs-not2" : ""))); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
         if (BAD[m.id]) card.appendChild(el("div", "cs-berr", "セットごとの担当者がいる場合は、その試合ではキャスターをセットごとに割り当ててください。"));
         var tm = arr(m.tm);
         card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）"));
@@ -1220,7 +1225,7 @@
         if (!slot.querySelector(".cs-tag")) slot.appendChild(el("span", "cs-empty", CS_ADM ? "ここに置く" : "押すと、名札を置く"));
         card.appendChild(slot);
         if (CS_ADM) arr(m.sets).forEach(function (sk) {
-          var ss = el("div", "cs-slot sub"); target(ss, m.id, sk);
+          var ss = el("div", "cs-slot sub" + (arr((CS.se[m.id] || {})[sk]).length !== 2 && nn === null ? " cs-not2" : "")); target(ss, m.id, sk);
           ss.appendChild(el("div", "cs-sl", { s1: "セット1", s2: "セット2", s3: "セット3", ext: "延長戦" }[sk] || sk));
           arr((CS.se[m.id] || {})[sk]).forEach(function (a) { ss.appendChild(placed(a, m.id, sk, true)); });
           card.appendChild(ss);
