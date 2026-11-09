@@ -1737,6 +1737,34 @@
     var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
     refreshSealed();
   }
+  // ───── 録画保存の確認（共感覚モードの次。サバイバー代表と、ハンターの選手が、それぞれ「OK」を押す） ─────
+  var REC_T0 = 0, REC_TM = 0;
+  function renderRec() {
+    var rc = S.rec, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null;
+    var mine = MY === "h" ? !!me && sd.hp === me : !!me && sd.rep === me;                 // 押せる人：サバイバー代表／ハンターの選手
+    var done = MY === "h" ? !!rc.h : !!rc.s;
+    if (!REC_T0) REC_T0 = Date.now();                                                     // 全員に、確認の文を、ボタン無しで3秒見せる
+    var wait3 = REC_T0 + 3000 - Date.now();
+    if (wait3 > 0 && !REC_TM) REC_TM = setTimeout(function () { REC_TM = 0; render(); }, wait3 + 60);
+    document.querySelector("main").classList.add("view");
+    var nt = $("notice"); nt.textContent = "";
+    nt.appendChild(el("div", "bar info", "🎥 録画保存の確認"));
+    var work = $("work"); work.textContent = ""; $("pal").textContent = ""; $("bar").textContent = "";
+    var wrap = el("div", "selwrap"), col = el("div", "selcol " + (MY === "h" ? "h" : "s"));
+    col.appendChild(el("h3", "", MY === "h" ? "🔴 ハンター側" : "🔵 サバイバー側"));
+    col.appendChild(el("div", "selhint selbig", "必ずゲーム内で試合の録画を保存してください。"));
+    col.appendChild(el("div", "selhint selbig syncq", "手動で保存ボタンを押すのを忘れないようにしてください。"));
+    col.appendChild(el("div", "selhint selmid", wait3 > 0 ? "（もう一度、読んでください）" : done ? "確認しました。相手側の確認を待っています。" : mine ? "忘れないと決めたら、「OK」ボタンを押してください。" : MY === "h" ? "ハンターの選手が「OK」を押すのを待っています。" : "サバイバー代表が「OK」を押すのを待っています。"));
+    col.appendChild(el("div", "selcount", "サバイバー側：" + (rc.s ? "✅ 確認済み" : "⬜ 待っています") + "　ハンター側：" + (rc.h ? "✅ 確認済み" : "⬜ 待っています")));
+    wrap.appendChild(col); work.appendChild(wrap);
+    if (mine && !done && wait3 <= 0) {
+      var go = el("button", "btn go ready", BUSY ? "データ送信中…" : "OK"); go.type = "button"; go.disabled = BUSY;
+      go.addEventListener("click", function () { selAct("rec_ok", null, function () { var r2 = S && S.rec; return !r2 || (MY === "h" ? !!r2.h : !!r2.s); }); });
+      $("bar").appendChild(go);
+    }
+    var m = el("div"); m.id = "msg"; m.className = LAST.cls; m.textContent = LAST.text; $("bar").appendChild(m);
+    refreshSealed();
+  }
   function renderSelect() {
     var sel = S.select, sd = OPENED.data && OPENED.data.sel, me = sd && sd.who ? sd.who[UID] : null, side = MY;
     var SPL = arr0(sel.s && sel.s.players), HPL = arr0(sel.h && sel.h.players);                 // 空のリストは、公開の場所（Firebase）では、項目ごと消える：無いときは、空として扱う
@@ -1847,6 +1875,8 @@
     if (S.select) { renderSelect(); return; }                                              // 選手選びの段階
     if (!S.sync) SYNC_T0 = 0;
     if (S.sync) { renderSync(); return; }                                                  // 共感覚モードの確認
+    if (!S.rec) REC_T0 = 0;
+    if (S.rec) { renderRec(); return; }                                                    // 録画保存の確認
     document.querySelector("main").classList.toggle("view", !SIDE);
     var nt = $("notice"); nt.textContent = "";
     var b1 = el("div", "bar info");
@@ -1986,7 +2016,7 @@
       var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
       var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
-        || JSON.stringify([d.select, d.sealed, d.pm, d.sync]) !== JSON.stringify([S.select, S.sealed, S.pm, S.sync]);
+        || JSON.stringify([d.select, d.sealed, d.pm, d.sync, d.rec]) !== JSON.stringify([S.select, S.sealed, S.pm, S.sync, S.rec]);
       if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; TSLOT = null; PSLOT = {}; }
       S = d; buildCH(d);
       if (changed || !$("work").firstChild) softRender();

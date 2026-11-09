@@ -125,6 +125,9 @@
   .wish { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
   .wish b { min-width: 4.5em; } .wish .st { font-size: 13px; color: var(--sub); flex: 1; }
   .frm { display: grid; grid-template-columns: 180px 1fr; gap: 10px 14px; align-items: center; }
+  .fxline { font-size: 13px; margin: 4px 0; } .fxt { color: #e8a23a; font-weight: 800; } .fxt.ok { color: #35c26b; } .fxng { color: var(--warn); font-weight: 700; }
+  .fxh { grid-column: 1 / -1; } .fxwrap { grid-column: 1 / -1; display: grid; gap: 10px; } .fxcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; }
+  .fxcard .fxopt { font-weight: 600; display: flex; gap: 6px; align-items: flex-start; cursor: pointer; } .fxcard .fxopt.on { color: var(--text); font-weight: 800; } .fxcard .row { gap: 6px; }
   .frm label { font-weight: 700; font-size: 14px; } .frm .hint { grid-column: 2; font-size: 12px; color: var(--sub); margin-top: -6px; }
   .bad { border-color: var(--ng) !important; color: var(--ng); }
   .mine-note { margin: 6px 0; padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--warn); color: var(--warn); font-weight: 800; font-size: 13px; }
@@ -273,6 +276,40 @@
     arr(w.ch).forEach(function (id) { if (arr(me.prof.fav).indexOf(id) >= 0) { var x = arr(D.chars).filter(function (c) { return c[0] === id; })[0]; if (x) out.push(x[1]); } });
     if (w.beg && st.beg) out.push("初心者歓迎");
     return out;
+  }
+  // ───── 試合日時：自分の答えと、チーム（リーダー）の答えが合うか（「いつでも」は、だれとでも合う）。合えば「日時がおすすめ」 ─────
+  function fxSlotsOf(row, r) {
+    if (!row) return [];
+    if (row.c === "any") return null;                                                  // null＝いつでも
+    if (row.c === "base") return [[String(r.iso || "").slice(0, 10), Number(String(r.iso || "").slice(11, 13))]];
+    return arr(row.s).map(function (s) { var m = /^(\d{4}-\d\d-\d\d)@(\d+|\*)$/.exec(s); return m ? [m[1], m[2] === "*" ? null : Number(m[2])] : null; }).filter(Boolean);
+  }
+  function fxOverlap(a, b, r) {
+    var x = fxSlotsOf(a, r), y = fxSlotsOf(b, r);
+    if (x === null || y === null) return !!(a && b);
+    return x.some(function (p) { return y.some(function (q) { return p[0] === q[0] && (p[1] === null || q[1] === null || p[1] === q[1]); }); });
+  }
+  function fxMatch(t) {                                                                // "ok"＝合う／"ng"＝合わない／""＝わからない（どちらかが、まだ答えていない）
+    var rounds = arr((D.entry || {}).flex), mine = (me && me.prof && me.prof.te && me.prof.te.flex) || {}, theirs = t.fx || {};
+    if (!rounds.length) return "";
+    for (var i = 0; i < rounds.length; i++) { var k = "r" + rounds[i].r; if (!mine[k] || !theirs[k]) return ""; }
+    return rounds.every(function (r) { return fxOverlap(mine["r" + r.r], theirs["r" + r.r], r); }) ? "ok" : "ng";
+  }
+  function fxLine(t, box) {                                                            // チームの希望日時（日時の部分は、別の色で目立たせる）
+    var rounds = arr((D.entry || {}).flex), th = t.fx || {}; if (!rounds.length) return;
+    var m = fxMatch(t), d = el("div", "fxline");
+    d.appendChild(document.createTextNode("📅 試合日時："));
+    var any = false;
+    rounds.forEach(function (r) {
+      var row = th["r" + r.r]; if (!row) return; any = true;
+      d.appendChild(document.createTextNode(r.name + " "));
+      d.appendChild(el("span", "fxt" + (m === "ok" ? " ok" : ""), row.c === "any" ? "いつでも" : row.c === "base" ? r.start + "から" : arr(row.s).map(fxText).join("、")));
+      d.appendChild(document.createTextNode("　"));
+    });
+    if (!any) d.appendChild(el("span", "fxt", "（まだ、答えていません）"));
+    if (m === "ok") d.appendChild(el("span", "badge hit", "⭐ 日時がおすすめ"));
+    else if (m === "ng") d.appendChild(el("span", "fxng", "⚠ あなたの希望日時と合わないかもしれません"));
+    box.appendChild(d);
   }
   var FN2 = { survivor: "サバイバー", hunter: "ハンター", both: "必ず両陣営", any: "どちらでも/両陣営OK" };
   function isMgr() { var u = U(); return !!(u && u.kind === "manager"); }
@@ -1396,6 +1433,7 @@
         box.appendChild(el("label", "", x[1])); var i = el("input"); i.type = "text"; i.maxLength = x[2]; i.value = E[x[0]] || ""; i.addEventListener("input", function () { E[x[0]] = i.value; }); box.appendChild(i);
       });
     }
+    E.flex = E.flex || {}; flexInputs(box, E.flex);
     [["dates", "📅 参加できる日（すべて選んでください）"], ["times", "🕒 参加できる時間帯（すべて選んでください）"]].forEach(function (x) {
       var cand = arr(v[x[0]]); if (!cand.length) return;
       E[x[0]] = E[x[0]] || [];
@@ -1407,8 +1445,52 @@
       box.appendChild(ch);
     });
   }
+  // ───── 試合日時の確認（「任意の日時」のラウンド：ラウンドごとに、4つから1つ。「別の日時」は、日と時をいくつでも） ─────
+  var FX_CH = [["base", "から試合を行いたい"], ["any", "いつでも試合を行える／できる限り相手チームに合わせられる"], ["alt", "可能なら別の開始日時を希望する"], ["must", "絶対に別の開始日時を希望する"]];
+  var FX_ALT = "本来よりも上の段位の人と当たる可能性があります。";
+  var FX_MUST = "それは不可能です。希望日時を対戦相手が了承しなければ、試合日時を変更することはできません。相手チームに拒否され、あなたのチームの選手人数が足りない等の問題が発生すれば、不戦敗になります。大会を正常に進行させるために、ご了承ください。";
+  function fxText(s) { var m = /^(\d{4})-(\d\d)-(\d\d)@(\d+|\*)$/.exec(s || ""); return m ? Number(m[2]) + "/" + Number(m[3]) + " " + (m[4] === "*" ? "いつでも" : m[4] + "時") : String(s); }
+  function flexInputs(box, F) {                                                       // F＝{r1: {c, s}}（答えを書き込む）
+    var rounds = arr((D.entry || {}).flex); if (!rounds.length) return;
+    box.appendChild(el("label", "fxh", "📅 試合日時の確認（ラウンドごとに、1つ選んでください）"));
+    var wrap = el("div", "fxwrap"); box.appendChild(wrap);
+    rounds.forEach(function (r) {
+      var k = "r" + r.r, row = F[k] = F[k] || null, card = el("div", "fxcard");
+      card.appendChild(el("b", "", r.name + " の試合日時の確認"));
+      FX_CH.forEach(function (c) {
+        var on = row && row.c === c[0], l = el("label", "fxopt" + (on ? " on" : ""));
+        var rd = el("input"); rd.type = "radio"; rd.name = "fx" + r.r; rd.checked = !!on;
+        rd.addEventListener("change", function () { F[k] = { c: c[0], s: c[0] === "alt" ? ((row && row.s) || []) : [] }; row = F[k]; render(); });
+        l.appendChild(rd); l.appendChild(document.createTextNode(" " + (c[0] === "base" ? r.start + " " : "") + c[1])); card.appendChild(l);
+      });
+      if (row && row.c === "alt") {
+        card.appendChild(el("div", "badtxt", "⚠ " + FX_ALT));
+        var chips = el("div", "chips"); arr(row.s).forEach(function (s) {
+          var ch = el("label", "on", fxText(s) + " ×"); ch.addEventListener("click", function () { row.s.splice(row.s.indexOf(s), 1); render(); }); chips.appendChild(ch); });
+        card.appendChild(chips);
+        var ad = el("div", "row"), di = el("input"); di.type = "date"; di.min = (r.iso || "").slice(0, 10);
+        var hs = el("select"); var o0 = el("option", "", "いつでも（その日）"); o0.value = "*"; hs.appendChild(o0);
+        for (var h = 0; h < 24; h++) { var o = el("option", "", h + "時"); o.value = String(h); hs.appendChild(o); }
+        var ab = el("button", "", "＋ 追加"); ab.type = "button";
+        ab.addEventListener("click", function () { if (!di.value) { setMsg("ng", "⚠ 日を選んでください。"); return; } var s = di.value + "@" + hs.value; if (row.s.indexOf(s) < 0) row.s.push(s); render(); });
+        ad.appendChild(di); ad.appendChild(hs); ad.appendChild(ab); card.appendChild(ad);
+      }
+      if (row && row.c === "must") card.appendChild(el("div", "badtxt", "❗ " + FX_MUST + "　（この選択のままでは、保存・エントリーできません）"));
+      wrap.appendChild(card);
+    });
+  }
+  function missingFlex(F) {
+    var out = [];
+    arr((D.entry || {}).flex).forEach(function (r) {
+      var row = (F || {})["r" + r.r];
+      if (!row) out.push(r.name + "の試合日時の確認");
+      else if (row.c === "must") out.push(r.name + "の試合日時（「絶対に別」は選べません）");
+      else if (row.c === "alt" && !arr(row.s).length) out.push(r.name + "の別の開始日時");
+    });
+    return out;
+  }
   function missingEntry(E) {
-    var v = D.entry || {}, out = [];
+    var v = D.entry || {}, out = missingFlex(E.flex);
     if (arr(v.dates).length && !arr(E.dates).length) out.push("参加できる日");
     if (arr(v.times).length && !arr(E.times).length) out.push("参加できる時間帯");
     return out;
@@ -1457,7 +1539,7 @@
     c.appendChild(el("h2", "", "🏷 チーム情報｜" + teamName(u.leader)));
     var missL = []; if (D.logo_on && u.logo === "no") missL.push("ロゴ"); if (!u.color) missL.push("チームカラー");
     if (missL.length) c.appendChild(el("div", "subwarn", "⚠ まだ未入力の事項があります：" + missL.join("・") + "。保留したままでも募集は始められますが、エントリー締切までに必ず登録してください（締切の1週間前・3日前・1日前の18時に、お知らせします）。"));
-    if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: fm.abbr_reading || "", color: u.color || "" };
+    if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: fm.abbr_reading || "", color: u.color || "", flex: JSON.parse(JSON.stringify(u.flex || {})) };
     var f = el("div", "frm");
     function inp(label, k, max, ph) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = TN[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { TN[k] = i.value; }); f.appendChild(i); return i; }
     inp("チーム名", "name", 30, "チーム名");
@@ -1501,14 +1583,20 @@
       c.appendChild(ae);
     }
     c.appendChild(f); decorateRules(f);
+    if (arr((D.entry || {}).flex).length) {                                            // 試合日時の確認（チーム単位。エントリーに要る）
+      var fxb = el("div", "frm"); fxb.style.marginTop = "10px"; flexInputs(fxb, TN.flex); c.appendChild(fxb);
+      c.appendChild(el("div", "lim", "チームの希望です。エントリーのときに、必要です（最初は、あなたの選手情報の答えが入っています）。"));
+    }
     var srow = el("div", "row"), sb = el("button", "go", "💾 チーム情報を保存"); sb.type = "button"; sb.disabled = BUSY;
     sb.addEventListener("click", function () {
       if (!TN.name.trim()) { setMsg("ng", "⚠ チーム名を入れてください。"); return; }
+      var fxm = missingFlex(TN.flex); if (fxm.length) { setMsg("ng", "⚠ 試合日時の確認で、入れていない項目があります：" + fxm.join("、")); return; }
       if (TN.color && !/^#[0-9a-fA-F]{6}$/.test(TN.color)) { setMsg("ng", "⚠ チームカラーは、#ff69b4 のような形にしてください（空なら標準の色）。"); return; }
       var info = { name: TN.name.trim(), reading: TN.reading.trim(), color: TN.color };
       if (u.recruiting && TN.auto != null) info.auto_enter = !!TN.auto;
       if (D.abbr) { info.abbr = TN.abbr.trim(); info.abbr_reading = TN.abbr_reading.trim(); }
       if (LOGO) info.logo = LOGO;
+      if (arr((D.entry || {}).flex).length) info.flex = TN.flex;
       send({ act: "team_info", team: u.leader, info: info }, "チーム情報を保存しています…");
     });
     srow.appendChild(sb); c.appendChild(srow);
@@ -1743,7 +1831,7 @@
     var rank = { open: 0, extra: 1, done: 2, full: 2, closed: 3 };
     teams.forEach(function (t) { t._fit = fits(t); });
     function rk(x) { return x.state in rank ? rank[x.state] : 3; }                     // 募集中 → 余分募集（下のほう） → そろった・満員 → 締め切り
-    teams.sort(function (a, b) { return (rk(a) - rk(b)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || a.id - b.id; });
+    teams.sort(function (a, b) { return (rk(a) - rk(b)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || ((fxMatch(a) === "ok" ? 0 : 1) - (fxMatch(b) === "ok" ? 0 : 1)) || a.id - b.id; });
     document.getElementById("empty").hidden = teams.length > 0;
     // 上から：あなたに合うチーム → 制限に合わないチーム → 募集終了したチーム（区切りの線つき。押すと折りたためる）
     var SECS = me ? [["fit", "✅ あなたに合うチーム"], ["nofit", "⚠ 制限に合わないチーム"], ["end", "⏹ 募集終了したチーム"]] : [["fit", "📣 募集中のチーム"], ["end", "⏹ 募集終了したチーム"]];
@@ -1765,6 +1853,7 @@
       var mt = matches(t);
       if (mt.length) { c.className += " match"; bd.appendChild(el("span", "badge hit", "⭐ 条件一致")); }
       if ((t.wants || {}).beg) bd.appendChild(el("span", "badge beg", "🔰 初心者歓迎"));
+      if (fxMatch(t) === "ok") { c.className += " match"; bd.appendChild(el("span", "badge hit", "⭐ 日時がおすすめ")); }
       if (t.state === "extra") bd.appendChild(el("span", "badge ext", "➕ 追加募集"));
       top.appendChild(bd);
       c.appendChild(top);
@@ -1931,6 +2020,7 @@
       d.appendChild(bd);
     }
     if (t.limits) d.appendChild(el("div", "lim", "制限：" + t.limits));
+    fxLine(t, d);
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
     if (me && isMgr() && t.locked && u && !u.mteam && !u.team && (t.state === "open" || t.state === "extra")) {     // マネージャーとして応募

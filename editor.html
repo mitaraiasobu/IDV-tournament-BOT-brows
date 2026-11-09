@@ -667,8 +667,8 @@
   // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
-  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, breaks: null }; return BRS; }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -1086,6 +1086,8 @@
     st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
     Object.keys(st.fmts || {}).forEach(function (r) { ops.push({ op: "set_round_format", round: Number(r), fmt: st.fmts[r] }); });     // 試合形式（抽選の前だけ）
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
+    Object.keys(st.flex || {}).forEach(function (r) { ops.push({ op: "set_round_flex", round: Number(r), on: st.flex[r] }); });                  // 任意の日時
+    Object.keys(st.dls || {}).forEach(function (r) { ops.push({ op: "set_round_deadline", round: Number(r), at: st.dls[r] }); });             // 結果報告の締切
     Object.keys(st.streams || {}).forEach(function (r) { ops.push({ op: "set_round_stream", round: Number(r), on: st.streams[r] }); });
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
@@ -1168,9 +1170,19 @@
         var tot = conc ? prep + est : (prep + est) * nm + brk;
         col.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分（半戦" + halves + "本と、その間の準備" + gap + "分×" + (halves - 1) + "）" + (brk ? "・休憩" + brk + "分" : "") + "）"));
       } else col.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
-      col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"]], conc ? "1" : "0", function (x) {
-        var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; renderBracket();
+      st.flex = st.flex || {}; st.dls = st.dls || {};
+      var fx = st.flex[r.no] != null ? st.flex[r.no] : !!r.flex;                      // 任意の日時（開始日時より後なら、対戦相手と相談して、いつでも試合ができる）
+      col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"], ["2", "任意の日時"]], fx ? "2" : conc ? "1" : "0", function (x) {
+        var wf = x === "2"; if (wf === !!r.flex) delete st.flex[r.no]; else st.flex[r.no] = wf;
+        if (!wf) { var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; }
+        renderBracket();
       }));
+      if (fx) {
+        var dl = el("input"); dl.type = "datetime-local"; dl.value = st.dls[r.no] !== undefined ? (st.dls[r.no] || "") : (r.deadline || "");
+        dl.title = "結果報告の締切（この日時までに、試合が終わって、結果が入っている必要があります）";
+        dl.addEventListener("change", function () { var o = r.deadline || ""; if ((dl.value || "") === o) delete st.dls[r.no]; else st.dls[r.no] = dl.value || null; renderBracket(); });
+        var dlw = el("label", "muted", "結果報告の締切："); dlw.appendChild(dl); col.appendChild(dlw);
+      }
       st.streams = st.streams || {};
       var strm = st.streams[r.no] != null ? st.streams[r.no] : r.stream;              // 生配信あり／なし（大会ルールの「BAN/PICK」タブに出る）
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
