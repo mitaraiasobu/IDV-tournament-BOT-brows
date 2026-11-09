@@ -760,7 +760,7 @@
     var m = ms.filter(function (x) { return x.id === SM.m; })[0];
     if (m) {
       var teams = [["", "選んでください"], [String(m.a[0]), m.a[1] + "がハンター"], [String(m.b[0]), m.b[1] + "がハンター"]];
-      rc.appendChild(el("div", "", "いま：" + m.status_text + (m.winner ? "（勝者：" + m.winner + (m.by_dq ? "・相手チームの失格" : "") + "）" : "") + (m.next_label && m.status !== "finished" && m.status !== "undecided" ? "　次の入力：" + m.next_label : "")));
+      rc.appendChild(el("div", "", "いま：" + m.status_text + (m.winner ? "（勝者：" + m.winner + (m.by_dq ? "・相手チームの不戦敗" : "") + "）" : "") + (m.next_label && m.status !== "finished" && m.status !== "undecided" ? "　次の入力：" + m.next_label : "")));
       if (!(m.entries || []).length) rc.appendChild(el("div", "note", "まだ登録された結果はありません。"));
       (m.entries || []).forEach(function (e) {
         var row = el("div", "row"); row.style.cssText = "align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0";

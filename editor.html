@@ -667,8 +667,8 @@
   // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
-  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, bases: {}, breaks: null }; return BRS; }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -1088,6 +1088,7 @@
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
     Object.keys(st.flex || {}).forEach(function (r) { ops.push({ op: "set_round_flex", round: Number(r), on: st.flex[r] }); });                  // 任意の日時
     Object.keys(st.dls || {}).forEach(function (r) { ops.push({ op: "set_round_deadline", round: Number(r), at: st.dls[r] }); });             // 結果報告の締切
+    Object.keys(st.bases || {}).forEach(function (r) { ops.push({ op: "set_round_base", round: Number(r), at: st.bases[r] }); });             // 基本の日時
     Object.keys(st.streams || {}).forEach(function (r) { ops.push({ op: "set_round_stream", round: Number(r), on: st.streams[r] }); });
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
@@ -1182,6 +1183,11 @@
         dl.title = "結果報告の締切（この日時までに、試合が終わって、結果が入っている必要があります）";
         dl.addEventListener("change", function () { var o = r.deadline || ""; if ((dl.value || "") === o) delete st.dls[r.no]; else st.dls[r.no] = dl.value || null; renderBracket(); });
         var dlw = el("label", "muted", "結果報告の締切："); dlw.appendChild(dl); col.appendChild(dlw);
+        st.bases = st.bases || {};
+        var bs = el("input"); bs.type = "datetime-local"; bs.value = st.bases[r.no] !== undefined ? (st.bases[r.no] || "") : (r.base || "");
+        bs.title = "試合日時の確認で選ぶ「基本の日時」（空＝このラウンドの開始日時）。大会の開始日時とは別に決められます";
+        bs.addEventListener("change", function () { var o = r.base || ""; if ((bs.value || "") === o) delete st.bases[r.no]; else st.bases[r.no] = bs.value || null; renderBracket(); });
+        var bsw = el("label", "muted", "基本の日時："); bsw.appendChild(bs); col.appendChild(bsw);
       }
       st.streams = st.streams || {};
       var strm = st.streams[r.no] != null ? st.streams[r.no] : r.stream;              // 生配信あり／なし（大会ルールの「BAN/PICK」タブに出る）

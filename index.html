@@ -529,7 +529,7 @@
     var lsrc = t && !t.bye ? logoSrc(t) : null;                       // 承認されたロゴがあれば、チーム名の左に（文字と同じ大きさで）出す
     if (lsrc) { var li = el("img", "tlogo"); li.src = lsrc; li.alt = ""; row.appendChild(li); }
     row.appendChild(nm);
-    if (t && t.dq) row.appendChild(el("span", "dqtag", "失格"));
+    if (t && t.dq) row.appendChild(el("span", "dqtag", "不戦敗"));
     var showScore = t && !t.bye && m.team_a && m.team_b && !m.bye;
     var notYet = m.status === "ready" || m.status === "pending";                       // まだ行っていない試合：「0」ではなく、「-」だけ
     row.appendChild(el("span", "score", showScore ? (notYet ? "-" : String(m.set_wins[side])) : ""));
@@ -584,7 +584,7 @@
     }
     else head.appendChild(el("span", null, m.bye ? label : label + " · " + m.format));            // 時間が決まっていない試合だけ、ラウンド名・試合形式を書く
     head.appendChild(el("span", "badge", m.bye && m.status === "finished" ? "不戦勝" :
-                                         m.by_dq && m.status === "finished" ? "失格勝ち" : BADGE[m.status]));
+                                         m.by_dq && m.status === "finished" ? "相手が不戦敗" : BADGE[m.status]));
     card.appendChild(head);
     card.appendChild(teamRow(m, "a"));
     card.appendChild(teamRow(m, "b"));
@@ -721,7 +721,7 @@
       if (m.extension.reason) eb.appendChild(el("div", "reason", m.extension.reason));
       body.appendChild(eb);
     }
-    if (!m.sets.length && !m.extension) body.appendChild(el("div", "none", m.by_dq ? "失格により確定（結果の登録なし）" : "まだ結果は登録されていません。"));
+    if (!m.sets.length && !m.extension) body.appendChild(el("div", "none", m.by_dq ? "不戦敗により確定（結果の登録なし）" : "まだ結果は登録されていません。"));
     c.appendChild(body);
     return c;
   }
