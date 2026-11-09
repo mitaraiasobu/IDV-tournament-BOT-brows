@@ -364,7 +364,7 @@
     }
     if (HOME_OPEN === "dates") {
       var p2 = el("div", "hm-panel"); p2.appendChild(el("h3", "", "🗓 大会日時"));
-      var d2 = el("dl"); arr0(h.dates).forEach(function (x) { d2.appendChild(el("dt", "", x.label)); d2.appendChild(el("dd", "", homeFmt(x.at))); });
+      var d2 = el("dl"); arr0(h.dates).forEach(function (x) { d2.appendChild(el("dt", "", x.label)); var dd2 = el("dd", "", homeFmt(x.at)); if (x.note) dd2.appendChild(el("div", "muted", x.note)); d2.appendChild(dd2); });
       p2.appendChild(d2); w.appendChild(p2);
     }
     box.appendChild(w);
