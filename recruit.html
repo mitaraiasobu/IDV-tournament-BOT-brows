@@ -1448,7 +1448,7 @@
   // ───── 試合日時の確認（「任意の日時」のラウンド：ラウンドごとに、4つから1つ。「別の日時」は、日と時をいくつでも） ─────
   var FX_CH = [["base", "から試合を行いたい"], ["any", "いつでも試合を行える／できる限り相手チームに合わせられる"], ["alt", "可能なら別の開始日時を希望する"], ["must", "絶対に別の開始日時を希望する"]];
   var FX_ALT = "本来よりも上の段位の人と当たる可能性があります。";
-  var FX_MUST = "それは不可能です。希望日時を対戦相手が了承しなければ、試合日時を変更することはできません。相手チームに拒否され、あなたのチームの選手人数が足りない等の問題が発生すれば、不戦敗になります。大会を正常に進行させるために、ご了承ください。";
+  var FX_MUST = "それは不可能です。希望日時を対戦相手が了承しなければ試合日時を変更することはできません。相手チームに拒否され、あなたのチームの選手人数が足りない等の問題が発生すれば不戦敗になります。大会を正常に進行させるためにご了承ください。";
   function fxText(s) { var m = /^(\d{4})-(\d\d)-(\d\d)@(\d+|\*)$/.exec(s || ""); return m ? Number(m[2]) + "/" + Number(m[3]) + " " + (m[4] === "*" ? "いつでも" : m[4] + "時") : String(s); }
   function flexInputs(box, F) {                                                       // F＝{r1: {c, s}}（答えを書き込む）
     var rounds = arr((D.entry || {}).flex); if (!rounds.length) return;
@@ -1475,7 +1475,7 @@
         ab.addEventListener("click", function () { if (!di.value) { setMsg("ng", "⚠ 日を選んでください。"); return; } var s = di.value + "@" + hs.value; if (row.s.indexOf(s) < 0) row.s.push(s); render(); });
         ad.appendChild(di); ad.appendChild(hs); ad.appendChild(ab); card.appendChild(ad);
       }
-      if (row && row.c === "must") card.appendChild(el("div", "badtxt", "❗ " + FX_MUST + "　（この選択のままでは、保存・エントリーできません）"));
+      if (row && row.c === "must") card.appendChild(el("div", "badtxt", "❗ " + FX_MUST + "（このままでは保存・エントリーできません）"));
       wrap.appendChild(card);
     });
   }
