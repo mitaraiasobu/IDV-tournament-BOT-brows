@@ -337,7 +337,6 @@
     function show(k) { HOME_OPEN = HOME_OPEN === k ? "" : k; goTab(TAB); }
     var e = h.entry || {}, L = h.links || {};
     var b1 = el("button", HOME_OPEN === "entry" ? "on" : "", "📝 エントリー/メンバー募集"); b1.type = "button"; b1.addEventListener("click", function () { show("entry"); }); go.appendChild(b1);
-    if (arr0(h.dates).length) { var b2 = el("button", HOME_OPEN === "dates" ? "on" : "", "🗓 大会日時"); b2.type = "button"; b2.addEventListener("click", function () { show("dates"); }); go.appendChild(b2); }
     tabs().forEach(function (t, i) {
       if (t.builtin === "home") return;
       var b = el("button", "", t.title); b.type = "button"; b.addEventListener("click", function () { goTab(i); }); go.appendChild(b);
@@ -361,11 +360,6 @@
       p.appendChild(dl);
       if (L.entry) { var a = el("a", "go", "エントリーのページへ"); a.href = L.entry; p.appendChild(a); }
       w.appendChild(p);
-    }
-    if (HOME_OPEN === "dates") {
-      var p2 = el("div", "hm-panel"); p2.appendChild(el("h3", "", "🗓 大会日時"));
-      var d2 = el("dl"); arr0(h.dates).forEach(function (x) { d2.appendChild(el("dt", "", x.label)); var dd2 = el("dd", "", homeFmt(x.at)); if (x.note) dd2.appendChild(el("div", "muted", x.note)); d2.appendChild(dd2); });
-      p2.appendChild(d2); w.appendChild(p2);
     }
     box.appendChild(w);
   }
@@ -586,6 +580,11 @@
       navButtons(main); return;
     }
     if (t.builtin === "home") { drawHome(main, t.home); return; }
+    if (t.builtin === "dates") {                                                       // 📅 大会日時（自動で入る。ホームのボタンの移動先）
+      var dw0 = el("div", "hm"), pn = el("div", "hm-panel"); pn.appendChild(el("h3", "", "📅 大会日時"));
+      var dd0 = el("dl"); arr0(t.dates).forEach(function (x) { dd0.appendChild(el("dt", "", x.label)); var de = el("dd", "", homeFmt(x.at)); if (x.note) de.appendChild(el("div", "muted", x.note)); dd0.appendChild(de); });
+      pn.appendChild(dd0); dw0.appendChild(pn); main.appendChild(dw0); navButtons(main); return;
+    }
     if (t.builtin === "flow") { var fw = el("div", "flw"); main.appendChild(fw); drawFlow(fw, t.flow || {}); navButtons(main); return; }
     var secs = t.sections || [], c = counts(t);
     var tl = el("div", "tools"); tl.appendChild(el("span", "prog", secs.length ? (c[0] === c[1] ? "✓ このタブは全部読みました" : "読んだ：" + c[0] + " / " + c[1]) : ""));

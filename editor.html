@@ -879,6 +879,10 @@
         ((I.about || {}).sections || []).forEach(function (sc) { var d = document.createElement("details"); var sm = el("summary", "", sc.title); sm.style.cursor = "pointer"; d.appendChild(sm); var pv = el("div", ""); pv.style.cssText = "white-space:pre-wrap;font-size:14px;margin:6px 0"; pv.textContent = sc.body; d.appendChild(pv); c.appendChild(d); });
         box.appendChild(c); return;
       }
+      if (t.builtin === "dates") {
+        c.appendChild(el("div", "note", "🔒 大会日時（ラウンドごとの開始日時・エントリーの締め切りなど）が、自動で入ります（書き換え・削除・非表示はできません。↑↓で並べ替えはできます）。ホームページの「📅 大会日時」ボタンは、このタブに移ります。"));
+        box.appendChild(c); return;
+      }
       if (t.builtin) {
         c.appendChild(el("div", "note", t.builtin === "entry" ? "「📋 ルール・登録項目」タブで書いたルール（デフォルトのルールも）が、そのまま出ます。" : t.builtin === "bp" ? (I.bp ? "BAN/PICKのルールのページ（BAN数・使用禁止キャラ・分配ポイントなど）が、そのまま出ます。" : "BAN/PICKを使わない大会なので、このタブは出ません。") : "トーナメント表のページが、そのまま出ます。"));
         box.appendChild(c); return;
@@ -1115,9 +1119,13 @@
     var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
     undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
     bar.appendChild(sv); bar.appendChild(undo);
-    if (!brDirty() && B.drawn && !B.locked) {
-      var pub = el("button", "", B.published ? "📣 もう一度公開する" : "📣 公開する"); pub.type = "button"; pub.disabled = B.publish_pending;
-      pub.addEventListener("click", function () { if (confirm("トーナメント表を公開します（対戦カードの用意と、サイレントのお知らせ）。よろしいですか？")) brSend([{ op: "bracket_publish" }], "公開を依頼しています…"); });
+    if (B.drawn && !B.locked) {                                                        // いつでも「保存して公開」（変更が無いときは、公開だけ）
+      var pub = el("button", "primary", "💾📣 保存して公開" + (!brDirty() && B.published ? "（もう一度）" : "")); pub.type = "button"; pub.disabled = B.publish_pending;
+      pub.addEventListener("click", function () {
+        var bad2 = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
+        if (bad2.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
+        if (confirm((brDirty() ? "変更を保存して、" : "") + "トーナメント表を公開します（対戦カードの用意と、サイレントのお知らせ）。よろしいですか？")) brSend(brOps(B).concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…");
+      });
       bar.appendChild(pub);
     }
     bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + "・" +
