@@ -485,7 +485,7 @@
     function group(d, lanes) { if (d) ev.push({ d: d, lanes: lanes }); }                // 同時に起きること：上下に分けて並べる
     var OV = TM.intro_overrides || {}, opt = TM.options || {};
     function ovr(mid, k) { return (OV[mid] || {})[k] || TM[k] || 0; }
-    function E(key, label, unit, mid) { return { key: key, label: label, unit: unit, mid: mid }; }
+    function E(key, label, unit, mid, suf) { return { key: key, label: label, unit: unit, mid: mid, suf: suf }; }
     // ── 配信が始まる前（同時進行のラウンド。実況・解説・配信なし） ──
     (TM.pre_rounds || []).forEach(function (r) {
       var prep = parseLocal(r.prep), play = parseLocal(r.play), end = parseLocal(r.end);
@@ -515,21 +515,19 @@
       var vs = (m.a || "（未定）") + " vs " + (m.b || "（未定）");
       var bpEd = [E("prep_minutes", "準備時間（BAN/PICKの開始から試合開始まで。保存すると、トーナメント表の時間も変わります）", "分")];
       if (TM.dev && TM.step_sec != null) bpEd.push(E("step_sec", "BAN/PICKの1手ごとの間隔（開発者用大会の自動進行）", "秒"));
-      var players = [card(prep, m.label + "：選手のBAN/PICK", vs + "（試合開始まで。準備時間" + TM.prep_minutes + "分）", "", { cat: "BAN/PICK", who: "tm", dur: prep && play ? msec((play - prep) / 1000) : "", edit: bpEd })];
+      var players = [card(prep, "選手のBAN/PICK", vs, "", { cat: "BAN/PICK", big: m.label, who: "tm", dur: prep && play ? msec((play - prep) / 1000) : "", edit: bpEd })];
       var ed = [E("player_sec", "選手紹介（1人）", "秒", m.mid), E("team_sec", "チーム紹介（1チーム）", "秒")];
       if (n) ed.unshift(E("caster_sec", "キャスター自己紹介（1人）", "秒", m.mid));
       var bad = (play && itEnd > play) ? "bad" : "", tS = TM.team_sec || 0;
       var t1s = itStart ? addSec(itStart, n * cs) : null, t2s = t1s ? addSec(t1s, 2 * tS) : null;
       var casters = [];
-      if (n) casters.push(card(itStart, m.label + "：キャスター自己紹介", (!m.casters ? "キャスター未定（仮に" + n + "人で計算）" : "キャスター" + n + "人") + "×" + cs + "秒（両チームの出場選手が決まったら、始まります）", bad,
-                               { cat: "紹介", who: "c", dur: msec(n * cs), edit: [E("caster_sec", "キャスター自己紹介（1人）", "秒", m.mid)], cast: m }));
-      else casters.push(card(itStart, m.label + "：キャスターの割り当て", "", bad, { cat: "紹介", who: "c", cast: m }));
-      casters.push(card(t1s, m.label + "：チーム紹介", "2チーム×" + tS + "秒", bad, { cat: "紹介", who: "tc", dur: msec(2 * tS), edit: [E("team_sec", "チーム紹介（1チーム）", "秒")] }));
-      casters.push(card(t2s, m.label + "：選手紹介", "選手5人×" + ps + "秒（早ければ " + (itEnd ? hhmm(itEnd) : "--:--") + " ごろまで）", bad, { cat: "紹介", who: "tc", dur: msec(5 * ps), edit: [E("player_sec", "選手紹介（1人）", "秒", m.mid)] }));
-      if (itEnd && play && itEnd < play) casters.push(card(itEnd, m.label + "：キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）", "", { cat: "雑談", who: "c", dur: msec((play - itEnd) / 1000) }));
+      casters.push(card(itStart, "キャスター割り当て", "", bad, { cat: "紹介", big: m.label, who: "c", cast: m, dur: n ? msec(n * cs) : "", edit: n ? [E("caster_sec", "キャスター自己紹介（1人/秒）", "", m.mid, "秒")] : [] }));
+      casters.push(card(t1s, "チーム紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(2 * tS), edit: [E("team_sec", "チーム紹介（1チーム/秒）", "", null, "秒")] }));
+      casters.push(card(t2s, "選手紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(5 * ps), edit: [E("player_sec", "選手紹介（1人/秒）", "", m.mid, "秒")] }));
+      if (itEnd && play && itEnd < play) casters.push(card(itEnd, "キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）", "", { cat: "雑談", big: m.label, who: "c", dur: msec((play - itEnd) / 1000) }));
       players.concat(casters).forEach(function (cd) { if (cd.d) ev.push(cd); });
-      add(play, m.label + "：試合開始（予定）", vs + "：00:00でゲームを始めます", "", { cat: "試合", who: "tcm" });
-      if (end) { add(end, m.label + "：試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "試合", who: "tm", dur: play ? msec((end - play) / 1000) : "", go: ["half_minutes", "⚙ 試合の想定時間を変える"] }); last = end; }
+      add(play, "試合開始（予定）", vs, "", { cat: "試合", big: m.label, who: "tcm" });
+      if (end) { add(end, "試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "試合", big: m.label, who: "tm", dur: play ? msec((end - play) / 1000) : "", go: ["half_minutes", "⚙ 試合の想定時間を変える"] }); last = end; }
     });
     function jpDT(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" + hhmm(d); }
     var SV = ST || {};                                                                 // 「⚙ 大会設定」の日時（保存していない変更も入れる）
@@ -562,8 +560,8 @@
     } else note.appendChild(el("div", "", "試合の終了予定が出せないため、配信終了の時刻は、出ていません（⚙ 大会設定で、試合の想定時間を入れてください）。"));
     ev.sort(function (a, b) { return a.d - b.d; });
     TLEV = []; TLFLOW = [];                                                            // 「共有」で送る、全体の流れ（文と、大会ルールのページに出す表の形）
-    ev.forEach(function (e) { (e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e]).forEach(function (c) { if (c.d) { TLEV.push({ t: ymdhm(c.d), main: c.main, sub: c.sub || "" });
-      TLFLOW.push({ t: ymdhm(c.d), main: c.main, sub: c.sub || "", cat: c.x.cat || "", who: c.x.who || "", dur: c.x.dur || "", off: !!c.x.off, g: !!e.lanes }); } }); });
+    ev.forEach(function (e) { (e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e]).forEach(function (c) { if (c.d) { TLEV.push({ t: ymdhm(c.d), main: (c.x.big ? c.x.big + "：" : "") + c.main, sub: c.sub || "" });
+      TLFLOW.push({ t: ymdhm(c.d), main: c.main, big: c.x.big || "", sub: c.sub || "", cat: c.x.cat || "", who: c.x.who || "", dur: c.x.dur || "", off: !!c.x.off, g: !!e.lanes }); } }); });
     TLEV.sort(function (a, b) { return a.t < b.t ? -1 : a.t > b.t ? 1 : 0; });
     renderFlow(ev, base);
   }
@@ -624,7 +622,7 @@
   }
   function fcardEl(e, base) {
     var c = el("div", "fcard" + (e.cls === "bad" ? " bad" : "") + (e.x.off ? " off" : ""));
-    c.appendChild(el("div", "ftm", e.d ? mdhm(e.d) : "--:--"));
+    c.appendChild(el("div", "ftm", e.d ? mdhm(e.d) + (e.x.big ? "　" + e.x.big : "") : "--:--"));         // 時間のとなりに、大きな区分（ラウンド・試合）。その下に、小さな区分
     if (e.x.cat) c.appendChild(el("div", "fcat", e.x.cat));
     c.appendChild(el("div", "fmain", e.main));
     if (e.sub) c.appendChild(el("div", "fsub", e.sub));
@@ -635,7 +633,7 @@
     }
     (e.x.edit || []).forEach(function (ed) {
       var box = el("div", "fedit");
-      box.appendChild(el("label", "", ed.label + "（" + ed.unit + "）"));
+      box.appendChild(el("label", "", ed.unit ? ed.label + "（" + ed.unit + "）" : ed.label));
       var ek = ed.key + "|" + (ed.mid || ""), mode = "all";                          // 紹介の秒数は、いつも全試合まとめて変える
       var cur = mode === "one" ? ((OVR()[ed.mid] || {})[ed.key] || TM[ed.key]) : TM[ed.key];
       var inp = el("input"); inp.type = "number"; inp.value = cur == null ? "" : cur;
@@ -645,7 +643,7 @@
         else TM[ed.key] = v;
         renderTimes(); refreshDirty();
       });
-      box.appendChild(inp);
+      box.appendChild(inp); if (ed.suf) box.appendChild(document.createTextNode(" " + ed.suf));
       c.appendChild(box);
     });
     if (e.x.go) { var gb = el("button", "", e.x.go[1]); gb.type = "button"; gb.addEventListener("click", function () { goSetting(e.x.go[0]); }); c.appendChild(gb); }

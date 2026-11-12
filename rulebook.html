@@ -543,7 +543,7 @@
         var ws = (e.who || "").split("").filter(function (k) { return cells[k]; }); if (!ws.length) ws = [""];
         ws.forEach(function (k) {                                                           // 出番のある列すべてに、同じカードを出す
           var card = el("div", "fcard" + (e.off ? " off" : ""));
-          card.appendChild(el("div", "ftm", mdhm2(c.d))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
+          card.appendChild(el("div", "ftm", mdhm2(c.d) + (e.big ? "　" + e.big : ""))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
           card.appendChild(el("div", "fmain", e.main)); if (e.sub) card.appendChild(el("div", "fsub", e.sub)); if (e.dur) card.appendChild(el("div", "fdur", "⏱ " + e.dur));
           cells[k].appendChild(card);
         });
