@@ -1605,15 +1605,19 @@
     row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
     box.appendChild(c);
   }
-  var TN = null;
+  var TN = null, TSAVED = null;                                                     // TSAVED＝チーム情報を保存したチーム（保存したあとに、「メンバー募集へ」を出す）
   function teamInfoView(box, u) {                                                    // チーム情報（リーダー）：チーム名 → 略称 → チームカラー → チームロゴ → メンバー → リーダーを譲る
     var c = el("div", "card"), fm = (D.forms || {})[String(u.leader)] || {};
     c.appendChild(el("h2", "", "🏷 チーム情報｜" + teamName(u.leader)));
     var missL = []; if (D.logo_on && u.logo === "no") missL.push("ロゴ"); if (!u.color) missL.push("チームカラー");
     if (missL.length) c.appendChild(el("div", "subwarn", "⚠ まだ未入力の事項があります：" + missL.join("・") + "。保留したままでも募集は始められますが、エントリー締切までに必ず登録してください（締切の1週間前・3日前・1日前の18時に、お知らせします）。"));
     if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: fm.abbr_reading || "", color: u.color || "", flex: JSON.parse(JSON.stringify(u.flex || {})) };
+    var nb = null;                                                                     // 「メンバー募集へ」：保存していない内容が1つでもあれば、押せない
+    function tnKey() { return JSON.stringify([TN.name, TN.reading, TN.abbr, TN.abbr_reading, TN.color, u.recruiting ? (TN.auto == null ? !!u.auto_enter : !!TN.auto) : null, TN.flex]); }
+    if (TN._snap === undefined) TN._snap = tnKey();
+    function chk() { if (nb) { nb.disabled = BUSY || !!LOGO || tnKey() !== TN._snap; nb.title = nb.disabled ? "保存していない内容があります。先に「💾 チーム情報を保存」を押してください" : ""; } }
     var f = el("div", "frm");
-    function inp(label, k, max, ph) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = TN[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { TN[k] = i.value; }); f.appendChild(i); return i; }
+    function inp(label, k, max, ph) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = TN[k]; if (ph) i.placeholder = ph; i.addEventListener("input", function () { TN[k] = i.value; chk(); }); f.appendChild(i); return i; }
     inp("チーム名", "name", 30, "チーム名");
     inp("チーム名の読み方", "reading", 60, "ひらがな（かなだけの名前なら、空でよい）");
     if (D.abbr) { inp("略称", "abbr", 8, "半角英数字"); f.appendChild(el("div", "hint", "")); inp("略称の読み方", "abbr_reading", 60, "変えるときだけ（ひらがな）"); }
@@ -1621,8 +1625,8 @@
     var cr = el("div", "row"); cr.style.marginTop = "0";
     var ci = el("input"); ci.type = "color"; ci.value = /^#[0-9a-fA-F]{6}$/.test(TN.color) ? TN.color : "#ff69b4";
     var ct = el("input"); ct.type = "text"; ct.maxLength = 7; ct.value = TN.color; ct.placeholder = "#ff69b4（空＝標準の色）"; ct.style.width = "12em";
-    ci.addEventListener("input", function () { ct.value = ci.value; TN.color = ci.value; });
-    ct.addEventListener("input", function () { TN.color = ct.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) ci.value = ct.value; });
+    ci.addEventListener("input", function () { ct.value = ci.value; TN.color = ci.value; chk(); });
+    ct.addEventListener("input", function () { TN.color = ct.value.trim(); if (/^#[0-9a-fA-F]{6}$/.test(ct.value)) ci.value = ct.value; chk(); });
     cr.appendChild(ci); cr.appendChild(ct); f.appendChild(cr);
     f.appendChild(el("div", "hint", ""));
     if (D.logo_on) {
@@ -1649,7 +1653,7 @@
       var ae = el("div", "card"); ae.style.marginTop = "8px"; ae.style.borderColor = "var(--ok)";
       ae.appendChild(el("div", "tag ok", "✅ チェック推奨"));
       var aer = el("label", ""); aer.style.cssText = "display:flex;gap:8px;align-items:flex-start;font-weight:700;cursor:pointer";
-      var aec = el("input"); aec.type = "checkbox"; aec.checked = TN.auto; aec.addEventListener("change", function () { TN.auto = aec.checked; });
+      var aec = el("input"); aec.type = "checkbox"; aec.checked = TN.auto; aec.addEventListener("change", function () { TN.auto = aec.checked; chk(); });
       aer.appendChild(aec); aer.appendChild(el("span", "", "大会のチーム最低人数を満たしたうえで、少なくともサバイバー4人ハンター1人が所属していれば、自動でエントリーする。")); ae.appendChild(aer);
       ae.appendChild(el("div", "lim", "自動でエントリーしたら、チーム専用チャンネルでお知らせします。"));
       c.appendChild(ae);
@@ -1669,9 +1673,17 @@
       if (D.abbr) { info.abbr = TN.abbr.trim(); info.abbr_reading = TN.abbr_reading.trim(); }
       if (LOGO) info.logo = LOGO;
       if (arr((D.entry || {}).flex).length) info.flex = TN.flex;
+      PEND = { kind: "tinfo", team: u.leader };
       send({ act: "team_info", team: u.leader, info: info }, "チーム情報を保存しています…");
     });
-    srow.appendChild(sb); c.appendChild(srow);
+    srow.appendChild(sb);
+    if (TSAVED === u.leader) {                                                         // 保存したあと：メンバーを集めるには、募集が要る
+      nb = el("button", "go", "📣 メンバー募集へ"); nb.type = "button";
+      nb.addEventListener("click", function () { if (nb.disabled) return; PAGE = "recruit"; render(); window.scrollTo(0, 0); });
+      srow.appendChild(nb); chk();
+    }
+    c.appendChild(srow);
+    if (nb) c.appendChild(el("div", "lim", "メンバーを集めるには、「メンバー募集」で募集投稿をしてください（チームを作っただけでは、メンバーは集まりません）。"));
     var roster = arr(u.roster);
     c.appendChild(el("h2", "", "👥 メンバー（" + roster.length + "/" + (D.cap || "—") + "）"));
     if (!roster.length) c.appendChild(el("div", "lead", "（まだいません）"));
@@ -2149,6 +2161,7 @@
           else if (PEND.kind === "inq") { INQ_URL = r.url || ""; INQ_TEXT = ""; }
           else if (PEND.kind === "mgr") { var um = U(); if (um) { um.kind = "manager"; um.pf_ok = true; } PROFOPEN = false; MGRN = null; var pm = document.getElementById("ov"); if (pm) pm.remove(); }
           else if (PEND.kind === "imgdel") { me.prof.img = 0; IMG_SET_AT = 0; }
+          else if (PEND.kind === "tinfo") { TSAVED = PEND.team; }
           else if (PEND.kind === "csw") { CS_ADM = !!r.adm; }
           else if (PEND.kind === "cs") { CS_ADM = !!r.adm; if (CS) CS.dirty = false; CS = null; }
           else if (PEND.kind === "ms") { CS_ADM = !!r.adm; if (MS) MS.dirty = false; MS = null; }
