@@ -594,6 +594,10 @@
             ok.addEventListener("click", function () { if (confirm(a.name + " さんを採用します（ロールの付与・お知らせが、BOTから行われます）。よろしいですか？")) K.send([{ op: "staff_decide", app: a.id, adopt: true }], "採用を頼んでいます…"); });
             ng.addEventListener("click", function () { if (confirm(a.name + " さんを不採用にします（DMでお知らせします）。よろしいですか？")) K.send([{ op: "staff_decide", app: a.id, adopt: false }], "不採用を頼んでいます…"); });
             br.appendChild(ok); br.appendChild(ng); row.appendChild(br);
+          } else if (a.status === "adopted") {
+            var rb = el("div", "row"), rm = el("button", "", "🚪 除名する"); rm.type = "button"; rm.style.color = "#ff7070"; rm.disabled = !!a.queued;
+            rm.addEventListener("click", function () { if (confirm("本当に除名しますか？\n" + a.name + " さんを、" + k.label + "から外します（担当の割り当ても外れ、ロールもなくなります）。")) K.send([{ op: "staff_remove", app: a.id }], "除名を頼んでいます…"); });
+            rb.appendChild(rm); row.appendChild(rb);
           }
           b.appendChild(row);
         });
@@ -603,14 +607,28 @@
       var DC = (K.data() || {}).deco || {}, dc = box(el, "🎀 キャスターの装飾", "キャスター表示（OBS）で、キャスターのアイコンのまわりに付ける飾りです。キャスターは、応募のときなどに、ここに登録した装飾から選びます。画像は、透明なPNGのURL（GitHubなど、ずっと残る場所）。" + (DC.max || 20) + "個まで。");
       var bl = el("a", "", "📥 基準画像をダウンロード（真ん中の透明な穴に、アイコンが入ります）"); bl.href = DC.base_url || "#"; bl.target = "_blank"; bl.rel = "noopener"; bl.style.cssText = "display:inline-block;margin:4px 0"; dc.appendChild(bl);
       if (!(DC.items || []).length) dc.appendChild(el("div", "note", "（まだ装飾はありません）"));
+      var gal = el("div", "decogal"); gal.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0";             // マス目状のギャラリー
+      var DE = K.state("deco_edit", { id: "", name: "", url: "" });
       (DC.items || []).forEach(function (d) {
-        var row = el("div", "row"); row.style.alignItems = "center";
-        var im = document.createElement("img"); im.src = d.url; im.alt = d.name; im.style.cssText = "width:48px;height:48px;object-fit:contain;background:#000;border-radius:6px"; im.referrerPolicy = "no-referrer"; row.appendChild(im);
-        var t = el("span", "", d.name); t.style.flex = "1"; row.appendChild(t);
-        var x = el("button", "", "🗑 消す"); x.type = "button"; x.style.color = "#ff7070";
-        x.addEventListener("click", function () { if (confirm("装飾「" + d.name + "」を消します（選んでいたキャスターは、装飾なしになります）。よろしいですか？")) K.send([{ op: "deco_remove", id: d.id }], "消しています…"); });
-        row.appendChild(x); dc.appendChild(row);
+        var cell = el("div", "card"); cell.style.cssText = "padding:8px;text-align:center";
+        var im = document.createElement("img"); im.src = d.url; im.alt = d.name; im.style.cssText = "width:100%;aspect-ratio:1/1;object-fit:contain;background:#000;border-radius:8px"; im.referrerPolicy = "no-referrer"; cell.appendChild(im);
+        if (DE.id === d.id) {
+          var en = inp(el, DE.name, DC.name_max || 20, "名前"); en.addEventListener("input", function () { DE.name = en.value; }); cell.appendChild(en);
+          var eu = inp(el, DE.url, 500, "画像のURL"); eu.addEventListener("input", function () { DE.url = eu.value; }); cell.appendChild(eu);
+          var er = el("div", "row"), es = el("button", "primary", "💾 保存"), ec = el("button", "", "やめる"); es.type = ec.type = "button";
+          es.addEventListener("click", function () { if (!DE.name.trim() || !DE.url.trim()) { K.msg("ng", "⚠ 名前と画像のURLを入れてください。"); return; } var o = { op: "deco_edit", id: d.id, name: DE.name, url: DE.url }; DE.id = ""; K.send([o], "直しています…"); });
+          ec.addEventListener("click", function () { DE.id = ""; K.redraw(); });
+          er.appendChild(es); er.appendChild(ec); cell.appendChild(er);
+        } else {
+          var t = el("div", "", d.name); t.style.cssText = "font-weight:700;margin:6px 0;word-break:break-all"; cell.appendChild(t);
+          var br = el("div", "row"), ed = el("button", "", "✏ 直す"), x = el("button", "", "🗑"); ed.type = x.type = "button"; x.style.color = "#ff7070";
+          ed.addEventListener("click", function () { DE.id = d.id; DE.name = d.name; DE.url = d.url; K.redraw(); });
+          x.addEventListener("click", function () { if (confirm("装飾「" + d.name + "」を消します（選んでいたキャスターは、装飾なしになります）。よろしいですか？")) K.send([{ op: "deco_remove", id: d.id }], "消しています…"); });
+          br.appendChild(ed); br.appendChild(x); cell.appendChild(br);
+        }
+        gal.appendChild(cell);
       });
+      dc.appendChild(gal);
       var DA = K.state("deco_add", { name: "", url: "" });
       var dn = inp(el, DA.name, DC.name_max || 20, "装飾の名前（例：王冠）"); dn.addEventListener("input", function () { DA.name = dn.value; }); dc.appendChild(field(el, "装飾の名前", dn));
       var du = inp(el, DA.url, 500, "https://…（透明なPNG）"); du.addEventListener("input", function () { DA.url = du.value; }); dc.appendChild(field(el, "画像のURL", du));

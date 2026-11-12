@@ -518,13 +518,13 @@
   function pad2(n) { return ("0" + n).slice(-2); }
   function pLocal(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
   function fhm(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+  function mdhm2(d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + fhm(d); }                  // 具体的な日付
   function dayLb(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
   var FLANES = [["c", "キャスター"], ["m", "モデレーター"], ["t", "チーム（選手）"], ["", "配信画面・日程"]];
   function drawFlow(box, fl) {
-    if (FLOWDIR == null) FLOWDIR = window.innerWidth < 700 ? "v" : "h";
+    FLOWDIR = "h";                                                                       // 時間は、いつも左から右
     var bar = el("div", "bar"), at = pLocal(fl.at);
     bar.appendChild(el("span", "sm", "大会の運営が「時間の設定を共有」したときの予定です" + (at ? "（" + (at.getMonth() + 1) + "/" + at.getDate() + " " + fhm(at) + " 時点）" : "") + "。時間は前後することがあります。"));
-    [["h", "横に並べる"], ["v", "縦に並べる"]].forEach(function (o) { var b = el("button", FLOWDIR === o[0] ? "on" : "", o[1]); b.type = "button"; b.addEventListener("click", function () { FLOWDIR = o[0]; render(); }); bar.appendChild(b); });
     box.appendChild(bar);
     var evs = (fl.events || []).map(function (e) { return { d: pLocal(e.t), e: e }; }).filter(function (x) { return x.d; });
     if (!evs.length) { box.appendChild(el("div", "msg", "まだ、全体の流れはありません。")); return; }
@@ -537,15 +537,16 @@
     FLANES.forEach(function (ln, li) { placeAt(el("div", "fhd lane", ln[1]), li + 2, 1); });
     function laneOf(w) { for (var i = 0; i < 3; i++) if ((w || "").indexOf("tcm"[i]) >= 0) return "tcm"[i]; return ""; }
     cols.forEach(function (c, ci) {
-      var th = el("div", "fhd time", fhm(c.d) + dayLb(c.d, base)); if (c.together) th.appendChild(el("div", "fgtitle", "同時に進みます")); placeAt(th, 1, ci + 2);
-      var cells = {}; FLANES.forEach(function (ln, li) { var cell = el("div", "fcell" + (c.together ? " together" : "")); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
+      var th = el("div", "fhd time", mdhm2(c.d)); placeAt(th, 1, ci + 2);
+      var cells = {}; FLANES.forEach(function (ln, li) { var cell = el("div", "fcell"); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
       c.cards.forEach(function (e) {
-        var main = laneOf(e.who), card = el("div", "fcard" + (e.off ? " off" : ""));
-        card.appendChild(el("div", "ftm", fhm(c.d) + dayLb(c.d, base))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
-        card.appendChild(el("div", "fmain", e.main)); if (e.sub) card.appendChild(el("div", "fsub", e.sub)); if (e.dur) card.appendChild(el("div", "fdur", "⏱ " + e.dur));
-        var w = el("div", "who"); (e.who || "").split("").forEach(function (k) { w.appendChild(el("span", k, { t: "チーム", c: "キャスター", m: "モデレーター" }[k])); }); if (w.childNodes.length) card.appendChild(w);
-        cells[main].appendChild(card);
-        (e.who || "").split("").forEach(function (k) { if (k === main || !cells[k]) return; var ref = el("div", "fref"); ref.appendChild(el("b", "", fhm(c.d))); ref.appendChild(el("span", "", " " + e.main)); cells[k].appendChild(ref); });
+        var ws = (e.who || "").split("").filter(function (k) { return cells[k]; }); if (!ws.length) ws = [""];
+        ws.forEach(function (k) {                                                           // 出番のある列すべてに、同じカードを出す
+          var card = el("div", "fcard" + (e.off ? " off" : ""));
+          card.appendChild(el("div", "ftm", mdhm2(c.d))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
+          card.appendChild(el("div", "fmain", e.main)); if (e.sub) card.appendChild(el("div", "fsub", e.sub)); if (e.dur) card.appendChild(el("div", "fdur", "⏱ " + e.dur));
+          cells[k].appendChild(card);
+        });
       });
     });
     box.appendChild(f);

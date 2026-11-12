@@ -1255,10 +1255,10 @@
     rounds.forEach(function (r) {
       var col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.name || "ラウンド"));
       r.list.forEach(function (m) {
-        var nn = cnt(m), card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : (nn !== null && nn !== 2 ? " cs-not2" : ""))); card.appendChild(el("div", "cs-mh", csMatchTitle(m)));
+        var nn = cnt(m), card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : (!m.x && nn !== null && nn !== 2 ? " cs-not2" : ""))); card.appendChild(el("div", "cs-mh", m.x || csMatchTitle(m)));
         if (BAD[m.id]) card.appendChild(el("div", "cs-berr", "セットごとの担当者がいる場合は、その試合ではキャスターをセットごとに割り当ててください。"));
         var tm = arr(m.tm);
-        card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）"));
+        if (!m.x) { card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）")); }
         var slot = el("div", "cs-slot" + (BAD[m.id] ? " cs-x" : "")); target(slot, m.id, "");
         slot.appendChild(el("div", "cs-sl", CS_ADM ? "名札" : "キャスター"));
         if (CS_ADM) arr(CS.av[m.id]).forEach(function (a) { slot.appendChild(placed(a, m.id, "", true)); });
@@ -1294,6 +1294,52 @@
       if (CS.dirty) c.appendChild(el("div", "hint", "名札を変えたら、先に「💾 名札を保存」を押してください（保存してから、確定できます）。"));
     }
     c.appendChild(r);
+    c.appendChild(liveMsg());
+    box.appendChild(c);
+  }
+  // ── 🛡 モデレーター日程：ラウンドごとに、担当のモデレーターを決める（管理者だけ。試合ごとは、決めない）──
+  var MS = null;
+  function msName(a) { var c = arr((D.ms || {}).ms).filter(function (x) { return x.a === a; })[0]; return c ? c.n : "?"; }
+  function msView(box) {
+    var d = D.ms, c = el("div", "card");
+    c.appendChild(el("h2", "", "🛡 モデレーター日程"));
+    if (!d) { return; }
+    admInit();
+    if (!CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "ラウンドごとの担当は、管理者が決めます。")); arr(d.rs).forEach(function (r) { var who = arr((d.as || {})["r" + r.r]).map(msName).join("、"); c.appendChild(el("div", "lead", r.rn + "：" + (who || "（まだ決まっていません）"))); }); box.appendChild(c); return; }
+    var sig = JSON.stringify(d.as || {});
+    if (!MS || (MS.sig !== sig && !MS.dirty)) MS = { sig: sig, as: JSON.parse(sig), sel: "", dirty: false };
+    c.appendChild(el("div", "cs-hint", "名札を押して選び、置きたいラウンドを押します（名札を、ラウンドへ持っていってもかまいません）。どのラウンドにも、担当が必要です。置いた名札の×で外します。"));
+    var pr = el("div", "cs-tags cs-scroll");
+    if (!arr(d.ms).length) pr.appendChild(el("span", "cs-empty", "採用したモデレーターが、まだいません"));
+    arr(d.ms).forEach(function (x) {
+      var t = el("span", "cs-tag" + (MS.sel === x.a ? " sel" : ""), "🏷 " + x.n); t.draggable = true;
+      t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", x.a); MS.sel = ""; });
+      t.addEventListener("click", function () { MS.sel = MS.sel === x.a ? "" : x.a; render(); });
+      pr.appendChild(t);
+    });
+    c.appendChild(pr);
+    var bk = el("div", "cs-br");
+    arr(d.rs).forEach(function (r) {
+      var key = "r" + r.r, col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.rn));
+      var card = el("div", "cs-m"); card.appendChild(el("div", "cs-mh", r.t ? csMatchTitle({ t: r.t, te: "" }).replace("試合開始", "から") : "日時未定"));
+      var slot = el("div", "cs-slot cs-drop"); slot.appendChild(el("div", "cs-sl", "担当のモデレーター"));
+      function put(a) { if (!a) return; MS.as[key] = arr(MS.as[key]); if (MS.as[key].indexOf(a) < 0) MS.as[key].push(a); MS.dirty = true; render(); }
+      slot.addEventListener("dragover", function (e) { e.preventDefault(); slot.classList.add("over"); });
+      slot.addEventListener("dragleave", function () { slot.classList.remove("over"); });
+      slot.addEventListener("drop", function (e) { e.preventDefault(); slot.classList.remove("over"); put(e.dataTransfer.getData("text/plain")); });
+      slot.addEventListener("click", function (e) { if (e.target.closest(".cs-tag")) return; if (MS.sel) put(MS.sel); });
+      arr(MS.as[key]).forEach(function (a) {
+        var t = el("span", "cs-tag", msName(a) + " "); var xb = el("span", "cs-x-btn", "×"); xb.setAttribute("role", "button"); xb.setAttribute("aria-label", "この名札を外す");
+        xb.addEventListener("click", function (e) { e.stopPropagation(); MS.as[key] = arr(MS.as[key]).filter(function (y) { return y !== a; }); MS.dirty = true; render(); });
+        t.appendChild(xb); slot.appendChild(t);
+      });
+      if (!arr(MS.as[key]).length) slot.appendChild(el("span", "cs-empty", "ここに置く"));
+      card.appendChild(slot); col.appendChild(card); bk.appendChild(col);
+    });
+    c.appendChild(bk);
+    var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 担当を保存"); sv.type = "button"; sv.disabled = BUSY || !MS.dirty;
+    sv.addEventListener("click", function () { PEND = { kind: "ms" }; send({ act: "ms_admin", as: MS.as }, "保存しています…"); });
+    var r0 = el("div", "row"); r0.appendChild(sv); c.appendChild(r0);
     c.appendChild(liveMsg());
     box.appendChild(c);
   }
@@ -1792,6 +1838,7 @@
     if (PG === "caster" || PG === "moderator") {                                  // 応募は、ポップアップにしないで、そのまま表示（キャスターは、その下に日程）
       SKIND = PG; var scd = el("div", "card"); staffDialog(scd); mine.appendChild(scd);
       if (PG === "caster" && D.cs) csView(mine, u);
+      if (PG === "moderator" && D.ms) msView(mine);
     } else if (SKIND && !document.getElementById("ov")) SKIND = null;
     if (PG === "profile") { var pfw = el("div"); if ((KIND || (u || {}).kind) === "manager") mgrForm(pfw); else profForm(pfw, false);
       if (!(u || {}).leader && !(u || {}).team && !(u || {}).mteam) { var swm2 = el("button", "", (KIND || (u || {}).kind) === "manager" ? "🎮 選手として登録する に切り替える" : "🧑‍💼 マネージャーとして登録する に切り替える"); swm2.type = "button"; swm2.addEventListener("click", function () { KIND = (KIND || (u || {}).kind) === "manager" ? "player" : "manager"; PF = null; render(); }); var swr2 = el("div", "row"); swr2.appendChild(swm2); pfw.appendChild(swr2); }
@@ -2104,6 +2151,7 @@
           else if (PEND.kind === "imgdel") { me.prof.img = 0; IMG_SET_AT = 0; }
           else if (PEND.kind === "csw") { CS_ADM = !!r.adm; }
           else if (PEND.kind === "cs") { CS_ADM = !!r.adm; if (CS) CS.dirty = false; CS = null; }
+          else if (PEND.kind === "ms") { CS_ADM = !!r.adm; if (MS) MS.dirty = false; MS = null; }
           else if (PEND.kind === "delete") me.prof = null;
           LOGO = null;
           PF = null;
