@@ -518,7 +518,7 @@
   function pad2(n) { return ("0" + n).slice(-2); }
   function pLocal(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null; }
   function fhm(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
-  function mdhm2(d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + fhm(d); }                  // 具体的な日付
+  function mdhm2(d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + fhm(d) + (d.getSeconds() ? ":" + pad2(d.getSeconds()) : ""); }                  // 具体的な日付
   function dayLb(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
   var FLANES = [["c", "キャスター"], ["m", "モデレーター"], ["t", "チーム（選手）"], ["", "配信画面・日程"]];
   function drawFlow(box, fl) {
@@ -529,7 +529,7 @@
     var evs = (fl.events || []).map(function (e) { return { d: pLocal(e.t), e: e }; }).filter(function (x) { return x.d; });
     if (!evs.length) { box.appendChild(el("div", "msg", "まだ、全体の流れはありません。")); return; }
     var base = evs[0].d, cols = [], byTime = {};
-    evs.forEach(function (x) { var k = String(Math.floor(x.d.getTime() / 60000)); if (!byTime[k]) { byTime[k] = { d: x.d, cards: [], together: false }; cols.push(byTime[k]); } byTime[k].cards.push(x.e); if (x.e.g) byTime[k].together = true; });
+    evs.forEach(function (x) { var k = String(Math.floor(x.d.getTime() / 1000)); if (!byTime[k]) { byTime[k] = { d: x.d, cards: [], together: false }; cols.push(byTime[k]); } byTime[k].cards.push(x.e); if (x.e.g) byTime[k].together = true; });
     var f = el("div", "flow grid " + FLOWDIR), H = FLOWDIR === "h";
     f.style.gridTemplateColumns = H ? "110px repeat(" + cols.length + ", 230px)" : "70px repeat(" + FLANES.length + ", minmax(160px, 1fr))";
     function placeAt(node, row, col) { node.style.gridRow = String(H ? row : col); node.style.gridColumn = String(H ? col : row); f.appendChild(node); }
@@ -537,13 +537,16 @@
     FLANES.forEach(function (ln, li) { placeAt(el("div", "fhd lane", ln[1]), li + 2, 1); });
     function laneOf(w) { for (var i = 0; i < 3; i++) if ((w || "").indexOf("tcm"[i]) >= 0) return "tcm"[i]; return ""; }
     cols.forEach(function (c, ci) {
-      var th = el("div", "fhd time", mdhm2(c.d)); placeAt(th, 1, ci + 2);
+      var th = el("div", "fhd time", mdhm2(c.d));
+      var bigs = []; c.cards.forEach(function (cd) { if (cd.big && bigs.indexOf(cd.big) < 0) bigs.push(cd.big); });
+      if (bigs.length) { var bg = el("div", "", bigs.join(" / ")); bg.style.cssText = "color:var(--accent,#ffb020);font-size:12px;font-weight:700;margin-top:2px;white-space:normal"; th.appendChild(bg); }
+      placeAt(th, 1, ci + 2);
       var cells = {}; FLANES.forEach(function (ln, li) { var cell = el("div", "fcell"); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
       c.cards.forEach(function (e) {
         var ws = (e.who || "").split("").filter(function (k) { return cells[k]; }); if (!ws.length) ws = [""];
         ws.forEach(function (k) {                                                           // 出番のある列すべてに、同じカードを出す
           var card = el("div", "fcard" + (e.off ? " off" : ""));
-          card.appendChild(el("div", "ftm", mdhm2(c.d) + (e.big ? "　" + e.big : ""))); if (e.cat) card.appendChild(el("div", "fcat", e.cat));
+          if (e.cat) card.appendChild(el("div", "fcat", e.cat));
           card.appendChild(el("div", "fmain", e.main)); if (e.sub) card.appendChild(el("div", "fsub", e.sub)); if (e.dur) card.appendChild(el("div", "fdur", "⏱ " + e.dur));
           cells[k].appendChild(card);
         });

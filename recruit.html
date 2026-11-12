@@ -1143,6 +1143,7 @@
     if (!a) return "日時未定";
     return a[0] + " " + a[1] + "試合開始" + (b ? "～" + (b[0] !== a[0] ? b[0] + " " : "") + b[1] + "試合終了" : "");
   }
+  function csXTime(s) { var x = /^\d{4}-(\d{2})-(\d{2})[T ](\d{2}:\d{2})/.exec(s || ""); return x ? "　" + (+x[1]) + "/" + (+x[2]) + " " + x[3] + "ごろ" : ""; }
   var CS_MK = { "": ["押", "#e6b800", "#111"], j: ["実", "#e04848", "#111"], k: ["解", "#35b6e8", "#05212d"] };          // 押（黄）→実（赤）→解（水色）→押…
   function csView(box, u) {
     var d = D.cs, c = el("div", "card");
@@ -1183,8 +1184,7 @@
     function badge(v) { var m = CS_MK[v || ""]; var b = el("b", "cs-mk", m[0]); b.style.background = m[1]; b.style.color = m[2]; return b; }
     function placed(a, mid, sk, canEdit) {                                           // 置いた名札：押す＝マークが変わる／長押し＝消す（「消しますか？」）
       var t = el("span", "cs-tag" + (canEdit ? "" : " other"));
-      if (!sk) t.appendChild(badge(mkOf(mid, a)));
-      t.appendChild(document.createTextNode(" " + csName(a)));
+      t.appendChild(document.createTextNode(csName(a) + " "));
       if (!canEdit) return t;
       var xb = el("span", "cs-x-btn", "×"); xb.title = "消す"; xb.setAttribute("role", "button"); xb.setAttribute("aria-label", "この名札を消す");
       ["pointerdown", "pointerup"].forEach(function (ev) { xb.addEventListener(ev, function (e) { e.stopPropagation(); }); });
@@ -1195,18 +1195,18 @@
       t.addEventListener("pointerdown", function () { long = false; timer = setTimeout(function () { long = true; if (confirm("消しますか？")) takeOff(mid, sk, a); }, 650); });
       ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) { t.addEventListener(ev, clear); });
       t.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-      t.addEventListener("click", function (e) { e.stopPropagation(); if (long) { long = false; return; } if (!sk) cycle(mid, a); });
+      t.addEventListener("click", function (e) { e.stopPropagation(); if (long) { long = false; return; } });
       return t;
     }
     // ── 上：説明（見ている人で切り替え）と、管理者だけの名札の一覧 ──
     var pal = el("div", "cs-pal");
     pal.appendChild(el("div", "cs-hint", CS_ADM
-      ? "【管理者】名札の一覧から名札を押して選び置きたい試合を押します。置いた名札を押すと実況か解説かマークできます。"
-      : "【キャスター】参加できる試合を押すとあなたの名札が置かれます。置いた名札を押すと実況か解説かマークできます。"));
+      ? "【管理者】名札の一覧から名札を押して選び、置きたい試合を押します。"
+      : "【キャスター】参加できる試合を押すと、あなたの名札が置かれます。"));
     if (CS_ADM) {
       var pr = el("div", "cs-tags cs-scroll");
       arr(d.cs).forEach(function (x) {
-        var t = el("span", "cs-tag" + (CS.sel === x.a ? " sel" : ""), "🏷 " + x.n); t.draggable = true;
+        var t = el("span", "cs-tag" + (CS.sel === x.a ? " sel" : ""), x.n); t.draggable = true;
         t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", x.a); CS.sel = ""; });
         t.addEventListener("click", function () { CS.sel = CS.sel === x.a ? "" : x.a; render(); });
         pr.appendChild(t);
@@ -1251,11 +1251,12 @@
     // ── トーナメント表：ラウンドごとの列に、試合のカード ──
     var rounds = [], byR = {};
     ms.forEach(function (m) { if (!byR[m.rn]) { byR[m.rn] = { name: m.rn, list: [] }; rounds.push(byR[m.rn]); } byR[m.rn].list.push(m); });
+    rounds.sort(function (a, b) { return (b.name === "配信のはじめ") - (a.name === "配信のはじめ"); });         // 開会は、いちばん左
     var bk = el("div", "cs-br");
     rounds.forEach(function (r) {
       var col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.name || "ラウンド"));
       r.list.forEach(function (m) {
-        var nn = cnt(m), card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : (!m.x && nn !== null && nn !== 2 ? " cs-not2" : ""))); card.appendChild(el("div", "cs-mh", m.x || csMatchTitle(m)));
+        var nn = cnt(m), card = el("div", "cs-m" + (BAD[m.id] ? " cs-bad" : (!m.x && nn !== null && nn !== 2 ? " cs-not2" : ""))); card.appendChild(el("div", "cs-mh", m.x ? m.x + csXTime(m.t) : csMatchTitle(m)));
         if (BAD[m.id]) card.appendChild(el("div", "cs-berr", "セットごとの担当者がいる場合は、その試合ではキャスターをセットごとに割り当ててください。"));
         var tm = arr(m.tm);
         if (!m.x) { card.appendChild(el("div", "cs-t", tm[0] || "（未定）")); card.appendChild(el("div", "cs-vs", "vs")); card.appendChild(el("div", "cs-t", tm[1] || "（未定）")); }
@@ -1300,45 +1301,66 @@
   // ── 🛡 モデレーター日程：ラウンドごとに、担当のモデレーターを決める（管理者だけ。試合ごとは、決めない）──
   var MS = null;
   function msName(a) { var c = arr((D.ms || {}).ms).filter(function (x) { return x.a === a; })[0]; return c ? c.n : "?"; }
-  function msView(box) {
-    var d = D.ms, c = el("div", "card");
+  function msView(box, u) {
+    var d = D.ms, c = el("div", "card"), me = (u || {}).ms_me || "";
     c.appendChild(el("h2", "", "🛡 モデレーター日程"));
     if (!d) { return; }
     admInit();
-    if (!CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "ラウンドごとの担当は、管理者が決めます。")); arr(d.rs).forEach(function (r) { var who = arr((d.as || {})["r" + r.r]).map(msName).join("、"); c.appendChild(el("div", "lead", r.rn + "：" + (who || "（まだ決まっていません）"))); }); box.appendChild(c); return; }
-    var sig = JSON.stringify(d.as || {});
-    if (!MS || (MS.sig !== sig && !MS.dirty)) MS = { sig: sig, as: JSON.parse(sig), sel: "", dirty: false };
-    c.appendChild(el("div", "cs-hint", "名札を押して選び、置きたいラウンドを押します（名札を、ラウンドへ持っていってもかまいません）。どのラウンドにも、担当が必要です。置いた名札の×で外します。"));
-    var pr = el("div", "cs-tags cs-scroll");
-    if (!arr(d.ms).length) pr.appendChild(el("span", "cs-empty", "採用したモデレーターが、まだいません"));
-    arr(d.ms).forEach(function (x) {
-      var t = el("span", "cs-tag" + (MS.sel === x.a ? " sel" : ""), "🏷 " + x.n); t.draggable = true;
-      t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", x.a); MS.sel = ""; });
-      t.addEventListener("click", function () { MS.sel = MS.sel === x.a ? "" : x.a; render(); });
-      pr.appendChild(t);
-    });
-    c.appendChild(pr);
+    if (!me && !CS_ADM) { c.appendChild(el("div", "lead", CS_ADM === null ? "⏳ 確かめています…" : "採用されたモデレーターだけが使えます。")); arr(d.rs).forEach(function (r) { var who = arr((d.as || {})["r" + r.r]).map(msName).join("、"); c.appendChild(el("div", "lead", r.rn + "：" + (who || "（まだ決まっていません）"))); }); box.appendChild(c); return; }
+    var sig = JSON.stringify([d.as || {}, d.av || {}]);
+    if (!MS || (MS.sig !== sig && !MS.dirty)) { var mine = {}; arr(d.rs).forEach(function (r) { if (arr((d.av || {})["r" + r.r]).indexOf(me) >= 0) mine["r" + r.r] = true; }); MS = { sig: sig, as: JSON.parse(JSON.stringify(d.as || {})), mine: mine, sel: "", dirty: false }; }
+    c.appendChild(el("div", "cs-hint", CS_ADM
+      ? "【管理者】名札を押して選び、置きたいラウンドを押します。置いた名札の×で外します。「希望」は、モデレーター自身が入れたものです。どのラウンドにも、担当が必要です。"
+      : "【モデレーター】できるラウンドを押すと、あなたの名札が置かれます（もう一度押すと外れます）。担当は、管理者が決めます。"));
+    if (CS_ADM) {
+      var pr = el("div", "cs-tags cs-scroll");
+      if (!arr(d.ms).length) pr.appendChild(el("span", "cs-empty", "採用したモデレーターが、まだいません"));
+      arr(d.ms).forEach(function (x) {
+        var t = el("span", "cs-tag" + (MS.sel === x.a ? " sel" : ""), x.n); t.draggable = true;
+        t.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", x.a); MS.sel = ""; });
+        t.addEventListener("click", function () { MS.sel = MS.sel === x.a ? "" : x.a; render(); });
+        pr.appendChild(t);
+      });
+      c.appendChild(pr);
+      var fr = el("button", "go", "希望のとおりに置く"); fr.type = "button";
+      fr.addEventListener("click", function () { if (!confirm("モデレーターの希望を、担当の名札として置きます（いま置いてある名札は、そのままです）。よろしいですか？")) return; arr(d.rs).forEach(function (r) { var k = "r" + r.r; MS.as[k] = arr(MS.as[k]); arr((d.av || {})[k]).forEach(function (a) { if (MS.as[k].indexOf(a) < 0) MS.as[k].push(a); }); }); MS.dirty = true; render(); });
+      var r1 = el("div", "row"); r1.appendChild(fr); c.appendChild(r1);
+    }
     var bk = el("div", "cs-br");
     arr(d.rs).forEach(function (r) {
       var key = "r" + r.r, col = el("div", "cs-rd"); col.appendChild(el("h3", "", r.rn));
       var card = el("div", "cs-m"); card.appendChild(el("div", "cs-mh", r.t ? csMatchTitle({ t: r.t, te: "" }).replace("試合開始", "から") : "日時未定"));
-      var slot = el("div", "cs-slot cs-drop"); slot.appendChild(el("div", "cs-sl", "担当のモデレーター"));
+      var slot = el("div", "cs-slot cs-drop"); slot.appendChild(el("div", "cs-sl", CS_ADM ? "担当" : "できる人"));
       function put(a) { if (!a) return; MS.as[key] = arr(MS.as[key]); if (MS.as[key].indexOf(a) < 0) MS.as[key].push(a); MS.dirty = true; render(); }
-      slot.addEventListener("dragover", function (e) { e.preventDefault(); slot.classList.add("over"); });
-      slot.addEventListener("dragleave", function () { slot.classList.remove("over"); });
-      slot.addEventListener("drop", function (e) { e.preventDefault(); slot.classList.remove("over"); put(e.dataTransfer.getData("text/plain")); });
-      slot.addEventListener("click", function (e) { if (e.target.closest(".cs-tag")) return; if (MS.sel) put(MS.sel); });
-      arr(MS.as[key]).forEach(function (a) {
-        var t = el("span", "cs-tag", msName(a) + " "); var xb = el("span", "cs-x-btn", "×"); xb.setAttribute("role", "button"); xb.setAttribute("aria-label", "この名札を外す");
-        xb.addEventListener("click", function (e) { e.stopPropagation(); MS.as[key] = arr(MS.as[key]).filter(function (y) { return y !== a; }); MS.dirty = true; render(); });
-        t.appendChild(xb); slot.appendChild(t);
-      });
-      if (!arr(MS.as[key]).length) slot.appendChild(el("span", "cs-empty", "ここに置く"));
-      card.appendChild(slot); col.appendChild(card); bk.appendChild(col);
+      if (CS_ADM) {
+        slot.addEventListener("dragover", function (e) { e.preventDefault(); slot.classList.add("over"); });
+        slot.addEventListener("dragleave", function () { slot.classList.remove("over"); });
+        slot.addEventListener("drop", function (e) { e.preventDefault(); slot.classList.remove("over"); put(e.dataTransfer.getData("text/plain")); });
+        slot.addEventListener("click", function (e) { if (e.target.closest(".cs-tag")) return; if (MS.sel) put(MS.sel); });
+        arr(MS.as[key]).forEach(function (a) {
+          var t = el("span", "cs-tag", msName(a) + " "); var xb = el("span", "cs-x-btn", "×"); xb.setAttribute("role", "button"); xb.setAttribute("aria-label", "この名札を外す");
+          xb.addEventListener("click", function (e) { e.stopPropagation(); MS.as[key] = arr(MS.as[key]).filter(function (y) { return y !== a; }); MS.dirty = true; render(); });
+          t.appendChild(xb); slot.appendChild(t);
+        });
+        if (!arr(MS.as[key]).length) slot.appendChild(el("span", "cs-empty", "ここに置く"));
+        card.appendChild(slot);
+        var wl = arr((d.av || {})[key]);
+        var ws = el("div", "cs-slot sub"); ws.appendChild(el("div", "cs-sl", "希望"));
+        wl.forEach(function (a) { ws.appendChild(el("span", "cs-tag other", msName(a))); });
+        if (!wl.length) ws.appendChild(el("span", "cs-empty", "なし"));
+        card.appendChild(ws);
+      } else {
+        slot.addEventListener("click", function (e) { if (e.target.closest(".cs-tag")) return; MS.mine[key] = !MS.mine[key]; if (!MS.mine[key]) delete MS.mine[key]; MS.dirty = true; render(); });
+        if (MS.mine[key]) { var mt = el("span", "cs-tag", msName(me) + " "); var mx = el("span", "cs-x-btn", "×"); mx.setAttribute("role", "button"); mx.addEventListener("click", function (e) { e.stopPropagation(); delete MS.mine[key]; MS.dirty = true; render(); }); mt.appendChild(mx); slot.appendChild(mt); }
+        arr((d.av || {})[key]).filter(function (a) { return a !== me; }).forEach(function (a) { slot.appendChild(el("span", "cs-tag other", msName(a))); });
+        if (!slot.querySelector(".cs-tag")) slot.appendChild(el("span", "cs-empty", "押すと、名札を置く"));
+        card.appendChild(slot);
+      }
+      col.appendChild(card); bk.appendChild(col);
     });
     c.appendChild(bk);
-    var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 担当を保存"); sv.type = "button"; sv.disabled = BUSY || !MS.dirty;
-    sv.addEventListener("click", function () { PEND = { kind: "ms" }; send({ act: "ms_admin", as: MS.as }, "保存しています…"); });
+    var sv = el("button", "go", BUSY ? "⏳ 保存中…" : "💾 名札を保存"); sv.type = "button"; sv.disabled = BUSY || !MS.dirty;
+    sv.addEventListener("click", function () { PEND = { kind: "ms" }; if (CS_ADM) send({ act: "ms_admin", as: MS.as }, "保存しています…"); else send({ act: "ms_mine", rs: Object.keys(MS.mine) }, "保存しています…"); });
     var r0 = el("div", "row"); r0.appendChild(sv); c.appendChild(r0);
     c.appendChild(liveMsg());
     box.appendChild(c);
@@ -1850,7 +1872,7 @@
     if (PG === "caster" || PG === "moderator") {                                  // 応募は、ポップアップにしないで、そのまま表示（キャスターは、その下に日程）
       SKIND = PG; var scd = el("div", "card"); staffDialog(scd); mine.appendChild(scd);
       if (PG === "caster" && D.cs) csView(mine, u);
-      if (PG === "moderator" && D.ms) msView(mine);
+      if (PG === "moderator" && D.ms) msView(mine, u);
     } else if (SKIND && !document.getElementById("ov")) SKIND = null;
     if (PG === "profile") { var pfw = el("div"); if ((KIND || (u || {}).kind) === "manager") mgrForm(pfw); else profForm(pfw, false);
       if (!(u || {}).leader && !(u || {}).team && !(u || {}).mteam) { var swm2 = el("button", "", (KIND || (u || {}).kind) === "manager" ? "🎮 選手として登録する に切り替える" : "🧑‍💼 マネージャーとして登録する に切り替える"); swm2.type = "button"; swm2.addEventListener("click", function () { KIND = (KIND || (u || {}).kind) === "manager" ? "player" : "manager"; PF = null; render(); }); var swr2 = el("div", "row"); swr2.appendChild(swm2); pfw.appendChild(swr2); }

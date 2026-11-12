@@ -16,6 +16,7 @@
 -->
 <style>
   :root { --bg: #0d1017; --panel: #151a24; --panel2: #1c2230; --line: #2b3347; --text: #eceff6; --sub: #9aa3b5; --ac: #ffb020; --h: #e5484d; --s: #3b82f6; --ok: #3ccf91; --bad: #ff5d5d; }
+  :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 system-ui, "Hiragino Sans", "Yu Gothic UI", sans-serif; }
   button, select, input { font: inherit; color: var(--text); }
@@ -53,9 +54,24 @@
   .rounds { width: 100%; border-collapse: collapse; } .rounds td { padding: 6px 8px; border-top: 1px solid var(--line); } .rounds td:first-child { white-space: nowrap; }
   #result { margin: 12px 0; } #result.ok { color: var(--ok); } #result.ng { color: var(--bad); }
   .note { color: var(--sub); font-size: 13px; }
-  .tabs { display: flex; gap: 6px; margin-top: 4px; border-bottom: 1px solid var(--line); } .tabs button { border-radius: 8px 8px 0 0; border-bottom: 0; padding: 8px 18px; }
-  @media (max-width: 760px) { .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; } .tabs button { flex: none; white-space: nowrap; padding: 10px 14px; } }      /* スマホ：タブは横に並べて、横にスクロール（縦に潰れない） */
-  .tabs button.on { background: var(--ac); border-color: var(--ac); color: #1a1200; font-weight: 700; }
+  /* タブ：左の一覧（グループごと）。画面が狭いときは、「☰ 項目」を押して開く */
+  main { max-width: 1320px; display: grid; grid-template-columns: 218px minmax(0, 1fr); column-gap: 22px; align-items: start; }
+  main > * { grid-column: 2; min-width: 0; }
+  main > #tabs { grid-column: 1; grid-row: 1 / span 60; position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 8px; margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  #tabs .navh { font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: .06em; padding: 8px 10px 2px; border-top: 1px solid var(--line); margin-top: 4px; } #tabs .navh:first-child { border-top: 0; margin-top: 0; padding-top: 4px; }
+  #tabs button { text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 6px 10px; white-space: nowrap; font-size: 14px; width: 100%; }
+  #tabs button:hover:not(:disabled) { background: var(--panel2); }
+  #tabs button.on, #tabs button.on:hover:not(:disabled) { background: var(--ac); color: #1a1200; font-weight: 700; }
+  #pagetitle { margin: 0 0 4px; font-size: 21px; font-weight: 800; } #result:empty { display: none; }
+  [id^=xbody-] select { max-width: 480px; } main h2 { margin-top: 20px; }
+  #navtoggle { display: none; width: 100%; text-align: left; font-weight: 700; margin-bottom: 8px; }
+  @media (max-width: 900px) {
+    main { display: block; padding: 12px; }
+    #navtoggle { display: block; }
+    #pagetitle, header .note { display: none; }
+    main > #tabs { display: none; position: static; max-height: none; margin-bottom: 10px; }
+    main > #tabs.open { display: flex; }
+  }
   .trow { display: grid; grid-template-columns: 1fr 190px 1.2fr; gap: 10px; align-items: center; padding: 10px 4px; border-top: 1px solid var(--line); } .trow:first-child { border-top: 0; }
   @media (max-width: 760px) { .trow { grid-template-columns: 1fr; } }
   .trow label { font-weight: 700; } .trow .hint { color: var(--sub); font-size: 13px; } .trow .calc { color: var(--ac); font-size: 14px; }
@@ -69,7 +85,7 @@
   .srow.problem { background: rgba(255, 70, 70, .30); box-shadow: inset 5px 0 0 var(--bad); border-radius: 8px; }   /* 直すところ：明るい赤（変えた項目の、ほんのり黄色とは別） */
   .srow.problem input, .srow.problem select { border-color: var(--bad) !important; box-shadow: 0 0 0 2px rgba(255, 70, 70, .45); }
   .flow { display: flex; gap: 10px; } .flow.h { flex-direction: row; overflow-x: auto; padding-bottom: 8px; } .flow.v { flex-direction: column; }
-  .flow.grid { display: grid; gap: 6px; overflow: auto; max-height: 80vh; align-items: start; }
+  .flow.grid { display: grid; gap: 6px; overflow-x: auto; overflow-y: hidden; align-items: start; padding-bottom: 8px; }
   .fhd { position: sticky; background: var(--panel); z-index: 1; font-size: 12px; color: var(--sub); padding: 4px 6px; border-radius: 6px; }
   .flow.h .fhd.time, .flow.h .fhd.corner { top: 0; } .flow.h .fhd.lane, .flow.h .fhd.corner { left: 0; z-index: 2; }
   .flow.v .fhd.lane, .flow.v .fhd.corner { top: 0; } .flow.v .fhd.time, .flow.v .fhd.corner { left: 0; z-index: 2; }
@@ -83,7 +99,8 @@
   .fcard .fmain { font-weight: 700; font-size: 14px; } .fcard .fsub { color: var(--sub); font-size: 12px; } .fcard .fdur { font-size: 13px; }
   .who { display: flex; gap: 4px; flex-wrap: wrap; } .who span { font-size: 11px; padding: 0 7px; border-radius: 999px; color: #fff; }
   .who .t { background: #2f6fd6; } .who .c { background: #8a4fd8; } .who .m { background: #1f9d6a; }
-  .fedit { border-top: 1px dashed var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .fedit { border-top: 1px dashed var(--line); padding-top: 6px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+  .fedit .unit { color: var(--sub); font-size: 13px; } .fhd .fbig { color: var(--ac); font-size: 12px; font-weight: 700; margin-top: 2px; white-space: normal; }
   .fedit label { font-size: 12px; color: var(--sub); } .fedit input { width: 90px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; color: var(--text); }
   .fedit .seg button { padding: 3px 8px; font-size: 12px; }
   .fedit select { padding: 4px 6px; font-size: 13px; } .fwarn { color: var(--bad); font-size: 12px; font-weight: 700; } .fcard.off { opacity: .6; }
@@ -148,6 +165,7 @@
   </header>
   <main>
     <div id="result"></div>
+    <button type="button" id="navtoggle">☰ 項目：⚙ 大会設定</button>
     <div class="tabs" id="tabs"><button type="button" id="tabset" class="on">⚙ 大会設定</button><button type="button" id="tabbp">🎯 BAN/PICKの手順</button><button type="button" id="tabtime">⏱ 時間管理</button><button type="button" id="tabbr">🏆 トーナメント表</button><button type="button" id="tabrc">📣 チームとメンバー募集</button><button type="button" id="tabrl">📋 ルール・登録項目</button><button type="button" id="tabrb">📖 大会ルール</button></div>
     <div id="viewbar" class="row" style="justify-content:flex-end;margin-top:8px" hidden></div>
     <div id="tab-set">
@@ -174,10 +192,8 @@
     <div id="tab-time" hidden>
       <div class="row" id="shareRow"><button id="share" type="button" class="primary">📣 時間の設定を共有</button><span class="note">いまの設定を保存して、下の「全体の流れ」を、キャスターとモデレーターに、Discordで知らせます（「💾 保存」とは、別のボタンです）。</span></div>
       <div class="note" id="timenote"></div>
-      <h2>全体の流れ（開会のごあいさつの担当のキャスターを呼ぶところから、配信終了まで。自動で計算します）</h2>
-      <div class="row"><span class="note">時間は、左から右に流れます。時間の欄は、その場で変えられます。</span></div>
-      <div class="note" id="timehelp">配信開始は、実況・解説がつく最初のラウンドの開始から逆算して、何分前に、配信を始めますか？で決めます（「配信開始」のカードの欄）。20〜30分前に配信を始めると、余裕を持って進行できるので、おすすめです。<br>
-        準備時間（BAN/PICKから試合まで）は、標準20分です（BAN/PICKのカードで変えられます。変えると、保存したときに、トーナメント表の試合の時間も計算し直します）。ほかの時間を変えても、トーナメント表の時間は、変わりません。チーム名の入れ替え・休憩・日を分ける設定は、トーナメント表の編集ページ（🏆 トーナメント表タブ）で行います。</div>
+      <h2>全体の流れ</h2>
+      <div class="note" id="timehelp" hidden></div>
       <div class="card"><div id="flow" class="flow h"></div><ol class="tl" id="timeline" hidden></ol></div>
     </div>
   </main>
@@ -438,7 +454,7 @@
   function ymdhm(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + hhmm(d); }
   function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function hhmmss(d) { return hhmm(d) + ":" + pad(d.getSeconds()); }
-  function mdhm(d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d); }                  // 具体的な日付（「翌日」「〇日前」とは書かない）
+  function mdhm(d) { return (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) + (d.getSeconds() ? ":" + pad(d.getSeconds()) : ""); }                  // 具体的な日付（「翌日」「〇日前」とは書かない）
   function dayLabel(d, base) { var n = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(base.getFullYear(), base.getMonth(), base.getDate())) / 86400000); return n === 0 ? "" : "（" + (n > 0 ? "翌" + (n > 1 ? n : "") + "日" : Math.abs(n) + "日前") + "）"; }
   function addMin(d, m) { return new Date(d.getTime() + m * 60000); }
   function addSec(d, s) { return new Date(d.getTime() + s * 1000); }
@@ -490,22 +506,22 @@
     (TM.pre_rounds || []).forEach(function (r) {
       var prep = parseLocal(r.prep), play = parseLocal(r.play), end = parseLocal(r.end);
       var vs = (r.cards || []).map(function (c) { return (c[0] || "（未定）") + " vs " + (c[1] || "（未定）"); }).join("\n");
-      add(prep, r.name + "：BAN/PICKの開始（同時進行・配信なし）", vs, "", { cat: "配信前", who: "tm" });
-      add(play, r.name + "：試合開始（予定）", "", "", { cat: "配信前", who: "tm" });
-      add(end, r.name + "：試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "配信前", who: "tm", dur: play && end ? msec((end - play) / 1000) : "",
+      add(prep, "BAN/PICKの開始", vs, "", { cat: "配信前", big: r.name, who: "tm" });
+      add(play, "試合開始", "", "", { cat: "配信前", big: r.name, who: "tm" });
+      add(end, "試合終了", "", "", { cat: "配信前", big: r.name, who: "tm", dur: play && end ? msec((end - play) / 1000) : "",
           go: ["half_minutes", "⚙ 試合の想定時間を変える"] });
     });
     // ── 開会 ──
-    add(addMin(open, -TM.caster_call_min), "開会のごあいさつの担当のキャスターを、待機ボイスへ呼ぶ", "", "", { cat: "準備", who: "c", edit: [E("caster_call_min", "配信開始の何分前", "分")] });
+    add(addMin(open, -TM.caster_call_min), "待機ボイスへ呼ぶ", "", "", { cat: "準備", big: "開会", who: "c", edit: [E("caster_call_min", "配信開始の", "分前")] });
     var openSec = openOther() + (TM.open_greet_sec || 0), openEnd = addSec(open, openSec);
-    add(open, "配信開始", TM.stream_round_name + "の開始 " + hhmm(base) + " の" + lead + "分前。開会の演出 → 開会のごあいさつ → ルール紹介 → キャスター交代（" + hhmm(openEnd) + " ごろまで）", "",
-        { cat: "開会", who: "cm", dur: msec(openSec), xcast: "open",
-          edit: [E("lead_min", "配信開始（ラウンドの開始の何分前）", "分"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代の画面", "秒")] });
+    add(open, "配信開始", "", "",
+        { cat: "開会", big: "開会", who: "cm", dur: msec(openSec), xcast: "open",
+          edit: [E("lead_min", TM.stream_round_name + "の開始の", "分前"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代", "秒")] });
     var last = null;
     (TM.mod_rounds || []).forEach(function (mr) {                                       // モデレーター：ラウンドごとの見守り（担当は、エントリーのページの「🛡 モデレーター」で決める）
       var d0 = parseLocal(mr.start); if (!d0) return;
       var nm = (mr.names || []).join("、");
-      add(d0, mr.name + "：モデレーターの見守り", nm ? "担当：" + nm : "⚠ 担当がまだ決まっていません（エントリーのページの「🛡 モデレーター」で決めます）", nm ? "" : "bad", { cat: "見守り", who: "m" });
+      add(d0, "モデレーターの見守り", nm ? "担当：" + nm : "⚠ 担当が未定", nm ? "" : "bad", { cat: "見守り", big: mr.name, who: "m" });
     });
     // ── 配信する試合：選手のBAN/PICKと、キャスターの紹介は、同時に進む（上下に分けて並べる） ──
     (TM.matches || []).forEach(function (m) {
@@ -513,21 +529,21 @@
       var cs = ovr(m.mid, "caster_sec"), ps = ovr(m.mid, "player_sec");
       var it = introTotal(n, cs, ps), itStart = prep, itEnd = itStart ? addSec(itStart, it) : null;    // 紹介は、両チームの出場選手が決まったら始まる（早くて、BAN/PICKの開始のとき）
       var vs = (m.a || "（未定）") + " vs " + (m.b || "（未定）");
-      var bpEd = [E("prep_minutes", "準備時間（BAN/PICKの開始から試合開始まで。保存すると、トーナメント表の時間も変わります）", "分")];
-      if (TM.dev && TM.step_sec != null) bpEd.push(E("step_sec", "BAN/PICKの1手ごとの間隔（開発者用大会の自動進行）", "秒"));
+      var bpEd = [E("prep_minutes", "準備時間", "分")];
+      if (TM.dev && TM.step_sec != null) bpEd.push(E("step_sec", "1手ごとの間隔", "秒"));
       var players = [card(prep, "選手のBAN/PICK", vs, "", { cat: "BAN/PICK", big: m.label, who: "tm", dur: prep && play ? msec((play - prep) / 1000) : "", edit: bpEd })];
       var ed = [E("player_sec", "選手紹介（1人）", "秒", m.mid), E("team_sec", "チーム紹介（1チーム）", "秒")];
       if (n) ed.unshift(E("caster_sec", "キャスター自己紹介（1人）", "秒", m.mid));
       var bad = (play && itEnd > play) ? "bad" : "", tS = TM.team_sec || 0;
       var t1s = itStart ? addSec(itStart, n * cs) : null, t2s = t1s ? addSec(t1s, 2 * tS) : null;
       var casters = [];
-      casters.push(card(itStart, "キャスター割り当て", "", bad, { cat: "紹介", big: m.label, who: "c", cast: m, dur: n ? msec(n * cs) : "", edit: n ? [E("caster_sec", "キャスター自己紹介（1人/秒）", "", m.mid, "秒")] : [] }));
-      casters.push(card(t1s, "チーム紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(2 * tS), edit: [E("team_sec", "チーム紹介（1チーム/秒）", "", null, "秒")] }));
-      casters.push(card(t2s, "選手紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(5 * ps), edit: [E("player_sec", "選手紹介（1人/秒）", "", m.mid, "秒")] }));
-      if (itEnd && play && itEnd < play) casters.push(card(itEnd, "キャスターの雑談", "紹介をふまえて、キャスターが雑談で場をつなぎます（試合開始まで）", "", { cat: "雑談", big: m.label, who: "c", dur: msec((play - itEnd) / 1000) }));
+      casters.push(card(itStart, "キャスター割り当て", "", bad, { cat: "紹介", big: m.label, who: "c", cast: m, dur: n ? msec(n * cs) : "", edit: n ? [E("caster_sec", "自己紹介（1人）", "秒", m.mid)] : [] }));
+      casters.push(card(t1s, "チーム紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(2 * tS), edit: [E("team_sec", "1チーム", "秒")] }));
+      casters.push(card(t2s, "選手紹介", "", bad, { cat: "紹介", big: m.label, who: "tc", dur: msec(5 * ps), edit: [E("player_sec", "1人", "秒", m.mid)] }));
+      if (itEnd && play && itEnd < play) casters.push(card(itEnd, "キャスターの雑談", "", "", { cat: "雑談", big: m.label, who: "c", dur: msec((play - itEnd) / 1000) }));
       players.concat(casters).forEach(function (cd) { if (cd.d) ev.push(cd); });
-      add(play, "試合開始（予定）", vs, "", { cat: "試合", big: m.label, who: "tcm" });
-      if (end) { add(end, "試合終了（予定）", "延長戦まで見込んだ予定です", "", { cat: "試合", big: m.label, who: "tm", dur: play ? msec((end - play) / 1000) : "", go: ["half_minutes", "⚙ 試合の想定時間を変える"] }); last = end; }
+      add(play, "試合開始", vs, "", { cat: "試合", big: m.label, who: "tcm" });
+      if (end) { add(end, "試合終了", "", "", { cat: "試合", big: m.label, who: "tm", dur: play ? msec((end - play) / 1000) : "", go: ["half_minutes", "⚙ 試合の想定時間を変える"] }); last = end; }
     });
     function jpDT(d) { return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日" + hhmm(d); }
     var SV = ST || {};                                                                 // 「⚙ 大会設定」の日時（保存していない変更も入れる）
@@ -537,26 +553,26 @@
     });
     (TM.breaks || []).forEach(function (b) {                                          // 休憩（スタッフの休憩にも）
       var bs = parseLocal(b.start);
-      add(bs, "☕ " + b.label + "（" + b.minutes + "分）", "スタッフも休憩します" + (b.end ? "（" + hhmm(parseLocal(b.end)) + " まで）" : ""), "",
+      add(bs, "☕ " + b.label + "（" + b.minutes + "分）", (b.end ? hhmm(parseLocal(b.end)) + " まで" : ""), "",
           { cat: "休憩", who: "", dur: msec(b.minutes * 60), go: ["__bracket", "🏆 休憩を変える"] });
     });
     if (last) {
       var fr = TM.final_result_sec || 0, fc = TM.finale_champ_sec || 0, fp = TM.finale_prize_sec || 0, fm = TM.finale_mvp_sec || 0, ent = TM.enter_sec || 0;
       var ivs = TM.interview_sec || 0, iv = opt.interview ? ent + ivs : 0, mvi = opt.mvp && opt.interview ? ent + ivs : 0;
       var t0 = addSec(last, fr), t1 = addSec(t0, fc), t2 = addSec(t1, fp), t3 = addSec(t2, iv), t4 = addSec(t3, opt.mvp ? fm : 0), t5 = addSec(t4, opt.mvp ? fp : 0), t6 = addSec(t5, mvi), t7 = addSec(t6, TM.close_greet_sec || 0), t8 = addSec(t7, TM.end_screen_sec);
-      var ivEd = [E("enter_sec", "入室のお知らせ", "秒"), E("interview_sec", "インタビューの時間（1人）", "秒")];
-      add(last, "成績の画面（FINAL RESULT）", "", "", { cat: "優勝", who: "", dur: msec(fr), edit: [E("final_result_sec", "成績の画面", "秒")] });
-      add(t0, "優勝の発表", "", "", { cat: "優勝", who: "tc", dur: msec(fc), edit: [E("finale_champ_sec", "優勝の発表", "秒")] });
-      add(t1, "賞品の贈呈（優勝）", "1ページの時間（賞品の数ぶん）", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ", edit: [E("finale_prize_sec", "賞品の贈呈（1ページ）", "秒")] });
-      add(t2, "優勝チームのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + msec(ivs) + "（1人で計算）" : "インタビューは、使わない設定です", "",
-          opt.interview ? { cat: "インタビュー", who: "tcm", dur: msec(iv), edit: ivEd, xcast: "interview" } : { cat: "インタビュー", off: true, go: ["interview", "⚙ インタビューを使う設定にする"] });
-      add(t3, "MVPの発表", opt.mvp ? "" : "MVPは、使わない設定です", "", opt.mvp ? { cat: "MVP", who: "c", dur: msec(fm), edit: [E("finale_mvp_sec", "MVPの発表", "秒")] } : { cat: "MVP", off: true, go: ["mvp", "⚙ MVPを使う設定にする"] });
-      if (opt.mvp) add(t4, "賞品の贈呈（MVP）", "1ページの時間は、優勝の贈呈と同じです", "", { cat: "贈呈", who: "tc", dur: msec(fp) + "×ページ", edit: [E("finale_prize_sec", "賞品の贈呈（1ページ）", "秒")] });
-      if (opt.mvp) add(t5, "MVPのインタビュー", opt.interview ? "入室のお知らせ" + ent + "秒のあと、1人" + msec(ivs) + "（1人で計算）" : "インタビューは、使わない設定です", "",
-          opt.interview ? { cat: "インタビュー", who: "tcm", dur: msec(mvi), edit: ivEd, xcast: "interview" } : { cat: "インタビュー", off: true, go: ["interview", "⚙ インタビューを使う設定にする"] });
-      add(t6, "閉会のごあいさつ", "", "", { cat: "閉会", who: "c", xcast: "close", dur: msec(TM.close_greet_sec || 0), edit: [E("close_greet_sec", "閉会のごあいさつ", "秒")] });
-      add(t7, "「大会終了」の画面", "", "", { cat: "閉会", who: "", dur: msec(TM.end_screen_sec), edit: [E("end_screen_sec", "「大会終了」の画面", "秒")] });
-      add(t8, "配信終了（予定）", "", "", { cat: "閉会", who: "" });
+      var ivEd = [E("enter_sec", "入室のお知らせ", "秒"), E("interview_sec", "1人", "秒")];
+      add(last, "成績の画面（FINAL RESULT）", "", "", { cat: "優勝", big: "表彰", who: "", edit: [E("final_result_sec", "", "秒")] });
+      add(t0, "優勝の発表", "", "", { cat: "優勝", big: "表彰", who: "tc", edit: [E("finale_champ_sec", "", "秒")] });
+      add(t1, "賞品の贈呈（優勝）", "", "", { cat: "贈呈", big: "表彰", who: "tc", dur: msec(fp) + "×ページ数", edit: [E("finale_prize_sec", "1ページ", "秒")] });
+      add(t2, "優勝チームのインタビュー", opt.interview ? "" : "なし", "",
+          opt.interview ? { cat: "インタビュー", big: "表彰", who: "tcm", dur: msec(iv), edit: ivEd, xcast: "interview" } : { cat: "インタビュー", big: "表彰", off: true, go: ["interview", "⚙ 使う設定にする"] });
+      add(t3, "MVPの発表", opt.mvp ? "" : "なし", "", opt.mvp ? { cat: "MVP", big: "表彰", who: "c", edit: [E("finale_mvp_sec", "", "秒")] } : { cat: "MVP", big: "表彰", off: true, go: ["mvp", "⚙ 使う設定にする"] });
+      if (opt.mvp) add(t4, "賞品の贈呈（MVP）", "", "", { cat: "贈呈", big: "表彰", who: "tc", dur: msec(fp) + "×ページ数", edit: [E("finale_prize_sec", "1ページ", "秒")] });
+      if (opt.mvp) add(t5, "MVPのインタビュー", opt.interview ? "" : "なし", "",
+          opt.interview ? { cat: "インタビュー", big: "表彰", who: "tcm", dur: msec(mvi), edit: ivEd, xcast: "interview" } : { cat: "インタビュー", big: "表彰", off: true, go: ["interview", "⚙ 使う設定にする"] });
+      add(t6, "閉会のごあいさつ", "", "", { cat: "閉会", big: "閉会", who: "c", xcast: "close", edit: [E("close_greet_sec", "", "秒")] });
+      add(t7, "「大会終了」の画面", "", "", { cat: "閉会", big: "閉会", who: "", edit: [E("end_screen_sec", "", "秒")] });
+      add(t8, "配信終了", "", "", { cat: "閉会", big: "閉会", who: "" });
     } else note.appendChild(el("div", "", "試合の終了予定が出せないため、配信終了の時刻は、出ていません（⚙ 大会設定で、試合の想定時間を入れてください）。"));
     ev.sort(function (a, b) { return a.d - b.d; });
     TLEV = []; TLFLOW = [];                                                            // 「共有」で送る、全体の流れ（文と、大会ルールのページに出す表の形）
@@ -622,7 +638,6 @@
   }
   function fcardEl(e, base) {
     var c = el("div", "fcard" + (e.cls === "bad" ? " bad" : "") + (e.x.off ? " off" : ""));
-    c.appendChild(el("div", "ftm", e.d ? mdhm(e.d) + (e.x.big ? "　" + e.x.big : "") : "--:--"));         // 時間のとなりに、大きな区分（ラウンド・試合）。その下に、小さな区分
     if (e.x.cat) c.appendChild(el("div", "fcat", e.x.cat));
     c.appendChild(el("div", "fmain", e.main));
     if (e.sub) c.appendChild(el("div", "fsub", e.sub));
@@ -633,7 +648,7 @@
     }
     (e.x.edit || []).forEach(function (ed) {
       var box = el("div", "fedit");
-      box.appendChild(el("label", "", ed.unit ? ed.label + "（" + ed.unit + "）" : ed.label));
+      if (ed.label) box.appendChild(el("label", "", ed.label));
       var ek = ed.key + "|" + (ed.mid || ""), mode = "all";                          // 紹介の秒数は、いつも全試合まとめて変える
       var cur = mode === "one" ? ((OVR()[ed.mid] || {})[ed.key] || TM[ed.key]) : TM[ed.key];
       var inp = el("input"); inp.type = "number"; inp.value = cur == null ? "" : cur;
@@ -643,7 +658,7 @@
         else TM[ed.key] = v;
         renderTimes(); refreshDirty();
       });
-      box.appendChild(inp); if (ed.suf) box.appendChild(document.createTextNode(" " + ed.suf));
+      box.appendChild(inp); box.appendChild(el("span", "unit", ed.suf || ed.unit || ""));          // 単位は、入力欄の右
       c.appendChild(box);
     });
     if (e.x.go) { var gb = el("button", "", e.x.go[1]); gb.type = "button"; gb.addEventListener("click", function () { goSetting(e.x.go[0]); }); c.appendChild(gb); }
@@ -660,7 +675,7 @@
     var cols = [], byTime = {};                                                       // 同じ日時のできごとは、同じ縦の列に（表として、時刻で並べる）
     ev.forEach(function (e) {
       var cards = e.lanes ? [].concat.apply([], e.lanes.map(function (l) { return l.cards; })) : [e];
-      var k = e.d ? String(Math.floor(e.d.getTime() / 60000)) : "none";              // 分の単位で同じなら、同じ列
+      var k = e.d ? String(Math.floor(e.d.getTime() / 1000)) : "none";               // 同じ時刻（秒まで）なら、同じ列
       if (byTime[k]) { byTime[k].cards = byTime[k].cards.concat(cards); byTime[k].together = byTime[k].together || !!e.lanes || true; return; }
       byTime[k] = { d: e.d, cards: cards, together: !!e.lanes };
       cols.push(byTime[k]);
@@ -672,6 +687,8 @@
     LANES.forEach(function (ln, li) { placeAt(el("div", "fhd lane", ln[1]), li + 2, 1); });
     cols.forEach(function (c, ci) {
       var th = el("div", "fhd time", c.d ? mdhm(c.d) : "--:--");
+      var bigs = []; c.cards.forEach(function (cd) { if (cd.x.big && bigs.indexOf(cd.x.big) < 0) bigs.push(cd.x.big); });
+      if (bigs.length) th.appendChild(el("div", "fbig", bigs.join(" / ")));                  // ラウンド・試合は、ここに1回だけ
       placeAt(th, 1, ci + 2);
       var cells = {};
       LANES.forEach(function (ln, li) { var cell = el("div", "fcell"); cells[ln[0]] = cell; placeAt(cell, li + 2, ci + 2); });
@@ -1315,6 +1332,7 @@
     if (name === "br") renderBracket();
     if (name === "time") renderTimes();
     if (name === "set") renderSettings();
+    navSync();
   }
   // ───── ⚙ 大会設定：設定の一覧（BOTが渡す）から、まとまりごとに入力欄を組み立てる ─────
   function sseg(opts, cur, onPick) {                       // 「⚙ 大会設定」・全体の流れ用の、選ぶボタン（手順の編集の seg とは別）
@@ -1654,6 +1672,27 @@
     $("tab-rb").parentNode.insertBefore(c, $("tab-rb").nextSibling);
     b.addEventListener("click", function () { showTab(t.id); });
   });
+  // ───── 左の一覧：グループごとに並べる（ボタンは、そのまま。見出しを足すだけ） ─────
+  var NAV = [["大会の基本", ["set", "br", "time", "rl", "rb"]], ["BAN/PICK", ["bp", "bz", "gm"]], ["参加する人", ["rc", "pl", "sf"]], ["演出・賞品", ["dz", "pz", "ps"]], ["当日と結果", ["lo"]], ["注意が要る操作", ["dg"]]];
+  (function () {
+    var box = $("tabs"), seen = {};
+    NAV.forEach(function (g) {
+      var btns = g[1].map(function (id) { return $("tab" + id); }).filter(Boolean);
+      if (!btns.length) return;
+      box.appendChild(el("div", "navh", g[0]));
+      btns.forEach(function (b) { seen[b.id] = 1; box.appendChild(b); });
+    });
+    Array.prototype.slice.call(box.querySelectorAll("button")).forEach(function (b) { if (!seen[b.id]) box.appendChild(b); });      // 一覧に無いタブは、最後に
+    $("navtoggle").addEventListener("click", function () { box.classList.toggle("open"); });
+    box.addEventListener("click", function (e) { if (e.target.closest("button")) box.classList.remove("open"); });
+    setTimeout(function () { navSync(); }, 0);
+  })();
+  function navSync() {
+    var on = document.querySelector("#tabs button.on"); if (!on) return;
+    $("navtoggle").textContent = "☰ 項目：" + on.textContent;
+    var pt = $("pagetitle"); if (!pt) { pt = el("div", ""); pt.id = "pagetitle"; $("viewbar").parentNode.insertBefore(pt, $("viewbar")); }
+    pt.textContent = on.textContent;
+  }
   $("tabtime").addEventListener("click", function () { showTab("time"); });
   $("tabbr").addEventListener("click", function () { showTab("br"); });
   $("reload").addEventListener("click", function () {
