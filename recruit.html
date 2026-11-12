@@ -268,7 +268,7 @@
     return out.join("\n");
   }
   function matches(t) {
-    if (!me || !me.prof) return [];
+    if (t.friends || !me || !me.prof) return [];                                       // 友達だけの募集は、おすすめ・条件一致にしない
     var w = t.wants || {}, st = me.prof.st || {}, f = me.f || "both", out = [];
     function hit(a, b) { arr(a).forEach(function (x) { if (arr(b).indexOf(x) >= 0) out.push(x); }); }
     if (f !== "hunter") hit(w.sr, st.sr);
@@ -290,6 +290,7 @@
     return x.some(function (p) { return y.some(function (q) { return p[0] === q[0] && (p[1] === null || q[1] === null || p[1] === q[1]); }); });
   }
   function fxMatch(t) {                                                                // "ok"＝合う／"ng"＝合わない／""＝わからない（どちらかが、まだ答えていない）
+    if (t.friends) return "";                                                          // 友達だけの募集は、日時のおすすめも、合わない表示も出さない
     var rounds = arr((D.entry || {}).flex), mine = (me && me.prof && me.prof.te && me.prof.te.flex) || {}, theirs = t.fx || {};
     if (!rounds.length) return "";
     for (var i = 0; i < rounds.length; i++) { var k = "r" + rounds[i].r; if (!mine[k] || !theirs[k]) return ""; }
@@ -303,7 +304,7 @@
     rounds.forEach(function (r) {
       var row = th["r" + r.r]; if (!row) return; any = true;
       d.appendChild(document.createTextNode(r.name + " "));
-      d.appendChild(el("span", "fxt" + (m === "ok" ? " ok" : ""), row.c === "any" ? "いつでも" : row.c === "base" ? r.start + "から" : arr(row.s).map(fxText).join("、")));
+      d.appendChild(el("span", "fxt" + (m === "ok" ? " ok" : ""), row.c === "any" ? "いつでも" : row.c === "base" ? r.start + "から" : fxGroups(row.s).map(function (g) { return g.t; }).join("、")));
       d.appendChild(document.createTextNode("　"));
     });
     if (!any) d.appendChild(el("span", "fxt", "（まだ、答えていません）"));
@@ -842,11 +843,6 @@
     if (s1 != null && s2 != null && s1 > s2) bad.push("サバイバーの段位の下限が、上限より高くなっています。");
     if (h1 != null && h2 != null && h1 > h2) bad.push("ハンターの段位の下限が、上限より高くなっています。");
     if (FORM.level_min && FORM.level_max && Number(FORM.level_min) > Number(FORM.level_max)) bad.push("閲歴の下限が、上限より大きくなっています。");
-    lab("応募パスワード"); var pr = el("div", "row"); pr.style.marginTop = "0";
-    var pc = el("input"); pc.type = "checkbox"; pc.checked = FORM.usepw; pc.addEventListener("change", function () { FORM.usepw = pc.checked; render(); });
-    pr.appendChild(pc); pr.appendChild(el("span", "", "応募パスワードつきの募集（友人だけを招待したいとき）"));
-    if (FORM.usepw) { var pw = el("input"); pw.type = "text"; pw.maxLength = 20; pw.value = FORM.password; pw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4文字以上の英数字"; pw.style.width = "14em"; pw.addEventListener("input", function () { pw.value = pw.value.replace(/[^A-Za-z0-9]/g, ""); FORM.password = pw.value; }); pr.appendChild(pw); }
-    f.appendChild(pr);
     c.appendChild(f);
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
     var row = el("div", "row");
@@ -854,10 +850,9 @@
     sv.addEventListener("click", function () {
       if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
       if ((cur.first || cur.friends) && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
-      if (FORM.usepw && !cur.lock && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ 応募パスワードは、4〜20文字の英数字にしてください。"); return; }
       var form = { friends: false, title: FORM.title, wanted: "", summary: FORM.summary, need_s: Number(FORM.need_s), need_h: Number(FORM.need_h), extra: FORM.extra, extra_faction: FORM.extra ? FORM.extra_faction : null,
                    level_min: FORM.level_min === "" ? null : Number(FORM.level_min), level_max: FORM.level_max === "" ? null : Number(FORM.level_max), rank_min: FORM.rank_min || null, rank_max: FORM.rank_max || null, rank_min_h: FORM.rank_min_h || null, rank_max_h: FORM.rank_max_h || null, wants: FORM.wants };
-      if (!FORM.usepw) form.password = ""; else if (FORM.password) form.password = FORM.password; else if (cur.first) form.password = "";
+      form.password = "";                                                                // 公開の募集に、パスワードは使わない
       send({ act: "form", team: teamId, form: form }, "保存しています…");
     });
     row.appendChild(sv);
@@ -1449,6 +1444,20 @@
   var FX_CH = [["base", "から試合を行いたい"], ["any", "いつでも試合を行える／できる限り相手チームに合わせられる"], ["alt", "可能なら別の開始日時を希望する"], ["must", "絶対に別の開始日時を希望する"]];
   var FX_ALT = "本来よりも上の段位の人と当たる可能性があります。";
   var FX_MUST = "それは不可能です。希望日時を対戦相手が了承しなければ試合日時を変更することはできません。相手チームに拒否され、あなたのチームの選手人数が足りない等の問題が発生すれば不戦敗になります。大会を正常に進行させるためにご了承ください。";
+  function fxGroups(list) {                                                           // 希望日時を「2026年12月6日 20時～22時」の形に（続く時間は1つに）。{t: 文, s: [元の希望]}
+    var days = {}, out = [];
+    arr(list).forEach(function (s) { var m = /^(\d{4})-(\d\d)-(\d\d)@(\d+|\*)$/.exec(s || ""); if (!m) return; var d = m[1] + "-" + m[2] + "-" + m[3]; (days[d] = days[d] || []).push([m[4] === "*" ? -1 : Number(m[4]), s]); });
+    Object.keys(days).sort().forEach(function (d) {
+      var p = d.split("-"), head = Number(p[0]) + "年" + Number(p[1]) + "月" + Number(p[2]) + "日", hs = days[d].sort(function (a, b) { return a[0] - b[0]; });
+      if (hs[0][0] < 0) { out.push({ t: head + " いつでも", s: hs.map(function (x) { return x[1]; }) }); return; }
+      var run = [];
+      hs.concat([null]).forEach(function (x) {
+        if (run.length && (!x || x[0] !== run[run.length - 1][0] + 1)) { out.push({ t: head + " " + run[0][0] + "時～" + (run[run.length - 1][0] + 1) + "時", s: run.map(function (y) { return y[1]; }) }); run = []; }
+        if (x) run.push(x);
+      });
+    });
+    return out;
+  }
   function fxText(s) { var m = /^(\d{4})-(\d\d)-(\d\d)@(\d+|\*)$/.exec(s || ""); return m ? Number(m[2]) + "/" + Number(m[3]) + " " + (m[4] === "*" ? "いつでも" : m[4] + "時") : String(s); }
   function flexInputs(box, F) {                                                       // F＝{r1: {c, s}}（答えを書き込む）
     var rounds = arr((D.entry || {}).flex); if (!rounds.length) return;
@@ -1467,15 +1476,30 @@
       });
       if (row && row.c === "alt") {
         card.appendChild(el("div", "badtxt", "⚠ " + FX_ALT));
-        var chips = el("div", "chips"); arr(row.s).forEach(function (s) {
-          var ch = el("label", "on", fxText(s) + " ×"); ch.addEventListener("click", function () { row.s.splice(row.s.indexOf(s), 1); render(); }); chips.appendChild(ch); });
+        var chips = el("div", "chips"); fxGroups(row.s).forEach(function (g) {
+          var ch = el("label", "on", g.t + " ×"); ch.addEventListener("click", function () { row.s = row.s.filter(function (x) { return g.s.indexOf(x) < 0; }); render(); }); chips.appendChild(ch); });
         card.appendChild(chips);
-        var ad = el("div", "row"), di = el("input"); di.type = "date"; di.min = (r.iso || "").slice(0, 10);
-        var hs = el("select"); var o0 = el("option", "", "いつでも（その日）"); o0.value = "*"; hs.appendChild(o0);
+        var ad = el("div", "row"), di = el("input"); di.type = "date"; di.min = r.from || (r.iso || "").slice(0, 10); if (r.to) di.max = r.to;       // 開始日時の日から（基本の日時からではない）
+        var hs = el("select"), he = el("select"); var o0 = el("option", "", "いつでも（その日）"); o0.value = "*"; hs.appendChild(o0);
         for (var h = 0; h < 24; h++) { var o = el("option", "", h + "時"); o.value = String(h); hs.appendChild(o); }
+        for (var h2 = 1; h2 <= 24; h2++) { var o2 = el("option", "", h2 + "時"); o2.value = String(h2); he.appendChild(o2); }
+        he.value = "21"; hs.addEventListener("change", function () { if (hs.value !== "*") he.value = String(Math.min(24, Number(hs.value) + 1)); });
         var ab = el("button", "", "＋ 追加"); ab.type = "button";
-        ab.addEventListener("click", function () { if (!di.value) { setMsg("ng", "⚠ 日を選んでください。"); return; } var s = di.value + "@" + hs.value; if (row.s.indexOf(s) < 0) row.s.push(s); render(); });
-        ad.appendChild(di); ad.appendChild(hs); ad.appendChild(ab); card.appendChild(ad);
+        ab.addEventListener("click", function () {
+          if (!di.value) { setMsg("ng", "⚠ 日を選んでください。"); return; }
+          var add = [];
+          if (hs.value === "*") add.push(di.value + "@*");
+          else {
+            var a = Number(hs.value), b = Number(he.value);
+            if (b <= a) { setMsg("ng", "⚠ 終わりの時は、始まりの時より後にしてください。"); return; }
+            for (var x = a; x < b; x++) {
+              if ((di.value === r.from && x < r.fh) || (r.to && di.value === r.to && x > r.th)) { setMsg("ng", "⚠ 選べる範囲（" + r.range + "）の外の時間です。最後に始められるのは、結果報告の締切から試合の時間を引いた日時までです。"); return; }
+              add.push(di.value + "@" + x);
+            }
+          }
+          add.forEach(function (s) { if (row.s.indexOf(s) < 0) row.s.push(s); }); render();
+        });
+        ad.appendChild(di); ad.appendChild(hs); ad.appendChild(document.createTextNode("～")); ad.appendChild(he); ad.appendChild(ab); card.appendChild(ad);
       }
       if (row && row.c === "must") card.appendChild(el("div", "badtxt", "❗ " + FX_MUST + "（このままでは保存・エントリーできません）"));
       wrap.appendChild(card);
