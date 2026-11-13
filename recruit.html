@@ -744,7 +744,7 @@
       var md = el("div", "modes");
       var b1 = el("button", "", "👫 友達だけを呼ぶ"); b1.type = "button"; b1.appendChild(el("small", "", "応募パスワードを知っている友達だけが入れます。募集の投稿には、求める人材や方針などは出しません。"));
       b1.addEventListener("click", function () { FORM.mode = "friends"; render(); });
-      var b2 = el("button", "go", "📣 新しく友達を募集する"); b2.type = "button"; b2.appendChild(el("small", "", "求める人材・方針・制限などを書いて、だれでも応募できるように募集します。"));
+      var b2 = el("button", "go", "📣 公開募集"); b2.type = "button"; b2.appendChild(el("small", "", "求める人材・方針・制限などを書いて、だれでも応募できるように募集します。"));
       b2.addEventListener("click", function () { FORM.mode = "open"; render(); });
       md.appendChild(b1); md.appendChild(b2); c.appendChild(md);
       box.appendChild(c); return;
@@ -752,20 +752,28 @@
     if (FORM.mode === "friends") {                                                       // 友達だけ：パスワードだけ
       c.appendChild(el("h2", "", "👫 友達だけを呼ぶ"));
       c.appendChild(el("div", "lead", "友達に、チーム名と応募パスワードを伝えてください。友達は、エントリーパネルの「📝 エントリー」から開いたページで、このチームを選び、応募パスワードを入れて応募します（友達にも、選手情報の登録が必要です）。"));
-      var ff = el("div", "frm");
-      ff.appendChild(el("label", "", "応募パスワード")); var fpw = el("input"); fpw.type = "text"; fpw.maxLength = 20; fpw.value = FORM.password; fpw.placeholder = cur.lock ? "（変えるときだけ入力）" : "4〜20文字の英数字"; fpw.style.width = "14em";
-      fpw.addEventListener("input", function () { fpw.value = fpw.value.replace(/[^A-Za-z0-9]/g, ""); FORM.password = fpw.value; }); ff.appendChild(fpw);
+      var ff = el("div", "frm"), fp = (me && me.prof && me.prof.fp) || "";
+      ff.appendChild(el("label", "", "応募パスワード（チームごとに決まっていて、変わりません）"));
+      if (fp) {
+        var prow = el("div", "row"); prow.style.marginTop = "0";
+        var pv = el("input"); pv.type = "text"; pv.readOnly = true; pv.value = fp; pv.style.width = "8em"; pv.style.fontSize = "1.3em"; pv.style.letterSpacing = ".15em"; prow.appendChild(pv);
+        var cp = el("button", "go", "📋 コピー"); cp.type = "button";
+        cp.addEventListener("click", function () { pv.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (e) {} if (navigator.clipboard) { navigator.clipboard.writeText(fp).then(function () { setMsg("ok", "コピーしました。"); }, function () { if (ok) setMsg("ok", "コピーしました。"); }); } else if (ok) setMsg("ok", "コピーしました。"); });
+        var rs = el("button", "danger", "🔄 作り直す"); rs.type = "button"; rs.disabled = BUSY;
+        rs.addEventListener("click", function () { if (confirm("応募パスワードを作り直しますか？
+前のパスワードでは、もう応募できなくなります（加入した人・応募ずみの人は、そのままです）。")) send({ act: "reset_pw", team: teamId }, "作り直しています…"); });
+        prow.appendChild(cp); prow.appendChild(rs); ff.appendChild(prow);
+        ff.appendChild(el("div", "hint", "パスワードが漏れたときは、「作り直す」を押してください。"));
+      } else ff.appendChild(el("div", "hint", cur.friends && cur.lock ? "読み込み中です。出ないときは、ページを開き直してください。" : "「この内容で始める」を押すと、BOTが決めます。"));
       c.appendChild(ff);
       var frow = el("div", "row");
       var fsv = el("button", "go", BUSY ? "⏳ 保存中…" : (cur.first || !cur.friends ? "💾 この内容で始める" : "💾 保存")); fsv.type = "button"; fsv.disabled = BUSY;
       fsv.addEventListener("click", function () {
-        var have = cur.lock && cur.friends;
-        if (!(have && !FORM.password) && !/^[A-Za-z0-9]{4,20}$/.test(FORM.password)) { setMsg("ng", "⚠ 応募パスワードは、4〜20文字の英数字にしてください。"); return; }
-        var form = { friends: true }; if (FORM.password) form.password = FORM.password;
+        var form = { friends: true };
         send({ act: "form", team: teamId, form: form }, "保存しています…");
       });
       frow.appendChild(fsv);
-      var sw = el("button", "", "📣 新しく友達を募集する に切り替える"); sw.type = "button";
+      var sw = el("button", "", "📣 公開募集 に切り替える"); sw.type = "button";
       sw.addEventListener("click", function () {                                        // 切り替えたら、募集に必要なことを入れてもらう（パスワードは外し、タイトルは空から）
         FORM.mode = "open"; FORM.usepw = false; FORM.password = ""; if (FORM.title === "友達だけの募集") FORM.title = "";
         render(); setMsg("ok", "募集に必要なことを入れて、「💾 募集投稿を保存」を押してください（保存するまでは、友達だけの募集のままです）。");
@@ -903,7 +911,7 @@
     var cau = el("details", "cau"); cau.open = CAU_OPEN; cau.addEventListener("toggle", function () { CAU_OPEN = cau.open; });
     cau.appendChild(el("summary", "", "⚠ 選手名の注意（必ず読んでください）"));
     cau.appendChild(el("div", "", "チーム略称は含めないでください。自動で付きます。手動でもつけると重複してAB_AB_Mitaのようになってしまいます。"));
-    cau.appendChild(el("div", "", "ゲーム内では名前は略称を含めて全角7字/半角14字までしか入れられませんが、入りきるところまで入れてください。例:選手名をMitaraiAsobuVtuberにしたい場合、ゲーム内ではAB_MitaraiAsobにしてください。"));
+    cau.appendChild(el("div", "", "ゲーム内では名前は略称を含めて全角7字/半角14字までしか入れられませんが、入りきるところまで入れてください。例:選手名をMitaraiAsobuVtuberにしたい場合、ゲーム内ではAB_MitaraiAsobやAB_Mitaraiにしてください。"));
     f.appendChild(cau);
     lab("名前の読み方"); txt("r", 40, "ひらがな（かなだけの名前なら、空でよい）");
     lab("ゲーム内ID"); txt("g", 12, "数字", true);
