@@ -760,8 +760,7 @@
         var cp = el("button", "go", "📋 コピー"); cp.type = "button";
         cp.addEventListener("click", function () { pv.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (e) {} if (navigator.clipboard) { navigator.clipboard.writeText(fp).then(function () { setMsg("ok", "コピーしました。"); }, function () { if (ok) setMsg("ok", "コピーしました。"); }); } else if (ok) setMsg("ok", "コピーしました。"); });
         var rs = el("button", "danger", "🔄 作り直す"); rs.type = "button"; rs.disabled = BUSY;
-        rs.addEventListener("click", function () { if (confirm("応募パスワードを作り直しますか？
-前のパスワードでは、もう応募できなくなります（加入した人・応募ずみの人は、そのままです）。")) send({ act: "reset_pw", team: teamId }, "作り直しています…"); });
+        rs.addEventListener("click", function () { if (confirm("応募パスワードを作り直しますか？\n前のパスワードでは、もう応募できなくなります（加入した人・応募ずみの人は、そのままです）。")) send({ act: "reset_pw", team: teamId }, "作り直しています…"); });
         prow.appendChild(cp); prow.appendChild(rs); ff.appendChild(prow);
         ff.appendChild(el("div", "hint", "パスワードが漏れたときは、「作り直す」を押してください。"));
       } else ff.appendChild(el("div", "hint", cur.friends && cur.lock ? "読み込み中です。出ないときは、ページを開き直してください。" : "「この内容で始める」を押すと、BOTが決めます。"));
