@@ -800,8 +800,6 @@
     c.appendChild(el("h2", "", "📝 募集投稿"));
     var sw2 = el("button", "", "友達だけを呼ぶに切り替える"); sw2.type = "button";
     sw2.addEventListener("click", function () { if (!cur.first && !confirm("いまの募集投稿の内容は、消えます。友達だけの募集に切り替えますか？")) return; startFriends(); });
-    c.appendChild(el("div", "lead", cur.first ? "募集の内容を書いて保存してください。制限は、決めなければ「制限なし」になります。あとから、いつでも変えられます。"
-                                              : ""));
     var f = el("div", "frm");
     function lab(t) { f.appendChild(el("label", "", t)); }
     function hint(t) { f.appendChild(el("div", "hint", t)); }
@@ -912,7 +910,6 @@
     if (!PF) PF = { _any: cur.f === "both" && (cur.st || {}).fx !== false, st: { sr: arr((cur.st || {}).sr).slice(), tp: arr((cur.st || {}).tp).slice(), beg: !!(cur.st || {}).beg }, n: cur.n || "", r: cur.r || "", g: cur.g || "", f: cur.f || "", sr: cur.sr || "", hr: cur.hr || "", sub: !!cur.sub, why: cur.why || "", sg: cur.sg || "", fav: arr(cur.fav).slice(), lv: cur.lv == null ? "" : String(cur.lv) };
     var c = el("div", "card");
     c.appendChild(el("h2", "", "🪪 あなたの選手情報"));
-    c.appendChild(el("div", "lead", "応募に使う、あなたの基本の選手情報です（大会をまたいで使います）。チームに加入すると、この内容で選手登録されます。"));
     var f = el("div", "frm");
     function lab(t) { f.appendChild(el("label", "", t)); }
     function txt(k, max, ph, digits) { var i = el("input"); i.type = "text"; i.maxLength = max; i.value = PF[k]; if (ph) i.placeholder = ph; if (digits) i.inputMode = "numeric";
@@ -1112,11 +1109,14 @@
     document.body.appendChild(pn);
   }
   var KIND = "", APPLY_MSG = "", INQ_TEXT = "", INQ_URL = "";
+  function mgrNote(p) {                                                              // マネージャーの説明（登録の画面）
+    ["マネージャーはチーム内選手数にカウントされずチームに所属できます。", "選手ではないため試合には出られません。", "チームリーダーから聞いた応募パスワードを使って応募してください。", "※Discordのサブ垢の登録するのにも利用できます。"].forEach(function (t) { p.appendChild(el("div", "lead", t)); });
+  }
   function mgrForm(box) {                                                             // マネージャー：名前だけ
     var u = U() || {};
     var c = el("div", "card");
     c.appendChild(el("h2", "", "🧑‍💼 マネージャーとして登録"));
-    c.appendChild(el("div", "lead", "マネージャーは、応募パスワードのある募集にだけ応募できます（チームのリーダーから、応募パスワードを聞いてください）。試合には出ません。"));
+    mgrNote(c);
     var f = el("div", "frm"); f.appendChild(el("label", "", "マネージャー名"));
     var ni = el("input"); ni.type = "text"; ni.maxLength = 20; ni.value = MGRN != null ? MGRN : (u.mgr || ""); ni.placeholder = "マネージャー名（選手名と同じ決まり）";
     ni.addEventListener("input", function () { MGRN = ni.value; }); f.appendChild(ni); c.appendChild(f); decorateRules(f);
@@ -1616,7 +1616,6 @@
   function createTeamView(box) {                                                      // チームを作って、メンバーを募集する
     if (!rulesOk()) { rulesGate(box); return; }                                         // 登録の前に、大会のルール
     var c = el("div", "card"); c.appendChild(el("h2", "", "🆕 チームを作って、メンバーを募集する"));
-    c.appendChild(el("div", "lead", "まずは、チーム名と略称を決めてください（仮でよく、あとから変えられます）。OKすると、次に、詳しい募集内容やロゴ・チームカラーを入れて、募集を始められます。あなたがリーダーになり、あなたの選手情報で、そのチームの選手になります。"));
     var LT = (me && me.prof && me.prof.lt) || {};                                     // リーダーだった人：いちばん最近開催された大会の、自分のチーム
     var f = el("div", "frm"), T = createTeamView.T = createTeamView.T || { name: LT.name || "", reading: LT.reading || "", abbr: LT.abbr || "", abbr_reading: LT.abbr_reading || "" };
     function txt(lb, k, max, ph) { f.appendChild(el("label", "", lb)); var i = el("input"); i.type = "text"; i.maxLength = max; i.value = T[k]; i.placeholder = ph || ""; i.addEventListener("input", function () { T[k] = i.value; }); f.appendChild(i); }
@@ -1831,7 +1830,6 @@
   // ───── チームの選手：脱退 ─────
   function memberView(box, u) {
     var c = el("div", "card"); c.appendChild(el("h2", "", "🏷 あなたのチーム：" + teamName(u.team)));
-    c.appendChild(el("div", "lead", "今のチームから脱退できます（リーダーへの申請は要りません）。脱退すると、チーム専用チャンネルに、脱退したことが知らされます。"));
     var b = el("button", "danger", "このチームから脱退する"); b.type = "button"; b.disabled = BUSY;
     b.addEventListener("click", function () { if (confirm("本当に、チーム「" + teamName(u.team) + "」から脱退しますか？\n（もう一度入るときは、あらためて応募が必要です）")) send({ act: "leave" }, "脱退しています…"); });
     var row = el("div", "row"); row.appendChild(b); c.appendChild(row); c.appendChild(liveMsg());
@@ -1869,8 +1867,7 @@
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「エントリー」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
     } else if (me && !(u && u.pf_ok && (me.prof || u.kind === "manager")) && !(u && (u.leader || u.team || u.mteam))) {   // 選手情報がまだ・自動で入っただけで確かめていない人：まず登録してもらう（自動で入っていても、同じ）
       mine.appendChild(el("div", "notice", "まずはあなたの選手情報を登録してください！"));
-      mine.appendChild(el("div", "lead", me.prof ? "これまでに登録した内容が入っています。内容を確かめて、直すところがあれば直してから、「💾 選手情報を保存」を押してください（保存するまで、応募・チーム作りはできません）。"
-                                                 : "※ Discordで選手登録したことがある方は、エントリーパネルの「エントリー」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります。"));
+      if (!me.prof) mine.appendChild(el("div", "lead", "※ Discordで選手登録したことがある方は、エントリーパネルの「エントリー」をもう一度押して、新しいURLから開くと、登録済みの内容が入ります。"));
       var go = el("button", "go", "🎮 選手として登録"); go.type = "button"; go.addEventListener("click", function () { KIND = "player"; PROFOPEN = true; PF = null; openProfile(); });
       var gm = el("button", "", "🧑‍💼 マネージャーとして登録"); gm.type = "button"; gm.addEventListener("click", function () { KIND = "manager"; PROFOPEN = true; PF = null; openProfile(); });
       var gr = el("div", "row"); gr.appendChild(go); gr.appendChild(gm); mine.appendChild(gr);
@@ -1924,7 +1921,7 @@
     }
     if (PG === "manager" && !(u && u.mteam)) {                                          // マネージャー登録（まだ）：名前を登録して、応募パスワードのあるチームへ応募
       var mg0 = el("div", "card"); mg0.appendChild(el("h2", "", "🧑‍💼 マネージャー登録"));
-      mg0.appendChild(el("div", "lead", "マネージャーは、試合には出ずに、チームを手伝う人です。名前だけ登録して、チームのリーダーから聞いた応募パスワードで、そのチームに応募します。"));
+      mgrNote(mg0);
       if (u && u.kind === "manager" && u.mgr) mg0.appendChild(el("div", "notice", "マネージャー名：" + u.mgr + "。「🏠 チームへ応募」で、応募パスワードのあるチームを選んで、応募してください。"));
       if (u && (u.leader || u.team)) mg0.appendChild(el("div", "msg ng", "あなたは、この大会にチームのリーダー・選手として登録しているため、マネージャーには登録できません。"));
       else {
@@ -2105,10 +2102,10 @@
       d.appendChild(el("div", "ask", "この情報でよろしいですか？必ず最新の情報にしてください！"));
       profileSummary(d);
       var q = me.prof || {}, te = q.te || {}, tc = q.tc || {};
-      d.appendChild(el("div", "lead", "💬 応募のメッセージ（任意）：リーダーとチームのメンバーに届きます。"));
-      var am = el("input"); am.type = "text"; am.maxLength = 200; am.placeholder = "例：よろしくお願いします。"; am.value = APPLY_MSG; am.addEventListener("input", function () { APPLY_MSG = am.value; }); d.appendChild(am);
+      if (!t.locked) d.appendChild(el("div", "lead", "💬 応募のメッセージ（任意）：リーダーとチームのメンバーに届きます。"));
+      if (!t.locked) { var am = el("input"); am.type = "text"; am.maxLength = 200; am.placeholder = "例：よろしくお願いします。"; am.value = APPLY_MSG; am.addEventListener("input", function () { APPLY_MSG = am.value; }); d.appendChild(am); }
       var pw = null;
-      if (t.locked) { d.appendChild(el("div", "lead", "🔒 このチームは、応募パスワードつきの募集です。リーダーから聞いた応募パスワードを入れてください。")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; d.appendChild(pw); }
+      if (t.locked) { d.appendChild(el("div", "lead", "🔒 パスワード")); pw = el("input"); pw.type = "text"; pw.maxLength = 20; pw.style.cssText = "width:8em;font-size:1.6em;letter-spacing:.15em;text-align:center"; pw.autocomplete = "off"; d.appendChild(pw); }
       var order = act.map(function (w) { return w.team; }).concat([t.id]);
       if (act.length) {                                                                // 2つ目からは、希望の順を並べ替える（先に応募したチームが上）
         d.appendChild(el("div", "lead", "希望の順を決めてください（ふつうは、先に応募したチームが上です）。"));
@@ -2130,7 +2127,7 @@
         if (!q.img) { setMsg("ng", "⚠ プロフィール画像が登録されていません。「✏ 編集する」から登録してください。"); return; }
         var miss = missingCustom(D.player_fields, tc).concat(missingEntry(te));
         if (miss.length) { setMsg("ng", "⚠ 入れていない項目があります（「✏ 編集する」から入れてください）：" + miss.join("、")); return; }
-        ORDER = null; send({ act: "wish", agree: rulesOk(), team: t.id, message: APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
+        ORDER = null; send({ act: "wish", agree: rulesOk(), team: t.id, message: t.locked ? "" : APPLY_MSG.trim(), order: act.length ? order : null, password: pw ? pw.value : "", extra_ok: t.state === "extra", custom: tc, entry: te });
       });
       var ed = el("button", "", "✏ 編集する"); ed.type = "button";
       ed.addEventListener("click", function () { BACK_TO = t.id; OPEN = null; DSTEP = null; ov.remove(); PROFOPEN = true; PF = null; openProfile(); });
@@ -2140,8 +2137,7 @@
       show(); return;
     }
     d.appendChild(el("div", "count", (t.locked ? "🔒 " : "") + t.name + "　" + t.n + "/" + (t.cap || "—") + "（エントリーには" + t.min + "人から）"));
-    if (t.friends) d.appendChild(el("div", "lead", "👫 友達だけの募集です。チームのリーダーから聞いた応募パスワードで応募できます。"));
-    else { d.appendChild(el("h2", "", t.title)); d.appendChild(needBox(t, true)); }
+    if (!t.friends) { d.appendChild(el("h2", "", t.title)); d.appendChild(needBox(t, true)); }
     if ((t.wants || {}).beg) d.appendChild(el("div", "tag ok", "🔰 初心者歓迎"));
     var mt2 = matches(t); if (mt2.length) d.appendChild(el("div", "tag warn", "⭐ 条件一致：" + mt2.join("・")));
     if (!t.friends) d.appendChild(el("div", "full", t.summary || "（概要はありません）"));
@@ -2155,12 +2151,12 @@
     var already = act.some(function (w) { return w.team === t.id; });
     var row = el("div", "row");
     if (me && isMgr() && t.locked && u && !u.mteam && !u.team && (t.state === "open" || t.state === "extra")) {     // マネージャーとして応募
-      d.appendChild(el("div", "lead", "🔒 応募パスワードを入れて、マネージャーとして応募します（試合には出ません）。"));
+      d.appendChild(el("div", "lead", "チームリーダーから聞いた応募パスワードを使ってマネージャーとして応募してください。選手ではないため試合には出られません。"));
       var mpw = el("input"); mpw.type = "text"; mpw.maxLength = 20; mpw.placeholder = "応募パスワード"; d.appendChild(mpw);
       var mg = el("button", "go", "🧑‍💼 マネージャーとして応募する"); mg.type = "button";
       mg.addEventListener("click", function () { if (!mpw.value.trim()) { setMsg("ng", "⚠ 応募パスワードを入れてください。"); return; } send({ act: "manager_apply", team: t.id, password: mpw.value.trim() }, "応募しています…"); });
       row.appendChild(mg);
-    } else if (me && isMgr() && !t.locked) d.appendChild(el("div", "msg ng", "マネージャーは、応募パスワードのある募集にだけ応募できます。"));
+    } else if (me && isMgr() && !t.locked) d.appendChild(el("div", "msg ng", "マネージャーは応募パスワードのある募集にだけ応募できます。"));
     if (!me && INV && (t.state === "open" || t.state === "extra")) {                   // 招待用のページ：押すと、まずDiscordに加入するようにお願いする
       var gj = el("button", "go", "このチームに応募する"); gj.type = "button"; gj.addEventListener("click", joinPrompt); row.appendChild(gj);
     }
