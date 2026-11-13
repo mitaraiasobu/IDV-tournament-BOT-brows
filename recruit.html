@@ -74,7 +74,7 @@
   .md { line-height: 1.6; font-size: 14px; overflow-wrap: anywhere; }
   .rulebox { max-height: 45vh; overflow: auto; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); margin: 8px 0; }
   button.rinfo { padding: 0 7px; margin-left: 6px; border-radius: 999px; font-size: 12px; line-height: 1.6; color: var(--accent); border-color: var(--accent); vertical-align: middle; }
-  .tutblink { animation: tutb 1s infinite; position: relative; z-index: 66; }
+  .tutblink { animation: tutb 1s infinite; scroll-margin: 90px 0; }                       /* 端ぴったりでなく、少し余裕をもって映す */
   @keyframes tutb { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,82,82,0); } 50% { box-shadow: 0 0 0 4px #ff5252, 0 0 18px #ff5252; } }
   .tutpop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .tutpop .box { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 18px; max-width: 460px; width: 100%; position: relative; }
@@ -444,10 +444,27 @@
   // ───── チュートリアル（はじめて開いた人。この端末に、どこまで進んだかを覚える。右上の赤いボタンで、いつでもスキップ） ─────
   var TUT_KEY = "rc_tut:" + ((me && me.key) ? me.key.slice(0, 12) : "");             // URL（鍵）ごと：URLを作り直したら、チュートリアルをもう一度見られる
   var TUT = ""; try { TUT = localStorage.getItem(TUT_KEY) || ""; } catch (e) { TUT = "done"; }
-  function setTut(v) { TUT = v; TUT_REACHED = ""; try { localStorage.setItem(TUT_KEY, v); } catch (e) { /* そのまま */ } }
-  var TUT_REACHED = "";                                                                // 行くべきところに進んだ段階（その段階では、もう点滅しない）
-  function tutWaiting() { return (TUT === "profile" || TUT === "create" || TUT === "recruit_go") && TUT_REACHED !== TUT; }             // メニューを点滅させて、待っている
-  function tutTarget() { return TUT === "profile" ? "profile" : TUT === "create" ? "create" : TUT === "recruit_go" ? "recruit" : ""; }
+  function setTut(v) { TUT = v; TUT_SCROLL_KEY = ""; try { localStorage.setItem(TUT_KEY, v); } catch (e) { /* そのまま */ } }
+  function tutTarget() { return TUT === "profile" ? "profile" : TUT === "create" ? "create" : TUT === "recruit_go" ? "recruit" : ""; }      // 行くべきページ
+  var TUT_SCROLL_KEY = "";
+  function tutHLTarget() {                                                             // いまの段階で、押すもの（1つだけ）。行くべきページに着いたら、もう無い
+    var t = tutTarget();
+    if (t) { if (PAGE === t) return null; return MENU_OPEN ? document.querySelector('#menupanel button[data-pg="' + t + '"]') : document.getElementById("menubtn"); }
+    if (TUT === "recruit_open") return document.querySelector('[data-tut="save"]');
+    return null;
+  }
+  function tutHL() {                                                                   // 古い点滅を全部消してから、いまの段階のものだけを点滅させ、映る場所までスクロール
+    Array.prototype.forEach.call(document.querySelectorAll(".tutblink"), function (e) { e.classList.remove("tutblink"); });
+    if (!me || TUT === "done" || document.getElementById("tutpop")) return;           // ポップアップが出ている間は、そちらが主役
+    var t = tutHLTarget(); if (!t || t.hidden) return;
+    t.classList.add("tutblink");
+    var key = TUT + "|" + PAGE + "|" + (MENU_OPEN ? 1 : 0);
+    if (key !== TUT_SCROLL_KEY) {                                                       // 段階・ページ・メニューの開き閉じが変わったときだけ（自分でスクロールしているのを、邪魔しない）
+      TUT_SCROLL_KEY = key;
+      try { t.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) { t.scrollIntoView(false); }       // 映る場所まで（もう映っていれば動かない）
+    }
+  }
+  function tutRun() { tutStep(); tutHL(); }
   function tutPop(text, buttons) {
     var old = document.getElementById("tutpop"); if (old) old.remove();
     var w = el("div", "tutpop"); w.id = "tutpop"; var b = el("div", "box");
@@ -465,7 +482,11 @@
     }]]);
   }
   function tutStep() {                                                                 // 描くたびに：いまの段階のポップアップ・点滅
-    if (!me || TUT === "done" || document.getElementById("tutpop")) return;
+    if (!me || TUT === "done") return;
+    var ex = document.getElementById("tutpop");
+    if (ex) {                                                                           // 「読み込んでいます…」は、読み込みが終わったら消して、次の画面を出す（固まらない）
+      if (ex.getAttribute("data-k") === "rules-loading" && !(TUT === "rules" && rbGate() && rbGate().loading)) ex.remove(); else return;
+    }
     var u = U() || {};
     if (TUT === "") {
       if (u.leader || u.team || u.mteam) { setTut("done"); return; }                   // もうチームに入っている人には、出さない
@@ -482,6 +503,7 @@
     if (TUT === "rules" && rulesOk()) { setTut("profile_intro"); tutStep(); return; }
     if (TUT === "rules" && rbGate()) {                                                // 読み終わるまで、大会ルールのページへ
       tutPop(rbGate().loading ? "大会ルールを読み込んでいます…" : "まずは、大会ルールを読みましょう！\nすべて「既読」にすると、「エントリーできる状態になりました！」と表示されます。", rbGate().loading ? [["もう一度読み込む", function () { loadRulebook(true); }]] : [["大会ルールを開く", openRulebook]]);
+      if (rbGate().loading) { var lp = document.getElementById("tutpop"); if (lp) lp.setAttribute("data-k", "rules-loading"); }
       return;
     }
     if (TUT === "rules") {                                                            // まず、大会のルールを読む
@@ -739,52 +761,45 @@
     if (FORM.mode == null) FORM.mode = cur.first ? "" : (cur.friends ? "friends" : "open");
     var c = el("div", "card");
     if (cur.stopped) c.appendChild(el("div", "subwarn", "⏸ 運営が、この募集を停止しています。再開については、運営に問い合わせてください（内容は残っています）。"));
+    function startFriends() { FORM.mode = "friends"; send({ act: "form", team: teamId, form: { friends: true } }, "始めています…"); }       // 選んだ瞬間に始まる（パスワードはBOTが作る）
     if (!FORM.mode) {                                                                   // まず、大きな選択肢
-      c.appendChild(el("h2", "", "📝 どうやってメンバーを集めますか？"));
+      c.appendChild(el("h2", "", "メンバーの集め方"));
       var md = el("div", "modes");
-      var b1 = el("button", "", "👫 友達だけを呼ぶ"); b1.type = "button"; b1.appendChild(el("small", "", "応募パスワードを知っている友達だけが入れます。募集の投稿には、求める人材や方針などは出しません。"));
-      b1.addEventListener("click", function () { FORM.mode = "friends"; render(); });
-      var b2 = el("button", "go", "📣 公開募集"); b2.type = "button"; b2.appendChild(el("small", "", "求める人材・方針・制限などを書いて、だれでも応募できるように募集します。"));
+      var b1 = el("button", "", "友達だけを呼ぶ"); b1.type = "button";
+      b1.addEventListener("click", startFriends);
+      var b2 = el("button", "go", "公開募集"); b2.type = "button";
       b2.addEventListener("click", function () { FORM.mode = "open"; render(); });
       md.appendChild(b1); md.appendChild(b2); c.appendChild(md);
       box.appendChild(c); return;
     }
-    if (FORM.mode === "friends") {                                                       // 友達だけ：パスワードだけ
-      c.appendChild(el("h2", "", "👫 友達だけを呼ぶ"));
-      c.appendChild(el("div", "lead", "友達に、チーム名と応募パスワードを伝えてください。友達は、エントリーパネルの「📝 エントリー」から開いたページで、このチームを選び、応募パスワードを入れて応募します（友達にも、選手情報の登録が必要です）。"));
+    if (FORM.mode === "friends") {                                                       // 友達だけ：パスワード・締め切り・公開募集への切り替えだけ
+      c.appendChild(el("h2", "", "友達だけを呼ぶ"));
       var ff = el("div", "frm"), fp = (me && me.prof && me.prof.fp) || "";
-      ff.appendChild(el("label", "", "応募パスワード（チームごとに決まっていて、変わりません）"));
+      ff.appendChild(el("label", "", "応募パスワード"));
       if (fp) {
         var prow = el("div", "row"); prow.style.marginTop = "0";
         var pv = el("input"); pv.type = "text"; pv.readOnly = true; pv.value = fp; pv.style.width = "8em"; pv.style.fontSize = "1.3em"; pv.style.letterSpacing = ".15em"; prow.appendChild(pv);
-        var cp = el("button", "go", "📋 コピー"); cp.type = "button";
+        var cp = el("button", "go", "コピー"); cp.type = "button";
         cp.addEventListener("click", function () { pv.select(); var ok = false; try { ok = document.execCommand("copy"); } catch (e) {} if (navigator.clipboard) { navigator.clipboard.writeText(fp).then(function () { setMsg("ok", "コピーしました。"); }, function () { if (ok) setMsg("ok", "コピーしました。"); }); } else if (ok) setMsg("ok", "コピーしました。"); });
-        var rs = el("button", "danger", "🔄 作り直す"); rs.type = "button"; rs.disabled = BUSY;
-        rs.addEventListener("click", function () { if (confirm("応募パスワードを作り直しますか？\n前のパスワードでは、もう応募できなくなります（加入した人・応募ずみの人は、そのままです）。")) send({ act: "reset_pw", team: teamId }, "作り直しています…"); });
+        var rs = el("button", "", "作り直す"); rs.type = "button"; rs.disabled = BUSY;
+        rs.addEventListener("click", function () { if (confirm("応募パスワードを作り直しますか？前のパスワードでは、もう応募できなくなります。")) send({ act: "reset_pw", team: teamId }, "作り直しています…"); });
         prow.appendChild(cp); prow.appendChild(rs); ff.appendChild(prow);
-        ff.appendChild(el("div", "hint", "パスワードが漏れたときは、「作り直す」を押してください。"));
-      } else ff.appendChild(el("div", "hint", cur.friends && cur.lock ? "読み込み中です。出ないときは、ページを開き直してください。" : "「この内容で始める」を押すと、BOTが決めます。"));
+      } else ff.appendChild(el("div", "hint", cur.friends ? "読み込み中…" : "始めています…"));
       c.appendChild(ff);
       var frow = el("div", "row");
-      var fsv = el("button", "go", BUSY ? "⏳ 保存中…" : (cur.first || !cur.friends ? "💾 この内容で始める" : "💾 保存")); fsv.type = "button"; fsv.disabled = BUSY;
-      fsv.addEventListener("click", function () {
-        var form = { friends: true };
-        send({ act: "form", team: teamId, form: form }, "保存しています…");
-      });
-      frow.appendChild(fsv);
-      var sw = el("button", "", "📣 公開募集 に切り替える"); sw.type = "button";
+      if (!cur.first && cur.friends) { var fcl = el("button", cur.closed ? "" : "danger", cur.closed ? "募集を再開する" : "募集を締め切る"); fcl.type = "button"; fcl.addEventListener("click", function () { send({ act: cur.closed ? "reopen" : "close", team: teamId }); }); frow.appendChild(fcl); }
+      var sw = el("button", "", "公開募集に切り替える"); sw.type = "button";
       sw.addEventListener("click", function () {                                        // 切り替えたら、募集に必要なことを入れてもらう（パスワードは外し、タイトルは空から）
         FORM.mode = "open"; FORM.usepw = false; FORM.password = ""; if (FORM.title === "友達だけの募集") FORM.title = "";
-        render(); setMsg("ok", "募集に必要なことを入れて、「💾 募集投稿を保存」を押してください（保存するまでは、友達だけの募集のままです）。");
+        render(); setMsg("ok", "募集に必要なことを入れて、「募集投稿を保存」を押してください（保存するまでは、友達だけの募集のままです）。");
       });
       frow.appendChild(sw);
-      if (!cur.first) { var fcl = el("button", cur.closed ? "" : "danger", cur.closed ? "▶ 募集を再開する" : "⏸ 募集を締め切る"); fcl.type = "button"; fcl.addEventListener("click", function () { send({ act: cur.closed ? "reopen" : "close", team: teamId }); }); frow.appendChild(fcl); }
       c.appendChild(frow); c.appendChild(liveMsg());
       box.appendChild(c); return;
     }
     c.appendChild(el("h2", "", "📝 募集投稿"));
-    var sw2 = el("button", "", "👫 友達だけを呼ぶ に切り替える"); sw2.type = "button";
-    sw2.addEventListener("click", function () { FORM.mode = "friends"; FORM.password = ""; render(); if (!cur.first) setMsg("ok", "友達に伝える応募パスワードを決めて、保存してください（保存するまでは、いまの募集のままです）。"); });
+    var sw2 = el("button", "", "友達だけを呼ぶに切り替える"); sw2.type = "button";
+    sw2.addEventListener("click", function () { if (!cur.first && !confirm("いまの募集投稿の内容は、消えます。友達だけの募集に切り替えますか？")) return; startFriends(); });
     c.appendChild(el("div", "lead", cur.first ? "募集の内容を書いて保存してください。制限は、決めなければ「制限なし」になります。あとから、いつでも変えられます。"
                                               : ""));
     var f = el("div", "frm");
@@ -853,7 +868,7 @@
     c.appendChild(f);
     bad.forEach(function (t) { c.appendChild(el("div", "badtxt", "⚠ " + t)); });
     var row = el("div", "row");
-    var sv = el("button", "go", "💾 募集投稿を保存"); sv.type = "button"; sv.disabled = BUSY || bad.length > 0;
+    var sv = el("button", "go", "💾 募集投稿を保存"); sv.type = "button"; sv.setAttribute("data-tut", "save"); sv.disabled = BUSY || bad.length > 0;
     sv.addEventListener("click", function () {
       if (!FORM.title.trim()) { setMsg("ng", "⚠ 募集タイトルを入れてください。"); return; }
       if ((cur.first || cur.friends) && !FORM.need_s && !FORM.need_h && !FORM.extra) { setMsg("ng", "⚠ 求めている人材（サバイバー・ハンターの人数）を選んでください。"); return; }
@@ -1070,20 +1085,19 @@
     var old = document.getElementById("menupanel"), sh = document.getElementById("menushade");
     if (old) old.remove(); if (sh) sh.remove();
     if (!MENU_OPEN) return;
-    sh = el("div"); sh.id = "menushade"; sh.addEventListener("click", function () { MENU_OPEN = false; drawMenu(u); }); document.body.appendChild(sh);
+    sh = el("div"); sh.id = "menushade"; sh.addEventListener("click", function () { MENU_OPEN = false; drawMenu(u); tutHL(); }); document.body.appendChild(sh);
     var pn = el("div"); pn.id = "menupanel";
     var mh = el("div", ""); mh.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px";
     mh.appendChild(el("h2", "", "☰ メニュー"));
     var mx = el("button", "", "✕"); mx.type = "button"; mx.setAttribute("aria-label", "メニューを閉じる"); mx.style.cssText = "padding:4px 12px;font-size:20px;line-height:1";
-    mx.addEventListener("click", function () { MENU_OPEN = false; drawMenu(u); }); mh.appendChild(mx); pn.appendChild(mh);
+    mx.addEventListener("click", function () { MENU_OPEN = false; drawMenu(u); tutHL(); }); mh.appendChild(mx); pn.appendChild(mh);
     pages(u).forEach(function (pg) {
       var b = el("button", PAGE === pg[0] ? "on" : "", pg[1]); b.type = "button";
-      if (MENU_OPEN && tutWaiting() && tutTarget() === pg[0]) b.classList.add("tutblink");          // チュートリアル：次に押す項目を点滅
+      b.setAttribute("data-pg", pg[0]);                                                  // チュートリアルが、押す項目を見つけるための印
       if (pg[2] && needsAttention(u, pg[0])) { var bang = el("span", "", " ❗"); bang.style.color = "var(--ng)"; b.appendChild(bang); b.style.borderColor = "var(--ng)"; b.style.boxShadow = "0 0 0 1px var(--ng)"; }
       if (!pg[2]) { b.disabled = true; b.style.opacity = ".4"; b.title = pg[3] || ""; b.appendChild(el("div", "", pg[3] || "")); b.lastChild.style.cssText = "font-size:11px;font-weight:400;margin-top:2px"; }
       b.addEventListener("click", function () {
         MENU_OPEN = false;
-        if (tutTarget() === pg[0]) TUT_REACHED = TUT;                                  // チュートリアル：行くべきところに進んだ（点滅を止める）
         if (pg[0] === "profile") { endGuide(); PF = null; PAGE = "profile"; window.scrollTo(0, 0); render(); return; }          // 「あなたの選手情報」は、ポップアップではなく、ページ
         PAGE = pg[0]; window.scrollTo(0, 0); render();
       });
@@ -1930,14 +1944,13 @@
       mr.appendChild(mx); mc.appendChild(mr); mc.appendChild(liveMsg()); mine.appendChild(mc);
     }
     var mb = document.getElementById("menubtn");                                      // ☰ メニュー（本人用のページだけ）
-    if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN); };
+    if (mb) { mb.hidden = !me; mb.onclick = function () { endGuide(); MENU_OPEN = !MENU_OPEN; drawMenu(u); tutHL(); };
       var attnMe = needsAttention(u, "team") || needsAttention(u, "recruit"), attnAll = attnMe || rbAttention();
       if (rbKey()) { try { localStorage.setItem("rc_attn:" + rbKey(), attnMe ? "1" : "0"); } catch (e) { /* そのまま */ } }       // 大会ルールのページの「エントリーのページへ」に、！をつけるため
       mb.textContent = "☰ メニュー" + (attnAll ? " ❗" : "");
-      mb.classList.toggle("tutblink", tutWaiting() && !MENU_OPEN);                       /* チュートリアル：メニューのボタンを点滅 */
       mb.style.color = attnAll ? "var(--ng)" : ""; }
     drawMenu(u);
-    if (me && UNLOCKED) setTimeout(tutStep, 0);                                        // チュートリアル
+    if (me && UNLOCKED) setTimeout(tutRun, 0);                                         // チュートリアル（ポップアップと、点滅・スクロール）
     document.getElementById("lead").textContent = !me && INV ? "募集中のチームを見られます（このページでは、応募・チーム作りはできません）。"
       : !me ? "募集中のチームです。応募するときは、Discordのエントリーパネルの「📝 エントリー」から開いてください。"
       : !(me.prof && u && u.pf_ok) && !(u && (u.leader || u.team)) ? "応募やチーム作りの前に、あなたの選手情報を確かめて、保存してください。"
