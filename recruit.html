@@ -1846,6 +1846,10 @@
       gateView(mine, u);
       return;
     }
+    if (me && !me.wait && !me.old && UNLOCKED && PAGE === "rules" && rbKey()) {         // パネルの「📖 ルール」：パスワードの確認と、既読の読み込みが終わってから、ルールのページへ
+      PAGE = "home"; try { var ru = new URL(location.href); ru.searchParams.delete("p"); history.replaceState(null, "", ru.href); } catch (e) { /* そのまま */ }     // 戻ってきたときに、また飛ばないように
+      openRulebook(); return;
+    }
     if (me && me.wait) { mine.appendChild(el("div", "lead", "あなたの選手情報を読み込んでいます…")); }
     else if (me && me.old) {                                                               // 更新の前のURL：選手情報が入っていないので、開き直してもらう（登録し直しは要らない）
       mine.appendChild(el("div", "notice", "このURLは古いため、あなたの選手情報を読み込めません。エントリーパネルの「エントリー」を押して、新しいURLから開き直してください（Discordで登録した内容は、そのまま使えます）。"));
