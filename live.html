@@ -639,15 +639,26 @@
   html[data-design="winter"].stage .rs-rows { background: linear-gradient(180deg, color-mix(in srgb, #8fd0f8 26%, var(--ink)), var(--ink)); }
   html[data-design="winter"].stage .rs-next .nx, html[data-design="winter"].stage .rs-next .nt { color: var(--ice); }
   /* 紹介のVS：氷の板が割れたような、ぎざぎざの割れ目。両側は、チームの色をうすく映した氷。雪がふり、ひし形のひびがゆっくり流れる */
-  html[data-design="winter"] .in-half .bgc { background: radial-gradient(ellipse at var(--gx, 30%) 55%, color-mix(in srgb, var(--ic) 46%, transparent), transparent 62%), linear-gradient(180deg, color-mix(in srgb, var(--ic) 22%, #0a3a62), color-mix(in srgb, var(--ic) 10%, #031018)); }
-  html[data-design="winter"] .in-half .bgc::after { opacity: .5; animation: inDiaW 14s linear infinite; background: repeating-linear-gradient(60deg, transparent 0 96px, rgba(235,248,255,.35) 96px 98px), repeating-linear-gradient(-60deg, transparent 0 96px, rgba(235,248,255,.25) 96px 98px); }
-  @keyframes inDiaW { from { transform: translateX(0); } to { transform: translateX(221.7px); } }
+  html[data-design="winter"] .in-half .bgc::after { inset: 0; opacity: .6; filter: blur(24px); animation: inRunW 16s ease-in-out infinite alternate;
+        background: repeating-linear-gradient(100deg, transparent 0 120px, color-mix(in srgb, var(--ic) 50%, rgba(190,230,255,.7)) 175px, transparent 240px); }
+  @keyframes inRunW { from { transform: translateX(-90px); } to { transform: translateX(90px); } }
   html[data-design="winter"] .in-half .bgc::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background-image: var(--snow-a), var(--snow-b); background-size: 420px 420px, 700px 700px; animation: snowFallW 24s linear infinite; }
   html[data-design="winter"] .in-half .side { font-family: var(--wf); color: var(--ice); text-shadow: 0 0 6px rgba(255,255,255,.55), 0 0 26px rgba(120,190,255,.7); }
   html[data-design="winter"] .in-half .pl .pn { font-family: var(--wf); color: var(--ice); text-shadow: 0 0 10px rgba(120,190,255,.7); }
   html[data-design="winter"] .in-half .pl .ic { border-color: var(--ice); box-shadow: 0 0 24px color-mix(in srgb, var(--ic) 60%, #9fd8ff); }
-  html[data-design="winter"] .in-slash { clip-path: polygon(56.6% 0, 54.9% 18%, 53.2% 17%, 51% 38%, 49.4% 36%, 47.2% 60%, 45.6% 58%, 43.5% 80%, 42.4% 78%, 41.6% 100%, 44.2% 100%, 45.6% 79%, 46.7% 81%, 48.6% 61%, 50% 63%, 52.4% 39%, 53.9% 41%, 56.1% 19%, 57.5% 21%, 59.2% 0);
+  html[data-design="winter"] .in-half.sv { clip-path: polygon(0% 0%, 51% 0%, 46% 11%, 54% 23%, 45% 36%, 55% 49%, 46% 62%, 54% 75%, 45% 88%, 50% 100%, 0% 100%); }
+  html[data-design="winter"] .in-half.hn { clip-path: polygon(100% 0%, 100% 100%, 50% 100%, 45% 88%, 54% 75%, 46% 62%, 55% 49%, 45% 36%, 54% 23%, 46% 11%, 51% 0%); }
+  html[data-design="winter"] .in-half .bgc { background: radial-gradient(ellipse at var(--gx, 30%) 55%, color-mix(in srgb, var(--ic) 70%, transparent), transparent 62%), linear-gradient(180deg, color-mix(in srgb, var(--ic) 58%, #0a2540), color-mix(in srgb, var(--ic) 30%, #031018)); }
+  html[data-design="winter"] .in-slash { clip-path: polygon(49.9% 0%, 44.9% 11%, 52.9% 23%, 43.9% 36%, 53.9% 49%, 44.9% 62%, 52.9% 75%, 43.9% 88%, 48.9% 100%, 51.1% 100%, 46.1% 88%, 55.1% 75%, 47.1% 62%, 56.1% 49%, 46.1% 36%, 55.1% 23%, 47.1% 11%, 52.1% 0%);
         background: linear-gradient(180deg, #fff, #bfe6ff, #fff, #9fd8ff, #fff); filter: drop-shadow(0 0 18px rgba(160,220,255,.9)); }
+  /* トーナメント表（開会）のカード：すりガラスのような氷。ふちが白くかがやき、上から小さなつららが下がる */
+  html[data-design="winter"] .op-card { border: 1px solid rgba(235,248,255,.75); border-left: 1px solid rgba(235,248,255,.75); backdrop-filter: blur(8px);
+        background: linear-gradient(135deg, rgba(220,244,255,.26), rgba(120,190,240,.08) 45%, rgba(220,244,255,.18)), rgba(8,40,70,.55);
+        box-shadow: inset 0 0 22px rgba(255,255,255,.28), 0 0 18px rgba(143,208,248,.4);
+        clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+  html[data-design="winter"] .op-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(118deg, rgba(255,255,255,.4) 0 10%, transparent 10%); }
+  html[data-design="winter"] .op-card::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 15px; pointer-events: none; background: rgba(235,248,255,.8);
+        clip-path: polygon(0 0, 100% 0, 97% 55%, 94% 8%, 89% 100%, 84% 20%, 77% 70%, 71% 12%, 63% 90%, 56% 18%, 47% 75%, 40% 10%, 31% 100%, 24% 25%, 15% 80%, 8% 15%, 3% 60%); }
   /* ═══════════════ デザイン：ファンタジー（画像）。公開サイトの Fantasy フォルダの画像（背景・背景の枠・チームの楕円・中央のバナー・NEXTの枠・線）を使う。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
   html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
         --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
@@ -1293,9 +1304,9 @@
   .intro .iv-tag.hero.sv .tx { color: #6db2ff; text-shadow: 0 0 26px rgba(80, 150, 255, .85), 4px 5px 0 rgba(0, 0, 0, .5); }
   .intro .iv-tag.hero.hn .tx { color: #ff6b7a; text-shadow: 0 0 26px rgba(255, 70, 90, .85), 4px 5px 0 rgba(0, 0, 0, .5); }
   @keyframes inSideTag {
-    0% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.3); opacity: 0; }
-    8% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(2.8); opacity: 1; }
-    13%, 42% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(2.4); opacity: 1; }
+    0% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.3); opacity: 0; }   /* --hs：場面の名前の長さに合わせて、JSが決める（はみ出さないように） */
+    8% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(calc(var(--hs, 2.4) * 1.17)); opacity: 1; }
+    13%, 42% { left: 50%; top: 50%; transform: translate(-50%, -50%) scale(var(--hs, 2.4)); opacity: 1; }
     60%, 100% { left: 70px; top: 54px; transform: translate(0, 0) scale(1); opacity: 1; }
   }
   .intro.enter.t-hero .in-team > * { animation-delay: 2.4s; }
@@ -1496,7 +1507,7 @@
   .op-node { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); opacity: 0; transform: scale(0); }
   .op-troph { position: absolute; width: 300px; height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; opacity: 0; transform: scale(.4); transition: opacity 1s ease, transform 1.3s cubic-bezier(.2, 1.4, .3, 1); }
   .op-troph.on { opacity: 1; transform: none; }
-  .op-troph .rays { position: absolute; left: 50%; top: 120px; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; opacity: .9;
+  .op-troph .rays { position: absolute; left: 50%; top: 220px; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; opacity: .9;
                     background: repeating-conic-gradient(from 0deg, rgba(255, 210, 63, .30) 0 7deg, transparent 7deg 22deg); -webkit-mask: radial-gradient(circle, #000 0 28%, transparent 70%); mask: radial-gradient(circle, #000 0 28%, transparent 70%); animation: opSpin 16s linear infinite; }
   .op-troph .cup { position: relative; font-size: 190px; line-height: 1; filter: drop-shadow(0 0 34px rgba(255, 210, 63, .95)); animation: opGlow 1.7s ease-in-out infinite; }
   .op-troph .lbl { position: relative; font-family: var(--cond); font-weight: 800; font-size: 40px; letter-spacing: .4em; color: #ffd23f; text-shadow: 0 0 18px rgba(255, 210, 63, .8); margin-top: 8px; }
@@ -1522,7 +1533,7 @@
   @keyframes rlIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: none; } }
   @keyframes rlPop { from { opacity: 0; transform: scale(.3) translateY(40px); } to { opacity: 1; transform: none; } }
   /* キャスター交代 */
-  .sw-row { display: flex; align-items: center; justify-content: center; gap: 90px; margin-top: 34px; }
+  .sw-row { display: flex; align-items: flex-start; justify-content: center; gap: 90px; margin-top: 34px; }
   .sw-grp { display: flex; gap: 46px; }
   .sw-grp.from { animation: swIn .9s cubic-bezier(.2, .9, .2, 1) .5s both; } .sw-grp.to { animation: swIn .9s cubic-bezier(.2, .9, .2, 1) 2.2s both; }
   .sw-p { display: flex; flex-direction: column; align-items: center; gap: 16px; }
@@ -1532,7 +1543,7 @@
   .sw-p.fr .sw-av { opacity: .8; filter: grayscale(.4); }
   .sw-p { position: relative; }
   .sw-bye { position: absolute; left: 50%; top: 100%; translate: -50% 0; margin-top: 14px; white-space: nowrap; font-family: var(--cond); font-weight: 800; font-size: 30px; color: var(--accent); text-shadow: 0 0 12px rgba(0, 0, 0, .8); text-align: center; animation: swArrow 1.2s ease-out 3.4s both; }
-  .sw-arrow { font-size: 76px; letter-spacing: -.1em; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: swArrow 1.4s ease-in-out 1.4s infinite both; opacity: 0; }
+  .sw-arrow { height: 250px; display: flex; align-items: center; font-size: 76px; letter-spacing: -.1em; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: swArrow 1.4s ease-in-out 1.4s infinite both; opacity: 0; }
   @keyframes swIn { from { opacity: 0; transform: translateX(-70px) scale(.9); } to { opacity: 1; transform: none; } }
   .sw-grp.to { animation-name: swInR; } @keyframes swInR { from { opacity: 0; transform: translateX(70px) scale(.9); } to { opacity: 1; transform: none; } }
   @keyframes swArrow { 0% { opacity: 0; transform: translateX(-30px); } 40%, 100% { opacity: 1; transform: none; } }
@@ -1607,25 +1618,28 @@
   html[data-design="simple"] .rs-team .pt { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.a .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
   html[data-tka="dark"][data-design="simple"] .rs-team.a .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
-  html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #fff !important; border-color: rgba(255,255,255,.92) !important; background-color: rgba(0,0,0,.28) !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
+  html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tka="dark"][data-design="simple"] .rs-team.a .pt { color: #fff !important; }
   html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.a .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
   html[data-tka="light"][data-design="simple"] .rs-team.a .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
-  html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tka="light"][data-design="simple"] .rs-team.a .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.b .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
   html[data-tkb="dark"][data-design="simple"] .rs-team.b .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
-  html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #fff !important; border-color: rgba(255,255,255,.92) !important; background-color: rgba(0,0,0,.28) !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
+  html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tkb="dark"][data-design="simple"] .rs-team.b .pt { color: #fff !important; }
   html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
-  html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-design="winter"] .rs-team .tn, html[data-design="winter"] .rs-team .pt { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tka="dark"][data-design="winter"] .rs-team.a .tn, html[data-tka="dark"][data-design="winter"] .rs-team.a .pt { color: #fff !important; }
   html[data-tka="light"][data-design="winter"] .rs-team.a .tn, html[data-tka="light"][data-design="winter"] .rs-team.a .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="dark"][data-design="winter"] .rs-team.b .tn, html[data-tkb="dark"][data-design="winter"] .rs-team.b .pt { color: #fff !important; }
   html[data-tkb="light"][data-design="winter"] .rs-team.b .tn, html[data-tkb="light"][data-design="winter"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  /* ロゴ：どんな形・色の画像でも、そのまま出す（円の枠・暗い下地は付けない。円の枠は、アイコンだけ） */
+  .logo, .fin-logo { border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; clip-path: none !important; overflow: visible !important; }
+  .logo img, .fin-logo img { object-fit: contain !important; border-radius: 0 !important; }
   .chg { text-decoration: underline; text-decoration-color: #ff3b3b; text-decoration-thickness: 3px; text-underline-offset: 4px; text-shadow: 0 0 8px rgba(255, 59, 59, .75); }       /* 最近（3日以内）変わったところ：文字の色はそのまま、赤い下線 */
   html.paused *, html.paused *::before, html.paused *::after { animation-play-state: paused !important; transition: none !important; }   /* 一時停止：演出の動きも止める */
 </style>
@@ -3035,6 +3049,18 @@
     tag.appendChild(el("span", "tx", text));
     return tag;
   }
+  function fitHero() {                                                                 // 中央に大きく出る場面の名前：長い名前は、倍率を下げて、画面の横にはみ出さないようにする
+    Array.prototype.forEach.call(document.querySelectorAll(".iv-tag.hero"), function (t) {
+      var w = t.offsetWidth || 1;
+      t.style.setProperty("--hs", Math.min(2.4, 1740 / (w * 1.17)).toFixed(3));
+    });
+  }
+  function fitTagline(tx, text) {                                                      // 決め台詞：1行に収まるように、文字の数で大きさを変える（改行しない）
+    var u = 0;
+    Array.prototype.forEach.call(text || "", function (ch) { u += /[\x00-\x7f]/.test(ch) ? 0.6 : 1; });
+    var fs = Math.max(36, Math.min(130, Math.floor(1720 / ((u + 0.6) * 1.08))));
+    tx.style.fontSize = fs + "px"; tx.style.whiteSpace = "nowrap";
+  }
   function introTimerBox(label) {
     var box = el("div", "iv-timer");
     box.appendChild(el("div", "iv-count", ""));
@@ -3229,6 +3255,7 @@
       w = opBase("op-tag"); c = el("div", "op-c");
       var tx = el("div", "op-t");
       Array.prototype.forEach.call(op.tagline || "", function (ch, i) { var s = el("i", "", ch === " " ? "\u00a0" : ch); s.style.setProperty("--i", i); tx.appendChild(s); });
+      fitTagline(tx, op.tagline || "");
       c.appendChild(tx);
       w.appendChild(c); return w;
     }
@@ -3465,7 +3492,7 @@
         if (ph.kind === "end") return;                                       // 全部終わった：次のデータが来るまで、最後の画面のまま
         root.className = "stage"; kind = "stage";
         screenEl.replaceChildren(openScene(ph, op));
-        fit();
+        fit(); fitHero();
       }
       if (ph.kind === "end") { clearNext(); return; }
       var nx = openPhase(op, ph.start + ph.dur + 0.05);
@@ -3528,7 +3555,7 @@
         }
         root.className = "stage"; kind = "stage";
         screenEl.replaceChildren(introScene(ph, iv));
-        fit();
+        fit(); fitHero();
       }
       if (ph.kind === "wait") return;
       var sc = screenEl.firstChild;
