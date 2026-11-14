@@ -35,7 +35,7 @@
   .scene.out { animation:sceneOut .9s ease forwards; }
   @keyframes sceneIn { from{opacity:0;filter:blur(14px)} to{opacity:1;filter:blur(0)} }
   @keyframes sceneOut { from{opacity:1;filter:blur(0)} to{opacity:0;filter:blur(14px)} }
-  .body { flex:1; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:10px; }
+  .body { flex:1; min-height:0; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:10px; }
 
   .ornament { font-family:var(--fa); color:var(--gold); letter-spacing:.5em; text-shadow:0 0 18px color-mix(in srgb,var(--accent) 80%,transparent); }
   .gold { color:var(--gold); }
@@ -79,52 +79,91 @@
   .stat span { font-size:46px; letter-spacing:.25em; color:var(--gold); }
   .times { font-family:var(--fa); font-size:80px; color:var(--gold); padding-bottom:70px; }
 
-  /* 日程 */
-  .tl { display:flex; gap:20px; width:100%; justify-content:center; }
-  .tl .card { width:340px; padding:34px 14px 30px; }
-  .tl .d { font-family:var(--fa); font-size:100px; line-height:1; color:#fff; text-shadow:0 0 24px var(--accent); }
-  .tl .w { font-size:40px; color:var(--gold); margin-top:6px; letter-spacing:.15em; }
-  .tl .t { font-size:36px; margin-top:4px; }
-  .tl .l { margin-top:18px; font-size:38px; line-height:1.4; }
-  .tl .l small { display:block; font-size:30px; color:color-mix(in srgb,var(--cream) 78%,transparent); margin-top:6px; }
+  /* トーナメント表（ライブブラウザの開会と同じ動き：1カードずつ出て、カメラが追い、線が決勝へ伸びて、優勝のマークが輝く） */
+  .bktag { position:absolute; left:70px; top:46px; z-index:5; font-family:var(--fa); font-size:60px; letter-spacing:.1em; color:#fff; text-shadow:0 0 22px var(--accent), 0 3px 0 #000; }
+  .bktag::before { content:"✠ "; color:var(--gold); font-size:40px; }
+  .op-br { position:absolute; left:0; top:0; transform-origin:0 0; transition:transform 1.2s cubic-bezier(.45,0,.2,1); will-change:transform; }
+  .pc { position:absolute; display:flex; align-items:center; gap:12px; padding:0 14px 0 12px; opacity:0; transform:translateY(16px) scale(.94); transition:opacity .3s ease, transform .35s cubic-bezier(.2,.9,.2,1);
+        background:linear-gradient(180deg,rgba(30,18,50,.94),rgba(12,6,24,.95)); border:2px solid var(--gold); border-left-width:7px; box-shadow:0 8px 22px rgba(0,0,0,.5), 0 0 18px color-mix(in srgb,var(--accent) 40%,transparent); }
+  .pc.on { opacity:1; transform:none; }
+  .pc .pn { font-family:var(--fa); color:var(--gold); flex:none; margin:0 auto; text-shadow:0 0 12px var(--accent); }
+  .pc.bye { border-color:color-mix(in srgb,var(--gold) 35%,transparent); box-shadow:none; background:rgba(20,10,40,.55); }
+  .ph { position:absolute; top:0; text-align:center; opacity:0; transform:translateY(-14px); transition:opacity .45s ease, transform .5s cubic-bezier(.2,.9,.2,1); }
+  .ph.on { opacity:1; transform:none; }
+  .ph .nm { font-family:var(--fa); font-size:44px; color:var(--gold); letter-spacing:.08em; text-shadow:0 0 16px var(--accent); }
+  .ph .dt { font-family:var(--fa); font-size:78px; line-height:1.05; color:#fff; text-shadow:0 0 24px var(--accent), 0 0 48px var(--accent), 0 3px 0 #000; white-space:nowrap; }
+  .ph .dt small { font-size:.42em; color:var(--gold); margin-left:6px; }
+  .ph .tm { font-family:var(--fh); font-size:36px; color:var(--cream); margin-top:2px; }
+  .ph .fm { display:inline-block; margin-top:8px; font-family:var(--fa); font-size:34px; color:#fff; border:2px solid var(--gold); padding:0 18px; }
+  .ph .live { font-size:26px; }
+  .op-lines { position:absolute; left:0; top:0; overflow:visible; }
+  .op-ln { stroke-dasharray:9999; stroke-dashoffset:9999; fill:none; stroke:var(--gold); stroke-width:7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 8px var(--accent)); }
+  .op-troph { position:absolute; width:300px; height:380px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; opacity:0; transform:scale(.4); transition:opacity 1s ease, transform 1.3s cubic-bezier(.2,1.4,.3,1); }
+  .op-troph.on { opacity:1; transform:none; }
+  .op-troph .rays { position:absolute; left:50%; top:220px; width:560px; height:560px; margin:-280px 0 0 -280px; border-radius:50%; background:radial-gradient(circle, rgba(255,210,63,.5), transparent 65%); }
+  .op-troph .cup { position:relative; font-size:190px; line-height:1; filter:drop-shadow(0 0 34px rgba(255,210,63,.95)); animation:pulse 1.7s ease-in-out infinite; }
+  .op-troph .lbl { position:relative; font-family:var(--fa); font-size:40px; letter-spacing:.4em; color:#ffd23f; text-shadow:0 0 18px rgba(255,210,63,.8); margin-top:8px; }
+
+  /* 参加チーム */
+  .stat { text-align:center; } .stat b { display:block; font-family:var(--fa); font-weight:400; font-size:230px; line-height:1; color:#fff; text-shadow:0 0 30px var(--accent), 0 0 60px var(--accent); }
+  .stat span { font-size:46px; letter-spacing:.25em; color:var(--gold); }
   .live { display:inline-block; font-family:var(--fa); font-size:30px; color:#fff; background:#d4204a; padding:0 16px; letter-spacing:.2em; box-shadow:0 0 18px rgba(255,60,100,.7); animation:pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50%{opacity:.55} }
+  .fit { width:100%; display:flex; flex-direction:column; align-items:center; transform-origin:50% 50%; }
 
-  /* ラウンド */
-  .rds { display:flex; gap:18px; width:100%; justify-content:center; }
-  .rd { width:340px; padding:34px 14px 28px; }
-  .rd .n { font-family:var(--fa); font-size:120px; line-height:1; color:#fff; text-shadow:0 0 22px var(--accent); }
-  .rd .nm { font-family:var(--fh); font-size:40px; margin-top:6px; color:var(--gold); min-height:56px; letter-spacing:.1em; }
-  .rd .fm { display:inline-block; margin-top:8px; font-family:var(--fa); font-size:60px; color:#fff; border:2px solid var(--gold); padding:0 26px; }
-  .rd .ms { margin-top:18px; font-size:38px; }
-  .rd .wn { margin-top:6px; font-size:34px; color:var(--gold); }
-  .rd .dt { margin-top:16px; font-size:34px; line-height:1.4; border-top:1px solid color-mix(in srgb,var(--gold) 50%,transparent); padding-top:14px; }
+  /* 大会ルールの「BAN/PICK」タブと同じ中身（全試合共通のルール・ラウンドごと） */
+  .rc { width:100%; text-align:left; padding:26px 34px; background:linear-gradient(180deg,rgba(30,18,50,.92),rgba(12,6,24,.94)); border:3px double var(--gold); box-shadow:0 0 36px color-mix(in srgb,var(--accent) 50%,transparent), inset 0 0 40px rgba(0,0,0,.6); }
+  .rc h4 { margin:0 0 14px; font-family:var(--fa); font-weight:400; font-size:42px; color:#fff; text-shadow:0 0 16px var(--accent); letter-spacing:.06em; }
+  .rw { display:flex; gap:22px; align-items:flex-start; padding:12px 0; border-top:1px solid color-mix(in srgb,var(--gold) 35%,transparent); }
+  .rw:first-of-type { border-top:0; }
+  .rw .lb { flex:none; min-width:250px; font-family:var(--fh); font-size:32px; color:var(--gold); line-height:1.4; }
+  .rw .lb.ban { color:var(--red); } .rw .lb.req { color:#9fe6c4; }
+  .rw .tx { font-size:32px; line-height:1.5; }
+  .bgrid { display:flex; gap:14px; flex-wrap:wrap; }
+  .bc { font-size:30px; padding:2px 18px; border:2px solid var(--gold); background:rgba(20,10,40,.85); white-space:nowrap; }
+  .bc b { font-family:var(--fa); font-weight:400; font-size:44px; color:#fff; margin:0 6px; text-shadow:0 0 12px var(--accent); }
+  .cc { display:flex; flex-wrap:wrap; gap:12px 22px; align-items:center; }
+  .cp { display:inline-flex; align-items:center; gap:10px; padding:5px 18px 5px 6px; border:2px solid var(--gold); background:rgba(20,10,40,.85); border-radius:60px; font-size:30px; }
+  .cp.ban { border-color:var(--red); background:rgba(255,107,138,.18); } .cp.req { border-color:#9fe6c4; } .cp.allow { border-color:#b79bff; }
+  .cp small { font-size:24px; color:var(--gold); }
+  .plus { font-family:var(--fa); font-size:36px; color:var(--gold); margin:0 2px; }
+  .combo { display:inline-flex; align-items:center; gap:8px; }
+  .face { position:relative; flex:none; width:64px; height:64px; border-radius:50%; overflow:hidden; background:#241838; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--fh); font-size:28px; }
+  .face img { position:absolute; height:100%; left:50%; top:0; transform:translateX(-50%); } .face img.fit { transform:none; }
+  .hero { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-bottom:22px; }
+  .hi { font-family:var(--fh); font-size:36px; padding:4px 26px; border:2px solid var(--gold); background:rgba(20,10,40,.85); }
+  .hi.nm { font-family:var(--fa); font-size:48px; color:#fff; background:color-mix(in srgb,var(--accent) 40%,transparent); text-shadow:0 0 14px var(--accent); }
+  .hi.live { color:#fff; background:#d4204a; border-color:#ff7a99; animation:none; font-size:34px; letter-spacing:.1em; }
+  .cols { display:flex; gap:28px; width:100%; align-items:flex-start; }
+  .steps { margin:0; padding:0; list-style:none; counter-reset:st; }
+  .steps li { counter-increment:st; display:flex; gap:16px; align-items:center; padding:8px 0; font-size:32px; line-height:1.4; }
+  .steps li::before { content:counter(st); flex:none; width:46px; height:46px; line-height:42px; text-align:center; font-family:var(--fa); font-size:30px; border:2px solid var(--gold); background:color-mix(in srgb,var(--accent) 40%,transparent); color:#fff; }
+  .steps li.h::before { border-color:var(--red); background:rgba(255,107,138,.25); } .steps li.s::before { border-color:#b79bff; background:rgba(120,90,255,.3); }
 
-  /* BAN&PICKの手順 */
-  .bp { width:100%; display:flex; flex-direction:column; gap:30px; }
-  .bp .ttl { font-size:40px; color:var(--gold); letter-spacing:.15em; margin-bottom:12px; text-align:left; }
-  .chips { display:flex; flex-wrap:wrap; gap:10px 6px; align-items:center; }
-  .chip { font-family:var(--fh); font-size:30px; padding:4px 12px; border:2px solid var(--gold); background:rgba(20,10,40,.85); white-space:nowrap; box-shadow:0 0 14px color-mix(in srgb,var(--accent) 50%,transparent); }
-  .chip.map { border-color:#9fe6c4; color:#c9ffe5; }
-  .chip.hb { border-color:var(--red); background:rgba(255,107,138,.18); }
-  .chip.sb { border-color:#b79bff; background:rgba(120,90,255,.22); }
-  .chip.pk { border-color:#fff; background:color-mix(in srgb,var(--accent) 45%,transparent); color:#fff; }
-  .chip i { font-style:normal; color:var(--gold); margin-left:8px; }
-  .ar { color:var(--gold); font-size:22px; }
-
-  .list { display:flex; flex-direction:column; gap:16px; width:100%; }
-  .li { display:flex; align-items:center; gap:24px; text-align:left; padding:16px 30px; background:linear-gradient(90deg,rgba(30,18,50,.92),rgba(12,6,24,.88)); border-left:6px solid var(--gold); box-shadow:0 0 24px color-mix(in srgb,var(--accent) 40%,transparent); }
-  .li .k { font-family:var(--fh); font-size:40px; color:var(--gold); min-width:290px; text-shadow:0 0 16px var(--accent); line-height:1.25; }
-  .li .v { font-size:36px; line-height:1.5; }
-  .no { font-family:var(--fa); font-size:50px; width:70px; height:70px; line-height:66px; text-align:center; border:2px solid var(--gold); color:#fff; flex:none; background:color-mix(in srgb,var(--accent) 40%,transparent); }
+  /* 賞品（賞品タブと同じカード） */
+  .pzg { display:grid; grid-template-columns:repeat(2,730px); gap:24px; justify-content:center; width:100%; }
+  .pzc { position:relative; padding:22px 28px; border:3px double var(--pz); background:linear-gradient(180deg,rgba(30,18,50,.92),rgba(12,6,24,.94)); box-shadow:0 0 34px color-mix(in srgb,var(--pz) 45%,transparent), inset 0 0 40px rgba(0,0,0,.6); text-align:left; }
+  .pzc.k1 { --pz:#f5c542; grid-column:1 / -1; } .pzc.k2 { --pz:#c4cfe0; } .pzc.kany { --pz:#6fc3ff; } .pzc.kmvp { --pz:#c48bff; } .pzc.wide { grid-column:1 / -1; }
+  .pzc .top { display:flex; align-items:center; gap:18px; margin-bottom:10px; }
+  .pzc .medal { flex:none; width:76px; height:76px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:46px; border:3px solid var(--pz); background:color-mix(in srgb,var(--pz) 22%,transparent); }
+  .pzc .plb { font-family:var(--fa); font-size:52px; color:var(--pz); text-shadow:0 0 16px color-mix(in srgb,var(--pz) 60%,transparent); letter-spacing:.06em; }
+  .pzc .it { display:flex; align-items:center; gap:18px; padding:10px 14px; margin-top:8px; background:rgba(255,255,255,.05); }
+  .pzc .it .ic { flex:none; font-size:42px; }
+  .pzc .who { font-family:var(--fh); font-size:28px; color:var(--gold); }
+  .pzc .gift { font-size:40px; line-height:1.35; color:#fff; overflow-wrap:anywhere; }
+  /* 日程（ラウンドの日時だけを大きく） */
+  .tl { display:flex; gap:20px; width:100%; justify-content:center; }
+  .tl .card { padding:40px 14px 34px; }
+  .tl .d { font-family:var(--fa); font-size:124px; line-height:1; color:#fff; text-shadow:0 0 24px var(--accent), 0 0 48px var(--accent); }
+  .tl .w { font-size:46px; color:var(--gold); margin-top:8px; letter-spacing:.15em; }
+  .tl .t { font-family:var(--fa); font-size:64px; margin-top:6px; color:#fff; }
+  .tl .l { margin-top:22px; font-size:44px; line-height:1.4; font-family:var(--fh); }
+  .tl .l small { display:block; font-size:30px; color:color-mix(in srgb,var(--cream) 78%,transparent); margin-top:6px; }
 
   .end-title { font-family:var(--fa); font-size:120px; margin:12px 0 0; color:#fff; text-shadow:0 0 34px var(--accent),0 0 90px var(--accent),0 4px 0 #000; letter-spacing:.06em; line-height:1.3; text-align:center; }
   .end-sub { font-size:48px; margin-top:22px; letter-spacing:.3em; color:var(--gold); }
   #bar { position:absolute; left:0; bottom:0; height:4px; width:0; background:var(--gold); opacity:.55; box-shadow:0 0 12px var(--accent); }
   #fade { position:absolute; inset:0; background:#000; opacity:1; pointer-events:none; transition:opacity 1.6s ease; }
-  .grid2 { display:grid; grid-template-columns:repeat(2,740px); gap:26px; justify-content:center; }
-  .grid2 .card { min-height:250px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-  .grid2 .card p { font-size:34px; }
 </style>
 </head>
 <body>
@@ -155,82 +194,184 @@
   function note(t, a) { return '<div class="rise" style="--a:' + a + ';font-size:36px;line-height:1.6;color:var(--gold);text-align:center;margin-top:34px;letter-spacing:.06em">' + t + '</div>'; }
   function ms(n) { return Math.max(7000, 4500 + n * 1500); }                                              // 場面の長さ：中身の数に合わせる
 
-  // ───── 場面（[長さ, HTML]）を、データから作る ─────
+  // ───── 顔の画像（大会ルールの「BAN/PICK」タブと同じ：頭の円が、アイコンの9割になるように置く） ─────
+  var FACES = null;
+  function loadFaces(cb) {
+    if (FACES) return cb();
+    function get(u) { return fetch(u, { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+    Promise.all([get("face_positions.json"), get("assets/face_positions.json")]).then(function (r) { FACES = (r[0] && r[0].faces) || (r[1] && r[1].faces) || {}; cb(); });
+  }
+  function imgUrl(p) { return String(p).split("/").map(encodeURIComponent).join("/"); }
+  function faceHtml(name, img) { return '<span class="face" data-n="' + esc(String(name || "?").slice(0, 1)) + '" data-img="' + esc(img || "") + '">' + (img ? "" : esc(String(name || "?").slice(0, 1))) + '</span>'; }
+  function hydrate(root) {
+    Array.prototype.forEach.call(root.querySelectorAll(".face[data-img]"), function (f) {
+      var img = f.getAttribute("data-img"); f.removeAttribute("data-img"); if (!img) return;
+      var im = new Image(); im.draggable = false;
+      im.onload = function () { loadFaces(function () { var fd = FACES[img]; if (!fd || !(fd.r > 0) || !im.naturalHeight) return;
+        var hf = 0.9 / (2 * fd.r), wf = hf * im.naturalWidth / im.naturalHeight; im.className = "fit";
+        im.style.cssText = "height:" + (hf * 100) + "%;width:" + (wf * 100) + "%;left:" + ((0.5 - fd.cx * wf) * 100) + "%;top:" + ((0.5 - fd.cy * hf) * 100) + "%;"; }); };
+      im.onerror = function () { im.remove(); f.textContent = f.getAttribute("data-n") || "?"; };
+      im.src = imgUrl(img); f.appendChild(im);
+    });
+  }
+
+  // ───── 大会ルールの「BAN/PICK」タブと同じ並べ方（ローカルBAN・許可・必須・組み合わせ禁止は、キャラの顔つき） ─────
+  var KIND = { "ローカルBAN": "ban", "ローカル許可": "allow", "ローカル必須": "req", "組み合わせ禁止キャラ": "combo" };
+  function splitTop(text, sep) {                                                   // かっこの中の区切りでは、分けない
+    var out = [], cur = "", depth = 0;
+    for (var i = 0; i < text.length; i++) { var ch = text[i]; if (ch === "（" || ch === "(") depth++; if (ch === "）" || ch === ")") depth = Math.max(0, depth - 1);
+      if (!depth && text.substr(i, sep.length) === sep) { out.push(cur); cur = ""; i += sep.length - 1; continue; } cur += ch; }
+    if (cur) out.push(cur); return out.map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+  function nameNote(x) { var m = /^(.*?)((?:（[^）]*）)*)$/.exec(x); return [m[1].trim(), m[2].replace(/^（|）$/g, "").replace(/）（/g, "・")]; }
+  function cpHtml(name, note, cls) { var fc = (D.bp && D.bp.faces) || {}; return '<span class="cp ' + (cls || "") + '">' + faceHtml(name, fc[name]) + esc(name) + (note ? "<small>" + esc(note) + "</small>" : "") + "</span>"; }
+  function charRow(label, text) {                                                   // キャラの名前の並び → 顔つきの並び（読めないときは null＝文字のまま）
+    var kind = KIND[label], faces = (D.bp && D.bp.faces) || {}; if (!kind) return null;
+    if (kind === "combo") {
+      var ok = true, h = "";
+      splitTop(text, "／").forEach(function (g) {
+        var nn = nameNote(g), names = nn[0].split("と"); if (!names.every(function (n) { return faces[n]; })) { ok = false; return; }
+        h += '<span class="combo">' + names.map(function (n) { return cpHtml(n, "", "ban"); }).join('<span class="plus">＋</span>') + (nn[1] ? "<small>" + esc(nn[1]) + "</small>" : "") + "</span>";
+      });
+      return ok && h ? '<div class="cc">' + h + "</div>" : null;
+    }
+    var items = splitTop(text, "、").map(nameNote); if (!items.length || !items.every(function (x) { return faces[x[0]]; })) return null;
+    return '<div class="cc">' + items.map(function (x) { return cpHtml(x[0], x[1], kind); }).join("") + "</div>";
+  }
+  var BAN_RE = /^(サバイバー|ハンター|マップ)(\d+)BAN$/;
+  function banParts(text) {                                                         // 「サバイバー4BAN / ハンター1BAN」→ {サバイバー: 4, ハンター: 1}（それ以外の形なら null）
+    var out = {}, ok = true;
+    String(text || "").split(" / ").forEach(function (q) { var m = BAN_RE.exec(q.trim()); if (m) out[m[1]] = m[2]; else ok = false; });
+    return ok && Object.keys(out).length ? out : null;
+  }
+  function rowsHtml(list) {
+    return (list || []).map(function (x) {
+      var bans = banParts(x.text), kind = KIND[x.label] || "";
+      if (bans) return '<div class="rw"><div class="lb">' + esc(x.label) + '</div><div class="bgrid">' + ["サバイバー", "ハンター", "マップ"].filter(function (k) { return bans[k] != null; })
+        .map(function (k) { return '<span class="bc">' + k + "<b>" + bans[k] + "</b>BAN</span>"; }).join("") + "</div></div>";
+      var body = kind ? charRow(x.label, x.text || "") : null;
+      return '<div class="rw"><div class="lb ' + kind + '">' + esc(x.label) + "</div>" + (body || '<div class="tx">' + esc(x.text) + "</div>") + "</div>";
+    }).join("");
+  }
+
+  // ───── トーナメント表（ルールの「トーナメント表」タブの予定の表と同じ形）：ラウンドの順に、日時を見せる。チーム名は出さない ─────
+  function planScene() {
+    var Rs = (D.plan && D.plan.rounds) || []; if (!Rs.length || !Rs[0].n) return null;
+    var R = Rs.length, N = Rs[0].n, CW = 300, STEP = 90, Y0 = 295;
+    var CH = N > 8 ? 46 : N > 4 ? 72 : 110, GY = N > 8 ? 10 : N > 4 ? 22 : 30, X = function (k) { return k * (CW + STEP); };
+    var ys = [];                                                                       // 各カードの上の位置（次のラウンドは、2つの試合の真ん中）
+    Rs.forEach(function (r, k) { var row = [];
+      for (var j0 = 0; j0 < r.n; j0++) (function (j) { if (k === 0) row.push(Y0 + j * (CH + GY)); else { var p = ys[k - 1], a = p[2 * j], b = p[2 * j + 1]; row.push(a == null ? p[p.length - 1] : b == null ? a : (a + b) / 2); } })(j0);
+      ys.push(row); });
+    var W = X(R) + 250, H = Y0 + N * (CH + GY), fit = Math.min(1800 / W, 830 / H, 1);
+    var ty = ys[R - 1][0] + CH / 2, tx = X(R - 1) + CW + 70;
+    var tf = "translate(" + ((1920 - W * fit) / 2) + "px," + ((1080 - H * fit) / 2 + 50) + "px) scale(" + fit + ")";
+    var paths = "", hd = "", cd = "", k, j;
+    for (k = 0; k < R; k++) {
+      var r = Rs[k], p = pd(r.at);
+      hd += '<div class="ph" data-k="' + k + '" style="left:' + X(k) + 'px;width:' + CW + 'px"><div class="nm">' + esc(r.name) + "</div>" + (r.live ? '<div><span class="live">LIVE</span></div>' : "")
+        + (p ? '<div class="dt">' + p.key + "<small>(" + p.w + ")</small></div><div class=\"tm\">" + p.hm + " ～</div>" : "")
+        + (r.format ? '<div class="fm">' + esc(r.format) + "</div>" : "") + "</div>";
+      var stag = Math.min(45, Math.floor(700 / Math.max(1, r.n)));
+      for (j = 0; j < r.n; j++) {
+        var bye = (r.bye || []).indexOf(j) >= 0;
+        cd += '<div class="pc' + (bye ? " bye" : "") + '" data-k="' + k + '" style="left:' + X(k) + "px;top:" + ys[k][j] + "px;width:" + CW + "px;height:" + CH + "px;transition-delay:" + (j * stag) + 'ms">'
+          + (bye ? "" : '<span class="pn" style="font-size:' + Math.min(34, CH - 10) + 'px">#' + (j + 1) + "</span>") + "</div>";
+        if (k < R - 1) paths += '<path class="op-ln" data-k="' + k + '" d="M ' + (X(k) + CW) + " " + (ys[k][j] + CH / 2) + " H " + (X(k) + CW + STEP / 2) + " V " + (ys[k + 1][j >> 1] + CH / 2) + " H " + X(k + 1) + '"/>';
+      }
+    }
+    paths += '<path class="op-ln" data-k="' + (R - 1) + '" d="M ' + (X(R - 1) + CW) + " " + ty + " H " + (tx - 10) + '"/>';
+    var html = '<section class="scene bk"><div class="bktag">トーナメント表</div><div class="op-br" style="width:' + W + "px;height:" + H + "px;transition:none;transform:" + tf + '">'
+      + '<svg class="op-lines" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '">' + paths + "</svg>" + hd + cd
+      + '<div class="op-troph" style="left:' + (tx - 40) + "px;top:" + (ty - 225) + 'px"><div class="rays"></div><div class="cup">🏆</div><div class="lbl">CHAMPION</div></div></div></section>';
+    var plan = [], t = 500;                                                            // ラウンドごとの時刻：見出し → カード → 線
+    Rs.forEach(function (r, i) { var stag = Math.min(45, Math.floor(700 / Math.max(1, r.n))), tc = t + 250 + r.n * stag + 350; plan.push({ k: i, t: t, tl: tc }); t = tc + 450; });
+    function start(sec) {
+      function later(ms2, f) { timers.push(setTimeout(f, ms2)); }
+      var box = sec.querySelector(".op-br"); void box.offsetWidth;
+      plan.forEach(function (pl) {
+        later(pl.t, function () { sec.querySelector('.ph[data-k="' + pl.k + '"]').classList.add("on"); });
+        later(pl.t + 250, function () { [].slice.call(sec.querySelectorAll('.pc[data-k="' + pl.k + '"]')).forEach(function (c) { c.classList.add("on"); }); });
+        later(pl.tl, function () {
+          [].slice.call(sec.querySelectorAll('.op-ln[data-k="' + pl.k + '"]')).forEach(function (pe) { var len = pe.getTotalLength(); pe.style.strokeDasharray = len; pe.style.strokeDashoffset = len;
+            pe.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 500, fill: "forwards", easing: "ease-in-out" }); });
+          if (pl.k === R - 1) later(300, function () { sec.querySelector(".op-troph").classList.add("on"); });
+        });
+      });
+    }
+    return [t + 3800, html, null, start];
+  }
+
+  // ───── 場面（[長さ, HTML, 作ったあとの処理, 出たときの処理]）を、データから作る ─────
   function scenes() {
-    var S = [], R = D.rounds || [], first = pd((R[0] || {}).at), last = pd((R[R.length - 1] || {}).at);
+    var S = [], R = (D.plan && D.plan.rounds) || [], first = pd((R[0] || {}).at), last = pd((R[R.length - 1] || {}).at), bp = D.bp || {};
     // 1 タイトル
     S.push([8000, '<section class="scene center"><div class="panel">'
       + '<div class="ornament rise" style="--a:.4s;font-size:34px">✠ ❦ ✠</div>'
-      + '<h1 class="title zoom" style="--a:.8s">' + esc(D.title) + '</h1><div class="rule rise" style="--a:1.6s"></div>'
-      + '<div class="sub rise" style="--a:2s">第五人格の大会</div>'
-      + (D.organizer ? '<div class="by rise" style="--a:2.6s">主催　' + esc(D.organizer) + '</div>' : '')
-      + (first && last ? '<div class="by gold rise" style="--a:3.1s">' + first.key + '(' + first.w + ')' + (last.key !== first.key ? ' ～ ' + last.key + '(' + last.w + ')' : '') + '</div>' : '')
+      + '<h1 class="title zoom" style="--a:.8s">' + esc(D.title) + '</h1>'
+      + (D.organizer ? '<div class="by rise" style="--a:1.6s;font-size:48px;margin:6px 0 0">主催　' + esc(D.organizer) + '</div>' : '')
+      + '<div class="rule rise" style="--a:2.2s"></div>'
+      + (first && last ? '<div class="by gold rise" style="--a:2.9s">' + first.key + '(' + first.w + ')' + (last.key !== first.key ? ' ～ ' + last.key + '(' + last.w + ')' : '') + '</div>' : '')
       + '</div></section>']);
-    // 2 数字
-    if (D.teams && R.length) S.push([8000, head("✠ THE TOURNAMENT ✠", "大会のかたち") + '<div class="body"><div class="row" style="align-items:flex-end;gap:50px">'
-      + '<div class="stat rise" style="--a:.6s"><b>' + D.teams + '</b><span>チーム</span></div><div class="times rise" style="--a:1s">×</div>'
-      + '<div class="stat rise" style="--a:1.3s"><b>' + R.length + '</b><span>ラウンド</span></div>'
-      + (D.matches ? '<div class="times rise" style="--a:1.7s">＝</div><div class="stat rise" style="--a:2s"><b>' + D.matches + '</b><span>試合</span></div>' : '')
-      + '</div></div></section>']);
-    // 3 日程
-    var sc = D.schedule || [];
-    if (sc.length) S.push([ms(sc.length * 1.5), head("✠ SCHEDULE ✠", "日程") + '<div class="body"><div class="tl">' + sc.slice(0, 5).map(function (c, i) {
-      var p = pd(c.at); return '<div class="card rise" style="--a:' + A(i) + '"><div class="d">' + p.key + '</div><div class="w">(' + p.w + ')</div><div class="t">' + p.hm + '</div>'
-        + '<div class="l">' + (c.live ? '<span class="live">LIVE</span><br>' : '') + esc(c.label) + (c.sub ? '<small>' + esc(c.sub) + '</small>' : '') + '</div></div>'; }).join("") + '</div></div></section>']);
-    // 4 ラウンドの紹介
-    if (R.length) S.push([ms(R.length * 1.4), head("✠ ROUNDS ✠", "ラウンドの紹介") + '<div class="body"><div class="rds">' + R.map(function (r, i) {
-      var p = pd(r.at), nm = String(r.name || "").replace(/^ラウンド\d+\s*/, "");
-      return '<div class="card rd rise" style="--a:' + A(i) + '"><div class="n">' + r.no + '</div><div class="nm">' + esc(nm || "ラウンド" + r.no) + '</div><div class="fm">' + esc(r.format) + '</div>'
-        + '<div class="ms">' + r.matches + ' 試合</div><div class="wn">' + (r.format === "BO3" ? "2セット先取" : r.format === "BO1" ? "1セット勝負" : "") + '</div>'
-        + '<div class="dt">' + (p ? p.key + "(" + p.w + ")<br>" + p.hm + " ～" : "") + (r.live ? '<br><span class="live">LIVE</span>' : "") + '</div></div>'; }).join("")
-      + '</div>' + (R.some(function (r) { return r.live; }) ? note("LIVE のラウンドは、実況解説つきの生配信です", "3s") : "") + '</div></section>']);
-    // 5 勝敗
-    var fm = D.formats || [];
+    // 2 参加チーム（チーム数・チーム内の人数・両陣営の兼任）
+    var sz = D.size || {}, szt = sz.min && sz.max ? (sz.min === sz.max ? "" + sz.min : sz.min + "～" + sz.max) : sz.min ? sz.min + "以上" : sz.max ? sz.max + "まで" : "";
+    if (D.teams || szt) S.push([9500, head("✠ TEAMS ✠", "参加チーム") + '<div class="body"><div class="col" style="gap:34px">'
+      + (D.teams ? '<div class="stat rise" style="--a:.6s"><b>' + D.teams + '</b><span>チーム</span></div>' : "")
+      + '<div class="row">'
+      + (szt ? '<div class="card rise" style="--a:1.4s;width:740px"><span class="tag">チーム内の人数</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + esc(szt) + '</div><p>人</p></div>' : "")
+      + '<div class="card rise" style="--a:2.1s;width:740px"><span class="tag' + (D.both ? "" : " red") + '">サバイバーとハンターの兼任</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + (D.both ? "OK" : "NG") + '</div>'
+      + '<p>' + (D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです") + '</p></div>'
+      + '</div></div></div></section>']);
+    // 3 トーナメント表（日程・ラウンドも、ここに含まれる）
+    var bk = planScene(); if (bk) S.push(bk);
+    // 3b 日程（トーナメント表のあと：ラウンドの日時だけを、大きく）
+    var sc = (D.schedule || []).slice(0, 6), cw = Math.min(380, Math.floor((1740 - 20 * (sc.length - 1)) / Math.max(1, sc.length)));
+    if (sc.length) S.push([Math.max(9000, ms(sc.length * 1.5)), head("✠ SCHEDULE ✠", "日程") + '<div class="body"><div class="tl">' + sc.map(function (c, i) {
+      var p = pd(c.at); return '<div class="card rise" style="--a:' + A(i) + ';width:' + cw + 'px"><div class="d">' + p.key + '</div><div class="w">(' + p.w + ')</div><div class="t">' + p.hm + '</div>'
+        + '<div class="l">' + esc(c.label).split("・").join("<br>") + (c.live ? '<br><span class="live">LIVE</span>' : '') + (c.sub ? '<small>' + esc(c.sub) + '</small>' : '') + '</div></div>'; }).join("") + '</div></div></section>']);
+    // 4 勝敗
+    var fm = []; R.forEach(function (r) { if (r.format && fm.indexOf(r.format) < 0) fm.push(r.format); }); fm.sort();
     S.push([12000, head("✠ HOW TO WIN ✠", "勝敗のきまり") + '<div class="body"><div class="col" style="gap:26px"><div class="row">'
       + fm.map(function (f, i) { return '<div class="card rise" style="--a:' + A(i) + ';width:' + (fm.length > 1 ? 740 : 1000) + 'px"><span class="tag">' + esc(f) + '</span><p style="font-size:46px"><b class="hl">'
         + (f === "BO3" ? "2セット先取" : "1セット先取") + '</b>で勝ち</p></div>'; }).join("") + '</div>'
       + '<div class="card rise" style="--a:1.8s;width:1506px"><p>セットは、ポイントが多かったチームの勝ち。<br>全セットが終わって<b class="hl">ポイントが同点</b>なら、<b class="hl">延長戦</b>です。</p></div>'
       + (D.ext && D.ext.length ? '<div class="row">' + D.ext.map(function (t, i) { return '<div class="card rise" style="--a:' + A(i, 2.6) + ';width:740px"><h3>延長戦' + "①②"[i] + '</h3><p class="s" style="font-size:34px">' + fmt(t).replace("：", "：<br>") + '</p></div>'; }).join("") + '</div>' : "")
       + '</div></div></section>']);
-    // 6 BAN＆PICK
-    if (D.bp && D.bp.length) {
-      var lab = { m: "マップ", h: "ハンターBAN", s: "サバイバーBAN", mb: "マップBAN", p: "PICK" }, cls = { m: "map", h: "hb", s: "sb", mb: "map", p: "pk" }, k = 0, base = 0.8;
-      S.push([ms(D.bp.length * 7), head("✠ BAN & PICK ✠", "BAN＆PICKの流れ") + '<div class="body"><div class="bp">' + D.bp.map(function (g) {
-        var cs = (g.steps || []).map(function (c, i) { var a = (base + (k++) * .35).toFixed(2) + "s";
-          return (i ? '<span class="ar rise" style="--a:' + a + '">▶</span>' : "") + '<span class="chip ' + cls[c.k] + ' rise" style="--a:' + a + '">' + lab[c.k] + (c.n > 1 ? '<i>×' + c.n + '</i>' : "") + '</span>'; }).join("");
-        base += .6; return '<div><div class="ttl rise" style="--a:' + (base - .4).toFixed(2) + 's">' + esc(g.label) + '</div><div class="chips">' + cs + '</div></div>'; }).join("")
-        + '<div class="rise" style="--a:' + (base + k * .35 + .5).toFixed(2) + 's;font-size:36px;line-height:1.6;color:var(--gold);text-align:center;margin-top:6px;letter-spacing:.06em">BANされたキャラは、その試合で使えません。<br>BAN＆PICKは、大会の番人BOTのブラウザで行います</div>'
-        + '</div></div></section>']);
-    }
-    // 7 全試合共通のルール
-    var lc = D.local || [];
-    if (lc.length) S.push([ms(lc.length * 2), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body"><div class="grid2">' + lc.map(function (c, i) {
-      var red = /BAN|禁止/.test(c.label);
-      return '<div class="card rise" style="--a:' + A(i) + '"><span class="tag' + (red ? ' red' : '') + '">' + esc(c.label) + '</span><h3 style="font-size:52px">' + esc(c.text) + '</h3>' + (c.note ? '<p>' + fmt(c.note) + '</p>' : "") + '</div>'; }).join("") + '</div></div></section>']);
-    // 8 試合当日の流れ
-    if (D.flow && D.flow.length) S.push([ms(D.flow.length * 1.3), head("✠ MATCH DAY ✠", "試合当日の流れ") + '<div class="body"><div class="list">' + D.flow.map(function (t, i) {
-      return '<div class="li rise" style="--a:' + A(i) + '"><div class="no">' + (i + 1) + '</div><div class="v">' + fmt(t) + '</div></div>'; }).join("") + '</div></div></section>']);
-    // 9 大会ルールの文（「動画に入れる」を押したセクション）
-    (D.texts || []).forEach(function (t) {
-      if (t.kind === "cards") S.push([ms((t.cards || []).length * 2 + 2), head("✠ RULES ✠", t.title) + '<div class="body"><div class="col">'
-        + (t.lead || []).map(function (x) { return '<div class="card rise" style="--a:.6s;width:1500px"><p style="font-size:50px;line-height:1.6">' + fmt(x) + '</p></div>'; }).join("")
-        + '<div class="row">' + t.cards.map(function (c, i) { return '<div class="card rise" style="--a:' + A(i, 1.6) + ';flex:1;max-width:480px"><h3 style="font-size:40px">' + esc(c.title) + '</h3><p class="s">' + esc(c.text) + '</p></div>'; }).join("") + '</div></div></div></section>']);
-      else S.push([ms((t.rows || []).length * 1.6), head("✠ RULES ✠", t.title) + '<div class="body"><div class="list">' + (t.rows || []).map(function (x, i) {
-        return '<div class="li rise" style="--a:' + A(i) + '"><div class="v">' + esc(x) + '</div></div>'; }).join("") + '</div></div></section>']);
+    // 5 全試合共通のルール（BAN/PICKの前に見せる）
+    if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body"><div class="rc rise" style="--a:.7s;width:1560px">' + rowsHtml(bp.global) + '</div></div></section>']);
+    // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
+    (bp.rounds || []).forEach(function (r) {
+      var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
+        r.matches ? ['<span class="hi">' + r.matches + "試合</span>"] : [], r.stream ? ['<span class="hi live">📺 生配信あり</span>'] : []].map(function (x) { return x[0] || ""; }).join("");
+      var steps = (r.steps || []).map(function (t) { return '<li class="' + (/^ハンター/.test(t) ? "h" : /^サバイバー/.test(t) ? "s" : "") + '">' + esc(t) + "</li>"; }).join("");
+      S.push([ms((r.rows || []).length * 1.8 + (r.steps || []).length * 1.2), head("✠ BAN & PICK ✠", "BAN/PICK") + '<div class="body"><div class="hero rise" style="--a:.6s">' + hero + '</div><div class="cols">'
+        + ((r.rows || []).length ? '<div class="rc rise" style="--a:1.1s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
+        + (steps ? '<div class="rc rise" style="--a:1.7s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順</h4><ol class="steps">' + steps + "</ol></div>" : "")
+        + "</div></div></section>"]);
     });
-    // 10 賞品
-    var pz = D.prizes || [];
-    if (pz.length) S.push([ms(pz.length * 1.6), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="col" style="gap:20px">' + pz.slice(0, 6).map(function (p, i) {
-      return '<div class="li rise" style="--a:' + A(i) + ';width:1500px"><div class="k" style="min-width:560px;font-size:36px;line-height:1.4">' + esc(p.who) + '</div><div class="v" style="font-size:44px;color:var(--gold)">' + esc(p.text) + '</div></div>'; }).join("") + '</div></div></section>']);
-    // 11 参加のしかた
+    // 7 賞品（賞品タブと同じカード：優勝チーム・準優勝チーム・順位を問わず・MVP）
+    var pz = D.prizes || [], MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟", cond: "🧩" };
+    if (pz.length) {
+      var n = 0, cards = pz.map(function (g, i) {
+        var items = (g.items || []).map(function (it) {
+          var fs = (it.chars && it.chars.length ? it.chars : (it.char ? [it.char] : [])).filter(function (x) { return x && x.img; });
+          n += (it.texts && it.texts.length ? it.texts : [it.text]).length;
+          return '<div class="it">' + (fs.length ? fs.map(function (x) { return faceHtml(x.name, x.img); }).join("") : '<span class="ic">🎁</span>') + '<div><div class="who">' + esc(it.who) + "</div>"
+            + (it.texts && it.texts.length ? it.texts : [it.text]).map(function (t) { return '<div class="gift">' + esc(t) + "</div>"; }).join("") + "</div></div>"; }).join("");
+        return '<div class="pzc k' + esc(g.kind) + ' rise" style="--a:' + A(i) + '"><div class="top"><span class="medal">' + (MEDAL[g.kind] || "🎁") + '</span><span class="plb">' + esc(g.label) + "</span></div>" + items + "</div>"; });
+      var rest = pz.filter(function (g) { return g.kind !== "1"; }).length;
+      if (rest % 2 === 1) cards[pz.length - 1] = cards[pz.length - 1].replace('class="pzc ', 'class="pzc wide ');
+      S.push([ms(n * 1.6 + pz.length), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="pzg">' + cards.join("") + "</div></div></section>"]);
+    }
+    // 8 参加のしかた
     var E = D.entry || {}, dl = pd(E.deadline);
     if (dl || E.max) S.push([ms(3 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px"><div class="row">'
       + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">応募締切</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
-      + (E.max ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">定員</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + E.max + '</div><p>チームまで</p></div>' : "") + '</div>'
+      + (E.max ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">定員</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + E.max + 'チーム</div><p>まで</p></div>' : "") + '</div>'
       + ((E.cond || []).length ? '<div class="card rise" style="--a:2s;width:1506px"><p style="font-size:36px;line-height:1.7">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
       + (E.invite ? '<div class="rise" style="--a:2.8s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
       + '</div></div></section>']);
-    // 12 おわり
+    // 9 おわり
     var d2 = pd(E.deadline);
     S.push([10000, '<section class="scene center"><div class="ornament rise" style="--a:.3s;font-size:36px">✠ ❦ ✠</div><div class="end-title zoom" style="--a:.7s">' + esc(D.tagline || D.title) + '</div>'
       + '<div class="rule rise" style="--a:1.8s;margin-top:18px"></div><div class="end-sub rise" style="--a:2.4s">' + esc(D.title) + '</div>'
@@ -246,6 +387,17 @@
     plan = scenes(); TOTAL = plan.reduce(function (a, s) { return a + s[0]; }, 0);
     var host = document.getElementById("scenes"); host.innerHTML = plan.map(function (s) { return s[1]; }).join("");
     els = Array.prototype.slice.call(host.children);
+    hydrate(host);
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(fitAll);
+  }
+  function fitAll() {                                                                      // 中身が多くて、場面の枠に入らないときは、小さくして収める
+    els.forEach(function (e) {
+      var body = e.querySelector(".body"); if (!body) return;
+      var w = body.querySelector(":scope > .fit");
+      if (!w) { w = document.createElement("div"); w.className = "fit"; while (body.firstChild) w.appendChild(body.firstChild); body.appendChild(w); }
+      w.style.transform = ""; var avail = body.clientHeight - 12, need = w.scrollHeight, wide = w.scrollWidth, k = Math.min(1, avail / Math.max(1, need), 1740 / Math.max(1, wide));
+      if (k < 1) w.style.transform = "scale(" + k.toFixed(3) + ")";
+    });
   }
   function clearAll() { timers.forEach(clearTimeout); timers = []; }
   function play(from) {
@@ -257,7 +409,7 @@
     plan.forEach(function (s, i) {
       if (i < from) return;
       var e = els[i];
-      timers.push(setTimeout(function () { e.className += " on"; }, at));
+      timers.push(setTimeout(function () { e.className += " on"; if (s[3]) s[3](e); }, at));
       timers.push(setTimeout(function () { e.className += " out"; }, at + s[0] - 900));
       at += s[0];
     });
