@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>紹介動画</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  @font-face { font-family: "GName"; src: url("Fantasy/ki_kokumin/font_1_kokumr_1.00_rls.ttf") format("truetype"); }
+  @font-face { font-family: "GName"; src: url("Fantasy/MODI_kurobara-gothic_2018_1102/kurobara-gothic-heavy.ttf") format("truetype");
+               unicode-range: U+3005-3006, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF; }
+  @font-face { font-family: "GBody"; src: url("Fantasy/MODI_kurobara-gothic_2018_1102/kurobara-gothic-regular.ttf") format("truetype");
+               unicode-range: U+3005-3006, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF; }
+  @font-face { font-family: "Hangyaku"; src: url("Fantasy/hangyaku-font/Hangyaku-0vRGR.ttf") format("truetype"); }
+  :root { --bg:#2f253c; --accent:#4229ff; --gold: color-mix(in srgb, var(--accent) 78%, white); --cream:#f3e9f6; --red:#ff6b8a;
+          --fa:"Hangyaku","GName","Yu Mincho",serif; --fh:"GName","Yu Mincho",serif; --fb:"GBody","GName","Yu Mincho",serif; }   /* GBody＝漢字だけ細く（かなは、下の GName の刻明朝に任せる）／fa＝タイトル・数字／fh＝見出し・ラベル（太い）／fb＝ふつうの文（漢字を、かなに合わせて細く） */
+  * { box-sizing: border-box; }
+  html,body { margin:0; height:100%; background:#05030a; overflow:hidden; cursor:none; }
+  #stage { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; overflow:hidden; color:var(--cream); font-family:var(--fb); }
+  #bg { position:absolute; inset:-60px; background:url("Gothic/background.png") center/cover; animation:drift 60s ease-in-out infinite alternate; }
+  @keyframes drift { from{transform:scale(1.02) translate(0,0)} to{transform:scale(1.12) translate(-30px,-14px)} }
+  #shade { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 45%, rgba(20,10,40,.35), rgba(5,2,12,.88) 100%), linear-gradient(color-mix(in srgb,var(--accent) 14%,transparent),color-mix(in srgb,var(--accent) 14%,transparent)); }
+  #mist { position:absolute; left:-20%; right:-20%; bottom:-10%; height:45%; background:radial-gradient(ellipse at 50% 100%, rgba(200,170,255,.22), transparent 70%); animation:mist 9s ease-in-out infinite alternate; filter:blur(20px); }
+  @keyframes mist { from{transform:translateX(-4%)} to{transform:translateX(4%)} }
+  #stars { position:absolute; inset:0; }
+  .sp { position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow:0 0 14px 4px color-mix(in srgb,var(--gold) 70%,white); opacity:0; animation:tw var(--d) ease-in-out infinite; animation-delay:var(--l); }
+  @keyframes tw { 0%,100%{opacity:0;transform:translateY(0) scale(.4)} 50%{opacity:.9;transform:translateY(-30px) scale(1)} }
+  .bat { position:absolute; width:46px; height:20px; background:#000; opacity:.8; clip-path:polygon(0 30%,18% 0,32% 40%,50% 20%,68% 40%,82% 0,100% 30%,80% 100%,50% 55%,20% 100%); animation:fly var(--t) linear infinite; animation-delay:var(--l); }
+  @keyframes fly { from{transform:translate(-120px,var(--y0)) scale(var(--s))} to{transform:translate(2040px,var(--y1)) scale(var(--s))} }
+  #vig { position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 260px 40px #000; }
+
+  /* 場面：全部重ねて、出る場面だけ見せる */
+  .scene { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; padding:56px 90px 60px; opacity:0; visibility:hidden; }
+  .scene.center { justify-content:center; padding-top:0; }
+  .scene.on { visibility:visible; animation:sceneIn 1.1s ease forwards; }
+  .scene.out { animation:sceneOut .9s ease forwards; }
+  @keyframes sceneIn { from{opacity:0;filter:blur(14px)} to{opacity:1;filter:blur(0)} }
+  @keyframes sceneOut { from{opacity:1;filter:blur(0)} to{opacity:0;filter:blur(14px)} }
+  .body { flex:1; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-bottom:10px; }
+
+  .ornament { font-family:var(--fa); color:var(--gold); letter-spacing:.5em; text-shadow:0 0 18px color-mix(in srgb,var(--accent) 80%,transparent); }
+  .gold { color:var(--gold); }
+  .rule { width:900px; height:50px; background:url("Gothic/line.png") center/contain no-repeat; filter:drop-shadow(0 0 8px var(--accent)); flex:none; }
+  .hd { text-align:center; flex:none; }
+  .hd .ornament { font-size:30px; }
+  .hd h2 { font-family:var(--fa); font-weight:400; font-size:86px; line-height:1.15; margin:4px 0 0; color:#fff; text-shadow:0 0 24px var(--accent), 0 0 50px var(--accent), 0 3px 0 #000; letter-spacing:.1em; }
+  .rise { opacity:0; transform:translateY(26px); }
+  .on .rise { animation:rise 1s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:var(--a,0s); }
+  @keyframes rise { to{opacity:1;transform:none} }
+  .zoom { opacity:0; transform:scale(.86); }
+  .on .zoom { animation:zoom 1.6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:var(--a,0s); }
+  @keyframes zoom { to{opacity:1;transform:none} }
+
+  /* 枠のパネル（コウモリの羽根の枠）。画像の外側は透明なので、中身は内側に収める */
+  .panel { position:relative; width:var(--w,1280px); height:var(--h,820px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:60px 200px 70px; }
+  .panel::before { content:""; position:absolute; inset:0; background:url("Gothic/banner.png") center/100% 100% no-repeat; filter:drop-shadow(0 0 28px color-mix(in srgb,var(--accent) 70%,transparent)); }
+  .panel > * { position:relative; }
+
+  /* かざり枠のカード（レースの縁・二重線） */
+  .card { position:relative; text-align:center; padding:34px 26px; background:linear-gradient(180deg,rgba(30,18,50,.92),rgba(12,6,24,.94)); border:3px double var(--gold); box-shadow:0 0 36px color-mix(in srgb,var(--accent) 55%,transparent), inset 0 0 40px rgba(0,0,0,.6); }
+  .card::before,.card::after { content:""; position:absolute; left:0; right:0; height:9px; background:radial-gradient(circle at 50% 100%,transparent 6px,var(--gold) 6.5px 8px,transparent 8.5px) left top/18px 9px repeat-x; }
+  .card::before { top:5px; } .card::after { bottom:5px; transform:scaleY(-1); }
+  .card h3 { font-family:var(--fa); font-weight:400; font-size:48px; margin:6px 0 14px; color:#fff; text-shadow:0 0 18px var(--accent); letter-spacing:.06em; line-height:1.25; }
+  .card p { margin:0; font-size:38px; line-height:1.6; }
+  .card p.s { font-size:32px; color:color-mix(in srgb,var(--cream) 80%,transparent); }
+  .tag { display:inline-block; font-family:var(--fh); font-size:36px; color:#fff; border:2px solid var(--gold); padding:0 20px; margin-bottom:12px; background:color-mix(in srgb,var(--accent) 35%,transparent); }
+  .tag.red { border-color:var(--red); background:rgba(255,107,138,.22); }
+  .row { display:flex; gap:26px; width:100%; justify-content:center; align-items:stretch; }
+  .col { display:flex; flex-direction:column; gap:22px; width:100%; align-items:center; }
+  b.hl { color:var(--gold); font-weight:400; font-family:var(--fh); }
+  .big { font-family:var(--fa); color:#fff; text-shadow:0 0 30px var(--accent), 0 0 60px var(--accent); line-height:1; }
+
+  /* 1 タイトル */
+  .title { font-family:var(--fa); font-weight:400; font-size:130px; line-height:1.15; margin:8px 0 0; color:#fff; text-shadow:0 0 30px var(--accent), 0 0 70px var(--accent), 0 4px 0 #000; letter-spacing:.06em; }
+  .sub { font-size:40px; margin-top:12px; letter-spacing:.2em; color:var(--gold); }
+  .by { font-size:34px; margin-top:10px; letter-spacing:.2em; }
+
+  /* 3 数 */
+  .stat { text-align:center; } .stat b { display:block; font-family:var(--fa); font-weight:400; font-size:230px; line-height:1; color:#fff; text-shadow:0 0 30px var(--accent), 0 0 60px var(--accent); }
+  .stat span { font-size:46px; letter-spacing:.25em; color:var(--gold); }
+  .times { font-family:var(--fa); font-size:80px; color:var(--gold); padding-bottom:70px; }
+
+  /* 日程 */
+  .tl { display:flex; gap:20px; width:100%; justify-content:center; }
+  .tl .card { width:340px; padding:34px 14px 30px; }
+  .tl .d { font-family:var(--fa); font-size:100px; line-height:1; color:#fff; text-shadow:0 0 24px var(--accent); }
+  .tl .w { font-size:40px; color:var(--gold); margin-top:6px; letter-spacing:.15em; }
+  .tl .t { font-size:36px; margin-top:4px; }
+  .tl .l { margin-top:18px; font-size:38px; line-height:1.4; }
+  .tl .l small { display:block; font-size:30px; color:color-mix(in srgb,var(--cream) 78%,transparent); margin-top:6px; }
+  .live { display:inline-block; font-family:var(--fa); font-size:30px; color:#fff; background:#d4204a; padding:0 16px; letter-spacing:.2em; box-shadow:0 0 18px rgba(255,60,100,.7); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50%{opacity:.55} }
+
+  /* ラウンド */
+  .rds { display:flex; gap:18px; width:100%; justify-content:center; }
+  .rd { width:340px; padding:34px 14px 28px; }
+  .rd .n { font-family:var(--fa); font-size:120px; line-height:1; color:#fff; text-shadow:0 0 22px var(--accent); }
+  .rd .nm { font-family:var(--fh); font-size:40px; margin-top:6px; color:var(--gold); min-height:56px; letter-spacing:.1em; }
+  .rd .fm { display:inline-block; margin-top:8px; font-family:var(--fa); font-size:60px; color:#fff; border:2px solid var(--gold); padding:0 26px; }
+  .rd .ms { margin-top:18px; font-size:38px; }
+  .rd .wn { margin-top:6px; font-size:34px; color:var(--gold); }
+  .rd .dt { margin-top:16px; font-size:34px; line-height:1.4; border-top:1px solid color-mix(in srgb,var(--gold) 50%,transparent); padding-top:14px; }
+
+  /* BAN&PICKの手順 */
+  .bp { width:100%; display:flex; flex-direction:column; gap:30px; }
+  .bp .ttl { font-size:40px; color:var(--gold); letter-spacing:.15em; margin-bottom:12px; text-align:left; }
+  .chips { display:flex; flex-wrap:wrap; gap:10px 6px; align-items:center; }
+  .chip { font-family:var(--fh); font-size:30px; padding:4px 12px; border:2px solid var(--gold); background:rgba(20,10,40,.85); white-space:nowrap; box-shadow:0 0 14px color-mix(in srgb,var(--accent) 50%,transparent); }
+  .chip.map { border-color:#9fe6c4; color:#c9ffe5; }
+  .chip.hb { border-color:var(--red); background:rgba(255,107,138,.18); }
+  .chip.sb { border-color:#b79bff; background:rgba(120,90,255,.22); }
+  .chip.pk { border-color:#fff; background:color-mix(in srgb,var(--accent) 45%,transparent); color:#fff; }
+  .chip i { font-style:normal; color:var(--gold); margin-left:8px; }
+  .ar { color:var(--gold); font-size:22px; }
+
+  .list { display:flex; flex-direction:column; gap:16px; width:100%; }
+  .li { display:flex; align-items:center; gap:24px; text-align:left; padding:16px 30px; background:linear-gradient(90deg,rgba(30,18,50,.92),rgba(12,6,24,.88)); border-left:6px solid var(--gold); box-shadow:0 0 24px color-mix(in srgb,var(--accent) 40%,transparent); }
+  .li .k { font-family:var(--fh); font-size:40px; color:var(--gold); min-width:290px; text-shadow:0 0 16px var(--accent); line-height:1.25; }
+  .li .v { font-size:36px; line-height:1.5; }
+  .no { font-family:var(--fa); font-size:50px; width:70px; height:70px; line-height:66px; text-align:center; border:2px solid var(--gold); color:#fff; flex:none; background:color-mix(in srgb,var(--accent) 40%,transparent); }
+
+  .end-title { font-family:var(--fa); font-size:120px; margin:12px 0 0; color:#fff; text-shadow:0 0 34px var(--accent),0 0 90px var(--accent),0 4px 0 #000; letter-spacing:.06em; line-height:1.3; text-align:center; }
+  .end-sub { font-size:48px; margin-top:22px; letter-spacing:.3em; color:var(--gold); }
+  #bar { position:absolute; left:0; bottom:0; height:4px; width:0; background:var(--gold); opacity:.55; box-shadow:0 0 12px var(--accent); }
+  #fade { position:absolute; inset:0; background:#000; opacity:1; pointer-events:none; transition:opacity 1.6s ease; }
+  .grid2 { display:grid; grid-template-columns:repeat(2,740px); gap:26px; justify-content:center; }
+  .grid2 .card { min-height:250px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  .grid2 .card p { font-size:34px; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "intro";</script>
+<!-- 大会の紹介動画（公開ページ）。BOTが書いた intro.json（core/intro_video.py）だけを見て、場面を並べる。
+     URLの ?t=（公開用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 /intro.json を読む。映すだけ（1920x1080・自動で最後まで流れて、くりかえす）。
+     クリック／スペースで最初から。#once で1回だけ。画像・フォントは、公開サイトの Gothic・Fantasy フォルダ（配信ページのゴシックと同じ）。 -->
+<div id="stage">
+  <div id="bg"></div><div id="shade"></div><div id="mist"></div><div id="stars"></div><div id="bats"></div><div id="vig"></div>
+  <div id="scenes"></div>
+  <div id="msg" style="position:absolute;left:0;right:0;top:480px;text-align:center;font-size:40px;color:var(--gold)"></div>
+  <div id="bar"></div>
+  <div id="fade"></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var WD = ["日", "月", "火", "水", "木", "金", "土"];
+  var D = null, els = [], plan = [], timers = [], t0 = 0, TOTAL = 1, ONCE = /[#&?]once/.test(location.href);
+  var key = ((/[?&]t=([A-Za-z0-9]+)/.exec(location.search) || [])[1] || "");
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>'); }                       // **強調** だけ
+  function pd(s) { var m = /(\d+)-(\d+)-(\d+)T(\d+):(\d+)/.exec(s || ""); if (!m) return null;
+    return { m: +m[2], d: +m[3], w: WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()], hm: m[4] + ":" + m[5], key: (+m[2]) + "/" + (+m[3]) }; }
+  function A(i, base) { return ((base == null ? .6 : base) + i * .4).toFixed(2) + "s"; }
+  function head(orn, h) { return '<section class="scene"><div class="hd"><div class="ornament rise" style="--a:.1s">' + orn + '</div><h2 class="rise" style="--a:.25s">' + esc(h) + '</h2><div class="rule rise" style="--a:.5s;margin:0 auto"></div></div>'; }
+  function note(t, a) { return '<div class="rise" style="--a:' + a + ';font-size:36px;line-height:1.6;color:var(--gold);text-align:center;margin-top:34px;letter-spacing:.06em">' + t + '</div>'; }
+  function ms(n) { return Math.max(7000, 4500 + n * 1500); }                                              // 場面の長さ：中身の数に合わせる
+
+  // ───── 場面（[長さ, HTML]）を、データから作る ─────
+  function scenes() {
+    var S = [], R = D.rounds || [], first = pd((R[0] || {}).at), last = pd((R[R.length - 1] || {}).at);
+    // 1 タイトル
+    S.push([8000, '<section class="scene center"><div class="panel">'
+      + '<div class="ornament rise" style="--a:.4s;font-size:34px">✠ ❦ ✠</div>'
+      + '<h1 class="title zoom" style="--a:.8s">' + esc(D.title) + '</h1><div class="rule rise" style="--a:1.6s"></div>'
+      + '<div class="sub rise" style="--a:2s">第五人格の大会</div>'
+      + (D.organizer ? '<div class="by rise" style="--a:2.6s">主催　' + esc(D.organizer) + '</div>' : '')
+      + (first && last ? '<div class="by gold rise" style="--a:3.1s">' + first.key + '(' + first.w + ')' + (last.key !== first.key ? ' ～ ' + last.key + '(' + last.w + ')' : '') + '</div>' : '')
+      + '</div></section>']);
+    // 2 数字
+    if (D.teams && R.length) S.push([8000, head("✠ THE TOURNAMENT ✠", "大会のかたち") + '<div class="body"><div class="row" style="align-items:flex-end;gap:50px">'
+      + '<div class="stat rise" style="--a:.6s"><b>' + D.teams + '</b><span>チーム</span></div><div class="times rise" style="--a:1s">×</div>'
+      + '<div class="stat rise" style="--a:1.3s"><b>' + R.length + '</b><span>ラウンド</span></div>'
+      + (D.matches ? '<div class="times rise" style="--a:1.7s">＝</div><div class="stat rise" style="--a:2s"><b>' + D.matches + '</b><span>試合</span></div>' : '')
+      + '</div></div></section>']);
+    // 3 日程
+    var sc = D.schedule || [];
+    if (sc.length) S.push([ms(sc.length * 1.5), head("✠ SCHEDULE ✠", "日程") + '<div class="body"><div class="tl">' + sc.slice(0, 5).map(function (c, i) {
+      var p = pd(c.at); return '<div class="card rise" style="--a:' + A(i) + '"><div class="d">' + p.key + '</div><div class="w">(' + p.w + ')</div><div class="t">' + p.hm + '</div>'
+        + '<div class="l">' + (c.live ? '<span class="live">LIVE</span><br>' : '') + esc(c.label) + (c.sub ? '<small>' + esc(c.sub) + '</small>' : '') + '</div></div>'; }).join("") + '</div></div></section>']);
+    // 4 ラウンドの紹介
+    if (R.length) S.push([ms(R.length * 1.4), head("✠ ROUNDS ✠", "ラウンドの紹介") + '<div class="body"><div class="rds">' + R.map(function (r, i) {
+      var p = pd(r.at), nm = String(r.name || "").replace(/^ラウンド\d+\s*/, "");
+      return '<div class="card rd rise" style="--a:' + A(i) + '"><div class="n">' + r.no + '</div><div class="nm">' + esc(nm || "ラウンド" + r.no) + '</div><div class="fm">' + esc(r.format) + '</div>'
+        + '<div class="ms">' + r.matches + ' 試合</div><div class="wn">' + (r.format === "BO3" ? "2セット先取" : r.format === "BO1" ? "1セット勝負" : "") + '</div>'
+        + '<div class="dt">' + (p ? p.key + "(" + p.w + ")<br>" + p.hm + " ～" : "") + (r.live ? '<br><span class="live">LIVE</span>' : "") + '</div></div>'; }).join("")
+      + '</div>' + (R.some(function (r) { return r.live; }) ? note("LIVE のラウンドは、実況解説つきの生配信です", "3s") : "") + '</div></section>']);
+    // 5 勝敗
+    var fm = D.formats || [];
+    S.push([12000, head("✠ HOW TO WIN ✠", "勝敗のきまり") + '<div class="body"><div class="col" style="gap:26px"><div class="row">'
+      + fm.map(function (f, i) { return '<div class="card rise" style="--a:' + A(i) + ';width:' + (fm.length > 1 ? 740 : 1000) + 'px"><span class="tag">' + esc(f) + '</span><p style="font-size:46px"><b class="hl">'
+        + (f === "BO3" ? "2セット先取" : "1セット先取") + '</b>で勝ち</p></div>'; }).join("") + '</div>'
+      + '<div class="card rise" style="--a:1.8s;width:1506px"><p>セットは、ポイントが多かったチームの勝ち。<br>全セットが終わって<b class="hl">ポイントが同点</b>なら、<b class="hl">延長戦</b>です。</p></div>'
+      + (D.ext && D.ext.length ? '<div class="row">' + D.ext.map(function (t, i) { return '<div class="card rise" style="--a:' + A(i, 2.6) + ';width:740px"><h3>延長戦' + "①②"[i] + '</h3><p class="s" style="font-size:34px">' + fmt(t).replace("：", "：<br>") + '</p></div>'; }).join("") + '</div>' : "")
+      + '</div></div></section>']);
+    // 6 BAN＆PICK
+    if (D.bp && D.bp.length) {
+      var lab = { m: "マップ", h: "ハンターBAN", s: "サバイバーBAN", mb: "マップBAN", p: "PICK" }, cls = { m: "map", h: "hb", s: "sb", mb: "map", p: "pk" }, k = 0, base = 0.8;
+      S.push([ms(D.bp.length * 7), head("✠ BAN & PICK ✠", "BAN＆PICKの流れ") + '<div class="body"><div class="bp">' + D.bp.map(function (g) {
+        var cs = (g.steps || []).map(function (c, i) { var a = (base + (k++) * .35).toFixed(2) + "s";
+          return (i ? '<span class="ar rise" style="--a:' + a + '">▶</span>' : "") + '<span class="chip ' + cls[c.k] + ' rise" style="--a:' + a + '">' + lab[c.k] + (c.n > 1 ? '<i>×' + c.n + '</i>' : "") + '</span>'; }).join("");
+        base += .6; return '<div><div class="ttl rise" style="--a:' + (base - .4).toFixed(2) + 's">' + esc(g.label) + '</div><div class="chips">' + cs + '</div></div>'; }).join("")
+        + '<div class="rise" style="--a:' + (base + k * .35 + .5).toFixed(2) + 's;font-size:36px;line-height:1.6;color:var(--gold);text-align:center;margin-top:6px;letter-spacing:.06em">BANされたキャラは、その試合で使えません。<br>BAN＆PICKは、大会の番人BOTのブラウザで行います</div>'
+        + '</div></div></section>']);
+    }
+    // 7 全試合共通のルール
+    var lc = D.local || [];
+    if (lc.length) S.push([ms(lc.length * 2), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body"><div class="grid2">' + lc.map(function (c, i) {
+      var red = /BAN|禁止/.test(c.label);
+      return '<div class="card rise" style="--a:' + A(i) + '"><span class="tag' + (red ? ' red' : '') + '">' + esc(c.label) + '</span><h3 style="font-size:52px">' + esc(c.text) + '</h3>' + (c.note ? '<p>' + fmt(c.note) + '</p>' : "") + '</div>'; }).join("") + '</div></div></section>']);
+    // 8 試合当日の流れ
+    if (D.flow && D.flow.length) S.push([ms(D.flow.length * 1.3), head("✠ MATCH DAY ✠", "試合当日の流れ") + '<div class="body"><div class="list">' + D.flow.map(function (t, i) {
+      return '<div class="li rise" style="--a:' + A(i) + '"><div class="no">' + (i + 1) + '</div><div class="v">' + fmt(t) + '</div></div>'; }).join("") + '</div></div></section>']);
+    // 9 大会ルールの文（「動画に入れる」を押したセクション）
+    (D.texts || []).forEach(function (t) {
+      if (t.kind === "cards") S.push([ms((t.cards || []).length * 2 + 2), head("✠ RULES ✠", t.title) + '<div class="body"><div class="col">'
+        + (t.lead || []).map(function (x) { return '<div class="card rise" style="--a:.6s;width:1500px"><p style="font-size:50px;line-height:1.6">' + fmt(x) + '</p></div>'; }).join("")
+        + '<div class="row">' + t.cards.map(function (c, i) { return '<div class="card rise" style="--a:' + A(i, 1.6) + ';flex:1;max-width:480px"><h3 style="font-size:40px">' + esc(c.title) + '</h3><p class="s">' + esc(c.text) + '</p></div>'; }).join("") + '</div></div></div></section>']);
+      else S.push([ms((t.rows || []).length * 1.6), head("✠ RULES ✠", t.title) + '<div class="body"><div class="list">' + (t.rows || []).map(function (x, i) {
+        return '<div class="li rise" style="--a:' + A(i) + '"><div class="v">' + esc(x) + '</div></div>'; }).join("") + '</div></div></section>']);
+    });
+    // 10 賞品
+    var pz = D.prizes || [];
+    if (pz.length) S.push([ms(pz.length * 1.6), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="col" style="gap:20px">' + pz.slice(0, 6).map(function (p, i) {
+      return '<div class="li rise" style="--a:' + A(i) + ';width:1500px"><div class="k" style="min-width:560px;font-size:36px;line-height:1.4">' + esc(p.who) + '</div><div class="v" style="font-size:44px;color:var(--gold)">' + esc(p.text) + '</div></div>'; }).join("") + '</div></div></section>']);
+    // 11 参加のしかた
+    var E = D.entry || {}, dl = pd(E.deadline);
+    if (dl || E.max) S.push([ms(3 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px"><div class="row">'
+      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">応募締切</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
+      + (E.max ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">定員</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + E.max + '</div><p>チームまで</p></div>' : "") + '</div>'
+      + ((E.cond || []).length ? '<div class="card rise" style="--a:2s;width:1506px"><p style="font-size:36px;line-height:1.7">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
+      + (E.invite ? '<div class="rise" style="--a:2.8s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
+      + '</div></div></section>']);
+    // 12 おわり
+    var d2 = pd(E.deadline);
+    S.push([10000, '<section class="scene center"><div class="ornament rise" style="--a:.3s;font-size:36px">✠ ❦ ✠</div><div class="end-title zoom" style="--a:.7s">' + esc(D.tagline || D.title) + '</div>'
+      + '<div class="rule rise" style="--a:1.8s;margin-top:18px"></div><div class="end-sub rise" style="--a:2.4s">' + esc(D.title) + '</div>'
+      + (d2 ? '<div class="by rise" style="--a:3s;font-size:34px">応募締切　' + d2.key + '(' + d2.w + ') ' + d2.hm + '</div>' : "") + '</section>']);
+    return S;
+  }
+
+  function build() {
+    document.title = (D.title || "") + " 紹介動画";
+    var th = D.theme || {}, rs = document.documentElement.style;
+    if (th.base) rs.setProperty("--bg", th.base);
+    if (th.accent) rs.setProperty("--accent", th.accent);
+    plan = scenes(); TOTAL = plan.reduce(function (a, s) { return a + s[0]; }, 0);
+    var host = document.getElementById("scenes"); host.innerHTML = plan.map(function (s) { return s[1]; }).join("");
+    els = Array.prototype.slice.call(host.children);
+  }
+  function clearAll() { timers.forEach(clearTimeout); timers = []; }
+  function play(from) {
+    if (!D) return;
+    from = from || 0; clearAll(); build();
+    var fade = document.getElementById("fade"); fade.style.opacity = 1; t0 = performance.now();
+    timers.push(setTimeout(function () { fade.style.opacity = 0; }, 100));
+    var at = 300;
+    plan.forEach(function (s, i) {
+      if (i < from) return;
+      var e = els[i];
+      timers.push(setTimeout(function () { e.className += " on"; }, at));
+      timers.push(setTimeout(function () { e.className += " out"; }, at + s[0] - 900));
+      at += s[0];
+    });
+    timers.push(setTimeout(function () { fade.style.opacity = 1; }, at - 1200));
+    timers.push(setTimeout(function () { if (ONCE) return; load(); }, at + 800));              // 終わったら、最新のデータを読み直して、最初から
+  }
+  function load() {
+    function go(d) { if (d && d.title) { D = d; document.getElementById("msg").textContent = ""; play(); } else if (!D) document.getElementById("msg").textContent = "まだ、紹介動画の内容がありません。"; else play(); }
+    if (window.INTRO_DATA_EMBEDDED) return go(window.INTRO_DATA_EMBEDDED);
+    var base = window.TOURNAMENT_DATA_BASE;
+    if (!base) { document.getElementById("msg").textContent = "データの場所が設定されていません。"; return; }
+    if (!/^[A-Za-z0-9]{12}$/.test(key)) { document.getElementById("msg").textContent = "このページは、大会のURL（主催者から案内されたもの）から開いてください。"; return; }
+    fetch(base + key + "/intro.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(go)
+      .catch(function () { if (D) play(); else document.getElementById("msg").textContent = "データを読み込めませんでした。しばらくしてからもう一度開いてください。"; });
+  }
+  // 背景のかざり
+  (function () {
+    var st = document.getElementById("stars"), i, e;
+    for (i = 0; i < 46; i++) { e = document.createElement("i"); e.className = "sp"; e.style.left = (Math.random() * 100) + "%"; e.style.top = (Math.random() * 100) + "%";
+      e.style.setProperty("--d", (4 + Math.random() * 6).toFixed(1) + "s"); e.style.setProperty("--l", (-Math.random() * 10).toFixed(1) + "s");
+      e.style.width = e.style.height = (3 + Math.random() * 7).toFixed(1) + "px"; st.appendChild(e); }
+    var bt = document.getElementById("bats");
+    for (i = 0; i < 7; i++) { e = document.createElement("i"); e.className = "bat"; e.style.left = 0; e.style.top = 0; var y0 = 80 + Math.random() * 500;
+      e.style.setProperty("--y0", y0 + "px"); e.style.setProperty("--y1", (y0 - 120 + Math.random() * 240) + "px"); e.style.setProperty("--s", (.5 + Math.random() * 1.1).toFixed(2));
+      e.style.setProperty("--t", (16 + Math.random() * 14).toFixed(1) + "s"); e.style.setProperty("--l", (-Math.random() * 26).toFixed(1) + "s"); bt.appendChild(e); }
+  })();
+  function fit() { var s = Math.min(innerWidth / 1920, innerHeight / 1080), st = document.getElementById("stage");
+    st.style.transform = "scale(" + s + ")"; st.style.left = ((innerWidth - 1920 * s) / 2) + "px"; st.style.top = ((innerHeight - 1080 * s) / 2) + "px"; }
+  addEventListener("resize", fit); fit();
+  (function tick() { var b = document.getElementById("bar"); b.style.width = Math.min(100, (performance.now() - t0) / (TOTAL + 1100) * 100) + "%"; requestAnimationFrame(tick); })();
+  addEventListener("click", function () { play(); });
+  addEventListener("keydown", function (e) { if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); play(); } });
+  window.__intro = { play: play, start: function (n) { D = window.INTRO_DATA_EMBEDDED; play(n); } };                                                                      // 確認用（場面の番号から流す）
+  load();
+})();
+</script>
+</body>
+</html>

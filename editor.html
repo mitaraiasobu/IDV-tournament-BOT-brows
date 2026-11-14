@@ -801,8 +801,8 @@
   function rbNorm(d) {                                                               // BOTが保存する形（空白を落とす・空のセクションは消す。非表示は、残す）
     return { tabs: (d.tabs || []).map(function (t) {
       if (t.builtin) return t.hidden ? { builtin: t.builtin, hidden: true } : { builtin: t.builtin };
-      var o = { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return x.builtin ? { builtin: x.builtin } : { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim(), hidden: !!x.hidden }; })
-        .filter(function (x) { return x.builtin || x.title || x.body; }).map(function (x) { if (x.builtin) return x; var y = { title: x.title || "（見出しなし）", body: x.body }; if (x.hidden) y.hidden = true; return y; }) };
+      var o = { title: String(t.title || "").trim(), sections: (t.sections || []).map(function (x) { return x.builtin ? { builtin: x.builtin } : { title: String(x.title || "").trim(), body: String(x.body || "").replace(/\r\n/g, "\n").trim(), hidden: !!x.hidden, video: !!x.video }; })
+        .filter(function (x) { return x.builtin || x.title || x.body; }).map(function (x) { if (x.builtin) return x; var y = { title: x.title || "（見出しなし）", body: x.body }; if (x.hidden) y.hidden = true; if (x.video) y.video = true; return y; }) };
       if (t.hidden) o.hidden = true;
       return o;
     }), theme: rbTheme(d.theme) };
@@ -938,6 +938,7 @@
         st.addEventListener("input", function () { sc.title = st.value; rbDirty(); }); sh.appendChild(st);
         sbx.style.opacity = sc.hidden ? ".55" : "";
         var shb = el("button", sc.hidden ? "primary" : "", sc.hidden ? "🙈 非表示中" : "👁 表示中"); shb.type = "button"; shb.addEventListener("click", function () { sc.hidden = !sc.hidden; rbDirty(); renderRulebook(); }); sh.appendChild(shb);
+        var svb = el("button", sc.video ? "primary" : "", sc.video ? "🎬 動画に入れる" : "🎬 動画に入れない"); svb.type = "button"; svb.title = "紹介動画に、この文を場面として入れます（「# 」＝大きな一文、「## 」＝見出しつきのカード、それ以外＝1行ずつ）"; svb.addEventListener("click", function () { sc.video = !sc.video; rbDirty(); renderRulebook(); }); sh.appendChild(svb);
         var su = el("button", "", "↑"); su.type = "button"; su.disabled = si === 0; su.addEventListener("click", function () { move(t.sections, si, -1); }); sh.appendChild(su);
         var sd = el("button", "", "↓"); sd.type = "button"; sd.disabled = si === t.sections.length - 1; sd.addEventListener("click", function () { move(t.sections, si, 1); }); sh.appendChild(sd);
         var sx = el("button", "", "🗑"); sx.type = "button"; sx.style.color = "#ff7070"; sx.addEventListener("click", function () { if (confirm("セクション「" + (sc.title || "") + "」を消します。よろしいですか？")) { t.sections.splice(si, 1); rbDirty(); renderRulebook(); } }); sh.appendChild(sx);
@@ -1319,6 +1320,9 @@
     bar.textContent = ""; bar.hidden = !url; if (!url) return;
     var a = el("a", "", "🔗 実際のページを見る（" + v[2] + "）"); a.href = url + (v[1] ? "#name=" + encodeURIComponent(v[1]) : ""); a.target = "_blank"; a.rel = "noopener";
     a.style.cssText = "font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none"; bar.appendChild(a);
+    if (name === "rb" && pages.intro) {                                                // 大会ルールのタブ：紹介動画（「🎬 動画に入れる」を押した文が、場面になる）
+      var b = el("a", "", "🎬 紹介動画を見る（映すだけのページ）"); b.href = pages.intro; b.target = "_blank"; b.rel = "noopener"; b.style.cssText = a.style.cssText + ";margin-left:8px"; bar.appendChild(b);
+    }
   }
   function showTab(name) {
     Object.keys(XTAB).forEach(function (id) { $("tab-" + id).hidden = name !== id; $("tab" + id).className = name === id ? "on" : ""; });        // 追加のタブ（editor_tabs.js）

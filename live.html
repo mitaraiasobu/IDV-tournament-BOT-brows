@@ -502,6 +502,152 @@
   html[data-design="simple"].stage .rs.enter::before { animation: fadeUpS .8s ease-out both; }
   html[data-design="simple"].flow .rs-title .big, html[data-design="simple"].flow .rs-title .small, html[data-design="simple"].flow .rs-row .lb, html[data-design="simple"].flow .rs-row .sc,
   html[data-design="simple"].flow .rs-team .pt, html[data-design="simple"].flow .rs-next .nx, html[data-design="simple"].flow .rs { font-family: inherit; font-style: normal; text-shadow: none; }
+  /* ═══════════════ ウィンターの戦績の画面（シンプルと同じ配置） ═══════════════ */
+  /* BAN/PICKの画面は、基本のスタイルのまま。文字だけ、標準の太字に戻す（筆のようなフォント・斜体にしない） */
+  html[data-design="winter"].stage .hdr { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
+  html[data-design="winter"].stage .card .cap { font-family: inherit; }
+  html[data-design="winter"].stage .center .ttl { font-family: inherit; font-style: normal; font-size: 34px; font-weight: 900; }
+  html[data-design="winter"].stage .center .sc div { font-family: inherit; font-style: normal; font-size: 72px; font-weight: 900; }
+  /* 成績の画面：金色の枠の中に、チーム2つと、セットごとの得点 */
+  html[data-design="winter"].stage .rs { font-family: inherit; }
+  html[data-design="winter"].stage .rs::before { inset: auto; left: 170px; right: 170px; top: 235px; bottom: 150px; background: none; border: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+        box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 20%, transparent), 0 20px 50px rgba(0,0,0,.5); }
+  html[data-design="winter"].stage .rs::after, html[data-design="winter"].stage .rs-tag { display: none; }
+  html[data-design="winter"].stage .rs-title { left: 0; right: 0; top: 40px; text-align: center; transform: none; white-space: normal; filter: drop-shadow(0 4px 14px rgba(0,0,0,.55)); }
+  html[data-design="winter"].stage .rs-title .big, html[data-design="winter"].stage .rs-title .small { position: static; display: inline; transform: none; font-family: inherit; font-style: normal; font-weight: 900;
+        font-size: 120px; letter-spacing: .02em; text-shadow: none; color: transparent; -webkit-background-clip: text; background-clip: text;
+        background-image: linear-gradient(180deg, var(--gold2), var(--accent) 60%, color-mix(in srgb, var(--accent) 60%, black)); }
+  html[data-design="winter"].stage .rs-title .small { margin-left: .3em; }
+  html[data-design="winter"].stage .rs-title::after { left: 50%; right: auto; width: 560px; margin-left: -280px; bottom: -8px; height: 4px; transform: none;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  html[data-design="winter"].stage .rs-team { top: 235px; width: 400px; height: 695px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        padding: 36px 10px 20px; text-align: center; background: var(--tc); background-image: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 40%, rgba(0,0,0,.28));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  html[data-design="winter"].stage .rs-team.a { left: 170px; } html[data-design="winter"].stage .rs-team.b { right: 170px; left: auto; }
+  html[data-design="winter"].stage .rs-team .art, html[data-design="winter"].stage .rs-team.b .art { position: static; left: auto; width: auto; height: auto; clip-path: none; background: none; overflow: visible;
+        display: flex; flex-direction: column; align-items: center; }
+  html[data-design="winter"].stage .rs-team .art::before, html[data-design="winter"].stage .rs-team .art::after { display: none; }
+  html[data-design="winter"].stage .rs-team .logo, html[data-design="winter"].stage .rs-team.b .logo { position: static; width: 170px; height: 170px; border: 6px solid rgba(255,255,255,.9); background: none;
+        font-family: inherit; font-size: 56px; font-weight: 900; order: -1; }
+  html[data-design="winter"].stage .rs-team .tn, html[data-design="winter"].stage .rs-team.b .tn { position: static; transform: none; margin-top: 28px; font-family: inherit; font-size: 64px; font-weight: 800; text-shadow: none; line-height: 1.1; }
+  html[data-design="winter"].stage .rs-team .tn.m { font-size: 54px; } html[data-design="winter"].stage .rs-team .tn.s { font-size: 44px; }
+  html[data-design="winter"].stage .rs-team .wl, html[data-design="winter"].stage .rs-team.b .wl { position: static; transform: none; background: none; padding: 0; min-width: 0; font-family: inherit; font-style: normal;
+        font-size: 84px; font-weight: 900; letter-spacing: 0; line-height: 1.1; min-height: 1.1em; color: #fff; }
+  html[data-design="winter"].stage .rs-team .wl:empty { display: block; }
+  html[data-design="winter"].stage .rs-team .wl.win { color: color-mix(in srgb, var(--gold2) 85%, white); } html[data-design="winter"].stage .rs-team .wl.lose { background: none; color: #fff; }
+  html[data-design="winter"].stage .rs-team .ptbox, html[data-design="winter"].stage .rs-team.a .ptbox, html[data-design="winter"].stage .rs-team.b .ptbox { position: static; transform: none; width: auto; height: auto; background: none; border: 0; box-shadow: none; }
+  html[data-design="winter"].stage .rs-team .pt { position: static; font-family: inherit; font-style: normal; font-size: 190px; font-weight: 900; line-height: 1; color: #fff; }
+  html[data-design="winter"].stage .rs-team .cap { display: none; }
+  html[data-design="winter"].stage .rs-rows { left: 570px; top: 235px; width: 780px; height: 695px; gap: 0; background: var(--ink); }
+  html[data-design="winter"].stage .rs-row { transform: none; flex-direction: column; justify-content: center; gap: 0; border: 0; border-bottom: 3px solid rgba(255,255,255,.18); box-shadow: none;
+        background: linear-gradient(90deg, rgba(0,0,0,.55), rgba(40,50,80,.35), rgba(0,0,0,.55)); }
+  html[data-design="winter"].stage .rs-row:last-child { border-bottom: 0; }
+  html[data-design="winter"].stage .rs-row .lb { position: static; font-family: inherit; font-style: normal; font-size: 40px; font-weight: 800; letter-spacing: .02em; color: #fff; }
+  html[data-design="winter"].stage .rs-row .lb::before, html[data-design="winter"].stage .rs-row .lb::after { content: none; }
+  html[data-design="winter"].stage .rs-row .sc { font-family: inherit; font-style: normal; font-size: 110px; font-weight: 900; line-height: 1.05; padding: 0; gap: .3em; color: #fff; }
+  html[data-design="winter"].stage .rs-row .sc i { width: auto; height: auto; background: none; transform: none; }
+  html[data-design="winter"].stage .rs-row .sc i::before { content: "-"; }
+  html[data-design="winter"].stage .rs-next { right: 60px; bottom: 44px; height: auto; padding: 0; background: none; border: 0; box-shadow: none; transform: none; gap: .5em; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+  html[data-design="winter"].stage .rs-next .nx, html[data-design="winter"].stage .rs-next .nt { font-family: inherit; font-size: 48px; font-weight: 900; letter-spacing: .04em; color: var(--accent); }
+  html[data-design="winter"].stage .rs-next .nx::before { margin-right: .2em; }
+  html[data-design="winter"].stage .rs-next .sl { display: none; }
+  @keyframes dropInW { from { transform: translateY(-80px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes riseW { from { transform: scaleY(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeUpW { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  html[data-design="winter"].stage .rs.enter .rs-title { animation: dropInW .7s ease-out both; }
+  html[data-design="winter"].stage .rs.enter .rs-row { animation: riseW .6s ease-out both; }
+  html[data-design="winter"].stage .rs.enter .rs-next { animation: fadeUpW .8s 1s ease-out both; }
+  html[data-design="winter"].stage .rs.enter::before { animation: fadeUpW .8s ease-out both; }
+  html[data-design="winter"].flow .rs-title .big, html[data-design="winter"].flow .rs-title .small, html[data-design="winter"].flow .rs-row .lb, html[data-design="winter"].flow .rs-row .sc,
+  html[data-design="winter"].flow .rs-team .pt, html[data-design="winter"].flow .rs-next .nx, html[data-design="winter"].flow .rs { font-family: inherit; font-style: normal; text-shadow: none; }
+  /* ═══════════════ デザイン：ウィンター（図形だけ。バナーなどの画像は、あとで差しかえる）。雪がふる、氷のようなパネル。チームの枠（BAN/PICKのカード・戦績のチーム）は、クリスタルの形。色は、テーマカラーと、チームの色 ═══════════════ */
+  html[data-design="winter"] { --accent: #8fd0f8; --glow: #1c4a78; --line: #3a6a9a; --hue: 205deg;   /* テーマカラーを決めていない大会は、氷の青（決めていれば、そちらが先） */
+        --ice: #e4f5ff;--ink: color-mix(in srgb, var(--bg) 70%, #0b2a45); --snow-a: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='white'><circle cx='170' cy='82' r='2.2' opacity='0.52'/><circle cx='279' cy='53' r='2.1' opacity='0.53'/><circle cx='264' cy='114' r='1.6' opacity='0.70'/><circle cx='40' cy='128' r='1.7' opacity='0.69'/><circle cx='294' cy='68' r='3.1' opacity='0.78'/><circle cx='303' cy='36' r='2.5' opacity='0.68'/><circle cx='118' cy='28' r='2.4' opacity='0.56'/><circle cx='219' cy='78' r='2.4' opacity='0.76'/><circle cx='291' cy='354' r='1.8' opacity='0.76'/><circle cx='332' cy='101' r='2.1' opacity='0.75'/><circle cx='37' cy='293' r='1.6' opacity='0.59'/><circle cx='353' cy='277' r='2.2' opacity='0.64'/><circle cx='304' cy='237' r='2.1' opacity='0.61'/><circle cx='97' cy='362' r='2.8' opacity='0.54'/><circle cx='158' cy='273' r='2.3' opacity='0.65'/><circle cx='234' cy='152' r='2.5' opacity='0.53'/></g></svg>"); --snow-b: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><g fill='white'><circle cx='529' cy='433' r='3.4' opacity='0.65'/><circle cx='505' cy='436' r='3.1' opacity='0.80'/><circle cx='576' cy='591' r='5.0' opacity='0.87'/><circle cx='353' cy='363' r='4.5' opacity='0.76'/><circle cx='472' cy='75' r='5.1' opacity='0.93'/><circle cx='490' cy='685' r='3.2' opacity='0.83'/><circle cx='322' cy='667' r='4.4' opacity='0.81'/><circle cx='461' cy='296' r='4.8' opacity='0.90'/><circle cx='360' cy='28' r='5.4' opacity='0.66'/></g></svg>"); }
+  /* ── ウィンター：氷結（四すみから霜がのび、ひびが走り、雪がふる）・氷の結晶のかざり・文字 ── */
+  html[data-design="winter"] { --wf: "Cinzel", "Shippori Mincho", "Yu Mincho", serif; --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.08'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.5'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.06'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%2523h)'%3E%3Cpolygon points='0,1080 40,860 90,700 130,860 190,1080'/%3E%3Cpolygon points='120,1080 190,930 240,800 280,930 330,1080'/%3E%3Cpolygon points='300,1080 350,990 390,920 420,990 460,1080'/%3E%3Cpolygon points='1500,1080 1560,1000 1600,930 1640,1000 1700,1080'/%3E%3Cpolygon points='1640,1080 1700,900 1770,720 1830,900 1880,1080'/%3E%3Cpolygon points='1800,1080 1850,820 1920,640 1920,1080'/%3E%3C/g%3E%3Cg fill='url(%2523g)'%3E%3Cpolygon points='1920,0 1920,240 1860,330 1800,150 1760,0'/%3E%3Cpolygon points='1700,0 1660,110 1620,0'/%3E%3Cpolygon points='0,0 120,0 70,130 0,200'/%3E%3C/g%3E%3Cg opacity='.5'%3E%3Cg fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M1780,160 L1780,90'/%3E%3Cpath d='M1780,122 L1768,112'/%3E%3Cpath d='M1780,122 L1792,112'/%3E%3Cpath d='M1780,105 L1768,96'/%3E%3Cpath d='M1780,105 L1792,96'/%3E%3Cpath d='M1780,160 L1841,125'/%3E%3Cpath d='M1813,141 L1816,126'/%3E%3Cpath d='M1813,141 L1828,146'/%3E%3Cpath d='M1827,133 L1830,118'/%3E%3Cpath d='M1827,133 L1842,138'/%3E%3Cpath d='M1780,160 L1841,195'/%3E%3Cpath d='M1813,179 L1828,174'/%3E%3Cpath d='M1813,179 L1816,194'/%3E%3Cpath d='M1827,187 L1842,182'/%3E%3Cpath d='M1827,187 L1830,202'/%3E%3Cpath d='M1780,160 L1780,230'/%3E%3Cpath d='M1780,198 L1792,208'/%3E%3Cpath d='M1780,198 L1768,208'/%3E%3Cpath d='M1780,215 L1792,224'/%3E%3Cpath d='M1780,215 L1768,224'/%3E%3Cpath d='M1780,160 L1719,195'/%3E%3Cpath d='M1747,179 L1744,194'/%3E%3Cpath d='M1747,179 L1732,174'/%3E%3Cpath d='M1733,187 L1730,202'/%3E%3Cpath d='M1733,187 L1718,182'/%3E%3Cpath d='M1780,160 L1719,125'/%3E%3Cpath d='M1747,141 L1732,146'/%3E%3Cpath d='M1747,141 L1744,126'/%3E%3Cpath d='M1733,133 L1718,138'/%3E%3Cpath d='M1733,133 L1730,118'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.38'%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M140,160 L140,114'/%3E%3Cpath d='M140,135 L132,128'/%3E%3Cpath d='M140,135 L148,128'/%3E%3Cpath d='M140,124 L132,118'/%3E%3Cpath d='M140,124 L148,118'/%3E%3Cpath d='M140,160 L180,137'/%3E%3Cpath d='M162,147 L164,137'/%3E%3Cpath d='M162,147 L171,151'/%3E%3Cpath d='M171,142 L173,132'/%3E%3Cpath d='M171,142 L181,146'/%3E%3Cpath d='M140,160 L180,183'/%3E%3Cpath d='M162,173 L171,169'/%3E%3Cpath d='M162,173 L164,183'/%3E%3Cpath d='M171,178 L181,174'/%3E%3Cpath d='M171,178 L173,188'/%3E%3Cpath d='M140,160 L140,206'/%3E%3Cpath d='M140,185 L148,192'/%3E%3Cpath d='M140,185 L132,192'/%3E%3Cpath d='M140,196 L148,202'/%3E%3Cpath d='M140,196 L132,202'/%3E%3Cpath d='M140,160 L100,183'/%3E%3Cpath d='M118,173 L116,183'/%3E%3Cpath d='M118,173 L109,169'/%3E%3Cpath d='M109,178 L107,188'/%3E%3Cpath d='M109,178 L99,174'/%3E%3Cpath d='M140,160 L100,137'/%3E%3Cpath d='M118,147 L109,151'/%3E%3Cpath d='M118,147 L116,137'/%3E%3Cpath d='M109,142 L99,146'/%3E%3Cpath d='M109,142 L107,132'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.3'%3E%3Cg fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M260,940 L260,904'/%3E%3Cpath d='M260,920 L254,915'/%3E%3Cpath d='M260,920 L266,915'/%3E%3Cpath d='M260,912 L254,907'/%3E%3Cpath d='M260,912 L266,907'/%3E%3Cpath d='M260,940 L291,922'/%3E%3Cpath d='M277,930 L279,922'/%3E%3Cpath d='M277,930 L285,933'/%3E%3Cpath d='M284,926 L286,918'/%3E%3Cpath d='M284,926 L292,929'/%3E%3Cpath d='M260,940 L291,958'/%3E%3Cpath d='M277,950 L285,947'/%3E%3Cpath d='M277,950 L279,958'/%3E%3Cpath d='M284,954 L292,951'/%3E%3Cpath d='M284,954 L286,962'/%3E%3Cpath d='M260,940 L260,976'/%3E%3Cpath d='M260,960 L266,965'/%3E%3Cpath d='M260,960 L254,965'/%3E%3Cpath d='M260,968 L266,973'/%3E%3Cpath d='M260,968 L254,973'/%3E%3Cpath d='M260,940 L229,958'/%3E%3Cpath d='M243,950 L241,958'/%3E%3Cpath d='M243,950 L235,947'/%3E%3Cpath d='M236,954 L234,962'/%3E%3Cpath d='M236,954 L228,951'/%3E%3Cpath d='M260,940 L229,922'/%3E%3Cpath d='M243,930 L235,933'/%3E%3Cpath d='M243,930 L241,922'/%3E%3Cpath d='M236,926 L228,929'/%3E%3Cpath d='M236,926 L234,918'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  html[data-design="winter"] #bg { background: radial-gradient(ellipse at 50% 55%, transparent 50%, rgba(0,8,24,.6) 100%), radial-gradient(ellipse at 50% 0%, color-mix(in srgb, #9fd8ff 30%, transparent), transparent 62%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, #0d2f52), color-mix(in srgb, var(--bg) 85%, #020b18) 70%, var(--bg)); }
+  html[data-design="winter"] #bg::before, html[data-design="winter"] .in-bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 280' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23f4fbff'/%3E%3Cstop offset='1' stop-color='%23a9d2f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon fill='%236f9cc4' opacity='.5' points='0,280 0,150 140,90 300,170 480,60 660,160 860,80 1040,170 1240,70 1440,160 1640,90 1800,150 1920,110 1920,280'/%3E%3Cpolygon fill='url(%23a)' opacity='.95' points='0,280 0,200 180,150 380,210 600,140 820,215 1060,160 1280,220 1500,150 1720,210 1920,170 1920,280'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cg fill='white'%3E%3Ccircle cx='235' cy='290' r='1.2' opacity='0.83'/%3E%3Ccircle cx='235' cy='264' r='1.2' opacity='0.50'/%3E%3Ccircle cx='266' cy='247' r='1.0' opacity='0.84'/%3E%3Ccircle cx='52' cy='232' r='0.7' opacity='0.45'/%3E%3Ccircle cx='25' cy='206' r='1.3' opacity='0.76'/%3E%3Ccircle cx='84' cy='11' r='1.2' opacity='0.43'/%3E%3Ccircle cx='22' cy='101' r='1.2' opacity='0.73'/%3E%3Ccircle cx='241' cy='171' r='0.9' opacity='0.86'/%3E%3Ccircle cx='269' cy='123' r='1.0' opacity='0.67'/%3E%3Ccircle cx='47' cy='238' r='1.0' opacity='0.62'/%3E%3Ccircle cx='286' cy='46' r='1.1' opacity='0.57'/%3E%3Ccircle cx='121' cy='266' r='0.7' opacity='0.44'/%3E%3Ccircle cx='59' cy='209' r='0.6' opacity='0.56'/%3E%3Ccircle cx='38' cy='12' r='1.2' opacity='0.40'/%3E%3Ccircle cx='111' cy='30' r='0.9' opacity='0.94'/%3E%3Ccircle cx='207' cy='218' r='0.6' opacity='0.75'/%3E%3Ccircle cx='142' cy='176' r='0.6' opacity='0.58'/%3E%3Ccircle cx='213' cy='64' r='0.6' opacity='0.79'/%3E%3Ccircle cx='9' cy='34' r='0.9' opacity='0.67'/%3E%3Ccircle cx='290' cy='100' r='0.9' opacity='0.50'/%3E%3Ccircle cx='71' cy='218' r='1.0' opacity='0.46'/%3E%3Ccircle cx='219' cy='112' r='0.5' opacity='0.88'/%3E%3Ccircle cx='159' cy='14' r='0.7' opacity='0.62'/%3E%3Ccircle cx='55' cy='25' r='1.3' opacity='0.52'/%3E%3Ccircle cx='136' cy='8' r='1.1' opacity='0.58'/%3E%3Ccircle cx='155' cy='201' r='0.6' opacity='0.45'/%3E%3C/g%3E%3C/svg%3E"), var(--snow-a), var(--snow-b); background-repeat: no-repeat, repeat, repeat, repeat;
+        background-size: 100% 26%, 300px 300px, 420px 420px, 700px 700px; background-position: 0 100%, 0 0, 0 0, 0 0; animation: snowFallW 24s linear infinite; }
+  @keyframes snowFallW { to { background-position: 0 100%, 0 0, 0 420px, -350px 700px; } }
+  /* オーロラ：緑・青・紫の帯が、ゆっくりゆれる */
+  html[data-design="winter"] #bg::after, html[data-design="winter"] .in-bg::after { content: ""; position: absolute; left: -6%; right: -6%; top: 2%; height: 66%; pointer-events: none; z-index: 1; mix-blend-mode: screen;
+        background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,10,30,.38) 22px 40px), linear-gradient(90deg, transparent 2%, rgba(44,240,166,.75) 18%, rgba(74,168,255,.75) 42%, rgba(154,108,255,.7) 66%, rgba(44,240,166,.55) 84%, transparent 98%); filter: blur(14px); opacity: .85; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 34%, transparent 96%); animation: auroraW 11s ease-in-out infinite alternate; }
+  html[data-design="winter"] #stage::before { content: ""; position: absolute; left: -6%; right: -6%; top: 12%; height: 52%; pointer-events: none; z-index: 1; mix-blend-mode: screen;
+        background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,10,30,.38) 22px 40px), linear-gradient(90deg, transparent 2%, rgba(44,240,166,.75) 18%, rgba(74,168,255,.75) 42%, rgba(154,108,255,.7) 66%, rgba(44,240,166,.55) 84%, transparent 98%); filter: blur(18px); opacity: .5; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 30%, transparent 95%); animation: auroraW 15s ease-in-out infinite alternate-reverse; }
+  html[data-design="winter"].flow #stage::before, html[data-design="winter"].black #stage::before { display: none; }
+  @keyframes auroraW { from { transform: translateX(-3.5%) scaleY(.88); } to { transform: translateX(3.5%) scaleY(1.1); } }
+  html[data-design="winter"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: var(--deco) 0 0 / 100% 100% no-repeat; animation: glintW 7s ease-in-out infinite alternate; }
+  @keyframes glintW { from { opacity: .7; } to { opacity: 1; } }
+  html[data-design="winter"].flow #stage::after, html[data-design="winter"].black #stage::after { display: none; }
+  html[data-design="winter"] .in-bg { background-color: #04101e; background-image: radial-gradient(ellipse at 26% 50%, color-mix(in srgb, var(--ic) 30%, transparent), transparent 58%), radial-gradient(ellipse at 50% 130%, rgba(0,0,0,.7), transparent 60%),
+        linear-gradient(180deg, color-mix(in srgb, var(--ic) 18%, #072a48), #031018); }
+  html[data-design="winter"] .in-streak { display: none; }
+  html[data-design="winter"] .iv-glow { background: radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 55%), radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.65), transparent 60%); }
+  /* 文字：見出し・名前は、明朝のような細い線＋氷のひかり（黒い影は使わない） */
+  html[data-design="winter"] .op-title, html[data-design="winter"] .op-nm, html[data-design="winter"] .op-tag .op-t, html[data-design="winter"] .cl-end, html[data-design="winter"] .cl-title,
+  html[data-design="winter"] .cl-thx2, html[data-design="winter"] .iv-tag .tx, html[data-design="winter"] .iv-name, html[data-design="winter"] .iv-count, html[data-design="winter"] .iv-who,
+  html[data-design="winter"] .iv-team .tn2, html[data-design="winter"] .in-nm, html[data-design="winter"] .in-team .tnm, html[data-design="winter"] .in-half .tnm, html[data-design="winter"] .in-pill .tn2,
+  html[data-design="winter"].stage .hdr, html[data-design="winter"].stage .center .ttl, html[data-design="winter"].stage .center .sc div, html[data-design="winter"].stage .rs-title .big, html[data-design="winter"].stage .rs-title .small,
+  html[data-design="winter"].stage .rs-row .lb, html[data-design="winter"].stage .rs-row .sc, html[data-design="winter"].stage .rs-team .tn, html[data-design="winter"].stage .rs-team .pt, html[data-design="winter"].stage .rs-team .wl,
+  html[data-design="winter"].stage .rs-next .nx, html[data-design="winter"].stage .rs-next .nt { font-family: var(--wf); font-style: normal; font-weight: 700; }
+  html[data-design="winter"] .op-sub, html[data-design="winter"] .cl-thx1 { font-family: var(--wf); font-weight: 700; color: var(--ice); }
+  html[data-design="winter"] .op-title, html[data-design="winter"] .op-nm, html[data-design="winter"] .op-tag .op-t, html[data-design="winter"] .cl-end, html[data-design="winter"] .cl-thx2, html[data-design="winter"] .iv-tag .tx, html[data-design="winter"] .iv-count,
+  html[data-design="winter"] .iv-name, html[data-design="winter"] .in-nm, html[data-design="winter"] .in-team .tnm, html[data-design="winter"] .in-half .tnm { color: var(--ice); letter-spacing: .06em;
+        text-shadow: 0 0 6px rgba(255,255,255,.55), 0 0 26px color-mix(in srgb, var(--ic, var(--accent)) 75%, #9fd8ff), 0 0 60px rgba(120,190,255,.35); }
+  html[data-design="winter"] .op-line { background: linear-gradient(90deg, transparent, #fff, transparent); box-shadow: 0 0 26px #9fd8ff; height: 3px; }
+  html[data-design="winter"] .iv-tag { border-bottom-color: var(--ice); } html[data-design="winter"] .iv-timer { border-right-color: var(--ice); }
+  html[data-design="winter"] .iv-ring { background: conic-gradient(from 0deg, #fff, #8fd0f8, #e4f5ff, #4c8fc0, #fff); }
+  html[data-design="winter"] .op-card, html[data-design="winter"] .in-kv { border-left-color: var(--ice); }
+  html[data-design="winter"].stage .rs-title .big, html[data-design="winter"].stage .rs-title .small { letter-spacing: .08em; font-size: 104px; }
+  html[data-design="winter"].stage .rs-row .sc { font-size: 96px; } html[data-design="winter"].stage .rs-team .pt { font-size: 150px; }
+  /* BAN/PICK：見出し・中央・BANのマスは、角を落とした氷の板。チームの枠は、クリスタル */
+  html[data-design="winter"].stage .hdr { font-family: inherit; font-style: normal; font-weight: 900; font-size: 34px; color: var(--ice); border: 0; box-shadow: none;
+        background: linear-gradient(120deg, rgba(255,255,255,.28) 0 12%, transparent 12%), linear-gradient(180deg, color-mix(in srgb, #7cc4f0 34%, var(--ink)), var(--ink));
+        clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0 50%); }
+  html[data-design="winter"].stage .sq { border: 0; border-radius: 0; box-shadow: none; background: linear-gradient(180deg, color-mix(in srgb, #8fd0f8 38%, var(--ink)), var(--ink));
+        clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); }
+  html[data-design="winter"].stage .sq.used { box-shadow: none; background: linear-gradient(180deg, color-mix(in srgb, var(--red) 40%, var(--ink)), var(--ink)); }
+  html[data-design="winter"].stage .center { border: 0; border-radius: 0; box-shadow: none; font-family: inherit;
+        background: linear-gradient(120deg, rgba(255,255,255,.2) 0 9%, transparent 9%), linear-gradient(180deg, color-mix(in srgb, #8fd0f8 30%, var(--ink)), var(--ink));
+        clip-path: polygon(0 30px, 30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px)); }
+  html[data-design="winter"].stage .center .ttl, html[data-design="winter"].stage .center .st { color: var(--ice); }
+  html[data-design="winter"].stage .surv .card { --tc: var(--ta); --tl: var(--tla); } html[data-design="winter"].stage .hunt .card { --tc: var(--tb); --tl: var(--tlb); }
+  html[data-design="winter"].stage .card { border: 0; border-radius: 0; padding: 7px 8px 0; box-shadow: none;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 55%, #d4efff), color-mix(in srgb, var(--tc) 65%, #0b2a45));
+        clip-path: polygon(0 12%, 50% 0, 100% 12%, 100% 88%, 50% 100%, 0 88%); }
+  html[data-design="winter"].stage .card::before { inset: 0; height: auto; z-index: 3; pointer-events: none;
+        background: linear-gradient(122deg, rgba(255,255,255,.4) 0 11%, transparent 11%), linear-gradient(238deg, transparent 0 84%, rgba(255,255,255,.22) 84% 92%, transparent 92%); }
+  html[data-design="winter"].stage .card .art { clip-path: polygon(0 11%, 50% 1%, 100% 11%, 100% 100%, 0 100%); background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--tc) 35%, #0b2a45), color-mix(in srgb, var(--tc) 18%, #020b18) 85%); }
+  html[data-design="winter"].stage .card .cap { border-top: 0; font-family: inherit; color: var(--ice); padding-bottom: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 45%, #0b2a45), color-mix(in srgb, var(--tc) 75%, #04101e)); }
+  /* 戦績：チームは、上と下がとがったクリスタル。文字は、とがりの内側に収める */
+  html[data-design="winter"].stage .rs-team { padding: 110px 22px 90px; clip-path: polygon(50% 0, 100% 12%, 100% 88%, 50% 100%, 0 88%, 0 12%);
+        background: var(--tc); background-image: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 38%, rgba(0,20,50,.4)); box-shadow: none; }
+  html[data-design="winter"].stage .rs-team::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+        background: linear-gradient(118deg, rgba(255,255,255,.42) 0 14%, transparent 14%), linear-gradient(242deg, transparent 0 78%, rgba(255,255,255,.22) 78% 90%, transparent 90%),
+                    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) top / 100% 12% no-repeat; }
+  html[data-design="winter"].stage .rs-team .logo, html[data-design="winter"].stage .rs-team.b .logo { width: 150px; height: 150px; border-radius: 0; border-width: 4px;
+        clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  html[data-design="winter"].stage .rs-team .tn, html[data-design="winter"].stage .rs-team.b .tn { font-size: 58px; margin-top: 18px; }
+  html[data-design="winter"].stage .rs-team .tn.m { font-size: 48px; } html[data-design="winter"].stage .rs-team .tn.s { font-size: 40px; }
+  html[data-design="winter"].stage .rs-team .wl, html[data-design="winter"].stage .rs-team.b .wl { font-size: 64px; }
+  html[data-design="winter"].stage .rs-team .pt { font-size: 170px; }
+  html[data-design="winter"].stage .rs-title .big, html[data-design="winter"].stage .rs-title .small { background-image: linear-gradient(180deg, #ffffff, var(--ice) 45%, #7cc4f0); }
+  html[data-design="winter"].stage .rs-title::after { background: linear-gradient(90deg, transparent, var(--ice), transparent); }
+  html[data-design="winter"].stage .rs::before { display: none; }      /* 四角い枠は出さない（クリスタルの四すみに、四角い線が見えてしまう） */
+  html[data-design="winter"].stage .rs-rows { background: linear-gradient(180deg, color-mix(in srgb, #8fd0f8 26%, var(--ink)), var(--ink)); }
+  html[data-design="winter"].stage .rs-next .nx, html[data-design="winter"].stage .rs-next .nt { color: var(--ice); }
+  /* 紹介のVS：氷の板が割れたような、ぎざぎざの割れ目。両側は、チームの色をうすく映した氷。雪がふり、ひし形のひびがゆっくり流れる */
+  html[data-design="winter"] .in-half .bgc { background: radial-gradient(ellipse at var(--gx, 30%) 55%, color-mix(in srgb, var(--ic) 46%, transparent), transparent 62%), linear-gradient(180deg, color-mix(in srgb, var(--ic) 22%, #0a3a62), color-mix(in srgb, var(--ic) 10%, #031018)); }
+  html[data-design="winter"] .in-half .bgc::after { opacity: .5; animation: inDiaW 14s linear infinite; background: repeating-linear-gradient(60deg, transparent 0 96px, rgba(235,248,255,.35) 96px 98px), repeating-linear-gradient(-60deg, transparent 0 96px, rgba(235,248,255,.25) 96px 98px); }
+  @keyframes inDiaW { from { transform: translateX(0); } to { transform: translateX(221.7px); } }
+  html[data-design="winter"] .in-half .bgc::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background-image: var(--snow-a), var(--snow-b); background-size: 420px 420px, 700px 700px; animation: snowFallW 24s linear infinite; }
+  html[data-design="winter"] .in-half .side { font-family: var(--wf); color: var(--ice); text-shadow: 0 0 6px rgba(255,255,255,.55), 0 0 26px rgba(120,190,255,.7); }
+  html[data-design="winter"] .in-half .pl .pn { font-family: var(--wf); color: var(--ice); text-shadow: 0 0 10px rgba(120,190,255,.7); }
+  html[data-design="winter"] .in-half .pl .ic { border-color: var(--ice); box-shadow: 0 0 24px color-mix(in srgb, var(--ic) 60%, #9fd8ff); }
+  html[data-design="winter"] .in-slash { clip-path: polygon(56.6% 0, 54.9% 18%, 53.2% 17%, 51% 38%, 49.4% 36%, 47.2% 60%, 45.6% 58%, 43.5% 80%, 42.4% 78%, 41.6% 100%, 44.2% 100%, 45.6% 79%, 46.7% 81%, 48.6% 61%, 50% 63%, 52.4% 39%, 53.9% 41%, 56.1% 19%, 57.5% 21%, 59.2% 0);
+        background: linear-gradient(180deg, #fff, #bfe6ff, #fff, #9fd8ff, #fff); filter: drop-shadow(0 0 18px rgba(160,220,255,.9)); }
   /* ═══════════════ デザイン：ファンタジー（画像）。公開サイトの Fantasy フォルダの画像（背景・背景の枠・チームの楕円・中央のバナー・NEXTの枠・線）を使う。チーム名＝黒薔薇ゴシック＋刻明朝／見出し・数字＝反逆。色は、テーマカラーから作る ═══════════════ */
   html[data-design="fantasy"] { --gold: color-mix(in srgb, var(--accent) 78%, white); --cream: color-mix(in srgb, var(--text) 86%, #ffe6f2);
         --fa: "Hangyaku", "GName", "Yu Mincho", serif;           /* タイトル・見出し・数字 */
@@ -1384,7 +1530,8 @@
   .sw-av img { width: 100%; height: 100%; object-fit: cover; }
   .sw-nm { font-family: var(--cond); font-weight: 800; font-size: 48px; text-shadow: 0 0 12px rgba(0, 0, 0, .8); max-width: 360px; text-align: center; overflow-wrap: anywhere; }
   .sw-p.fr .sw-av { opacity: .8; filter: grayscale(.4); }
-  .sw-bye { font-family: var(--cond); font-weight: 800; font-size: 30px; color: var(--accent); text-shadow: 0 0 12px rgba(0, 0, 0, .8); text-align: center; animation: swArrow 1.2s ease-out 3.4s both; }
+  .sw-p { position: relative; }
+  .sw-bye { position: absolute; left: 50%; top: 100%; translate: -50% 0; margin-top: 14px; white-space: nowrap; font-family: var(--cond); font-weight: 800; font-size: 30px; color: var(--accent); text-shadow: 0 0 12px rgba(0, 0, 0, .8); text-align: center; animation: swArrow 1.2s ease-out 3.4s both; }
   .sw-arrow { font-size: 76px; letter-spacing: -.1em; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: swArrow 1.4s ease-in-out 1.4s infinite both; opacity: 0; }
   @keyframes swIn { from { opacity: 0; transform: translateX(-70px) scale(.9); } to { opacity: 1; transform: none; } }
   .sw-grp.to { animation-name: swInR; } @keyframes swInR { from { opacity: 0; transform: translateX(70px) scale(.9); } to { opacity: 1; transform: none; } }
@@ -1454,26 +1601,31 @@
      ・ロゴの画像は、透明な部分の形に合わせて、黒い、細いぼかしの縁取りを付ける（白いチームの色の上でも、白いロゴが見えるように）。
      data-tka／data-tkb は、A／Bチームの色が、dark（黒に近い）・light（白に近い）のとき、JSがつける */
   .rs-team .logo img { filter: drop-shadow(0 0 1.5px rgba(0,0,0,.95)) drop-shadow(0 0 4px rgba(0,0,0,.7)); }
-  html:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]) .rs-team .tn { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
+  html:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team .tn { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
   html[data-design="simple"] .rs-team .tn { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team .logo { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-design="simple"] .rs-team .pt { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
-  html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]) .rs-team.a .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
+  html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.a .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
   html[data-tka="dark"][data-design="simple"] .rs-team.a .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tka="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #fff !important; border-color: rgba(255,255,255,.92) !important; background-color: rgba(0,0,0,.28) !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tka="dark"][data-design="simple"] .rs-team.a .pt { color: #fff !important; }
-  html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]) .rs-team.a .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
+  html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.a .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
   html[data-tka="light"][data-design="simple"] .rs-team.a .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tka="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.a .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tka="light"][data-design="simple"] .rs-team.a .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
-  html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]) .rs-team.b .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
+  html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.b .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7), 5px 6px 0 rgba(0,0,0,.45) !important; }
   html[data-tkb="dark"][data-design="simple"] .rs-team.b .tn { color: #fff !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tkb="dark"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #fff !important; border-color: rgba(255,255,255,.92) !important; background-color: rgba(0,0,0,.28) !important; text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
   html[data-tkb="dark"][data-design="simple"] .rs-team.b .pt { color: #fff !important; }
-  html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]) .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
+  html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]):not([data-design="simple"]):not([data-design="winter"]) .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7), 5px 6px 0 rgba(255,255,255,.5) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .tn { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"]:not([data-design="fantasy"]):not([data-design="gothic"]) .rs-team.b .logo { color: #111 !important; border-color: rgba(0,0,0,.85) !important; background-color: rgba(255,255,255,.3) !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   html[data-tkb="light"][data-design="simple"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  html[data-design="winter"] .rs-team .tn, html[data-design="winter"] .rs-team .pt { text-shadow: 0 0 2px rgba(0,0,0,.95), 0 0 5px rgba(0,0,0,.7) !important; }
+  html[data-tka="dark"][data-design="winter"] .rs-team.a .tn, html[data-tka="dark"][data-design="winter"] .rs-team.a .pt { color: #fff !important; }
+  html[data-tka="light"][data-design="winter"] .rs-team.a .tn, html[data-tka="light"][data-design="winter"] .rs-team.a .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
+  html[data-tkb="dark"][data-design="winter"] .rs-team.b .tn, html[data-tkb="dark"][data-design="winter"] .rs-team.b .pt { color: #fff !important; }
+  html[data-tkb="light"][data-design="winter"] .rs-team.b .tn, html[data-tkb="light"][data-design="winter"] .rs-team.b .pt { color: #111 !important; text-shadow: 0 0 2px rgba(255,255,255,.95), 0 0 5px rgba(255,255,255,.7) !important; }
   .chg { text-decoration: underline; text-decoration-color: #ff3b3b; text-decoration-thickness: 3px; text-underline-offset: 4px; text-shadow: 0 0 8px rgba(255, 59, 59, .75); }       /* 最近（3日以内）変わったところ：文字の色はそのまま、赤い下線 */
   html.paused *, html.paused *::before, html.paused *::after { animation-play-state: paused !important; transition: none !important; }   /* 一時停止：演出の動きも止める */
 </style>
