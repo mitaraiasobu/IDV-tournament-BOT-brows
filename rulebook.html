@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大会ルール</title>
 <meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: 'self'; connect-src https:; frame-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: 'self' https:; media-src https:; connect-src https:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv; base-uri 'none'; form-action 'none'">
 <!--
   大会ルールのページ（どの大会にも共通の1枚）。
   ・URLの ?t=（公開用の12文字）で、window.TOURNAMENT_DATA_BASE ＋ その12文字 /rulebook.json（BOTが書いた、大会ルール）を読む。
@@ -246,6 +246,18 @@
     .hm-sec { margin-top: 28px; }
   }
   @media (max-width: 380px) { .dts { grid-template-columns: 1fr; } }
+  /* 画面のぶれ防止：スクロールバーの有無で幅が変わらないように／横に広いタブ（トーナメント表など）でも、上の帯・「戻る・次へ」は、いつも同じ場所 */
+  html { overflow-y: scroll; scrollbar-gutter: stable; }
+  .allbar, .tools, .nav { max-width: 868px; margin-left: auto; margin-right: auto; }
+  /* 紹介動画・生配信の埋め込み */
+  .embs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .embs.one { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; }
+  .emb { border: 1px solid var(--line, #3a4a7a); border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--accent, #7aa2ff) 7%, transparent); min-width: 0; }
+  .emb .ttl { padding: 10px 14px 6px; font-weight: 800; }
+  .emb .vw { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .emb .vw iframe, .emb .vw video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .emb .op { display: block; padding: 8px 14px 10px; font-size: 13px; opacity: .85; word-break: break-all; }
+  .emb .lk { padding: 18px 14px; }
 </style>
 </head>
 <body>
@@ -417,6 +429,16 @@
   var HOME_OPEN = "";
   function homeFmt(s) { var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s || ""); return m ? m[1] + "年" + (+m[2]) + "月" + (+m[3]) + "日 " + m[4] + ":" + m[5] : ""; }
   function dateParts(iso) { var d = pLocal(iso); if (!d) return null; return { md: (d.getMonth() + 1) + "/" + d.getDate(), w: "日月火水木金土"[d.getDay()], hm: d.getHours() + ":" + pad2(d.getMinutes()), y: d.getFullYear() }; }
+  function embedCard(x, title) {                                                      // 紹介動画・生配信：YouTube・Twitch・動画ファイルは、その場で再生できる。それ以外は、リンク
+    var c = el("div", "emb"); if (title) c.appendChild(el("div", "ttl", title));
+    var vw = el("div", "vw"), f = null;
+    if (x.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(x.id || "")) { f = el("iframe"); f.src = "https://www.youtube.com/embed/" + x.id + "?rel=0"; f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen"); f.setAttribute("allowfullscreen", ""); f.title = title || "動画"; }
+    else if (x.kind === "twitch" && (x.channel || x.video)) { f = el("iframe"); f.src = "https://player.twitch.tv/?" + (x.channel ? "channel=" + encodeURIComponent(x.channel) : "video=" + encodeURIComponent(x.video)) + "&parent=" + encodeURIComponent(location.hostname || "") + "&autoplay=false"; f.setAttribute("allowfullscreen", ""); f.title = title || "配信"; }
+    else if (x.kind === "video" && /^https?:\/\//.test(x.url || "")) { f = el("video"); f.controls = true; f.preload = "metadata"; f.setAttribute("playsinline", ""); f.src = x.url; }
+    if (f) { f.setAttribute("loading", "lazy"); vw.appendChild(f); c.appendChild(vw); } else c.appendChild(el("div", "lk"));
+    if (/^https?:\/\//.test(x.url || "")) { var a = el("a", "op", "↗ " + x.url); a.href = x.url; a.target = "_blank"; a.rel = "noopener noreferrer"; c.appendChild(a); }
+    return c;
+  }
   function hmSec(title, body) { var sc = el("section", "hm-sec rv"); sc.appendChild(el("h2", "", title)); sc.appendChild(body); return sc; }
   function drawHome(box, h) {
     h = h || {};
@@ -429,6 +451,7 @@
     if (h.text) { var tx = el("div", "hm-text"); tx.appendChild(mdRender(h.text)); hero.appendChild(tx); }
     w.appendChild(hero);
     var e = h.entry || {}, L = h.links || {};
+    if (h.intro) { var gi = el("div", "embs one"); gi.appendChild(embedCard(h.intro, "")); w.appendChild(hmSec("🎞 大会紹介動画", gi)); }
     // ① 大会日時：1つずつのカード（スマホでは2列・狭いときは1列）
     var dts = arr0(h.dates);
     if (dts.length) {
@@ -449,6 +472,7 @@
       f.setAttribute("data-fid", "a"); f.style.height = (BK_H.a || 600) + "px"; kw.appendChild(f);
       w.appendChild(hmSec("🏆 トーナメント表", kw));
     }
+    if (arr0(h.streams).length) { var gs = el("div", "embs" + (h.streams.length === 1 ? " one" : "")); h.streams.forEach(function (x) { gs.appendChild(embedCard(x, "📺 " + x.label)); }); w.appendChild(hmSec("📺 生配信", gs)); }
     // ④ エントリー/メンバー募集
     var p = el("div", "hm-panel"), dl = el("dl");
     function row(k, v) { if (!v) return; dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); }
