@@ -21,6 +21,13 @@
                   flow＝縦長・狭い画面（スマホなど）。画面の幅に合わせて文字の大きさ・並びが変わり、縦に並べて、スクロールできる */
   html.stage, html.stage body { height: 100%; overflow: hidden; }
   html[data-bg="transparent"], html[data-bg="transparent"] body { background: transparent; }
+  /* 設定の「背景のURL」（画像・動画・YouTube）：どのデザインでも、デザインの背景より上に出す。少し暗くして、文字を読みやすくする */
+  #bgmedia { display: none; position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  #bgmedia > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; }
+  #bgmedia::after { content: ""; position: absolute; inset: 0; background: rgba(4,6,22,.42); }
+  html[data-hasbg]:not([data-bg="transparent"]) #bgmedia { display: block; }
+  html[data-hasbg]:not([data-bg="transparent"]) { background: var(--bg) !important; }
+  html[data-hasbg]:not([data-bg="transparent"]) body { background: transparent !important; }
 
   /* ════════ 配信用：1920x1080 固定ステージ（ウィンドウに合わせて拡縮） ════════ */
   #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
@@ -329,6 +336,7 @@
 </head>
 <body>
 <script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/";</script>
+<div id="bgmedia"></div>
 
 <div id="stage">
   <div class="top">
@@ -457,6 +465,23 @@
     return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
   }
   var THEME_VARS = ["--bg", "--panel", "--panel2", "--text", "--sub", "--line", "--accent", "--lose", "--chip", "--champbg"];
+  // 設定の「背景のURL」（画像・動画・YouTube）。内容が変わったときだけ入れ替える
+  var bgSig = null;
+  function setBackground(bg) {
+    var sig = JSON.stringify(bg || null);
+    if (sig === bgSig) return;
+    bgSig = sig;
+    var box = document.getElementById("bgmedia"), e = null;
+    box.replaceChildren();
+    if (bg && bg.kind === "image" && bg.url) { e = new Image(); e.src = bg.url; e.alt = ""; e.draggable = false; }
+    else if (bg && bg.kind === "video" && bg.url) { e = document.createElement("video"); e.src = bg.url; e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("muted", ""); e.play && e.play().catch(function () {}); }
+    else if (bg && bg.kind === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(bg.id || "")) {
+      e = document.createElement("iframe"); e.setAttribute("allow", "autoplay"); e.setAttribute("tabindex", "-1");
+      e.src = "https://www.youtube.com/embed/" + bg.id + "?autoplay=1&mute=1&controls=0&loop=1&playlist=" + bg.id + "&playsinline=1&rel=0&start=" + (parseInt(bg.start, 10) || 0);
+    }
+    if (e) box.appendChild(e);
+    if (e) document.documentElement.setAttribute("data-hasbg", ""); else document.documentElement.removeAttribute("data-hasbg");
+  }
   function applyTheme(th) {
     var root = document.documentElement.style;
     THEME_VARS.forEach(function (p) { root.removeProperty(p); });
@@ -839,9 +864,10 @@
     updateMusic(data);
     if (window.Changelog && !EMBED && !INBOOK) window.Changelog.update(data.changes);                 // ✏ 更新履歴
     ensureLogos(data.logos);
-    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
+    var sig = JSON.stringify([data.phase, data.title, data.matches, data.teams, data.champion, data.theme, data.design, data.bg, data.rounds, data.delay_min, data.logos, logosVer, tab, champPlayers]);
     if (sig === last) return;
     last = sig;
+    setBackground(data.bg);
     applyTheme(data.theme);
     document.documentElement.setAttribute("data-design", data.design || "rock");
     var title = data.title || "トーナメント表";

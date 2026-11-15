@@ -25,7 +25,7 @@
   .sp { position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow:0 0 14px 4px color-mix(in srgb,var(--gold) 70%,white); opacity:0; animation:tw var(--d) ease-in-out infinite; animation-delay:var(--l); }
   @keyframes tw { 0%,100%{opacity:0;transform:translateY(0) scale(.4)} 50%{opacity:.9;transform:translateY(-30px) scale(1)} }
   .bat { position:absolute; width:46px; height:20px; background:#000; opacity:.8; clip-path:polygon(0 30%,18% 0,32% 40%,50% 20%,68% 40%,82% 0,100% 30%,80% 100%,50% 55%,20% 100%); animation:fly var(--t) linear infinite, wave var(--w,3.6s) ease-in-out infinite alternate; animation-delay:var(--l), var(--wl,0s); }
-  @keyframes wave { from{translate:0 calc(var(--amp,50px) * -1); rotate:-14deg} to{translate:0 var(--amp,50px); rotate:14deg} }
+  @keyframes wave { from{translate:0 calc(var(--amp,50px) * -1); rotate:-4deg} to{translate:0 var(--amp,50px); rotate:4deg} }
   @keyframes fly { from{transform:translate(-120px,var(--y0)) scale(var(--s))} to{transform:translate(2040px,var(--y1)) scale(var(--s))} }
   #vig { position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 260px 40px #000; }
 
@@ -207,6 +207,118 @@
   .end-sub { font-size:48px; margin-top:22px; letter-spacing:.3em; color:var(--gold); }
   #bar { position:absolute; left:0; bottom:0; height:4px; width:0; background:var(--gold); opacity:.55; box-shadow:0 0 12px var(--accent); }
   #fade { position:absolute; inset:0; background:#000; opacity:1; pointer-events:none; transition:opacity 1.6s ease; }
+
+  /* ═══════════════ デザイン：ウィンター（ライブ画面と同じ：氷の青・雪・オーロラ・氷の結晶）。見出しだけ Feeling of Fear ═══════════════ */
+  @font-face { font-family: "WinterTitle"; src: url("Winter/FeelingOfFear_v1.0b/FeelingOfFear.ttf") format("truetype"); font-display: swap; }
+  html[data-design="winter"] { --accent: #8fd0f8; --glow: #1c4a78; --line: #3a6a9a; --hue: 205deg;   /* テーマカラーを決めていない大会は、氷の青（決めていれば、そちらが先） */
+        --ice: #e4f5ff;--ink: color-mix(in srgb, var(--bg) 70%, #0b2a45); --snow-a: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='white'><circle cx='170' cy='82' r='2.2' opacity='0.52'/><circle cx='279' cy='53' r='2.1' opacity='0.53'/><circle cx='264' cy='114' r='1.6' opacity='0.70'/><circle cx='40' cy='128' r='1.7' opacity='0.69'/><circle cx='294' cy='68' r='3.1' opacity='0.78'/><circle cx='303' cy='36' r='2.5' opacity='0.68'/><circle cx='118' cy='28' r='2.4' opacity='0.56'/><circle cx='219' cy='78' r='2.4' opacity='0.76'/><circle cx='291' cy='354' r='1.8' opacity='0.76'/><circle cx='332' cy='101' r='2.1' opacity='0.75'/><circle cx='37' cy='293' r='1.6' opacity='0.59'/><circle cx='353' cy='277' r='2.2' opacity='0.64'/><circle cx='304' cy='237' r='2.1' opacity='0.61'/><circle cx='97' cy='362' r='2.8' opacity='0.54'/><circle cx='158' cy='273' r='2.3' opacity='0.65'/><circle cx='234' cy='152' r='2.5' opacity='0.53'/></g></svg>"); --snow-b: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><g fill='white'><circle cx='529' cy='433' r='3.4' opacity='0.65'/><circle cx='505' cy='436' r='3.1' opacity='0.80'/><circle cx='576' cy='591' r='5.0' opacity='0.87'/><circle cx='353' cy='363' r='4.5' opacity='0.76'/><circle cx='472' cy='75' r='5.1' opacity='0.93'/><circle cx='490' cy='685' r='3.2' opacity='0.83'/><circle cx='322' cy='667' r='4.4' opacity='0.81'/><circle cx='461' cy='296' r='4.8' opacity='0.90'/><circle cx='360' cy='28' r='5.4' opacity='0.66'/></g></svg>"); }
+  html[data-design="winter"] { --wf: "Hangyaku", "GName", "Yu Mincho", serif; --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.08'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.5'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.06'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%2523h)'%3E%3Cpolygon points='0,1080 40,860 90,700 130,860 190,1080'/%3E%3Cpolygon points='120,1080 190,930 240,800 280,930 330,1080'/%3E%3Cpolygon points='300,1080 350,990 390,920 420,990 460,1080'/%3E%3Cpolygon points='1500,1080 1560,1000 1600,930 1640,1000 1700,1080'/%3E%3Cpolygon points='1640,1080 1700,900 1770,720 1830,900 1880,1080'/%3E%3Cpolygon points='1800,1080 1850,820 1920,640 1920,1080'/%3E%3C/g%3E%3Cg fill='url(%2523g)'%3E%3Cpolygon points='1920,0 1920,240 1860,330 1800,150 1760,0'/%3E%3Cpolygon points='1700,0 1660,110 1620,0'/%3E%3Cpolygon points='0,0 120,0 70,130 0,200'/%3E%3C/g%3E%3Cg opacity='.5'%3E%3Cg fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M1780,160 L1780,90'/%3E%3Cpath d='M1780,122 L1768,112'/%3E%3Cpath d='M1780,122 L1792,112'/%3E%3Cpath d='M1780,105 L1768,96'/%3E%3Cpath d='M1780,105 L1792,96'/%3E%3Cpath d='M1780,160 L1841,125'/%3E%3Cpath d='M1813,141 L1816,126'/%3E%3Cpath d='M1813,141 L1828,146'/%3E%3Cpath d='M1827,133 L1830,118'/%3E%3Cpath d='M1827,133 L1842,138'/%3E%3Cpath d='M1780,160 L1841,195'/%3E%3Cpath d='M1813,179 L1828,174'/%3E%3Cpath d='M1813,179 L1816,194'/%3E%3Cpath d='M1827,187 L1842,182'/%3E%3Cpath d='M1827,187 L1830,202'/%3E%3Cpath d='M1780,160 L1780,230'/%3E%3Cpath d='M1780,198 L1792,208'/%3E%3Cpath d='M1780,198 L1768,208'/%3E%3Cpath d='M1780,215 L1792,224'/%3E%3Cpath d='M1780,215 L1768,224'/%3E%3Cpath d='M1780,160 L1719,195'/%3E%3Cpath d='M1747,179 L1744,194'/%3E%3Cpath d='M1747,179 L1732,174'/%3E%3Cpath d='M1733,187 L1730,202'/%3E%3Cpath d='M1733,187 L1718,182'/%3E%3Cpath d='M1780,160 L1719,125'/%3E%3Cpath d='M1747,141 L1732,146'/%3E%3Cpath d='M1747,141 L1744,126'/%3E%3Cpath d='M1733,133 L1718,138'/%3E%3Cpath d='M1733,133 L1730,118'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.38'%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M140,160 L140,114'/%3E%3Cpath d='M140,135 L132,128'/%3E%3Cpath d='M140,135 L148,128'/%3E%3Cpath d='M140,124 L132,118'/%3E%3Cpath d='M140,124 L148,118'/%3E%3Cpath d='M140,160 L180,137'/%3E%3Cpath d='M162,147 L164,137'/%3E%3Cpath d='M162,147 L171,151'/%3E%3Cpath d='M171,142 L173,132'/%3E%3Cpath d='M171,142 L181,146'/%3E%3Cpath d='M140,160 L180,183'/%3E%3Cpath d='M162,173 L171,169'/%3E%3Cpath d='M162,173 L164,183'/%3E%3Cpath d='M171,178 L181,174'/%3E%3Cpath d='M171,178 L173,188'/%3E%3Cpath d='M140,160 L140,206'/%3E%3Cpath d='M140,185 L148,192'/%3E%3Cpath d='M140,185 L132,192'/%3E%3Cpath d='M140,196 L148,202'/%3E%3Cpath d='M140,196 L132,202'/%3E%3Cpath d='M140,160 L100,183'/%3E%3Cpath d='M118,173 L116,183'/%3E%3Cpath d='M118,173 L109,169'/%3E%3Cpath d='M109,178 L107,188'/%3E%3Cpath d='M109,178 L99,174'/%3E%3Cpath d='M140,160 L100,137'/%3E%3Cpath d='M118,147 L109,151'/%3E%3Cpath d='M118,147 L116,137'/%3E%3Cpath d='M109,142 L99,146'/%3E%3Cpath d='M109,142 L107,132'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.3'%3E%3Cg fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M260,940 L260,904'/%3E%3Cpath d='M260,920 L254,915'/%3E%3Cpath d='M260,920 L266,915'/%3E%3Cpath d='M260,912 L254,907'/%3E%3Cpath d='M260,912 L266,907'/%3E%3Cpath d='M260,940 L291,922'/%3E%3Cpath d='M277,930 L279,922'/%3E%3Cpath d='M277,930 L285,933'/%3E%3Cpath d='M284,926 L286,918'/%3E%3Cpath d='M284,926 L292,929'/%3E%3Cpath d='M260,940 L291,958'/%3E%3Cpath d='M277,950 L285,947'/%3E%3Cpath d='M277,950 L279,958'/%3E%3Cpath d='M284,954 L292,951'/%3E%3Cpath d='M284,954 L286,962'/%3E%3Cpath d='M260,940 L260,976'/%3E%3Cpath d='M260,960 L266,965'/%3E%3Cpath d='M260,960 L254,965'/%3E%3Cpath d='M260,968 L266,973'/%3E%3Cpath d='M260,968 L254,973'/%3E%3Cpath d='M260,940 L229,958'/%3E%3Cpath d='M243,950 L241,958'/%3E%3Cpath d='M243,950 L235,947'/%3E%3Cpath d='M236,954 L234,962'/%3E%3Cpath d='M236,954 L228,951'/%3E%3Cpath d='M260,940 L229,922'/%3E%3Cpath d='M243,930 L235,933'/%3E%3Cpath d='M243,930 L241,922'/%3E%3Cpath d='M236,926 L228,929'/%3E%3Cpath d='M236,926 L234,918'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  html[data-design="winter"] #bg { background: radial-gradient(ellipse at 50% 55%, transparent 50%, rgba(0,8,24,.6) 100%), radial-gradient(ellipse at 50% 0%, color-mix(in srgb, #9fd8ff 30%, transparent), transparent 62%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, #0d2f52), color-mix(in srgb, var(--bg) 85%, #020b18) 70%, var(--bg)); }
+  html[data-design="winter"] #bg::before, html[data-design="winter"] .in-bg::before, html[data-design="winter"] .in-half .bgc::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 280' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23f4fbff'/%3E%3Cstop offset='1' stop-color='%23a9d2f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon fill='%236f9cc4' opacity='.5' points='0,280 0,150 140,90 300,170 480,60 660,160 860,80 1040,170 1240,70 1440,160 1640,90 1800,150 1920,110 1920,280'/%3E%3Cpolygon fill='url(%23a)' opacity='.95' points='0,280 0,200 180,150 380,210 600,140 820,215 1060,160 1280,220 1500,150 1720,210 1920,170 1920,280'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cg fill='white'%3E%3Ccircle cx='235' cy='290' r='1.2' opacity='0.83'/%3E%3Ccircle cx='235' cy='264' r='1.2' opacity='0.50'/%3E%3Ccircle cx='266' cy='247' r='1.0' opacity='0.84'/%3E%3Ccircle cx='52' cy='232' r='0.7' opacity='0.45'/%3E%3Ccircle cx='25' cy='206' r='1.3' opacity='0.76'/%3E%3Ccircle cx='84' cy='11' r='1.2' opacity='0.43'/%3E%3Ccircle cx='22' cy='101' r='1.2' opacity='0.73'/%3E%3Ccircle cx='241' cy='171' r='0.9' opacity='0.86'/%3E%3Ccircle cx='269' cy='123' r='1.0' opacity='0.67'/%3E%3Ccircle cx='47' cy='238' r='1.0' opacity='0.62'/%3E%3Ccircle cx='286' cy='46' r='1.1' opacity='0.57'/%3E%3Ccircle cx='121' cy='266' r='0.7' opacity='0.44'/%3E%3Ccircle cx='59' cy='209' r='0.6' opacity='0.56'/%3E%3Ccircle cx='38' cy='12' r='1.2' opacity='0.40'/%3E%3Ccircle cx='111' cy='30' r='0.9' opacity='0.94'/%3E%3Ccircle cx='207' cy='218' r='0.6' opacity='0.75'/%3E%3Ccircle cx='142' cy='176' r='0.6' opacity='0.58'/%3E%3Ccircle cx='213' cy='64' r='0.6' opacity='0.79'/%3E%3Ccircle cx='9' cy='34' r='0.9' opacity='0.67'/%3E%3Ccircle cx='290' cy='100' r='0.9' opacity='0.50'/%3E%3Ccircle cx='71' cy='218' r='1.0' opacity='0.46'/%3E%3Ccircle cx='219' cy='112' r='0.5' opacity='0.88'/%3E%3Ccircle cx='159' cy='14' r='0.7' opacity='0.62'/%3E%3Ccircle cx='55' cy='25' r='1.3' opacity='0.52'/%3E%3Ccircle cx='136' cy='8' r='1.1' opacity='0.58'/%3E%3Ccircle cx='155' cy='201' r='0.6' opacity='0.45'/%3E%3C/g%3E%3C/svg%3E"), var(--snow-a), var(--snow-b); background-repeat: no-repeat, repeat, repeat, repeat;
+        background-size: 100% 26%, 300px 300px, 420px 420px, 700px 700px; background-position: 0 100%, 0 0, 0 0, 0 0; animation: snowFallW 24s linear infinite; }
+  @keyframes snowFallW { to { background-position: 0 100%, 0 0, 0 420px, -350px 700px; } }
+  html[data-design="winter"] #bg::after, html[data-design="winter"] .in-bg::after, html[data-design="winter"] .in-half .bgc::after { content: ""; position: absolute; left: -6%; right: -6%; top: 2%; height: 66%; pointer-events: none; z-index: 1; mix-blend-mode: screen;
+        background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,10,30,.38) 22px 40px), linear-gradient(90deg, transparent 2%, rgba(44,240,166,.75) 18%, rgba(74,168,255,.75) 42%, rgba(154,108,255,.7) 66%, rgba(44,240,166,.55) 84%, transparent 98%); filter: blur(14px); opacity: .85; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 34%, transparent 96%); animation: auroraW 11s ease-in-out infinite alternate; }
+  html[data-design="winter"] #stage::before { content: ""; position: absolute; left: -6%; right: -6%; top: 12%; height: 52%; pointer-events: none; z-index: 1; mix-blend-mode: screen;
+        background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,10,30,.38) 22px 40px), linear-gradient(90deg, transparent 2%, rgba(44,240,166,.75) 18%, rgba(74,168,255,.75) 42%, rgba(154,108,255,.7) 66%, rgba(44,240,166,.55) 84%, transparent 98%); filter: blur(18px); opacity: .5; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 30%, transparent 95%); animation: auroraW 15s ease-in-out infinite alternate-reverse; }
+  @keyframes auroraW { from { transform: translateX(-3.5%) scaleY(.88); } to { transform: translateX(3.5%) scaleY(1.1); } }
+  html[data-design="winter"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: var(--deco) 0 0 / 100% 100% no-repeat; animation: glintW 7s ease-in-out infinite alternate; }
+  @keyframes glintW { from { opacity: .7; } to { opacity: 1; } }
+  html[data-design="winter"] { --bg: #0e2a48; --gold: color-mix(in srgb, var(--accent) 40%, #e4f5ff); --cream: #eaf7ff; --fh: var(--wf); --red: #ff7e9a; }
+  html[data-design="winter"] #shade { background: radial-gradient(ellipse at 50% 45%, rgba(0,20,50,.10), rgba(0,8,24,.55) 100%); }
+  html[data-design="winter"] #mist, html[data-design="winter"] #stars, html[data-design="winter"] #bats { display: none; }
+  html[data-design="winter"] #vig { box-shadow: inset 0 0 220px 30px rgba(0,8,24,.85); }
+  html[data-design="winter"] .scene { z-index: 2; }
+  /* 文字：黒い影は使わない（氷のひかり） */
+  html[data-design="winter"] .title, html[data-design="winter"] .hd h2, html[data-design="winter"] .bktag, html[data-design="winter"] .big, html[data-design="winter"] .stat b, html[data-design="winter"] .stat span,
+  html[data-design="winter"] .ph .dt, html[data-design="winter"] .pzh .nm, html[data-design="winter"] .card h3 { color: var(--ice); text-shadow: 0 0 6px rgba(255,255,255,.55), 0 0 26px color-mix(in srgb, var(--accent) 75%, #9fd8ff), 0 0 60px rgba(120,190,255,.35); }
+  html[data-design="winter"] .hd h2, html[data-design="winter"] .bktag { font-family: "WinterTitle", var(--fa); font-weight: 400; letter-spacing: .08em; }
+  html[data-design="winter"] .bktag::before, html[data-design="winter"] .ornament { color: var(--ice); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 80%, transparent); }
+  html[data-design="winter"] .rule { background: linear-gradient(90deg, transparent, #fff, transparent); height: 3px; margin-top: 14px; filter: none; box-shadow: 0 0 22px #9fd8ff; }
+  /* 板：氷の板（角を落として、上のふちが白く光る） */
+  html[data-design="winter"] .card, html[data-design="winter"] .rc, html[data-design="winter"] .pzi .it, html[data-design="winter"] .pc { border: 0; border-top: 3px solid rgba(228,245,255,.9); box-shadow: none;
+        background: linear-gradient(122deg, rgba(255,255,255,.30) 0 7%, transparent 7%), linear-gradient(180deg, color-mix(in srgb, var(--accent) 38%, #0b2a45), rgba(5,22,44,.93) 70%);
+        clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px); }
+  html[data-design="winter"] .card::before, html[data-design="winter"] .card::after { display: none; }
+  html[data-design="winter"] .pc { border-left: 7px solid var(--ice); clip-path: none; }
+  html[data-design="winter"] .pc.bye { background: rgba(10,40,70,.45); }
+  html[data-design="winter"] .op-ln { filter: drop-shadow(0 0 8px #9fd8ff); stroke: var(--ice); }
+  html[data-design="winter"] .tag { border-color: var(--ice); color: var(--ice); background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  html[data-design="winter"] .pzi .it { border-left: 6px solid var(--pz); border-top: 3px solid color-mix(in srgb, var(--pz) 60%, #fff); }
+  html[data-design="winter"] .gh { clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%); border: 0; box-shadow: none; }
+  html[data-design="winter"] .pzh .nm small, html[data-design="winter"] .pzl { color: var(--ice); }
+
+  html[data-design="rock"] .bktag::before { content: "▰ "; color: var(--accent); }
+  html[data-design="simple"] .bktag::before { content: "◆ "; color: var(--gold); }
+  html[data-design="winter"] .bktag::before { content: "❄ "; }
+  /* ═══════════════ デザイン：ロック（筆のような見出し・右肩あがりに切ったパネル・傷の質感）。色は、テーマカラー ═══════════════ */
+  @font-face { font-family: "Edo SZ"; src: url("assets/rock/edosz.ttf") format("truetype"); font-display: swap; }
+  @font-face { font-family: "851Kana"; src: url("assets/rock/851chikara-dzuyoku-kanaA.ttf") format("truetype"); unicode-range: U+3040-30FF, U+31F0-31FF, U+FF66-FF9F; font-display: swap; }
+  html[data-design="rock"] { --bg: #0b1230; --accent: #ffb020; --glow: #1f2c66; --gold: color-mix(in srgb, var(--accent) 70%, white); --cream: #eceff6; --ink: color-mix(in srgb, var(--bg) 62%, #000);
+        --disp: "Edo SZ", "851Kana", "Yuji Boku", "Yu Gothic UI", sans-serif; --cond: "Anton", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
+        --fa: var(--disp); --fh: var(--cond); --fb: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", sans-serif;
+        --rock-grad: linear-gradient(160deg, color-mix(in srgb, var(--accent) 84%, white), var(--accent) 45%, color-mix(in srgb, var(--accent) 62%, var(--bg))); }
+  html[data-design="rock"] #bg { background: radial-gradient(ellipse at 50% 30%, var(--glow), var(--bg) 70%); animation: none; }
+  html[data-design="rock"] #bg::before { content: ""; position: absolute; inset: 0; background: var(--rock-grad); -webkit-mask: url(assets/rock/scratch_alpha.webp) center / cover no-repeat; mask: url(assets/rock/scratch_alpha.webp) center / cover no-repeat; opacity: .8; pointer-events: none; }
+  html[data-design="rock"] #shade { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.05), rgba(0,0,10,.55) 100%); }
+  html[data-design="rock"] #mist, html[data-design="rock"] #stars, html[data-design="rock"] #bats { display: none; }
+  html[data-design="rock"] .scene { z-index: 2; }
+  html[data-design="rock"] .title, html[data-design="rock"] .hd h2, html[data-design="rock"] .bktag, html[data-design="rock"] .big, html[data-design="rock"] .stat b, html[data-design="rock"] .stat span,
+  html[data-design="rock"] .ph .dt, html[data-design="rock"] .pzh .nm, html[data-design="rock"] .card h3 { color: #fff; font-weight: 400; letter-spacing: .04em; text-shadow: .06em .06em 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+  html[data-design="rock"] .hd h2 { display: inline-block; border-bottom: .12em solid var(--accent); padding: 0 .3em; }
+  html[data-design="rock"] .ornament { font-family: var(--cond); color: var(--accent); text-shadow: none; letter-spacing: .4em; }
+  html[data-design="rock"] .rule { background: var(--accent); height: 10px; width: 760px; margin-top: 18px; filter: none; clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 22px 100%); }
+  html[data-design="rock"] .card, html[data-design="rock"] .rc, html[data-design="rock"] .pzi .it, html[data-design="rock"] .gh, html[data-design="rock"] .tag { border: 0; box-shadow: inset .4em 0 0 var(--accent);
+        background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-position: 60% 50%; background-blend-mode: screen;
+        clip-path: polygon(0 100%, 22px 0, 100% 0, calc(100% - 22px) 100%); }
+  html[data-design="rock"] .card::before, html[data-design="rock"] .card::after { display: none; }
+  html[data-design="rock"] .tag { color: var(--bg); background-image: none; background-color: var(--accent); box-shadow: none; padding: 0 28px; font-weight: 800; }
+  html[data-design="rock"] .pc { border: 0; border-left: 7px solid var(--accent); background-color: var(--ink); background-image: url(assets/rock/darkgrunge.webp); background-size: cover; background-blend-mode: screen; box-shadow: none; }
+  html[data-design="rock"] .pc.bye { opacity: .5; }
+  html[data-design="rock"] .ph .nm, html[data-design="rock"] .ph .fm { color: var(--accent); font-family: var(--cond); font-style: italic; }
+  html[data-design="rock"] .op-ln { stroke: var(--accent); filter: none; }
+  html[data-design="rock"] .pzi .it { border-left: 0; box-shadow: inset .4em 0 0 var(--pz); }
+  html[data-design="rock"] .pzh .nm small, html[data-design="rock"] .pzl { color: var(--accent); }
+
+  /* ═══════════════ デザイン：シンプル（紺のガラスのパネルと、金色の縁取り。落ち着いた見た目） ═══════════════ */
+  html[data-design="simple"] { --bg: #0b1230; --accent: #ffb020; --glow: #1f2c66; --gold: color-mix(in srgb, var(--accent) 55%, white); --cream: #eceff6;
+        --fa: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, sans-serif; --fh: var(--fa); --fb: var(--fa); }
+  html[data-design="simple"] #bg { background: radial-gradient(ellipse at 50% 30%, var(--glow), var(--bg) 75%); animation: none; }
+  html[data-design="simple"] #shade { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0), rgba(0,0,12,.5) 100%); }
+  html[data-design="simple"] #mist, html[data-design="simple"] #stars, html[data-design="simple"] #bats { display: none; }
+  html[data-design="simple"] .title, html[data-design="simple"] .hd h2, html[data-design="simple"] .bktag, html[data-design="simple"] .big, html[data-design="simple"] .stat b, html[data-design="simple"] .stat span,
+  html[data-design="simple"] .ph .dt, html[data-design="simple"] .pzh .nm, html[data-design="simple"] .card h3, html[data-design="simple"] .ph .nm, html[data-design="simple"] .ph .fm, html[data-design="simple"] .tag, html[data-design="simple"] .gh,
+  html[data-design="simple"] .times, html[data-design="simple"] .pc .pn, html[data-design="simple"] .live, html[data-design="simple"] .ornament { font-weight: 800; letter-spacing: .04em; }
+  html[data-design="simple"] .title, html[data-design="simple"] .hd h2, html[data-design="simple"] .bktag, html[data-design="simple"] .big, html[data-design="simple"] .stat b, html[data-design="simple"] .stat span,
+  html[data-design="simple"] .ph .dt, html[data-design="simple"] .pzh .nm, html[data-design="simple"] .card h3 { color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+  html[data-design="simple"] .ornament { color: var(--gold); text-shadow: none; }
+  html[data-design="simple"] .rule { background: linear-gradient(90deg, transparent, var(--gold), transparent); height: 2px; margin-top: 16px; filter: none; }
+  html[data-design="simple"] .card, html[data-design="simple"] .rc, html[data-design="simple"] .pzi .it, html[data-design="simple"] .pc { border: 2px solid var(--gold); border-radius: 10px;
+        background: linear-gradient(180deg, color-mix(in srgb, #1a2450 94%, transparent), color-mix(in srgb, #121a3d 96%, transparent)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent), 0 10px 30px rgba(0,0,0,.45); }
+  html[data-design="simple"] .card::before, html[data-design="simple"] .card::after { display: none; }
+  html[data-design="simple"] .pc { border-left-width: 6px; }
+  html[data-design="simple"] .tag, html[data-design="simple"] .gh { border-radius: 6px; border-color: var(--gold); color: var(--gold); background: rgba(10,16,40,.7); }
+  html[data-design="simple"] .op-ln { stroke: var(--gold); filter: none; }
+  html[data-design="simple"] .pzi .it { border-left-width: 6px; border-left-color: var(--pz); }
+  html[data-design="simple"] .scene { z-index: 2; }
+
+  /* ═══════════════ デザイン：ファンタジー（ゴシック調の画像：背景・金の枠。重厚な見た目） ═══════════════ */
+  html[data-design="fantasy"] { --bg: #0b0b12; --accent: #ffb020; --gold: color-mix(in srgb, var(--accent) 55%, white); --cream: #f3eadb; --ink: color-mix(in srgb, var(--bg) 70%, #000); }
+  html[data-design="fantasy"] #bg { background: var(--bg) url("Fantasy/background.png") center / cover no-repeat; }
+  html[data-design="fantasy"] #bg::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .14; background: radial-gradient(ellipse at 50% 40%, var(--accent), color-mix(in srgb, var(--accent) 35%, transparent)); }
+  html[data-design="fantasy"] #stage::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: url("Fantasy/backgroundframe.png") center / 100% 100% no-repeat; }
+  html[data-design="fantasy"] #shade { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.05), rgba(0,0,0,.5) 100%); }
+  html[data-design="fantasy"] #mist, html[data-design="fantasy"] #bats { display: none; }
+  html[data-design="fantasy"] .scene { z-index: 2; }
+  html[data-design="fantasy"] .title, html[data-design="fantasy"] .hd h2, html[data-design="fantasy"] .bktag, html[data-design="fantasy"] .big, html[data-design="fantasy"] .stat b, html[data-design="fantasy"] .stat span,
+  html[data-design="fantasy"] .ph .dt, html[data-design="fantasy"] .pzh .nm, html[data-design="fantasy"] .card h3 { text-shadow: .05em .05em 0 color-mix(in srgb, var(--accent) 45%, transparent), 0 0 24px rgba(0,0,0,.6); }
+  html[data-design="fantasy"] .rule { background: url("Fantasy/line.png") center / contain no-repeat; filter: none; }
+  html[data-design="fantasy"] .card, html[data-design="fantasy"] .rc, html[data-design="fantasy"] .pzi .it, html[data-design="fantasy"] .pc { border: 2px solid var(--gold); border-radius: 6px; background: color-mix(in srgb, var(--ink) 92%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  html[data-design="fantasy"] .card::before, html[data-design="fantasy"] .card::after { display: none; }
+  html[data-design="fantasy"] .pc { border-left-width: 6px; }
+  html[data-design="fantasy"] .op-ln { stroke: var(--gold); filter: none; }
 </style>
 </head>
 <body>
@@ -479,10 +591,16 @@
 
   function build() {
     document.title = (D.title || "") + " 紹介動画";
+    document.documentElement.setAttribute("data-design", D.design || "gothic");
     var th = D.theme || {}, rs = document.documentElement.style;
     if (th.base) rs.setProperty("--bg", th.base);
     if (th.accent) rs.setProperty("--accent", th.accent);
-    plan = scenes(); TOTAL = plan.reduce(function (a, s) { return a + s[0]; }, 0);
+    plan = scenes();
+    var ORN = { rock: ["▰", "▰"], simple: ["◆", "◆"] }[D.design];                                           // かざりの記号：ロックは斜めの帯、シンプルは小さなひし形
+    if (ORN) plan.forEach(function (x) { x[1] = x[1].replace(/✠/g, ORN[0]).replace(/❦/g, ORN[1]); });
+    if (D.design === "rock" && !document.getElementById("rockFonts")) { var lk = document.createElement("link"); lk.id = "rockFonts"; lk.rel = "stylesheet"; lk.href = "https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@500;800&family=Yuji+Boku&display=swap"; document.head.appendChild(lk); }
+    if (D.design === "winter") plan.forEach(function (x) { x[1] = x[1].replace(/✠/g, "❄").replace(/❦/g, "❅"); });          // かざりの十字は、雪の結晶に
+    TOTAL = plan.reduce(function (a, s) { return a + s[0]; }, 0);
     var host = document.getElementById("scenes"); host.innerHTML = plan.map(function (s) { return s[1]; }).join("");
     els = Array.prototype.slice.call(host.children);
     hydrate(host); layoutFigs(host);
@@ -537,7 +655,7 @@
       e.style.width = e.style.height = (3 + Math.random() * 7).toFixed(1) + "px"; st.appendChild(e); }
     var bt = document.getElementById("bats");
     for (i = 0; i < 7; i++) { e = document.createElement("i"); e.className = "bat"; e.style.left = 0; e.style.top = 0; var y0 = 80 + Math.random() * 500;
-      e.style.setProperty("--y0", y0 + "px"); e.style.setProperty("--y1", (y0 - 120 + Math.random() * 240) + "px"); e.style.setProperty("--s", (.5 + Math.random() * 1.1).toFixed(2)); e.style.setProperty("--amp", (35 + Math.random() * 45).toFixed(0) + "px"); e.style.setProperty("--w", (2.4 + Math.random() * 2.2).toFixed(1) + "s"); e.style.setProperty("--wl", (-Math.random() * 4).toFixed(1) + "s");
+      e.style.setProperty("--y0", y0 + "px"); e.style.setProperty("--y1", (y0 - 120 + Math.random() * 240) + "px"); e.style.setProperty("--s", (.5 + Math.random() * 1.1).toFixed(2)); e.style.setProperty("--amp", (10 + Math.random() * 16).toFixed(0) + "px"); e.style.setProperty("--w", (4.5 + Math.random() * 3).toFixed(1) + "s"); e.style.setProperty("--wl", (-Math.random() * 4).toFixed(1) + "s");
       e.style.setProperty("--t", (16 + Math.random() * 14).toFixed(1) + "s"); e.style.setProperty("--l", (-Math.random() * 26).toFixed(1) + "s"); bt.appendChild(e); }
   })();
   function fit() { var s = Math.min(innerWidth / 1920, innerHeight / 1080), st = document.getElementById("stage");
