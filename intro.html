@@ -24,7 +24,8 @@
   #stars { position:absolute; inset:0; }
   .sp { position:absolute; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow:0 0 14px 4px color-mix(in srgb,var(--gold) 70%,white); opacity:0; animation:tw var(--d) ease-in-out infinite; animation-delay:var(--l); }
   @keyframes tw { 0%,100%{opacity:0;transform:translateY(0) scale(.4)} 50%{opacity:.9;transform:translateY(-30px) scale(1)} }
-  .bat { position:absolute; width:46px; height:20px; background:#000; opacity:.8; clip-path:polygon(0 30%,18% 0,32% 40%,50% 20%,68% 40%,82% 0,100% 30%,80% 100%,50% 55%,20% 100%); animation:fly var(--t) linear infinite; animation-delay:var(--l); }
+  .bat { position:absolute; width:46px; height:20px; background:#000; opacity:.8; clip-path:polygon(0 30%,18% 0,32% 40%,50% 20%,68% 40%,82% 0,100% 30%,80% 100%,50% 55%,20% 100%); animation:fly var(--t) linear infinite, wave var(--w,3.6s) ease-in-out infinite alternate; animation-delay:var(--l), var(--wl,0s); }
+  @keyframes wave { from{translate:0 calc(var(--amp,50px) * -1); rotate:-14deg} to{translate:0 var(--amp,50px); rotate:14deg} }
   @keyframes fly { from{transform:translate(-120px,var(--y0)) scale(var(--s))} to{transform:translate(2040px,var(--y1)) scale(var(--s))} }
   #vig { position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 260px 40px #000; }
 
@@ -114,6 +115,47 @@
   .rw:first-of-type { border-top:0; }
   .rw .lb { flex:none; min-width:250px; font-family:var(--fh); font-size:32px; color:var(--gold); line-height:1.4; }
   .rw .lb.ban { color:var(--red); } .rw .lb.req { color:#9fe6c4; }
+  /* 全試合共通のルール：キャラの全身を大きく（必須→許可→BAN→組み合わせ禁止） */
+  .gr { width:1760px; display:flex; flex-direction:column; align-items:stretch; gap:14px; }
+  .grow { display:flex; gap:14px; align-items:stretch; height:640px; }
+  .gs { position:relative; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0 4px; --k:var(--gold); }
+  .gs.req { --k:#9fe6c4; } .gs.allow { --k:#b79bff; } .gs.ban, .gs.combo { --k:var(--red); }
+  .gs + .gs::before { content:""; position:absolute; left:-8px; top:70px; bottom:20px; width:2px; background:linear-gradient(transparent,color-mix(in srgb,var(--gold) 70%,transparent),transparent); }
+  .gh { flex:none; font-family:var(--fh); font-size:40px; line-height:1; padding:10px 34px; color:#fff; border:2px solid var(--k); background:linear-gradient(180deg,color-mix(in srgb,var(--k) 38%,#000),rgba(10,5,20,.9)); box-shadow:0 0 26px color-mix(in srgb,var(--k) 60%,transparent); text-shadow:0 0 14px var(--k); letter-spacing:.08em; white-space:nowrap; }
+  .gf { flex:1; min-height:0; width:100%; display:flex; align-items:flex-end; justify-content:center; gap:6px; padding-top:14px; }
+  .gcb { flex:1 1 0; min-width:0; height:100%; display:flex; align-items:flex-end; justify-content:center; position:relative; border:3px solid var(--red); border-radius:20px; background:linear-gradient(180deg,rgba(255,107,138,.06),rgba(255,107,138,.2)); box-shadow:0 0 26px rgba(255,107,138,.35), inset 0 0 26px rgba(255,107,138,.15); padding:8px 6px 0; margin:0 6px; }
+  .gcb .plus { flex:none; align-self:center; z-index:3; font-size:64px; color:#fff; text-shadow:0 0 18px var(--red); font-family:var(--fa); line-height:1; margin:0 -10px; }
+  .gf .fg { flex:1 1 0; min-width:0; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; position:relative; }
+  .fg .pic { position:relative; flex:none; height:470px; width:100%; display:flex; align-items:flex-end; justify-content:center; }
+  .fg .pic::before { content:""; position:absolute; left:8%; right:8%; bottom:0; height:62%; border-radius:50% 50% 0 0; background:radial-gradient(ellipse at 50% 100%, color-mix(in srgb,var(--k) 55%,transparent), transparent 72%); }
+  .fg img { position:relative; flex:none; max-width:none; height:70%; visibility:hidden; object-fit:contain; object-position:50% 100%; filter:drop-shadow(0 8px 14px #000) drop-shadow(0 0 16px color-mix(in srgb,var(--k) 70%,transparent)); }
+  .fg img.ok { visibility:visible; }
+  .gs.ban img, .gs.combo img { filter:grayscale(.55) brightness(.8) drop-shadow(0 8px 14px #000) drop-shadow(0 0 16px color-mix(in srgb,var(--red) 80%,transparent)); }
+  .fg .nm2 { flex:none; margin-top:8px; font-size:30px; line-height:1.2; text-align:center; text-shadow:0 2px 8px #000; white-space:nowrap; }
+  .fg .nt { flex:none; font-size:22px; color:var(--gold); text-align:center; line-height:1.2; }
+  .fg .ini { font-family:var(--fh); font-size:90px; align-self:center; margin:auto; }
+  .gx { display:flex; flex-wrap:wrap; justify-content:center; gap:0 30px; }
+  .gx .rw { border-top:0; padding:4px 0; }
+  /* 賞品：受け取れる人ごとに、大きく */
+  .pzs { width:1700px; display:flex; flex-direction:column; align-items:center; gap:34px; --pz:#f5c542; }
+  .pzs.k2 { --pz:#c4cfe0; } .pzs.kany { --pz:#6fc3ff; } .pzs.kmvp { --pz:#c48bff; } .pzs.kcond { --pz:#7be0b0; }
+  .pzh { position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 40px; }
+  .pzh .orn { font-family:var(--fh); font-size:34px; letter-spacing:.5em; color:var(--pz); opacity:.9; }
+  .pzh .nm { font-family:var(--fa); font-size:124px; line-height:1.15; color:#fff; letter-spacing:.1em; text-shadow:0 0 22px color-mix(in srgb,var(--pz) 55%,transparent), 0 2px 0 rgba(0,0,0,.6); }
+  .pzh .nm small { font-size:42px; margin-left:18px; color:var(--pz); }
+  .pzl { display:flex; align-items:center; gap:18px; width:900px; color:var(--pz); font-size:28px; }
+  .pzl i { flex:1; height:2px; background:linear-gradient(90deg,transparent,var(--pz),transparent); }
+  .pzi { display:grid; grid-template-columns:repeat(var(--c,1),minmax(0,1fr)); gap:26px; width:100%; justify-items:stretch; }
+  .pzs.k1 .pzi, .pzi { max-width:1700px; }
+  .pzi .it { display:flex; align-items:center; gap:26px; padding:28px 36px; border:1px solid color-mix(in srgb,var(--pz) 70%,transparent); border-left:6px solid var(--pz); background:linear-gradient(90deg,rgba(26,16,44,.94),rgba(10,5,20,.94)); box-shadow:0 10px 30px rgba(0,0,0,.5); min-height:140px; }
+  .pzi .it.multi { flex-direction:column; align-items:flex-start; gap:12px; }
+  .pzi .it .ic { flex:none; font-size:34px; color:var(--pz); }
+  .pzi .who { font-family:var(--fh); font-size:32px; color:var(--pz); margin-bottom:4px; }
+  .pzi .gift { font-size:58px; line-height:1.3; color:#fff; overflow-wrap:anywhere; }
+  .pzs[style*="--c:2"] .gift { font-size:46px; } .pzs[style*="--c:3"] .gift { font-size:38px; } .pzs[style*="--c:3"] .who { font-size:28px; }
+  .pzi .it > div:last-child { min-width:0; flex:1; }
+  .pzi .gift .nb { white-space:nowrap; }
+  .pzi .face { width:96px; height:96px; }
   .rw .tx { font-size:32px; line-height:1.5; }
   .bgrid { display:flex; gap:14px; flex-wrap:wrap; }
   .bc { font-size:30px; padding:2px 18px; border:2px solid var(--gold); background:rgba(20,10,40,.85); white-space:nowrap; }
@@ -196,11 +238,11 @@
   function ms(n) { return Math.max(7000, 4500 + n * 1500); }                                              // 場面の長さ：中身の数に合わせる
 
   // ───── 顔の画像（大会ルールの「BAN/PICK」タブと同じ：頭の円が、アイコンの9割になるように置く） ─────
-  var FACES = null;
+  var FACES = null, LINEUP = {};
   function loadFaces(cb) {
     if (FACES) return cb();
     function get(u) { return fetch(u, { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
-    Promise.all([get("face_positions.json"), get("assets/face_positions.json")]).then(function (r) { FACES = (r[0] && r[0].faces) || (r[1] && r[1].faces) || {}; cb(); });
+    Promise.all([get("face_positions.json"), get("assets/face_positions.json")]).then(function (r) { FACES = (r[0] && r[0].faces) || (r[1] && r[1].faces) || {}; LINEUP = (r[0] && r[0].lineup) || (r[1] && r[1].lineup) || {}; cb(); });
   }
   function imgUrl(p) { return String(p).split("/").map(encodeURIComponent).join("/"); }
   function faceHtml(name, img) { return '<span class="face" data-n="' + esc(String(name || "?").slice(0, 1)) + '" data-img="' + esc(img || "") + '">' + (img ? "" : esc(String(name || "?").slice(0, 1))) + '</span>'; }
@@ -238,6 +280,52 @@
     }
     var items = splitTop(text, "、").map(nameNote); if (!items.length || !items.every(function (x) { return faces[x[0]]; })) return null;
     return '<div class="cc">' + items.map(function (x) { return cpHtml(x[0], g && x[1] === "全試合・全セット必須" ? "" : x[1], kind); }).join("") + "</div>";      // 「全試合共通」の場面では、同じことを名前の横に重ねて書かない
+  }
+  // 全身の大きな並び（必須→許可→BAN→組み合わせ禁止）。顔の一覧に無いキャラが混じる行は、ここには出さず、文字の並びで下に出す
+  var GORDER = ["req", "allow", "ban", "combo"], GLAB = { req: "必須", allow: "許可", ban: "BAN", combo: "組み合わせ禁止" };
+  function figW(name) { var u = String(((D.bp && D.bp.faces) || {})[name] || ""); return /^hunter\//i.test(u) ? 1.9 : 1; }       // ハンターは横に広い（サバイバーは細長い）：幅の割り当て
+  function figK(name) { var u = String(((D.bp && D.bp.faces) || {})[name] || ""); return /^hunter\//i.test(u) ? 1.22 : String(name).indexOf("泣き虫") >= 0 ? 0.8 : 1; }       // 頭の大きさ：サバイバー=1／ハンターは少し大きく／泣き虫は少し小さく
+  function layoutFigs(root) {                                                       // 頭の大きさをそろえる（移動ではなく、画像ぜんたいの拡大縮小）
+    Array.prototype.forEach.call(root.querySelectorAll(".gr"), function (gr) {
+      var imgs = Array.prototype.slice.call(gr.querySelectorAll(".fg img[data-p]")); if (!imgs.length) return;
+      loadFaces(function () {
+        Promise.all(imgs.map(function (im) { return new Promise(function (ok) { if (im.complete) return ok(); im.addEventListener("load", ok); im.addEventListener("error", ok); }); })).then(function () {
+          var its = imgs.filter(function (im) { return im.naturalHeight && im.parentNode; }).map(function (im) { var p = im.getAttribute("data-p"), fd = FACES[p], k = +im.getAttribute("data-k") || 1, ok = fd && fd.cy > 0 && fd.cy < 1, ln = LINEUP[p];
+            return { im: im, rel: ln && ln.h > 0 ? ln.h : 0, hu: ok ? k / (1 - fd.cy) : 0, asp: im.naturalWidth / im.naturalHeight }; });
+          // 大きさは、顔の位置の登録ツールの「横並び」で決めた大きさ（LINEUP）のとおり。決めていないキャラだけ、頭の円から自動で計算（足元から頭の中心までの高さをそろえる）
+          var hmax = Math.max.apply(null, its.map(function (x) { return x.hu; }).concat([0]));
+          its.forEach(function (x) { x.H0 = x.rel ? x.rel * 470 : x.hu && hmax ? x.hu / hmax * 470 : 330; });
+          var wsum = its.reduce(function (a, x) { return a + x.H0 * x.asp; }, 0), f = Math.min(1, 2000 / Math.max(1, wsum));          // 横に並べて入らないときだけ、ぜんたいを同じ割合で小さくする（少し重なるのはOK）
+          its.forEach(function (x) { var H = x.H0 * f; x.im.style.height = H + "px"; x.im.style.width = (H * x.asp) + "px"; x.im.className = "ok"; });
+        });
+      });
+    });
+  }
+  function figHtml(name, note, delay) {
+    var img = ((D.bp && D.bp.faces) || {})[name]; if (!img) return "";
+    return '<span class="fg rise" style="flex:' + figW(name) + ' 1 0;--a:' + delay.toFixed(2) + 's"><span class="pic"><img alt="" src="' + esc(imgUrl(img)) + '" data-p="' + esc(img) + '" data-k="' + figK(name) + '" data-n="' + esc(String(name).slice(0, 1)) + '" onerror="var p=this.parentNode;p.innerHTML=\'<span class=ini>\'+this.getAttribute(\'data-n\')+\'</span>\'"></span><span class="nm2">' + esc(name) + "</span>" + (note ? '<span class="nt">' + esc(note) + "</span>" : "") + "</span>";
+  }
+  function bigSection(kind, text, k) {                                              // → {n: 体数, html} か null
+    var faces = (D.bp && D.bp.faces) || {}, d0 = .8 + k * .45, i = 0;
+    if (kind === "combo") {
+      var ok = true, h = "", n = 0, w = 0;
+      splitTop(text, "／").forEach(function (g) { var nn = nameNote(g), names = nn[0].split("と");
+        if (!names.every(function (x) { return faces[x]; })) { ok = false; return; }
+        names.forEach(function (x) { w += figW(x); });
+        h += '<span class="gcb rise" style="--a:' + (d0 + i * .15).toFixed(2) + 's;flex:' + names.reduce(function (a, x) { return a + figW(x); }, 0) + ' 1 0">' + names.map(function (x) { return figHtml(x, "", 0); }).join('<span class="plus">＋</span>') + '</span>'; i += names.length; n += names.length; });
+      return ok && h ? { n: n, w: w, html: h } : null;
+    }
+    var items = splitTop(text, "、").map(nameNote); if (!items.length || !items.every(function (x) { return faces[x[0]]; })) return null;
+    return { n: items.length, w: items.reduce(function (a, x) { return a + figW(x[0]); }, 0), html: items.map(function (x) { return figHtml(x[0], x[1] === "全試合・全セット必須" ? "" : x[1], d0 + (i++) * .15); }).join("") };
+  }
+  function globalHtml(list) {
+    var by = {}, rest = [];
+    (list || []).forEach(function (x) { var kd = KIND[x.label], sec = kd ? bigSection(kd, x.text || "", GORDER.indexOf(kd)) : null;
+      if (sec) { by[kd] = by[kd] || { n: 0, w: 0, html: "" }; by[kd].n += sec.n; by[kd].w += sec.w; by[kd].html += sec.html; } else rest.push(x); });
+    var cols = GORDER.filter(function (k) { return by[k]; }), h = '<div class="gr">';
+    if (cols.length) h += '<div class="grow">' + cols.map(function (k) { return '<div class="gs ' + k + '" style="flex:' + Math.max(1, by[k].w) + ' 1 0"><div class="gh rise" style="--a:.5s">' + GLAB[k] + '</div><div class="gf">' + by[k].html + "</div></div>"; }).join("") + "</div>";
+    if (rest.length) h += '<div class="rc rise gx" style="--a:1.2s;padding:12px 30px">' + rowsHtml(rest, true) + "</div>";
+    return h + "</div>";
   }
   var BAN_RE = /^(サバイバー|ハンター|マップ)(\d+)BAN$/;
   function banParts(text) {                                                         // 「サバイバー4BAN / ハンター1BAN」→ {サバイバー: 4, ハンター: 1}（それ以外の形なら null）
@@ -319,7 +407,7 @@
     if (D.teams || szt) S.push([9500, head("✠ TEAMS ✠", "参加チーム") + '<div class="body"><div class="col" style="gap:34px">'
       + (D.teams ? '<div class="stat rise" style="--a:.6s"><b>' + D.teams + '</b><span>チーム</span></div>' : "")
       + '<div class="row">'
-      + (szt ? '<div class="card rise" style="--a:1.4s;width:740px"><span class="tag">チーム内の人数</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + esc(szt) + '</div><p>人</p></div>' : "")
+      + (szt ? '<div class="card rise" style="--a:1.4s;width:740px"><span class="tag">チーム内の人数</span><div style="display:flex;align-items:baseline;justify-content:center;gap:14px;margin:6px 0 6px"><div class="big" style="font-size:120px">' + esc(szt) + '</div><p>人</p></div></div>' : "")
       + '<div class="card rise" style="--a:2.1s;width:740px"><span class="tag' + (D.both ? "" : " red") + '">サバイバーとハンターの兼任</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + (D.both ? "OK" : "NG") + '</div>'
       + '<p>' + (D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです") + '</p></div>'
       + '</div></div></div></section>']);
@@ -339,7 +427,7 @@
       + (D.ext && D.ext.length ? '<div class="row">' + D.ext.map(function (t, i) { return '<div class="card rise" style="--a:' + A(i, 2.6) + ';width:740px"><h3>延長戦' + "①②"[i] + '</h3><p class="s" style="font-size:34px">' + fmt(t).replace("：", "：<br>") + '</p></div>'; }).join("") + '</div>' : "")
       + '</div></div></section>']);
     // 5 全試合共通のルール（BAN/PICKの前に見せる）
-    if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body"><div class="rc rise" style="--a:.7s;width:1560px">' + rowsHtml(bp.global, true) + '</div></div></section>']);
+    if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
     // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
     (bp.rounds || []).forEach(function (r) {
       var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
@@ -351,46 +439,27 @@
         + "</div></div></section>"]);
     });
     // 7 賞品（賞品タブと同じカード：優勝チーム・準優勝チーム・順位を問わず・MVP）。該当者が多いときは、カードを分けて、何画面かに出す（小さくなりすぎないように）
-    var pz = D.prizes || [], MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟", cond: "🧩" };
+    var RANK = { "1": "— 優 勝 —", "2": "— 準優勝 —", any: "— 全 員 へ —", mvp: "— M V P —", cond: "— 条 件 —" }, pz = D.prizes || [], MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟", cond: "🧩" };
     function gifts(it) { return it.texts && it.texts.length ? it.texts : [it.text]; }
-    function itemHtml(it) {
+    function itemHtml(it, rs) {
       var fs = (it.chars && it.chars.length ? it.chars : (it.char ? [it.char] : [])).filter(function (x) { return x && x.img; });
-      var fc = fs.length ? '<div class="fcs">' + fs.slice(0, 3).map(function (x) { return faceHtml(x.name, x.img); }).join("") + (fs.length > 3 ? '<span class="more">+' + (fs.length - 3) + "</span>" : "") + "</div>" : '<span class="ic">🎁</span>';
-      return '<div class="it' + (fs.length > 1 ? " multi" : "") + '">' + fc
-        + '<div><div class="who">' + esc(it.who) + "</div>" + gifts(it).map(function (t) { return '<div class="gift">' + esc(t) + "</div>"; }).join("") + "</div></div>";
+      var fc = fs.length ? '<div class="fcs">' + fs.slice(0, 3).map(function (x) { return faceHtml(x.name, x.img); }).join("") + (fs.length > 3 ? '<span class="more">+' + (fs.length - 3) + "</span>" : "") + "</div>" : '<span class="ic">◆</span>';
+      return '<div class="it' + (fs.length > 1 ? " multi" : "") + (rs != null ? ' rise" style="--a:' + rs.toFixed(2) + 's' : "") + '">' + fc
+        + '<div><div class="who">' + esc(it.who) + "</div>" + gifts(it).map(function (t) { return '<div class="gift">' + esc(t).replace(/称号(「[^」]*」)/g, '称号<br><span class="nb">$1</span>') + "</div>"; }).join("") + "</div></div>";
     }
     function itemH(it, cols) { var per = cols === 3 ? 10 : cols === 2 ? 18 : 40, multi = ((it.chars || []).length > 1 ? 72 : 0);          // その人（賞品）の高さの見積もり
       return 30 + multi + Math.max(64, 34 + 50 * gifts(it).reduce(function (a, t) { return a + Math.max(1, Math.ceil(String(t).length / per)); }, 0)); }
-    var total = pz.reduce(function (a, g) { return a + (g.items || []).length; }, 0);
-    if (pz.length && total <= 6) {
-      var cards = pz.map(function (g, i) {
-        return '<div class="pzc k' + esc(g.kind) + ' rise" style="--a:' + A(i) + '"><div class="top"><span class="medal">' + (MEDAL[g.kind] || "🎁") + '</span><span class="plb">' + esc(g.label) + "</span></div>" + (g.items || []).map(itemHtml).join("") + "</div>"; });
-      var rest = pz.filter(function (g) { return g.kind !== "1"; }).length;
-      if (rest % 2 === 1) cards[pz.length - 1] = cards[pz.length - 1].replace('class="pzc ', 'class="pzc wide ');
-      S.push([ms(total * 1.6 + pz.length), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="pzg">' + cards.join("") + "</div></div></section>"]);
-    } else if (pz.length) {
-      var BUD = 720, HEAD = 112, GAP = 22, pages = [], cur = [], used = 0;
-      pz.forEach(function (g) {
-        var items = (g.items || []).slice(), cols = items.length === 1 ? 1 : items.length === 2 ? 2 : 3, first = true;
-        while (items.length) {
-          if (cur.length && used + HEAD + itemH(items[0], cols) > BUD) { pages.push(cur); cur = []; used = 0; }
-          var chunk = [], h = HEAD;
-          while (items.length) {
-            var row = items.slice(0, cols), rh = Math.max.apply(null, row.map(function (x) { return itemH(x, cols); }));
-            if (chunk.length && used + h + rh > BUD) break;
-            chunk = chunk.concat(row); h += rh; items = items.slice(row.length);
-          }
-          cur.push({ g: g, items: chunk, cols: cols, cont: !first }); used += h + GAP; first = false;
-          if (items.length) { pages.push(cur); cur = []; used = 0; }
-        }
-      });
-      if (cur.length) pages.push(cur);
-      pages.forEach(function (pg, pi) {
-        S.push([5000, head("✠ PRIZES ✠", "賞品" + (pages.length > 1 ? "（" + (pi + 1) + "／" + pages.length + "）" : "")) + '<div class="body"><div class="pzg stack">' + pg.map(function (c, i) {
-          return '<div class="pzc k' + esc(c.g.kind) + ' rise" style="--a:' + A(i, .3) + '"><div class="top"><span class="medal">' + (MEDAL[c.g.kind] || "🎁") + '</span><span class="plb">' + esc(c.g.label) + (c.cont ? "（つづき）" : "") + "</span></div>"
-            + '<div class="its" style="--c:' + c.cols + '">' + c.items.map(itemHtml).join("") + "</div></div>"; }).join("") + "</div></div></section>"]);
-      });
-    }
+    // 受け取れる人（優勝チーム・準優勝チーム・順位を問わず・MVP）ごとに、1つずつ大きく見せる。人数が多いときは、何画面かに分ける
+    pz.forEach(function (g) {
+      var items = (g.items || []).slice(), longest = items.reduce(function (m, it) { return Math.max(m, gifts(it).reduce(function (a, t) { var q = /称号(「[^」]*」)/.exec(t); return Math.max(a, q ? q[1].length : 0); }, 0)); }, 0),
+        MAXC = longest > 18 ? 1 : longest > 11 ? 2 : 3, PER = MAXC === 1 ? 3 : MAXC * 2, pages = Math.max(1, Math.ceil(items.length / PER)), per = Math.ceil(items.length / pages), pi, k = String(g.kind);
+      for (pi = 0; pi < pages; pi++) {
+        var chunk = items.slice(pi * per, (pi + 1) * per), cols = Math.min(MAXC, chunk.length === 1 ? 1 : chunk.length === 2 || chunk.length === 4 ? 2 : 3);
+        S.push([4600 + (chunk.length > 3 ? 1200 : 0), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="pzs k' + esc(k) + '" style="--c:' + cols + '">'
+          + '<div class="pzh"><div class="orn rise" style="--a:.4s">' + (RANK[k] || "✠") + '</div><div class="nm zoom" style="--a:.7s">' + esc(g.label) + (pi ? '<small>（つづき）</small>' : "") + '</div><div class="pzl rise" style="--a:1.1s"><i></i><b>✠</b><i></i></div></div>'
+          + '<div class="pzi">' + chunk.map(function (it, i) { return itemHtml(it, 1.4 + i * .35); }).join("") + "</div></div></div></section>"]);
+      }
+    });
     // 8 参加のしかた
     var E = D.entry || {}, dl = pd(E.deadline);
     if (dl || E.max) S.push([ms(3 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px"><div class="row">'
@@ -416,8 +485,14 @@
     plan = scenes(); TOTAL = plan.reduce(function (a, s) { return a + s[0]; }, 0);
     var host = document.getElementById("scenes"); host.innerHTML = plan.map(function (s) { return s[1]; }).join("");
     els = Array.prototype.slice.call(host.children);
-    hydrate(host);
-    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(fitAll);
+    hydrate(host); layoutFigs(host);
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { fitGifts(); fitAll(); });
+  }
+  function fitGifts() {                                                                    // 称号の「○○」は、途中で改行しない：はみ出すときは、文字を小さくして収める
+    Array.prototype.forEach.call(document.querySelectorAll(".pzi .gift .nb"), function (nb) {
+      var g = nb.parentNode, box = g.parentNode, fs = parseFloat(getComputedStyle(g).fontSize);
+      while (nb.offsetWidth > box.clientWidth - 4 && fs > 18) { fs -= 2; g.style.fontSize = fs + "px"; }
+    });
   }
   function fitAll() {                                                                      // 中身が多くて、場面の枠に入らないときは、小さくして収める
     els.forEach(function (e) {
@@ -462,7 +537,7 @@
       e.style.width = e.style.height = (3 + Math.random() * 7).toFixed(1) + "px"; st.appendChild(e); }
     var bt = document.getElementById("bats");
     for (i = 0; i < 7; i++) { e = document.createElement("i"); e.className = "bat"; e.style.left = 0; e.style.top = 0; var y0 = 80 + Math.random() * 500;
-      e.style.setProperty("--y0", y0 + "px"); e.style.setProperty("--y1", (y0 - 120 + Math.random() * 240) + "px"); e.style.setProperty("--s", (.5 + Math.random() * 1.1).toFixed(2));
+      e.style.setProperty("--y0", y0 + "px"); e.style.setProperty("--y1", (y0 - 120 + Math.random() * 240) + "px"); e.style.setProperty("--s", (.5 + Math.random() * 1.1).toFixed(2)); e.style.setProperty("--amp", (35 + Math.random() * 45).toFixed(0) + "px"); e.style.setProperty("--w", (2.4 + Math.random() * 2.2).toFixed(1) + "s"); e.style.setProperty("--wl", (-Math.random() * 4).toFixed(1) + "s");
       e.style.setProperty("--t", (16 + Math.random() * 14).toFixed(1) + "s"); e.style.setProperty("--l", (-Math.random() * 26).toFixed(1) + "s"); bt.appendChild(e); }
   })();
   function fit() { var s = Math.min(innerWidth / 1920, innerHeight / 1080), st = document.getElementById("stage");
