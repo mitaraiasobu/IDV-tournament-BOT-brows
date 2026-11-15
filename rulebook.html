@@ -595,7 +595,6 @@
     var oa = el("button", "", "すべて開く"); oa.type = "button"; oa.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = true; }); });
     var ca = el("button", "", "すべてたたむ"); ca.type = "button"; ca.addEventListener("click", function () { main.querySelectorAll("details.sec").forEach(function (d) { d.open = false; }); });
     tl.appendChild(oa); tl.appendChild(ca);
-    if (c[0]) { var rs = el("button", "", "未読に戻す"); rs.type = "button"; rs.addEventListener("click", function () { if (!confirm("このタブのルールを、すべて未読に戻しますか？")) return; secs.forEach(function (s) { setRead(s, false); }); render(); }); tl.appendChild(rs); }
     main.appendChild(tl);
     if (!secs.length) main.appendChild(el("div", "msg", "このタブには、まだ何も書かれていません。"));
     var firstUnread = -1; secs.forEach(function (s, i) { if (firstUnread < 0 && !isRead(s)) firstUnread = i; });

@@ -1664,6 +1664,13 @@
 (function () {
   var params = new URLSearchParams(location.search);
   if (params.get("bg") === "transparent") document.documentElement.setAttribute("data-bg", "transparent");
+  var RH = params.get("rehearsal") === "1";                                          // リハーサル（rehearsal.html の中）：時計を、親のページが決める。データは、親が送る
+  if (RH) {
+    var RH_REAL = Date.now, RH_T = null;
+    Date.now = function () { return RH_T != null ? RH_T : RH_REAL.call(Date); };
+    window.__rhSet = function (ms) { RH_T = ms; };
+    var RH_ST = document.createElement("style"); RH_ST.textContent = "#nextscene { display: none !important; }"; document.head.appendChild(RH_ST);
+  }
   var POLL_MS = 2000, MEDIA_MS = 10000;
   var root = document.documentElement;
   var PAUSE = null, PAUSED_MEDIA = [];                                              // 一時停止：演出・進行の時計を、止めた時刻のまま（BOTのデータの pause）
@@ -3595,6 +3602,55 @@
     d.state = "rules"; d.result = null;
     return d;
   }
+  // ── リハーサル用：1つのデータ（場面）の中の、それぞれの場面の始まりの時刻と長さ（ページ自身の、時間割と同じ計算）。at＝時刻（秒）・dur＝長さ（秒）・label＝名前 ──
+  function rhSegments(data) {
+    var out = [], st = data && data.state;
+    function add(label, at, dur) { out.push({ label: label, at: at, dur: dur }); }
+    if (st === "open" && data.open) {
+      var op = data.open, S = op.sec || {}, at = op.t0;
+      var segs = [["大会名", S.title]];
+      if (S.organizer > 0) segs.push(["主催者名", S.organizer]);
+      arr(op.teams).forEach(function (tm, i) { segs.push(["参加チーム：" + (tm.name || (i + 1)), S.team]); });
+      segs.push(["トーナメント表", S.lead + arr(op.cards).length * S.card + S.tail]);
+      segs.push(["決め台詞", S.tagline]);
+      if (S.greet > 0) segs.push(["開会のごあいさつ", S.greet]);
+      if (S.rules > 0) segs.push(["ルール紹介", S.rules]);
+      if (S.swap > 0) segs.push(["キャスター交代", S.swap]);
+      segs.forEach(function (g) { add(g[0], at, g[1]); at += g[1]; });
+    } else if (st === "close" && data.close) {
+      var cl = data.close;
+      add("閉会のごあいさつ", cl.greet_t0, cl.t0 - cl.greet_t0);
+      add("大会終了", cl.t0, cl.sec);
+    } else if (st === "intro" && data.intro) {
+      var iv = data.intro, C = iv.caster_sec || 20, T = iv.team_sec || 20, P = iv.player_sec || 25, t;
+      if (iv.swap) add("キャスター交代", iv.swap_start, iv.swap_sec);
+      arr(iv.casters).forEach(function (c, i) { add("キャスター紹介：" + (c.name || ""), iv.caster_start + i * C, C); });
+      if (iv.survivor && iv.hunter && iv.team_start != null) {
+        t = iv.team_start;
+        add("チーム紹介：" + (iv.survivor.name || "サバイバー側"), t, T); t += T;
+        arr(iv.survivor.players).forEach(function (p) { add("選手紹介：" + (p.name || ""), t, P); t += P; });
+        add("チーム紹介：" + (iv.hunter.name || "ハンター側"), t, T); t += T;
+        arr(iv.hunter.players).slice(0, 1).forEach(function (p) { add("選手紹介：" + (p.name || ""), t, P); t += P; });
+        add("VS（試合開始まで）", t, Math.max(12, iv.play_at - t));
+      }
+    } else if (data && data.finale && data.finale.timing && !data.finale.entering && (data.finale.stage || "") === "" && st === "result" && data.result && data.result.final) {
+      var f = data.finale, tm = f.timing, pzC = arr((f.prizes || {}).champion), fin = (tm.final_ms || 12000) / 1000, ch = (tm.champ_ms || 12000) / 1000, pg = (tm.prize_ms || 12000) / 1000, ft = tm.t0;
+      add("最終戦の戦績", ft, fin); ft += fin;
+      var cdur = pzC.length ? ch : 40;
+      add("優勝発表", ft, cdur); ft += cdur;
+      pzC.forEach(function (x, i) { add("賞品の贈呈 " + (i + 1) + "/" + pzC.length, ft, pg); ft += pg; });
+    } else if (data && data.finale && data.finale.timing && !data.finale.entering && data.finale.stage === "mvp" && arr(((data.finale.mvp || {}).awards)).length && !(((data.finale.mvp || {}).interview || {}).current)) {
+      var f2 = data.finale, tm2 = f2.timing, pzM = arr((f2.prizes || {}).mvp), mv = (tm2.mvp_ms || 12000) / 1000, pg2 = (tm2.prize_ms || 12000) / 1000, mt = tm2.mvp_at || Date.now() / 1000;
+      add("MVP発表", mt, mv); mt += mv;
+      pzM.forEach(function (x, i) { add("MVPの賞品の贈呈 " + (i + 1) + "/" + pzM.length, mt, pg2); mt += pg2; });
+    } else if (st === "play" && data.live) {
+      var lv = data.live, start = Date.parse(lv.play_started_at), n = lv.n_steps || 1;
+      if (isNaN(start)) start = Date.now();
+      for (var k = 0; k < n; k++) add("BAN/PICK " + (k + 1) + "手順目", (start + stepStart(lv, k)) / 1000, stepMs(lv, k) / 1000);
+      add("BAN/PICK 終わり（画面が消える）", (start + replayTotal(lv)) / 1000, (EXIT_MS + 800) / 1000);
+    }
+    return out;
+  }
   function render(data, force) {
     if (!data) data = { state: "idle" };
     applyPause(data.pause);                                                          // 一時停止（BOTが、配信管理者の「一時停止」で、止めた時刻を送る）
@@ -3701,7 +3757,8 @@
   }
 
   root.className = "flow";
-  if (window.BANPICK_DATA_EMBEDDED) render(window.BANPICK_DATA_EMBEDDED);      // 動作確認用（データを直接埋め込んだとき）
+  if (RH) window.__rh = { render: render, segments: rhSegments };
+  else if (window.BANPICK_DATA_EMBEDDED) render(window.BANPICK_DATA_EMBEDDED);      // 動作確認用（データを直接埋め込んだとき）
   else if (window.TOURNAMENT_DATA_BASE) load();
   else document.getElementById("msg").textContent = "データの場所が設定されていません。";
 })();

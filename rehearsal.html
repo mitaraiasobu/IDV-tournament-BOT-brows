@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>リハーサル</title>
+<style>
+  :root { color-scheme: dark; --bg: #07080c; --panel: rgba(14,16,24,.88); --line: rgba(255,255,255,.18); --text: #eef1f7; --dim: #9aa3b5; --accent: #ffb020; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif; overflow: hidden; }
+  #screen { position: fixed; left: 50%; top: 50%; width: min(100vw, 177.78vh); height: min(56.25vw, 100vh); transform: translate(-50%, -50%); background: #000; }
+  #screen iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .ui { transition: opacity .25s; }
+  body.hide .ui { opacity: 0; pointer-events: none; }
+  #bar { position: fixed; left: 12px; top: 10px; display: flex; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; max-width: calc(100vw - 24px); z-index: 5; }
+  #bar b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+  #bar small { color: var(--dim); white-space: nowrap; }
+  button { font: inherit; color: var(--text); background: rgba(255,255,255,.1); border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
+  button:hover { background: rgba(255,255,255,.2); }
+  button:disabled { opacity: .35; cursor: default; }
+  .arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 54px; height: 96px; font-size: 30px; border-radius: 14px; z-index: 5; padding: 0; }
+  #prev { left: 8px; } #next { right: 8px; }
+  #clock { position: fixed; right: 12px; bottom: 120px; min-width: 230px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; z-index: 5; }
+  #clock .t { font-size: 34px; font-weight: 800; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  #clock .t small { font-size: 15px; color: var(--dim); font-weight: 400; margin-left: 6px; }
+  #clock .c { margin-top: 2px; font-size: 14px; color: var(--accent); }
+  #clock .c i { font-style: normal; color: var(--dim); }
+  #list { position: fixed; left: 12px; top: 56px; bottom: 12px; width: min(380px, calc(100vw - 24px)); overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px; z-index: 6; display: none; }
+  #list.on { display: block; }
+  #list .g { position: sticky; top: 0; background: #1b1e2a; color: var(--accent); font-size: 12px; padding: 4px 8px; border-radius: 6px; margin-top: 6px; }
+  #list .i { display: flex; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  #list .i:hover { background: rgba(255,255,255,.1); }
+  #list .i.cur { background: rgba(255,176,32,.25); }
+  #list .i span:first-child { color: var(--dim); min-width: 32px; text-align: right; }
+  #msg { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-size: 18px; text-align: center; padding: 24px; z-index: 4; }
+  #help { position: fixed; left: 12px; bottom: 12px; color: var(--dim); font-size: 12px; z-index: 5; }
+</style>
+</head>
+<body>
+<script>window.TOURNAMENT_DATA_BASE = "https://idv-tournament-bot-realtime-default-rtdb.asia-southeast1.firebasedatabase.app/tournament/"; window.PAGE_KIND = "rehearsal";</script>
+<div id="screen"><iframe id="f" title="配信の画面" allow="autoplay"></iframe></div>
+<div id="msg">リハーサルを準備しています…</div>
+<div id="bar" class="ui" style="display:none">
+  <button id="prev2" title="前の場面">◀</button>
+  <button id="next2" title="次の場面">▶</button>
+  <button id="lbtn">一覧</button>
+  <small id="pos"></small>
+  <b id="name"></b>
+</div>
+<button id="prev" class="arrow ui" title="前の場面（←）" style="display:none">◀</button>
+<button id="next" class="arrow ui" title="次の場面（→）" style="display:none">▶</button>
+<div id="clock" class="ui" style="display:none"><div class="t"><span id="el">0:00</span><small id="len"></small></div><div class="c" id="cl"></div></div>
+<div id="list" class="ui"></div>
+<div id="help" class="ui">← → で場面を進める・戻す ／ H で、操作の表示を隠す</div>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var frame = document.getElementById("f"), items = [], cur = -1, shownAt = 0, timer = null;
+
+  function $(id) { return document.getElementById(id); }
+  function two(n) { return (n < 10 ? "0" : "") + n; }
+  function mmss(sec) { sec = Math.max(0, Math.floor(sec)); return Math.floor(sec / 60) + ":" + two(sec % 60); }
+  function clockText(sec) {
+    if (sec == null) return "";
+    var d = new Date(sec * 1000), W = "日月火水木金土";
+    return (d.getMonth() + 1) + "/" + d.getDate() + "(" + W[d.getDay()] + ") " + d.getHours() + ":" + two(d.getMinutes()) + ":" + two(d.getSeconds());
+  }
+
+  // ── データ：{scenes:[{group,label,data,at,plan_at}]}。1つのデータの中に、いくつも場面があるもの（開会・紹介・BAN/PICK）は、ページが数えて、1つずつに分ける ──
+  function expand(plan) {
+    var win = frame.contentWindow, rh = win && win.__rh, out = [];
+    (plan.scenes || []).forEach(function (sc) {
+      var segs = rh ? rh.segments(sc.data) : [];
+      if (!segs.length) { out.push({ group: sc.group, label: sc.label, data: sc.data, t: sc.at, dur: null, plan: sc.plan_at }); return; }
+      var t0 = segs[0].at;
+      segs.forEach(function (g) {
+        out.push({ group: sc.group, label: sc.label === g.label ? g.label : sc.label + "：" + g.label, data: sc.data, t: g.at, dur: g.dur,
+                   plan: sc.plan_at != null ? sc.plan_at + (g.at - t0) : null });
+      });
+    });
+    return out;
+  }
+
+  function show(i) {
+    if (i < 0 || i >= items.length) return;
+    cur = i; shownAt = Date.now();
+    var it = items[i], win = frame.contentWindow;
+    win.__rhSet((it.t + 0.05) * 1000);
+    win.__rh.render(it.data, true);
+    try { win.dispatchEvent(new Event("resize")); } catch (e) { /* そのまま */ }                // 配信の画面の大きさ合わせを、やり直す
+    $("pos").textContent = (i + 1) + " / " + items.length;
+    $("name").textContent = it.label.indexOf(it.group) === 0 ? it.label : it.group + "　" + it.label;
+    $("prev").disabled = $("prev2").disabled = i === 0;
+    $("next").disabled = $("next2").disabled = i === items.length - 1;
+    $("len").textContent = it.dur ? "／ 本番の長さ " + mmss(it.dur) : "";
+    $("cl").innerHTML = it.plan != null ? "<i>本番では</i> " + clockText(it.plan) + " <i>ごろ</i>" : "";
+    var rows = $("list").querySelectorAll(".i");
+    for (var k = 0; k < rows.length; k++) rows[k].classList.toggle("cur", k === i);
+    var c = rows[i]; if (c && $("list").classList.contains("on")) c.scrollIntoView({ block: "nearest" });
+    tick();
+  }
+  function tick() {                                                                  // 自動では進めない：場面の中の時計だけ、進める（場面の最後で止める）
+    if (cur < 0) return;
+    var it = items[cur], el = (Date.now() - shownAt) / 1000, win = frame.contentWindow;
+    $("el").textContent = mmss(el);
+    var run = it.dur ? Math.min(el, Math.max(0, it.dur - 0.3)) : el;
+    try { win.__rhSet((it.t + 0.05 + run) * 1000); } catch (e) { /* まだ読み込み中 */ }
+  }
+
+  function build(plan) {
+    items = expand(plan);
+    var list = $("list"), g = null;
+    items.forEach(function (it, i) {
+      if (it.group !== g) { g = it.group; var h = document.createElement("div"); h.className = "g"; h.textContent = g; list.appendChild(h); }
+      var r = document.createElement("div"); r.className = "i";
+      var a = document.createElement("span"); a.textContent = i + 1; var b = document.createElement("span"); b.textContent = it.label;
+      r.appendChild(a); r.appendChild(b); r.addEventListener("click", function () { show(i); }); list.appendChild(r);
+    });
+    $("msg").style.display = "none";
+    ["bar", "prev", "next", "clock"].forEach(function (id) { $(id).style.display = ""; });
+    show(0);
+    timer = setInterval(tick, 200);
+  }
+
+  function go(d) { show(Math.max(0, Math.min(items.length - 1, cur + d))); }
+  $("prev").addEventListener("click", function () { go(-1); }); $("prev2").addEventListener("click", function () { go(-1); });
+  $("next").addEventListener("click", function () { go(1); }); $("next2").addEventListener("click", function () { go(1); });
+  $("lbtn").addEventListener("click", function () { $("list").classList.toggle("on"); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown") { go(1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { go(-1); e.preventDefault(); }
+    else if (e.key === "h" || e.key === "H") document.body.classList.toggle("hide");
+    else if (e.key === "Escape") $("list").classList.remove("on");
+  });
+
+  function fail(text) { $("msg").textContent = text; }
+  function start(plan) { if (!plan || !plan.scenes || !plan.scenes.length) { fail("リハーサルのデータが、まだありません。"); return; } build(plan); }
+  function loaded() {                                                                // live.html の準備ができたら、データを読む
+    var tries = 0;
+    (function wait() {
+      var w = frame.contentWindow;
+      if (w && w.__rh && w.__rhSet) { load(); return; }
+      if (++tries > 100) { fail("配信の画面を読み込めませんでした。"); return; }
+      setTimeout(wait, 100);
+    })();
+  }
+  function load() {
+    if (window.REHEARSAL_DATA_EMBEDDED) { start(window.REHEARSAL_DATA_EMBEDDED); return; }
+    var url = params.get("plan");                                                    // 確認用：データのファイルを、直接指定
+    var base = window.TOURNAMENT_DATA_BASE, key = params.get("t") || "";
+    if (!url) {
+      if (!base) { fail("データの場所が設定されていません。"); return; }
+      if (!/^[A-Za-z0-9]{12}$/.test(key)) { fail("このページは、大会設定ブラウザの「リハーサル」から開いてください。"); return; }
+      url = base + key + "/rehearsal.json";
+    }
+    fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(start)
+      .catch(function () { fail("リハーサルのデータを読み込めませんでした。大会設定ブラウザの「リハーサル」で、もう一度作ってください。"); });
+  }
+  frame.addEventListener("load", loaded);
+  frame.src = "live.html?rehearsal=1&music=0";
+})();
+</script>
+</body>
+</html>

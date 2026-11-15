@@ -1043,6 +1043,32 @@
   });
 
   // ───── ⚠ やり直し・削除（取り返しがつかない操作） ─────
+  // ───── 🎬 リハーサル ─────
+  TABS.push({
+    id: "rh", label: "🎬 リハーサル",
+    intro: "いまの大会の設定（チーム数・デザイン・BAN/PICKの手順・賞品・キャスターなど）のまま、大会のすべての場面（開会から閉会まで）を、順番に見られるページです。本番のデータには、さわりません。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).rehearsal || {}, st = D.status || {}, url = ((K.data() || {}).pages || {}).rehearsal || "";
+      var c = box(el, "🎬 リハーサルのページ", "矢印のボタン（キーボードの ← →）で、次の場面・前の場面へ進みます。自動では進みません。右下に、タイマーと、本番では何時ごろになる場面かが出ます。" +
+        "チームやキャスターが決まっていないところは、サンプル（サンプルチーム○・キャスター○）が出ます。音楽は流しません。");
+      var lines = [];
+      if (st.state === "queued" || st.state === "building") lines.push("⏳ いま、作っています（30秒ほど）。できたら、上の「最新を読み込む」を押してください。");
+      else if (st.state === "error") lines.push("⚠ 作れませんでした。もう一度、押してください。" + (st.error ? "（" + st.error + "）" : ""));
+      else if (st.built_at) lines.push("✅ 作りました：" + String(st.built_at).replace("T", " ").slice(0, 16) + "（場面 " + (st.scenes || 0) + " こ）");
+      else lines.push("まだ作っていません。");
+      lines.push("設定を変えたときは、「作り直す」を押してください（作った時点の設定のまま、見られます）。");
+      lines.forEach(function (t) { c.appendChild(el("div", "note", t)); });
+      var r = el("div", "row");
+      var mk = el("button", "primary", st.built_at ? "🔄 作り直す" : "🎬 リハーサルを作る"); mk.type = "button";
+      mk.disabled = st.state === "queued" || st.state === "building";
+      mk.addEventListener("click", function () { K.send([{ op: "rehearsal_make" }], "リハーサルを頼んでいます…"); });
+      r.appendChild(mk);
+      if (url && st.built_at) { var a = el("a", "", "▶ リハーサルを見る"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.style.cssText = "display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:8px;text-decoration:none"; r.appendChild(a); }
+      c.appendChild(r);
+      root.appendChild(c);
+    }
+  });
+
   TABS.push({
     id: "dg", label: "⚠ やり直し・削除・URL",
     intro: "Discordの「⚙ 基本設定」の「♻ 大会の試合をやり直す」「🗑 大会を削除」と同じです。取り消せないので、確認のため、大会名を入力してから押します。押すと、BOTが「BOT管理」チャンネルに知らせます。",
