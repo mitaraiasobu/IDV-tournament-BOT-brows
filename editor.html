@@ -516,13 +516,13 @@
     var openSec = openOther() + (TM.open_greet_sec || 0), openEnd = addSec(open, openSec);
     add(open, "配信開始", "", "",
         { cat: "開会", big: "開会", who: "cm", dur: msec(openSec), xcast: "open",
-          edit: [E("lead_min", TM.stream_round_name + "の開始の", "分前"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代", "秒"), E("part_gap_min", "配信を区切る空き", "分")] });
+          edit: [E("lead_min", TM.stream_round_name + "の開始の", "分前"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代", "秒"), { key: "part_split", label: "ライブブラウザを、日ごとに分ける", pick: [[1, "分ける"], [0, "分けない"]] }, E("part_gap_min", "分ける空き時間", "分")] });
     (TM.parts || []).forEach(function (pt, pi) {                                          // 配信が何回かに分かれるとき：部の終わりは「中断」、次の部の始まりは、もう一度「開会」
       if (pi === 0) return;
       var prevEnd = parseLocal(TM.parts[pi - 1].end), st = parseLocal(pt.start);
       var nm = "第" + pt.no + "部（" + pt.rounds.join("・") + "）";
       if (prevEnd) {
-        add(prevEnd, "配信の中断", "中断のごあいさつ → 「配信を中断します」の画面 → 暗転（優勝・賞品・「ありがとうございました」は出ません）", "", { cat: "中断", big: "第" + pi + "部の終わり", who: "c", xcast: "close", edit: [E("close_greet_sec", "中断のごあいさつ", "秒"), E("end_screen_sec", "「配信を中断します」の画面", "秒")] });
+        add(prevEnd, "本日の配信終了", "ごあいさつ → 「本日の全試合が終了しました」の画面 → 暗転（優勝・賞品・「ありがとうございました」は出ません）", "", { cat: "閉会", big: "第" + pi + "部の終わり", who: "c", xcast: "close", edit: [E("close_greet_sec", "ごあいさつ", "秒"), E("end_screen_sec", "「本日の全試合が終了しました」の画面", "秒")] });
       }
       if (st && lead != null && lead !== "") add(addMin(st, -lead), "配信開始（もう一度、開会の演出）", nm + "から", "", { cat: "開会", big: "第" + pt.no + "部", who: "cm", dur: msec(openSec), xcast: "open" });
     });
@@ -660,7 +660,10 @@
       if (ed.label) box.appendChild(el("label", "", ed.label));
       var ek = ed.key + "|" + (ed.mid || ""), mode = "all";                          // 紹介の秒数は、いつも全試合まとめて変える
       var cur = mode === "one" ? ((OVR()[ed.mid] || {})[ed.key] || TM[ed.key]) : TM[ed.key];
-      var inp = el("input"); inp.type = "number"; inp.value = cur == null ? "" : cur;
+      var inp = el(ed.pick ? "select" : "input");
+      if (ed.pick) ed.pick.forEach(function (o) { var op = el("option", "", o[1]); op.value = String(o[0]); inp.appendChild(op); });
+      else inp.type = "number";
+      inp.value = cur == null ? "" : cur;
       inp.addEventListener("change", function () {
         var v = inp.value === "" ? null : Math.round(Number(inp.value));
         if (mode === "one") { TM.intro_overrides = TM.intro_overrides || {}; var o = TM.intro_overrides[ed.mid] = Object.assign({}, TM.intro_overrides[ed.mid] || {}); if (v == null) delete o[ed.key]; else o[ed.key] = v; if (!Object.keys(o).length) delete TM.intro_overrides[ed.mid]; }

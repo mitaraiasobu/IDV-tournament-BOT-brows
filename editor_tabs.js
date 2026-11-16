@@ -915,14 +915,14 @@
         root.appendChild(cpc);
       }
       // 配信
-      var S = D.stream || {}, sc = box(el, "📡 配信（ライブブラウザの演出）", "配信開始は、部ごとに1回だけ押せます（最初からやり直すことはできません）。" + ((S.parts || 0) > 1 ? "この大会の配信は、" + S.parts + "回に分かれます（ラウンドの間が大きくあくところで、いったん中断します）。いまは第" + S.part + "部です。" : ""));
+      var S = D.stream || {}, sc = box(el, "📡 配信（ライブブラウザの演出）", "配信開始は、部ごとに1回だけ押せます（最初からやり直すことはできません）。" + ((S.parts || 0) > 1 ? "この大会の配信は、" + S.parts + "回に分かれます（ラウンドの間が大きくあくところで、ライブブラウザを分けます）。いまは第" + S.part + "部です。" : ""));
       var sr = el("div", "row");
       var so = el("button", "primary", "▶ 配信開始"); so.type = "button"; so.disabled = S.awaiting_open == null ? !!S.open_started : !S.awaiting_open; so.addEventListener("click", function () { if (confirm("ライブブラウザで、開会の演出を始めます（1回だけ）。よろしいですか？")) K.send([{ op: "stream_open" }], "配信開始を頼んでいます…"); });
       var brk = S.close_kind === "break";
-      var sx = el("button", "", brk ? "⏸ 配信を中断" : "⏹ 配信終了"); sx.type = "button"; sx.addEventListener("click", function () { if (confirm(brk ? "中断のごあいさつ →「配信を中断します」の画面 → 暗転、と進めます（大会は終わりません。優勝・賞品・「ありがとうございました」は出しません）。よろしいですか？" : "閉会のごあいさつ →「大会終了」の画面 → 暗転、と進めます。よろしいですか？")) K.send([{ op: "stream_close" }], brk ? "配信の中断を頼んでいます…" : "配信終了を頼んでいます…"); });
+      var sx = el("button", "", brk ? "⏹ 本日の配信を終了" : "⏹ 配信終了"); sx.type = "button"; sx.addEventListener("click", function () { if (confirm(brk ? "ごあいさつ →「本日の全試合が終了しました」の画面 → 暗転、と進めます（大会は終わりません。優勝・賞品・「ありがとうございました」は出しません）。よろしいですか？" : "閉会のごあいさつ →「大会終了」の画面 → 暗転、と進めます。よろしいですか？")) K.send([{ op: "stream_close" }], brk ? "本日の配信終了を頼んでいます…" : "配信終了を頼んでいます…"); });
       var sz = el("button", "", "↺ 最初（真っ黒）に戻す"); sz.type = "button"; sz.addEventListener("click", function () { if (confirm("ライブブラウザを、真っ黒に戻します。よろしいですか？")) K.send([{ op: "stream_reset" }], "戻しています…"); });
       sr.appendChild(so); sr.appendChild(sx); sr.appendChild(sz); sc.appendChild(sr);
-      sc.appendChild(el("div", "note", "いま：" + (S.close_started ? (S.on_break ? "配信を中断しています（次は第" + S.part + "部）" : "配信終了の演出を始めました") : S.open_started ? "配信の演出が始まっています" : "まだ始めていません") + "。主催者名・決め台詞は「⚙ 大会設定」、配信開始の時刻は「⏱ 時間管理」で決めます。"));
+      sc.appendChild(el("div", "note", "いま：" + (S.close_started ? (S.on_break ? "本日の配信は終了しました（次は第" + S.part + "部）" : "配信終了の演出を始めました") : S.open_started ? "配信の演出が始まっています" : "まだ始めていません") + "。主催者名・決め台詞は「⚙ 大会設定」、配信開始の時刻は「⏱ 時間管理」で決めます。"));
       root.appendChild(sc);
       // MVP
       var M = D.mvp || {}, mc = box(el, "🏆 MVP選出", M.enabled ? "チーム・選手のどちらでも、いくつでも選べます。確定すると取り消せません（大会名チャンネルに公開で通知し、本人（チームはリーダー）にもDMを送ります）。" : "MVP選出は「使わない」になっています（⚙ 大会設定で「使う」にできます）。");
