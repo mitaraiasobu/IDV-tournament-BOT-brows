@@ -206,6 +206,10 @@
 
   .end-title { font-family:var(--fa); font-size:120px; margin:12px 0 0; color:#fff; text-shadow:0 0 34px var(--accent),0 0 90px var(--accent),0 4px 0 #000; letter-spacing:.06em; line-height:1.3; text-align:center; }
   .end-sub { font-size:48px; margin-top:22px; letter-spacing:.3em; color:var(--gold); }
+  #spd { position:fixed; right:12px; bottom:12px; z-index:50; display:flex; gap:6px; opacity:0; transition:opacity .4s; }
+  html.mv #spd { opacity:1; } html.mv, html.mv body { cursor:default; }
+  #spd button { font:700 13px/1 system-ui,sans-serif; padding:7px 10px; border-radius:999px; cursor:pointer; color:#eceff6; background:rgba(10,12,18,.82); border:1px solid rgba(255,255,255,.25); }
+  #spd button.on { background:#eceff6; color:#10131c; }
   #bar { position:absolute; left:0; bottom:0; height:4px; width:0; background:var(--gold); opacity:.55; box-shadow:0 0 12px var(--accent); }
   #fade { position:absolute; inset:0; background:#000; opacity:1; pointer-events:none; transition:opacity 1.6s ease; }
 
@@ -338,6 +342,10 @@
   #bgm > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; pointer-events: none; }
   html[data-bgm] #bg, html[data-bgm] #stage::before { display: none; }
   html[data-bgm] #mist, html[data-bgm] #stars, html[data-bgm] #bats { display: none; }
+  /* ウィンター：背景の画像・動画のうえでも、雪はふらせる（足もとの雪だまりと、光の帯は出さない） */
+  html[data-design="winter"][data-bgm] #bg { display: block; background: none; z-index: 1; }
+  html[data-design="winter"][data-bgm] #bg::after { display: none; }
+  html[data-design="winter"][data-bgm] #bg::before { background-size: 0 0, 300px 300px, 420px 420px, 700px 700px; }
   html[data-bgm] #shade { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.3), rgba(0,0,0,.62) 100%); }
 </style>
 </head>
@@ -353,11 +361,13 @@
   <div id="bar"></div>
   <div id="fade"></div>
 </div>
+<div id="spd" aria-label="自動進行の速さ"><button type="button" data-s="1" class="on">1倍速</button><button type="button" data-s="0.75">0.75倍速</button><button type="button" data-s="0.5">0.5倍速</button></div>
+<script src="music.js"></script>
 <script>
 (function () {
   "use strict";
   var WD = ["日", "月", "火", "水", "木", "金", "土"];
-  var D = null, els = [], plan = [], timers = [], t0 = 0, TOTAL = 1, ONCE = /[#&?]once/.test(location.href);
+  var D = null, els = [], plan = [], timers = [], t0 = 0, TOTAL = 1, cur = -1, auto = false, ended = false, speed = 1, mpInit = false, ONCE = /[#&?]once/.test(location.href), AUTO0 = ONCE || /[#&?]auto/.test(location.href);   // 初めは手動（右キー：次へ／左キー：戻る／上キー：自動進行／下キー：停止）。URL に #auto で、初めから自動進行
   var key = ((/[?&]t=([A-Za-z0-9]+)/.exec(location.search) || [])[1] || "");
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -589,7 +599,7 @@
     function itemH(it, cols) { var per = cols === 3 ? 10 : cols === 2 ? 18 : 40, multi = ((it.chars || []).length > 1 ? 72 : 0);          // その人（賞品）の高さの見積もり
       return 30 + multi + Math.max(64, 34 + 50 * gifts(it).reduce(function (a, t) { return a + Math.max(1, Math.ceil(String(t).length / per)); }, 0)); }
     // 1画面の長さ：出てくるまで（1.4秒＋1人ごとに0.35秒）＋読む時間（賞品1つにつき0.8秒）。賞品が多いほど、長くする（最大14秒）
-    function pzMs(chunk) { var n = chunk.length, gs = chunk.reduce(function (a, it) { return a + gifts(it).length; }, 0); return Math.min(14000, 1400 + 350 * n + 2200 + 800 * Math.max(1, gs)); }
+    function pzMs(chunk) { var n = chunk.length, gs = chunk.reduce(function (a, it) { return a + gifts(it).length; }, 0); return Math.min(28000, 2 * (1400 + 350 * n + 2200 + 800 * Math.max(1, gs))); }
     // 受け取れる人（優勝チーム・準優勝チーム・順位を問わず・MVP）ごとに、1つずつ大きく見せる。人数が多いときは、何画面かに分ける
     pz.forEach(function (g) {
       var items = (g.items || []).slice(), longest = items.reduce(function (m, it) { return Math.max(m, gifts(it).reduce(function (a, t) { var q = /称号(「[^」]*」)/.exec(t); return Math.max(a, q ? q[1].length : 0); }, 0)); }, 0),
@@ -597,14 +607,14 @@
       for (pi = 0; pi < pages; pi++) {
         var chunk = items.slice(pi * per, (pi + 1) * per), cols = Math.min(MAXC, chunk.length === 1 ? 1 : chunk.length === 2 || chunk.length === 4 ? 2 : 3);
         S.push([pzMs(chunk), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="pzs k' + esc(k) + '" style="--c:' + cols + '">'
-          + '<div class="pzh"><div class="nm zoom" style="--a:.7s">' + esc(g.label) + (pi ? '<small>（つづき）</small>' : "") + '</div><div class="pzl rise" style="--a:1.1s"><i></i><b>✠</b><i></i></div></div>'
+          + '<div class="pzh"><div class="nm zoom" style="--a:.7s">' + esc(g.label) + (pi ? '<small>（つづき）</small>' : "") + '</div></div>'
           + '<div class="pzi">' + chunk.map(function (it, i) { return itemHtml(it, 1.4 + i * .35); }).join("") + "</div></div></div></section>"]);
       }
     });
     // 8 参加のしかた
     var E = D.entry || {}, dl = pd(E.deadline);
     if (dl || E.max) S.push([ms(3 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px"><div class="row">'
-      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">応募締切</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
+      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">エントリー締切</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
       + (E.max ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">定員</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + E.max + 'チーム</div><p>まで</p></div>' : "") + '</div>'
       + ((E.cond || []).length ? '<div class="card rise" style="--a:2s;width:1506px"><p style="font-size:36px;line-height:1.7">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
       + (E.invite ? '<div class="rise" style="--a:2.8s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
@@ -613,7 +623,7 @@
     var d2 = pd(E.deadline);
     S.push([10000, '<section class="scene center"><div class="ornament rise" style="--a:.3s;font-size:36px">✠ ❦ ✠</div><div class="end-title zoom" style="--a:.7s">' + esc(D.tagline || D.title) + '</div>'
       + '<div class="rule rise" style="--a:1.8s;margin-top:18px"></div><div class="end-sub rise" style="--a:2.4s">' + esc(D.title) + '</div>'
-      + (d2 ? '<div class="by rise" style="--a:3s;font-size:34px">応募締切　' + d2.key + '(' + d2.w + ') ' + d2.hm + '</div>' : "")
+      + (d2 ? '<div class="by rise" style="--a:3s;font-size:34px">エントリー締切　' + d2.key + '(' + d2.w + ') ' + d2.hm + '</div>' : "")
       + '<div class="end-sub rise" style="--a:3.8s;font-size:50px;letter-spacing:.12em;margin-top:30px">皆様のエントリーをお待ちしております。</div></section>']);
     return S;
   }
@@ -661,28 +671,62 @@
   function clearAll() { timers.forEach(clearTimeout); timers = []; }
   function play(from) {
     if (!D) return;
-    from = from || 0; clearAll(); build();
-    var fade = document.getElementById("fade"); fade.style.opacity = 1; t0 = performance.now();
+    from = from || 0; clearAll(); build(); auto = true; ended = false;
+    var DUR = plan.map(function (x) { return x[0] / speed; });                              // ページ送りの速さ：1倍速・0.75倍速・0.5倍速
+    TOTAL = DUR.reduce(function (a, x) { return a + x; }, 0);
+    var fade = document.getElementById("fade"); fade.style.transition = ""; fade.style.opacity = 1; t0 = performance.now() - DUR.slice(0, from).reduce(function (a, x) { return a + x; }, 0);
     timers.push(setTimeout(function () { fade.style.opacity = 0; }, 100));
     var at = 300;
     plan.forEach(function (s, i) {
       if (i < from) return;
       var e = els[i];
-      timers.push(setTimeout(function () { e.className += " on"; if (s[3]) s[3](e); }, at));
-      timers.push(setTimeout(function () { e.className += " out"; }, at + s[0] - 900));
-      at += s[0];
+      timers.push(setTimeout(function () { cur = i; e.className += " on"; if (s[3]) s[3](e); }, at));
+      timers.push(setTimeout(function () { e.className += " out"; }, at + DUR[i] - 900));
+      at += DUR[i];
     });
     timers.push(setTimeout(function () { fade.style.opacity = 1; }, at - 1200));
-    timers.push(setTimeout(function () { if (ONCE) return; load(); }, at + 800));              // 終わったら、最新のデータを読み直して、最初から
+    timers.push(setTimeout(function () { auto = false; ended = true; }, at + 800));            // 終わったら、止まる（くり返さない）。もう一度見るには、上か右のキー
   }
+  function show(i) {                                                                       // 手動：その場面だけを出して、そのまま止めておく
+    clearAll(); auto = false; cur = Math.max(0, Math.min(plan.length ? plan.length - 1 : 0, i));
+    var fade = document.getElementById("fade"), n = cur; fade.style.transition = "opacity .3s ease"; fade.style.opacity = 1;
+    timers.push(setTimeout(function () { build(); cur = n; var e = els[n]; if (!e) return; e.className += " on"; if (plan[n][3]) plan[n][3](e); fade.style.opacity = 0; }, 320));
+  }
+  document.addEventListener("keydown", function (ev) {
+    if (!D || ev.ctrlKey || ev.altKey || ev.metaKey) return;
+    var k = ev.key, last = plan.length - 1;
+    if (ended && (k === "ArrowRight" || k === "ArrowUp")) { auto = true; ended = false; load(); }   // 終わったあと：もう一度、最初から（最新のデータを読み直す）
+    else if (ended && k === "ArrowDown") { /* 止まっているので、何もしない */ }
+    else if (k === "ArrowRight") { if (cur < last) { if (auto) play(cur + 1); else show(cur + 1); } }
+    else if (k === "ArrowLeft") { if (cur > 0) { if (auto) play(cur - 1); else show(cur - 1); } }
+    else if (k === "ArrowUp") { if (!auto) play(Math.max(0, cur)); }
+    else if (k === "ArrowDown") { if (auto) show(cur); }
+    else return;
+    ev.preventDefault();
+  });
+  (function () {                                                                           // 速さのボタン（マウスを動かしたときだけ出る）
+    var root = document.documentElement, tm = null;
+    document.addEventListener("mousemove", function () { root.classList.add("mv"); clearTimeout(tm); tm = setTimeout(function () { root.classList.remove("mv"); }, 3000); });
+    Array.prototype.forEach.call(document.querySelectorAll("#spd button"), function (b) {
+      b.addEventListener("click", function () {
+        speed = parseFloat(b.getAttribute("data-s")) || 1;
+        Array.prototype.forEach.call(document.querySelectorAll("#spd button"), function (x) { x.classList.toggle("on", x === b); });
+        b.blur(); if (auto && D) play(Math.max(0, cur));
+      });
+    });
+  })();
   function load() {
-    function go(d) { if (d && d.title) { D = d; document.getElementById("msg").textContent = ""; play(); } else if (!D) document.getElementById("msg").textContent = "まだ、紹介動画の内容がありません。"; else play(); }
+    function go(d) {
+      if (d && d.title) { var first = !D; D = d; document.getElementById("msg").textContent = ""; if (window.MusicPlayer) { if (!mpInit) { mpInit = true; MusicPlayer.init({ ui: true, volume: 0.35 }); } MusicPlayer.set(D.music || null); }
+        if (first && !AUTO0) show(0); else if (auto || first) play(); }
+      else if (!D) document.getElementById("msg").textContent = "まだ、紹介動画の内容がありません。"; else if (auto) play();
+    }
     if (window.INTRO_DATA_EMBEDDED) return go(window.INTRO_DATA_EMBEDDED);
     var base = window.TOURNAMENT_DATA_BASE;
     if (!base) { document.getElementById("msg").textContent = "データの場所が設定されていません。"; return; }
     if (!/^[A-Za-z0-9]{12}$/.test(key)) { document.getElementById("msg").textContent = "このページは、大会のURL（主催者から案内されたもの）から開いてください。"; return; }
     fetch(base + key + "/intro.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(go)
-      .catch(function () { if (D) play(); else document.getElementById("msg").textContent = "データを読み込めませんでした。しばらくしてからもう一度開いてください。"; });
+      .catch(function () { if (D) { if (auto) play(); }   else document.getElementById("msg").textContent = "データを読み込めませんでした。しばらくしてからもう一度開いてください。"; });
   }
   // 背景のかざり
   (function () {
@@ -698,9 +742,7 @@
   function fit() { var s = Math.min(innerWidth / 1920, innerHeight / 1080), st = document.getElementById("stage");
     st.style.transform = "scale(" + s + ")"; st.style.left = ((innerWidth - 1920 * s) / 2) + "px"; st.style.top = ((innerHeight - 1080 * s) / 2) + "px"; }
   addEventListener("resize", fit); fit();
-  (function tick() { var b = document.getElementById("bar"); b.style.width = Math.min(100, (performance.now() - t0) / (TOTAL + 1100) * 100) + "%"; requestAnimationFrame(tick); })();
-  addEventListener("click", function () { play(); });
-  addEventListener("keydown", function (e) { if (e.code === "Space" || e.key === "Enter") { e.preventDefault(); play(); } });
+  (function tick() { var b = document.getElementById("bar"); b.style.width = (auto ? Math.min(100, (performance.now() - t0) / (TOTAL + 1100) * 100) : plan.length > 1 ? Math.max(0, cur) / (plan.length - 1) * 100 : 0) + "%"; requestAnimationFrame(tick); })();
   window.__intro = { play: play, start: function (n) { D = window.INTRO_DATA_EMBEDDED; play(n); } };                                                                      // 確認用（場面の番号から流す）
   load();
 })();

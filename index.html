@@ -370,6 +370,8 @@
   // 大会ルールのページの「トーナメント表」タブに入れるとき（?inbook=1）：このページの高さを、外のページに知らせる（中でスクロールさせず、大きいまま見せる）
   //   幅が広いとき：横長の表を、幅いっぱいに（高さ＝幅×1080/1920）。スマホ（幅が狭い）とき：縦に並べた表（高さ＝中身の高さ）。
   var INBOOK = params.get("inbook") === "1" && window.parent !== window, INBOOK_H = 0, INBOOK_PH = null;
+  var HOME = INBOOK && params.get("home") === "1";            // ホームの中：スマホでも回さず、そのまま縮小して出す（タップは、外のページが受ける）
+  window.addEventListener("message", function (e) { if (INBOOK && e.origin === location.origin && e.data && e.data.type === "rb_layout") fit(); });   // 外のページの「縦に並べる」ボタンが押された
   function sendH(h) {
     h = Math.ceil(h); if (!INBOOK || !h || (Math.abs(h - INBOOK_H) < 2 && INBOOK_PH === (curData && curData.phase))) return; INBOOK_H = h; INBOOK_PH = curData && curData.phase;
     try { window.parent.postMessage({ type: "rb_height", h: h, fid: params.get("fid") || "", phase: (curData && curData.phase) || "" }, location.origin); } catch (e) { /* そのまま */ }
@@ -419,15 +421,15 @@
     var st = document.getElementById("stage");
     var W = window.innerWidth, H = window.innerHeight;
     if (INBOOK) {                                                // 大会ルールのページの中：高さは、こちらから決める（外のページが、それに合わせる）
-      if (W >= 700) {
+      if (W >= 700 || HOME) {
         document.documentElement.className = "stage"; layoutButton(false, false);
         var sw = W / 1920; st.style.transform = "scale(" + sw + ")"; st.style.left = "0px"; st.style.top = "0px"; sendH(1080 * sw);
       } else if (getLayout() === "flow") {                     // スマホで「縦に並べて見る」を選んだとき
-        document.documentElement.className = "flow"; layoutButton(true, true);
+        document.documentElement.className = "flow"; layoutButton(false, true);
         st.style.transform = ""; st.style.left = ""; st.style.top = ""; setTimeout(function () { sendH(document.documentElement.scrollHeight); }, 50);
       } else {                                                 // スマホ：これまでのページと同じく、表を90°回して横向きで見る（高さ＝幅×1920/1080）
         var rr = W / 1080, HH = 1920 * rr;
-        document.documentElement.className = "stage rot"; layoutButton(true, false);
+        document.documentElement.className = "stage rot"; layoutButton(false, false);
         st.style.left = "0px"; st.style.top = "0px";
         st.style.transform = "translate(" + (1080 * rr) + "px,0px) rotate(90deg) scale(" + rr + ")";
         sendH(HH);

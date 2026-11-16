@@ -186,6 +186,15 @@
   .hm-sec { margin: 34px 0 0; text-align: left; }
   .hm-sec > h2 { margin: 0 0 14px; font-size: clamp(20px, 5.2vw, 28px); font-weight: 900; letter-spacing: .08em; text-align: center; }
   .hm-sec > h2::after { content: ""; display: block; height: 3px; width: 90px; margin: 8px auto 0; background: linear-gradient(90deg, transparent, var(--accent, #7aa2ff), transparent); }
+  .dtw { max-width: 560px; margin: 0 auto; }
+  .dtu { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 9px 12px; border: 1px dashed var(--line, #3a4a7a); border-radius: 10px; font-size: 14px; margin-bottom: 10px; }
+  .dtu i { font-style: normal; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 99px; background: color-mix(in srgb, var(--accent, #7aa2ff) 18%, transparent); }
+  .dtu b { font-weight: 900; margin-left: auto; }
+  .dtl { border-left: 2px solid var(--line, #3a4a7a); margin: 16px 0 0 7px; padding-left: 20px; }
+  .dtg { position: relative; margin-bottom: 16px; } .dtg::before { content: ""; position: absolute; left: -27px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent, #7aa2ff); }
+  .dtg .dd { font-size: 17px; font-weight: 900; margin-bottom: 6px; }
+  .dtg .chip { display: inline-block; background: color-mix(in srgb, var(--accent, #7aa2ff) 10%, transparent); border-radius: 8px; padding: 5px 11px; font-size: 14px; margin: 0 6px 6px 0; } .dtg .chip b { color: var(--accent, #7aa2ff); font-weight: 900; }
+  .dtg .dn { font-size: 12px; opacity: .75; line-height: 1.6; overflow-wrap: anywhere; margin-bottom: 4px; }
   .dts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .dt { text-align: center; padding: 16px 12px; border: 1px solid var(--line, #3a4a7a); border-radius: 14px; background: color-mix(in srgb, var(--accent, #7aa2ff) 8%, transparent); min-width: 0; }
   .dt .l { font-size: 13px; font-weight: 800; opacity: .85; line-height: 1.5; overflow-wrap: anywhere; }
@@ -196,6 +205,10 @@
   .hm-go.small { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-top: 22px; }
   .hm-go.small button { padding: 10px 8px; font-size: .92em; }
   .hm-sec .bkw { margin: 0; }
+  .bkw.tap { position: relative; cursor: pointer; } .bkw.tap::after { content: ""; position: absolute; inset: 0; }          /* 上に透明な板：中の表ではなく、こちらがタップを受ける */
+  .bkhint { text-align: center; font-size: 12px; opacity: .7; margin-top: 6px; }
+  .lytbar { display: none; margin: 0 0 10px; } .lytbar button { font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 999px; cursor: pointer; border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
+  @media (max-width: 699px) { .lytbar { display: block; } }
   .hm-panel .go.big { display: block; text-align: center; font-size: 1.15em; padding: 14px 18px; margin-top: 14px; }
   .hm-end { margin: 40px 0 8px; text-align: center; }
   .hm-end .nxt { display: block; width: min(420px, 100%); margin: 0 auto; padding: 18px 14px; font-size: 1.15em; font-weight: 900; letter-spacing: .1em; border-radius: 14px; }
@@ -345,6 +358,8 @@
     return box;
   }
   function tabs() { return (D && D.tabs) || []; }
+  var EMO = /^[\s\u200d\ufe0f\u2190-\u2bff\u{1F000}-\u{1FFFF}]+/u;
+  function nm(t) { return String((t && t.title) || "").replace(EMO, "") || String((t && t.title) || ""); }          // タブの名前から、頭の絵文字をとる（保存してある名前は、そのまま）
   function counts(t) { var n = 0, r = 0; (t.sections || []).forEach(function (s) { n++; if (isRead(s)) r++; }); return [r, n]; }
 
   // ── 本文：書き方（記号）から、見た目を（rbfmt.js）。[[タブの名前]]は、そのタブへのリンク ──
@@ -388,7 +403,7 @@
         (t.sections || []).forEach(function (s, si) {
           var txt = (s.title || "") + "\n" + (s.body || ""), p = txt.indexOf(w);
           if (p < 0 || n >= 30) return; n++;
-          var b = el("button"); b.type = "button"; b.appendChild(el("div", "", t.title + " ＞ " + s.title));
+          var b = el("button"); b.type = "button"; b.appendChild(el("div", "", nm(t) + " ＞ " + s.title));
           var a = Math.max(0, p - 20); b.appendChild(el("div", "w", (a > 0 ? "…" : "") + txt.slice(a, p + w.length + 30).replace(/\n/g, " ") + "…"));
           b.addEventListener("click", function () { goTab(ti, si); }); hits.appendChild(b);
         });
@@ -399,7 +414,7 @@
     tabs().forEach(function (t, i) {
       var b = el("button", "tb" + (i === TAB ? " on" : "")); b.type = "button";
       if (tabFlag(t)) b.appendChild(bang());
-      b.appendChild(el("span", "nm", t.title));
+      b.appendChild(el("span", "nm", nm(t)));
       if (!t.builtin || t.sections) { var c = counts(t); if (c[1]) b.appendChild(el("span", "c" + (c[0] === c[1] ? " all" : ""), c[0] === c[1] ? "✓ 読んだ" : c[0] + "/" + c[1])); }
       b.addEventListener("click", function () { goTab(i); }); pn.appendChild(b);
     });
@@ -451,28 +466,44 @@
     if (h.text) { var tx = el("div", "hm-text"); tx.appendChild(mdRender(h.text)); hero.appendChild(tx); }
     w.appendChild(hero);
     var e = h.entry || {}, L = h.links || {};
-    if (h.intro) { var gi = el("div", "embs one"); gi.appendChild(embedCard(h.intro, "")); w.appendChild(hmSec("🎞 大会紹介動画", gi)); }
-    // ① 大会日時：1つずつのカード（スマホでは2列・狭いときは1列）
+    if (h.intro) { var gi = el("div", "embs one"); gi.appendChild(embedCard(h.intro, "")); w.appendChild(hmSec("大会紹介動画", gi)); }
+    // ① 大会日時：「受付」（エントリー・キャスター/モデレーターの締め切り）と、「ラウンド」（日付ごとに、縦の線でつなぐ。同じ日は同じところに並べる）
     var dts = arr0(h.dates);
     if (dts.length) {
-      var gd = el("div", "dts");
-      dts.forEach(function (x) {
-        var p = dateParts(x.at), c = el("div", "dt"); c.appendChild(el("div", "l", x.label));
-        if (p) { var d = el("div", "d", p.md); d.appendChild(el("small", "", "(" + p.w + ")")); c.appendChild(d); c.appendChild(el("div", "t", p.hm + " ～")); }
-        if (x.note) c.appendChild(el("div", "n", x.note));
-        gd.appendChild(c);
+      var gd = el("div", "dtw"), ddl = dts.filter(function (x) { return x.kind === "deadline"; }), rds = dts.filter(function (x) { return x.kind !== "deadline"; });
+      ddl.forEach(function (x) {
+        var p = dateParts(x.at), u = el("div", "dtu"); u.appendChild(el("i", "", "受付")); u.appendChild(el("span", "", x.label));
+        if (p) u.appendChild(el("b", "", p.md + "(" + p.w + ") " + p.hm));
+        gd.appendChild(u);
       });
-      w.appendChild(hmSec("📅 大会日時", gd));
+      var days = [], byDay = {};
+      rds.forEach(function (x) { var p = dateParts(x.at); if (!p) return; var k = p.y + "/" + p.md; if (!byDay[k]) { byDay[k] = { p: p, items: [] }; days.push(byDay[k]); } byDay[k].items.push({ x: x, p: p }); });
+      if (days.length) {
+        var tl = el("div", "dtl");
+        days.forEach(function (g) {
+          var gr = el("div", "dtg"); gr.appendChild(el("div", "dd", g.p.md + "(" + g.p.w + ")"));
+          g.items.forEach(function (it) {
+            var c = el("span", "chip"); c.appendChild(el("b", "", it.p.hm)); c.appendChild(document.createTextNode(" " + it.x.label)); gr.appendChild(c);
+            if (it.x.note) gr.appendChild(el("div", "dn", it.x.note));
+          });
+          tl.appendChild(gr);
+        });
+        gd.appendChild(tl);
+      }
+      w.appendChild(hmSec("大会日時", gd));
     }
     // ② 賞品（注意事項は、これまでどおり「ルール」のタブに置く）
-    if (arr0(D.prizes).length) w.appendChild(hmSec("🎁 賞品", prizeCards()));
+    if (arr0(D.prizes).length) w.appendChild(hmSec("賞品", prizeCards()));
     // ③ トーナメント表
     if (L.bracket || tabs().some(function (t) { return t.builtin === "bracket"; })) {
-      var kw = el("div", "bkw"), f = el("iframe"); f.src = "index.html?t=" + encodeURIComponent(key) + "&inbook=1&tab=plan&fid=a"; f.title = "トーナメント表"; f.setAttribute("scrolling", "no");
-      f.setAttribute("data-fid", "a"); f.style.height = (BK_H.a || 600) + "px"; kw.appendChild(f);
-      w.appendChild(hmSec("🏆 トーナメント表", kw));
+      var kw = el("div", "bkw tap"), f = el("iframe"); f.src = "index.html?t=" + encodeURIComponent(key) + "&inbook=1&home=1&tab=plan&fid=a"; f.title = "トーナメント表"; f.setAttribute("scrolling", "no");
+      f.setAttribute("data-fid", "a"); f.style.height = (BK_H.a || 300) + "px"; kw.appendChild(f);
+      var bi = tabs().findIndex(function (t) { return t.builtin === "bracket"; });            // タップすると「トーナメント表」のタブへ
+      if (bi >= 0) { kw.setAttribute("role", "button"); kw.tabIndex = 0; kw.setAttribute("aria-label", "トーナメント表のタブを開く"); kw.addEventListener("click", function () { goTab(bi); }); kw.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); goTab(bi); } }); }
+      w.appendChild(hmSec("トーナメント表", kw));
+      if (bi >= 0) w.lastChild.appendChild(el("div", "bkhint", "タップすると、大きく見られます"));
     }
-    if (arr0(h.streams).length) { var gs = el("div", "embs" + (h.streams.length === 1 ? " one" : "")); h.streams.forEach(function (x) { gs.appendChild(embedCard(x, "📺 " + x.label)); }); w.appendChild(hmSec("📺 生配信", gs)); }
+    if (arr0(h.streams).length) { var gs = el("div", "embs" + (h.streams.length === 1 ? " one" : "")); h.streams.forEach(function (x) { gs.appendChild(embedCard(x, x.label)); }); w.appendChild(hmSec("生配信", gs)); }
     // ④ エントリー/メンバー募集
     var p = el("div", "hm-panel"), dl = el("dl");
     function row(k, v) { if (!v) return; dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); }
@@ -488,18 +519,18 @@
     });
     p.appendChild(dl);
     var eh = entryHref(); if (eh) { var a = el("a", "go big", "📝 エントリーのページへ"); a.href = eh; p.appendChild(a); }
-    w.appendChild(hmSec("📝 エントリー/メンバー募集", p));
+    w.appendChild(hmSec("エントリー/メンバー募集", p));
     // ⑤ 各ページへ（ルールなど）
     var go = el("div", "hm-go small");
-    tabs().forEach(function (t, i) { if (t.builtin === "home" || t.builtin === "bracket" || t.builtin === "dates") return; var b = el("button", "", t.title); b.type = "button"; b.addEventListener("click", function () { goTab(i); }); go.appendChild(b); });
-    if (go.children.length) w.appendChild(hmSec("📖 ルールを読む", go));
+    tabs().forEach(function (t, i) { if (t.builtin === "home" || t.builtin === "bracket" || t.builtin === "dates") return; var b = el("button", "", nm(t)); b.type = "button"; b.addEventListener("click", function () { goTab(i); }); go.appendChild(b); });
+    if (go.children.length) w.appendChild(hmSec("ルールを読む", go));
     // ⑥ いちばん下：次へ（ルールのタブに進む）
     var ts = tabs(), nx = -1;                                                         // 次へ：ホームに出したもの（トーナメント表・日時）は飛ばして、ルールのタブへ
     for (var q = TAB + 1; q < ts.length; q++) if (ts[q].builtin !== "bracket" && ts[q].builtin !== "dates") { nx = q; break; }
     if (nx < 0 && TAB < ts.length - 1) nx = TAB + 1;
     if (nx >= 0) {
       var en = el("div", "hm-end rv"), nb = el("button", "go nxt", "次へ ▶"); nb.type = "button"; nb.addEventListener("click", function () { goTab(nx); });
-      en.appendChild(nb); en.appendChild(el("small", "", ts[nx].title)); w.appendChild(en);
+      en.appendChild(nb); en.appendChild(el("small", "", nm(ts[nx]))); w.appendChild(en);
     }
     box.appendChild(w);
   }
@@ -733,7 +764,7 @@
     if (TAB >= ts.length) TAB = 0;
     var t = ts[TAB];
     main.style.maxWidth = t.builtin === "bracket" || t.builtin === "flow" ? "1600px" : "";                     // トーナメント表は、横に広く（大きいまま）
-    document.getElementById("now").textContent = t.title;
+    document.getElementById("now").textContent = nm(t);
     badge();
     main.appendChild(allBar());
     if (t.builtin !== "home") navButtons(main);                                           // ◀ 戻る・次へ ▶ は、上にも（ホームは、いちばん下に「次へ」）
@@ -741,6 +772,11 @@
       var lastId = 0; RBF.kindChanges(D, t.builtin).forEach(function (c) { if (c.id > lastId) lastId = c.id; }); if (lastId) RBF.setSeen(key, t.builtin, lastId);          // 見たので、次からは！をつけない（この表示では、まだ目立つ）
       if (t.builtin === "bp") { var bw = el("div", "bpw"); main.appendChild(bw); drawBp(bw); }
       else {
+        var lb = el("div", "lytbar"), lk = "tournament_mobile_layout", lbb = el("button"); lbb.type = "button";           // 「縦に並べて見る」：表の外の、上に置く（スマホだけ）
+        function lbT() { var fl = false; try { fl = localStorage.getItem(lk) === "flow"; } catch (e) { /* 既定 */ } return fl; }
+        function lbS() { lbb.textContent = lbT() ? "↻ 横向きの表で見る" : "☰ 縦に並べて見る"; } lbS();
+        lbb.addEventListener("click", function () { try { localStorage.setItem(lk, lbT() ? "rotate" : "flow"); } catch (e) { /* 保存できなくても */ } lbS(); main.querySelectorAll(".bkw iframe").forEach(function (fr) { try { fr.contentWindow.postMessage({ type: "rb_layout" }, location.origin); } catch (e) { /* そのまま */ } }); });
+        lb.appendChild(lbb); main.appendChild(lb);
         var kw = el("div", "bkw");                                                     // 上：予定の表／下：登録状況（チーム登録受付中だけ。タブにせず、上下に並べる）
         [["a", "plan", "📋 予定の表"], ["b", "reg", "👥 登録状況"]].forEach(function (x) {
           var f = el("iframe"); f.src = "index.html?t=" + encodeURIComponent(key) + "&inbook=1&tab=" + x[1] + "&fid=" + x[0]; f.title = x[2]; f.setAttribute("scrolling", "no");
@@ -784,7 +820,7 @@
         render(nx >= 0 ? nx : -1);
         var tgt = document.getElementById("sec" + (nx >= 0 ? nx : i)); if (tgt) tgt.scrollIntoView({ behavior: "smooth", block: "start" });
         var tabDone = false;
-        if (nx < 0) { var c2 = counts(t); if (c2[0] === c2[1]) { tabDone = true; toast("✓ 「" + t.title + "」を全部読みました。" + (TAB < tabs().length - 1 ? "次のタブへ進みます。" : "")); } }
+        if (nx < 0) { var c2 = counts(t); if (c2[0] === c2[1]) { tabDone = true; toast("✓ 「" + nm(t) + "」を全部読みました。" + (TAB < tabs().length - 1 ? "次のタブへ進みます。" : "")); } }
         if (!wasAll && allRead()) showReady();
         else if (tabDone && TAB < tabs().length - 1) setTimeout(function () { goTab(TAB + 1); }, 700);          // このタブを全部読んだ：自動で次のタブへ
       });
@@ -794,8 +830,8 @@
   }
   function navButtons(main) {                                                         // 前のタブ・次のタブ
     var ts = tabs(), nv = el("div", "nav");
-    if (TAB > 0) { var p = el("button", "", "◀ 戻る"); p.title = ts[TAB - 1].title; p.type = "button"; p.addEventListener("click", function () { goTab(TAB - 1); }); nv.appendChild(p); } else nv.appendChild(el("span"));
-    if (TAB < ts.length - 1) { var n = el("button", "go", "次へ ▶"); n.title = ts[TAB + 1].title; n.type = "button"; n.addEventListener("click", function () { goTab(TAB + 1); }); nv.appendChild(n); }
+    if (TAB > 0) { var p = el("button", "", "◀ 戻る"); p.title = nm(ts[TAB - 1]); p.type = "button"; p.addEventListener("click", function () { goTab(TAB - 1); }); nv.appendChild(p); } else nv.appendChild(el("span"));
+    if (TAB < ts.length - 1) { var n = el("button", "go", "次へ ▶"); n.title = nm(ts[TAB + 1]); n.type = "button"; n.addEventListener("click", function () { goTab(TAB + 1); }); nv.appendChild(n); }
     main.appendChild(nv);
   }
 

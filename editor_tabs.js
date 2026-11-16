@@ -285,15 +285,44 @@
   });
 
   // ───── 🎨 デザイン ─────
-  function mediaForm(el, K, c, cur, labelUrl, ph, onSave, onClear) {                // URL＋再生を始める位置の入力と、保存・消すボタン
+  function mediaForm(el, K, c, cur, labelUrl, ph, onSave, onClear, withLoop) {                // URL＋再生を始める位置の入力と、保存・消すボタン
     var ui = inp(el, cur.url, 500, ph), st = inp(el, cur.start, 12, "00:00:00（空なら最初から）"); st.style.maxWidth = "14em";
     c.appendChild(field(el, labelUrl, ui)); c.appendChild(field(el, "再生を始める位置（動画・YouTube・音楽。時:分:秒）", st));
+    var lp = null;
+    if (withLoop) {                                                                 // 音楽：繰り返すとき、どこへ戻るか
+      lp = document.createElement("select"); lp.style.cssText = "font-size:16px;padding:8px;max-width:100%";
+      [["start", "指定した再生開始時間からループする"], ["zero", "00:00からループする"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; lp.appendChild(op); });
+      lp.value = cur.loop === "zero" ? "zero" : "start"; c.appendChild(field(el, "ループする時（曲の終わりまで来たら、どこへ戻るか）", lp));
+    }
     if (cur.text) c.appendChild(el("div", "note", "いま：" + cur.text));
     var r = el("div", "row"), sv = el("button", "primary", "💾 保存"); sv.type = "button";
-    sv.addEventListener("click", function () { if (!ui.value.trim()) { K.msg("ng", "⚠ URLを入れてください（消すときは、「消す」を押します）。"); return; } onSave(ui.value, st.value); });
+    sv.addEventListener("click", function () { if (!ui.value.trim()) { K.msg("ng", "⚠ URLを入れてください（消すときは、「消す」を押します）。"); return; } onSave(ui.value, st.value, lp ? lp.value : ""); });
     var cl = el("button", "", "消す"); cl.type = "button"; cl.disabled = !cur.url; cl.addEventListener("click", function () { onClear(); });
     r.appendChild(sv); r.appendChild(cl); c.appendChild(r);
   }
+  TABS.push({
+    id: "iv", label: "🎬 紹介動画",
+    intro: "大会の紹介動画（映すだけのページ）の、見方と、流す音楽を決めます。ページは、上の「🔗 実際のページを見る」から開けます。内容は、大会の設定から、BOTが自動で作ります。",
+    render: function (root, K) {
+      var el = K.el, D = (K.data() || {}).design || {};
+      var kc = box(el, "⌨ キーの使い方（ページを開いたあと）", "最初は、1ページ目で止まっています。");
+      [["→（右キー）", "次のページへ進みます。終わったあとは、もう一度、最初から再生します。"], ["←（左キー）", "前のページへ戻ります。"],
+       ["↑（上キー）", "いまのページから、自動で進みはじめます。終わると止まります（くり返しません）。終わったあとは、↑か→で、最初から再生します。"],
+       ["↓（下キー）", "そのページで止めます（自動進行も止まります）。"]].forEach(function (r) {
+        var row = el("div", ""); row.style.cssText = "display:flex;gap:12px;padding:4px 0;border-bottom:1px dashed var(--line)";
+        var k = el("b", "", r[0]); k.style.cssText = "min-width:9em"; row.appendChild(k); row.appendChild(el("span", "", r[1])); kc.appendChild(row);
+      });
+      kc.appendChild(el("div", "note", "画面の右下の「1倍速・0.75倍速・0.5倍速」のボタンで、自動進行のページ送りの速さを変えられます（マウスを動かすと出ます）。ページのURLの終わりに #auto をつけると、開いたときから、自動で進みます（配信に映すとき用）。"));
+      root.appendChild(kc);
+      var m = (D.music || []).filter(function (x) { return x.key === "intro"; })[0];
+      if (m) {
+        var mc = box(el, "🎵 紹介動画の音楽", "URLは、YouTube か、音声ファイル（.mp3 .wav .ogg .m4a など）です。⚠ 音楽の利用規約・著作権に、ご注意ください。ブラウザによっては、ページを開いたあと、キーを押すかクリックするまで、音が出ません。見る人は、左下のバーで、音量を変えられます。");
+        mediaForm(el, K, mc, m, "音楽のURL", "https://…（YouTube・音声ファイル）",
+          function (u, s, l) { K.send([{ op: "music_set", scene: "intro", url: u, start: s, loop: l }], "音楽を保存しています…"); }, function () { K.send([{ op: "music_set", scene: "intro", url: "" }], "音楽を消しています…"); }, true);
+        root.appendChild(mc);
+      }
+    }
+  });
   TABS.push({
     id: "dz", label: "🎨 デザイン",
     intro: "配信・ルール・トーナメント表のページの見た目（デザイン・色・背景・音楽）を決めます。Discordの「🎨 ブラウザデザイン」と同じものです。ここで押したボタンは、その場で保存されて、ページには数秒で反映されます。",
@@ -328,10 +357,11 @@
       // 音楽
       var mc = box(el, "🎵 ブラウザ音楽（場面ごと）", "配信用の画面（OBSのブラウザソース）に、場面ごとに音楽を流します。URLは、YouTube か、音声ファイル（.mp3 .wav .ogg .m4a など）です。⚠ 音楽の利用規約・著作権に、ご注意ください。配信や大会のページで流してよいか、必ず確認してから設定してください。ブラウザによっては、ページを開いたあと、1回タップするまで、音が出ないことがあります。");
       (D.music || []).forEach(function (m) {
+        if (m.key === "intro") return;                                                     // 紹介動画の音楽は、「🎬 紹介動画」タブで
         var d = document.createElement("details"); d.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0"; d.open = !!K.open("mz:" + m.key); d.addEventListener("toggle", function () { K.open("mz:" + m.key, d.open); });
         var sm = document.createElement("summary"); sm.style.cursor = "pointer"; sm.textContent = (m.url ? "✅ " : "🎵 ") + m.label; d.appendChild(sm);
         mediaForm(el, K, d, m, "音楽のURL", "https://…（YouTube・音声ファイル）",
-          function (u, s) { K.send([{ op: "music_set", scene: m.key, url: u, start: s }], "音楽を保存しています…"); }, function () { K.send([{ op: "music_set", scene: m.key, url: "" }], "音楽を消しています…"); });
+          function (u, s, l) { K.send([{ op: "music_set", scene: m.key, url: u, start: s, loop: l }], "音楽を保存しています…"); }, function () { K.send([{ op: "music_set", scene: m.key, url: "" }], "音楽を消しています…"); }, true);
         mc.appendChild(d);
       });
       root.appendChild(mc);

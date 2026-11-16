@@ -2975,6 +2975,7 @@
   var lastSig = null;
   // ── ブラウザ音楽（music.js）：場面ごとの音楽。優勝・インタビューの画面 → BAN/PICK → 大会開始前／試合と試合の間 の順に、場面を決める ──
   var musicOn = params.get("music") !== "0";                                      // ?music=0 で、音楽を流さない（OBSで流しているときに、ふつうのブラウザでも開いて見るとき）
+  function bpScene(m) { return m.final && (m.scenes || {}).final ? "final" : "banpick"; }                     // 決勝戦のBAN/PICKは、別の音楽（設定があれば）
   function updateMusic(data, fm) {
     if (!window.MusicPlayer || !musicOn) return;
     var m = data.music;
@@ -2992,19 +2993,19 @@
       else if (data.state === "close") scene = "close";                             // 配信終了の音楽：閉会のごあいさつから「大会終了」の画面まで、同じ音楽（優勝・インタビューの音楽からは、閉会のごあいさつの始まりで切り替わる）
       else if (fm) scene = fm === "interview" || fm === "mvp_interview" || fm === "enter" ? "interview" : "champion";
       else if (data.state === "hold") scene = null;                                 // 試合の途中（結果の確認待ち）：背景が透明なので、音楽は止める
-      else if (data.state === "play") scene = root.classList.contains("clear") ? null : "banpick";   // 試合開始の時間になって背景が透明になったら、音楽を止める
+      else if (data.state === "play") scene = root.classList.contains("clear") ? null : bpScene(m);   // 試合開始の時間になって背景が透明になったら、音楽を止める
       else if (data.state === "result") {                                           // 試合終了から30秒は、BAN/PICKの音楽のまま → そのあと、試合の間の音楽にフェードで切り替える
         var ended = m.ended ? Date.parse(m.ended) : NaN;
         if (isNaN(ended)) { if (resultSeenAt === 0) resultSeenAt = NOW(); ended = resultSeenAt; }
         var left = BANPICK_TAIL_MS - (NOW() - ended);
-        if (left > 0) { scene = "banpick"; musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
+        if (left > 0) { scene = bpScene(m); musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
         else scene = "wait";
       } else if (data.state === "intro") scene = lastScene === "pre" || lastScene === "wait" ? lastScene : (pre ? "pre" : "wait");       // 紹介の場面：途中で、音楽を変えない（大会開始の時刻を過ぎても、紹介が終わるまで、そのまま）
       else scene = pre ? "pre" : "wait";
       if (data.state !== "result") resultSeenAt = 0;
       src = scene ? (m.scenes || {})[scene] : null;
-      if (scene === "banpick" && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
-      var fade = lastScene === "banpick" && scene === "wait" && data.state === "result" ? FADE_MS : 0;
+      if ((scene === "banpick" || scene === "final") && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
+      var fade = (lastScene === "banpick" || lastScene === "final") && scene === "wait" && data.state === "result" ? FADE_MS : 0;
       if (lastScene !== null && scene !== lastScene && scene !== "open" && scene !== "close" && scene !== null) {      // 場面の切り替わりの一瞬だけ別の場面になっても、音楽は変えない：新しい場面が続いて（1.2秒）から変える
         if (heldScene !== scene) { heldScene = scene; heldAt = NOW(); clearTimeout(holdTimer); holdTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, MUSIC_HOLD_MS + 60); return; }
         if (NOW() - heldAt < MUSIC_HOLD_MS) return;

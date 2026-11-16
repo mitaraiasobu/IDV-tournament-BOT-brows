@@ -1,5 +1,5 @@
 /* ブラウザ音楽（BGM）：配信用の画面（live.html）・トーナメント表（index.html）・ルールのページで、共通に使う。
-   音源は、YouTube（{kind:"youtube", id, start}）か、音声ファイルのURL（{kind:"audio", url, start}）。start は、再生を始める位置（秒）。繰り返すときも、その位置に戻る。
+   音源は、YouTube（{kind:"youtube", id, start}）か、音声ファイルのURL（{kind:"audio", url, start}）。start は、再生を始める位置（秒）。繰り返すときは、その位置に戻る（loop:"zero" のときだけ、00:00 に戻る）。
    使い方：MusicPlayer.init({ ui: true|false, volume: 0〜1 }) → MusicPlayer.set(音源 or null)（音源が同じなら、何もしない）。
    ui:true（公開のページ）…… 左下に、音量のバーを出す。開くたびに、小さめ（volume）から始まる。バーで大きくできる。🔇にしたら、次回以降も🔇（この端末に覚える）。
    ui:false（OBSの配信用の画面）…… 音量は、そのまま（OBSの側で調整する）。
@@ -8,14 +8,14 @@
   var cfg = { ui: false, volume: 1 };
   var master = 1, cur = null, bar = null, hint = null, gestureBound = false, started = false;
 
-  function key(src) { return src ? (src.kind || "") + "|" + (src.id || src.url || "") + "|" + (parseInt(src.start, 10) || 0) : ""; }
+  function key(src) { return src ? (src.kind || "") + "|" + (src.id || src.url || "") + "|" + (parseInt(src.start, 10) || 0) + "|" + (src.loop === "zero" ? "z" : "") : ""; }
 
   // ── 音声ファイル ──
   function audioCtl(src, onBlocked) {
-    var S = Math.max(0, parseInt(src.start, 10) || 0), a = new Audio(), dead = false;
+    var S = Math.max(0, parseInt(src.start, 10) || 0), L = src.loop === "zero" ? 0 : S, a = new Audio(), dead = false;
     a.preload = "auto"; a.src = src.url; a.volume = master;
     a.addEventListener("loadedmetadata", function () { if (S) { try { a.currentTime = S; } catch (e) { /* 無視 */ } } });
-    a.addEventListener("ended", function () { if (dead) return; try { a.currentTime = S; a.play().catch(function () { /* 無視 */ }); } catch (e) { /* 無視 */ } });
+    a.addEventListener("ended", function () { if (dead) return; try { a.currentTime = L; a.play().catch(function () { /* 無視 */ }); } catch (e) { /* 無視 */ } });
     function play() { a.play().then(function () { onBlocked(false); }).catch(function () { if (!dead) onBlocked(true); }); }
     return {
       play: play,
@@ -41,7 +41,7 @@
     return ytLoading;
   }
   function youtubeCtl(src, onBlocked) {
-    var S = Math.max(0, parseInt(src.start, 10) || 0), dead = false, ready = false, player = null, want = false, check = null;
+    var S = Math.max(0, parseInt(src.start, 10) || 0), L = src.loop === "zero" ? 0 : S, dead = false, ready = false, player = null, want = false, check = null;
     var box = document.createElement("div");
     box.setAttribute("aria-hidden", "true");
     box.style.cssText = "position:fixed;left:-9999px;top:0;width:220px;height:140px;overflow:hidden;pointer-events:none;opacity:0";
@@ -60,7 +60,7 @@
           onStateChange: function (e) {
             if (dead) return;
             if (e.data === 1) onBlocked(false);                                                      // 再生中
-            else if (e.data === 0) { try { e.target.seekTo(S, true); e.target.playVideo(); } catch (x) { /* 無視 */ } }   // 終わったら、開始位置から繰り返す
+            else if (e.data === 0) { try { e.target.seekTo(L, true); e.target.playVideo(); } catch (x) { /* 無視 */ } }   // 終わったら、開始位置から繰り返す
           }
         }
       });

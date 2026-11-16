@@ -1313,15 +1313,12 @@
   var VIEW = { set: ["rulebook", "", "大会ルール"], bp: ["rulebook", "BAN/PICK", "大会ルールの「BAN/PICK」"], time: ["rulebook", "全体の流れ", "大会ルールの「全体の流れ」"],
                br: ["rulebook", "トーナメント表", "大会ルールの「トーナメント表」"], rc: ["recruit", "", "エントリーのページ"], rl: ["rulebook", "エントリーのルール", "大会ルールの「エントリーのルール」"],
                rb: ["rulebook", "", "大会ルール"], pz: ["rulebook", "賞品", "大会ルールの「賞品」"], dz: ["live", "", "配信の画面"], bz: ["rulebook", "BAN/PICK", "大会ルールの「BAN/PICK」"],
-               sf: ["recruit", "", "エントリーのページ"], lo: ["live", "", "配信の画面"] };
+               sf: ["recruit", "", "エントリーのページ"], lo: ["live", "", "配信の画面"], iv: ["intro", "", "紹介動画"] };
   function viewBar(name) {
     var bar = $("viewbar"), v = VIEW[name], pages = (data && data.pages) || {}, url = v && pages[v[0]];
     bar.textContent = ""; bar.hidden = !url; if (!url) return;
     var a = el("a", "", "🔗 実際のページを見る（" + v[2] + "）"); a.href = url + (v[1] ? "#name=" + encodeURIComponent(v[1]) : ""); a.target = "_blank"; a.rel = "noopener";
     a.style.cssText = "font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none"; bar.appendChild(a);
-    if (name === "rb" && pages.intro) {                                                // 大会ルールのタブ：紹介動画（映すだけのページ）
-      var b = el("a", "", "🎬 紹介動画を見る（映すだけのページ）"); b.href = pages.intro; b.target = "_blank"; b.rel = "noopener"; b.style.cssText = a.style.cssText + ";margin-left:8px"; bar.appendChild(b);
-    }
   }
   function showTab(name) {
     Object.keys(XTAB).forEach(function (id) { $("tab-" + id).hidden = name !== id; $("tab" + id).className = name === id ? "on" : ""; });        // 追加のタブ（editor_tabs.js）
@@ -1676,7 +1673,7 @@
     b.addEventListener("click", function () { showTab(t.id); });
   });
   // ───── 左の一覧：グループごとに並べる（ボタンは、そのまま。見出しを足すだけ） ─────
-  var NAV = [["大会の基本", ["set", "br", "time", "rl", "rb"]], ["BAN/PICK", ["bp", "bz", "gm"]], ["参加する人", ["rc", "pl", "sf"]], ["演出・賞品", ["dz", "pz", "ps"]], ["当日と結果", ["lo"]], ["注意が要る操作", ["dg"]]];
+  var NAV = [["大会の基本", ["set", "br", "time", "rl", "rb"]], ["BAN/PICK", ["bp", "bz", "gm"]], ["参加する人", ["rc", "pl", "sf"]], ["演出・賞品", ["dz", "iv", "pz", "ps"]], ["当日と結果", ["lo"]], ["注意が要る操作", ["dg"]]];
   (function () {
     var box = $("tabs"), seen = {};
     NAV.forEach(function (g) {
