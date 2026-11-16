@@ -3519,35 +3519,51 @@
     openTimer = setInterval(tick, 150);
   }
   function renderClose(data) {
-    var cl = data.close, started = false, greeting = false;
+    var cl = data.close, started = false, greeting = false, brk = cl.kind === "break";        // brk＝配信の中断（大会は、まだ終わらない：優勝・賞品・「ありがとうございました」は、出さない）
+    function nextText(nx) {                                                            // 次の配信の日時：「11月20日（金）　20:00ごろ」
+      if (!nx || !nx.at) return "";
+      var d = new Date(nx.at * 1000), wk = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+      return (d.getMonth() + 1) + "月" + d.getDate() + "日（" + wk + "）　" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + "ごろ";
+    }
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
     function tick() {
       var nowS = NOW() / 1000, left = cl.t0 + cl.sec - nowS;
       if (left <= 0) { root.className = "stage black"; screenEl.replaceChildren(); return; }
-      if (nowS < cl.t0) {                                                                // 閉会のごあいさつ：担当のキャスターのアイコンを、画面の中央に
+      if (nowS < cl.t0) {                                                                // 閉会（中断）のごあいさつ：担当のキャスターのアイコンを、画面の中央に
         if (!greeting) {
           greeting = true;
           root.className = "stage"; kind = "stage";
-          screenEl.replaceChildren(greetScene("CLOSING", "閉会のごあいさつ", cl.title, cl.greeters));
+          screenEl.replaceChildren(brk ? greetScene("INTERMISSION", "中断のごあいさつ", cl.title, cl.greeters) : greetScene("CLOSING", "閉会のごあいさつ", cl.title, cl.greeters));
           fit();
         }
         var cc = screenEl.querySelector(".iv-count"); if (cc) cc.textContent = fmtCount(cl.t0 - nowS);          // 右下：ごあいさつののこり時間
-        setNext("大会終了", cl.t0 * 1000);
+        setNext(brk ? "配信を中断" : "大会終了", cl.t0 * 1000);
         return;
       }
       if (!started) {
         started = true;
         root.className = "stage"; kind = "stage";
         var w = opBase("cl"), c = el("div", "cl-c");
-        c.appendChild(el("div", "cl-end", "大会終了"));
-        c.appendChild(lineEl("cl-title", cl.title || "", 92));
-        c.appendChild(el("div", "cl-thx1", "皆様のご参加とご視聴"));
-        c.appendChild(el("div", "cl-thx2", "ありがとうございました"));
+        if (brk) {
+          var nx = cl.next || {}, when = nextText(nx), endEl = el("div", "cl-end", "配信を中断します");
+          endEl.style.fontSize = "150px";
+          c.appendChild(endEl);
+          c.appendChild(lineEl("cl-title", cl.title || "", 92));
+          c.appendChild(el("div", "cl-thx1", when ? "次の配信" : "次の配信の日時は、決まりしだい、お知らせします"));
+          if (when) c.appendChild(el("div", "cl-thx2", when));
+          if (nx.round) c.appendChild(el("div", "cl-thx1", nx.round + "から"));
+        } else {
+          c.appendChild(el("div", "cl-end", "大会終了"));
+          c.appendChild(lineEl("cl-title", cl.title || "", 92));
+          c.appendChild(el("div", "cl-thx1", "皆様のご参加とご視聴"));
+          c.appendChild(el("div", "cl-thx2", "ありがとうございました"));
+        }
         w.appendChild(c); w.appendChild(el("div", "cl-blk"));
         screenEl.replaceChildren(w); fit();
       }
       var blk = screenEl.querySelector(".cl-blk");
       if (blk && left <= 2.2) blk.classList.add("on");
-      setNext("配信終了", (cl.t0 + cl.sec) * 1000);
+      setNext(brk ? "配信中断（暗転）" : "配信終了", (cl.t0 + cl.sec) * 1000);
     }
     tick();
     openTimer = setInterval(tick, 200);
@@ -3620,8 +3636,8 @@
       segs.forEach(function (g) { add(g[0], at, g[1]); at += g[1]; });
     } else if (st === "close" && data.close) {
       var cl = data.close;
-      add("閉会のごあいさつ", cl.greet_t0, cl.t0 - cl.greet_t0);
-      add("大会終了", cl.t0, cl.sec);
+      add(cl.kind === "break" ? "中断のごあいさつ" : "閉会のごあいさつ", cl.greet_t0, cl.t0 - cl.greet_t0);
+      add(cl.kind === "break" ? "配信を中断します" : "大会終了", cl.t0, cl.sec);
     } else if (st === "intro" && data.intro) {
       var iv = data.intro, C = iv.caster_sec || 20, T = iv.team_sec || 20, P = iv.player_sec || 25, t;
       if (iv.swap) add("キャスター交代", iv.swap_start, iv.swap_sec);
