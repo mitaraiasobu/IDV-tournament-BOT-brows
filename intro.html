@@ -542,15 +542,8 @@
       + '<div class="rule rise" style="--a:2.2s"></div>'
       + (first && last ? '<div class="by gold rise" style="--a:2.9s">' + first.key + '(' + first.w + ')' + (last.key !== first.key ? ' ～ ' + last.key + '(' + last.w + ')' : '') + '</div>' : '')
       + '</div></section>']);
-    // 2 参加チーム（チーム数・チーム内の人数・両陣営の兼任）
+    // （参加チーム・チーム内の人数・兼任は、最後の「参加のしかた」に移した）
     var sz = D.size || {}, szt = sz.min && sz.max ? (sz.min === sz.max ? "" + sz.min : sz.min + "～" + sz.max) : sz.min ? sz.min + "以上" : sz.max ? sz.max + "まで" : "";
-    if (D.teams || szt) S.push([9500, head("✠ TEAMS ✠", "参加チーム") + '<div class="body"><div class="col" style="gap:34px">'
-      + (D.teams ? '<div class="stat rise" style="--a:.6s"><b>' + D.teams + '</b><span>チーム</span></div>' : "")
-      + '<div class="row">'
-      + (szt ? '<div class="card rise" style="--a:1.4s;width:740px"><span class="tag">チーム内の人数</span><div style="display:flex;align-items:baseline;justify-content:center;gap:14px;margin:6px 0 6px"><div class="big" style="font-size:120px">' + esc(szt) + '</div><p>人</p></div></div>' : "")
-      + '<div class="card rise" style="--a:2.1s;width:740px"><span class="tag' + (D.both ? "" : " red") + '">サバイバーとハンターの兼任</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + (D.both ? "OK" : "NG") + '</div>'
-      + '<p>' + (D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです") + '</p></div>'
-      + '</div></div></div></section>']);
     // 3 トーナメント表（日程・ラウンドも、ここに含まれる）
     var bk = planScene(); if (bk) S.push(bk);
     // 3b 日程（トーナメント表のあと：ラウンドの日時だけを、大きく）
@@ -611,13 +604,17 @@
           + '<div class="pzi">' + chunk.map(function (it, i) { return itemHtml(it, 1.4 + i * .35); }).join("") + "</div></div></div></section>"]);
       }
     });
-    // 8 参加のしかた
-    var E = D.entry || {}, dl = pd(E.deadline);
-    if (dl || E.max) S.push([ms(3 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px"><div class="row">'
-      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">エントリー締切</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
-      + (E.max ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">定員</span><div class="big" style="font-size:120px;margin:6px 0 6px">' + E.max + 'チーム</div><p>まで</p></div>' : "") + '</div>'
-      + ((E.cond || []).length ? '<div class="card rise" style="--a:2s;width:1506px"><p style="font-size:36px;line-height:1.7">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
-      + (E.invite ? '<div class="rise" style="--a:2.8s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
+    // 8 参加のしかた（エントリー締切・定員のチーム数・チーム内の人数・両陣営の兼任・条件）
+    var E = D.entry || {}, dl = pd(E.deadline), nt = E.max || D.teams, BIG = 'class="big" style="font-size:96px;margin:4px 0 4px"';
+    if (dl || nt || szt) S.push([ms(5 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:20px"><div class="row">'
+      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">エントリー締切</span><div ' + BIG + '>' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
+      + (nt ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">' + (E.max ? "定員" : "チーム数") + '</span><div ' + BIG + '>' + nt + 'チーム</div><p>' + (E.max ? "まで" : "　") + '</p></div>' : "") + '</div>'
+      + '<div class="row">'
+      + (szt ? '<div class="card rise" style="--a:1.8s;width:740px"><span class="tag">チーム内の人数</span><div style="display:flex;align-items:baseline;justify-content:center;gap:14px;margin:4px 0 4px"><div class="big" style="font-size:96px">' + esc(szt) + '</div><p>人</p></div></div>' : "")
+      + '<div class="card rise" style="--a:2.4s;width:740px"><span class="tag' + (D.both ? "" : " red") + '">サバイバーとハンターの兼任</span><div ' + BIG + '>' + (D.both ? "OK" : "NG") + '</div>'
+      + '<p>' + (D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです") + '</p></div></div>'
+      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px"><p style="font-size:34px;line-height:1.6">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
+      + (E.invite ? '<div class="rise" style="--a:3.6s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
       + '</div></div></section>']);
     // 9 おわり
     var d2 = pd(E.deadline);
