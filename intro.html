@@ -618,18 +618,20 @@
     // 8 参加のしかた（エントリー締切／チームの定員・チーム内の人数・両陣営の兼任は、1つのパネルにまとめる／条件）
     var E = D.entry || {}, dl = pd(E.deadline), nt = E.max || D.teams;
     function erow(label, val, sub, a) {
-      return '<div class="rise" style="--a:' + a + 's;display:flex;align-items:baseline;gap:30px;padding:10px 6px;border-bottom:1px dashed rgba(255,255,255,.22)"><span class="tag" style="margin:0;min-width:300px;text-align:center;flex:none">' + label + '</span>'
-        + '<span class="big" style="font-size:74px;line-height:1.1">' + val + '</span>' + (sub ? '<span style="font-size:34px;opacity:.92">' + sub + '</span>' : "") + '</div>';
+      return '<div class="rise" style="--a:' + a + 's;display:flex;align-items:baseline;gap:30px;padding:6px 6px;border-bottom:1px dashed rgba(255,255,255,.22)"><span class="tag" style="margin:0;min-width:300px;text-align:center;flex:none">' + label + '</span>'
+        + '<span class="big" style="font-size:56px;line-height:1.1">' + val + '</span>' + (sub ? '<span style="font-size:30px;opacity:.92">' + sub + '</span>' : "") + '</div>';
     }
-    if (dl || nt || szt) S.push([ms(4 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px">'
-      + (dl ? '<div class="card rise" style="--a:.5s;width:1506px;padding:18px 30px"><div style="display:flex;align-items:baseline;justify-content:center;gap:30px"><span class="tag red" style="margin:0">エントリー締切</span><span class="big" style="font-size:86px">' + dl.key + '</span><span style="font-size:40px">(' + dl.w + ') ' + dl.hm + ' まで</span></div></div>' : "")
+    if (dl || nt || szt) S.push([ms(6 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:16px">'
+      + (dl ? '<div class="card rise" style="--a:.5s;width:1506px;padding:18px 30px"><div style="display:flex;align-items:baseline;justify-content:center;gap:30px"><span class="tag red" style="margin:0">エントリー締切</span><span class="big" style="font-size:64px">' + dl.key + '</span><span style="font-size:40px">(' + dl.w + ') ' + dl.hm + ' まで</span></div></div>' : "")
       + '<div class="card rise" style="--a:1s;width:1506px;padding:14px 40px;text-align:left">'
       + (nt ? erow(E.max ? "定員" : "チーム数", nt + "チーム", E.max ? "まで" : "", 1.4) : "")
       + (szt ? erow("チーム内の人数", esc(szt) + "人", "", 1.9) : "")
       + erow("サバイバーとハンターの兼任", D.both ? "OK" : "NG", D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです", 2.4)
       + '</div>'
-      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px;padding:18px 30px"><p style="font-size:34px;line-height:1.6">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
-      + (E.invite ? '<div class="rise" style="--a:3.6s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
+      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px;padding:18px 30px"><p style="font-size:30px;line-height:1.5">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
+      + (E.invite ? '<div class="card rise" style="--a:3.6s;width:1506px;padding:14px 30px;box-shadow:0 0 40px var(--accent)"><div style="font-size:70px;line-height:1.2;white-space:nowrap;color:#fff;font-weight:800;letter-spacing:.04em;text-shadow:0 0 18px var(--accent)">エントリーは、Discordサーバーから！</div>'
+        + '<p style="font-size:34px;line-height:1.45;margin:6px 0 4px">まずは、Discordサーバーに入ってください。<br>仲間探しに困っているなら、ここで新しい仲間があなたを待っています。<br>応援・観戦での参加も、大歓迎です。</p>'
+        + '<div style="font-size:60px;color:var(--gold);letter-spacing:.06em">Discord：' + esc(E.invite) + '</div></div>' : "")
       + '</div></div></section>']);
     // 9 おわり
     var d2 = pd(E.deadline);
