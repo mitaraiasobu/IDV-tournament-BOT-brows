@@ -334,6 +334,9 @@
   .bpstack .bpr.act { visibility: visible; }
   .on .bpstack .bpr .rise { animation: none; }
   .on .bpstack .bpr.act .rise { animation: rise .6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: var(--a,0s); }
+  .sgs { display: grid; grid-template-columns: minmax(0, 1fr); } .sgs .sg { grid-area: 1 / 1; visibility: hidden; } .sgs .sg.act { visibility: visible; animation: sgin .5s ease both; }
+  .sgs .slab { text-align: center; font-size: 32px; color: var(--gold); letter-spacing: .06em; margin: 2px 0 6px; }
+  @keyframes sgin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   .on .bpstack .bpr .zoom { animation: none; }
   .on .bpstack .bpr.act .zoom { animation: zoom 1.6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: var(--a,0s); }
   /* 大会設定ブラウザで決めた背景（画像・動画・YouTube）：どのデザインでも、デザインの背景のかわりに使う。読みやすいように、少し暗くする */
@@ -565,23 +568,31 @@
     if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
     // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
     // ラウンドやセットが変わっても、「BAN/PICK」の見出しは、出入りさせない（1つの場面の中で、中身だけを入れかえる）
-    var PERR = 2600, panels = [];
+    var PERR = 2600, panels = [], pcount = [];
     (bp.rounds || []).forEach(function (r) {
-      var groups = r.stepsets && r.stepsets.length > 1 ? r.stepsets : [{ label: "", steps: r.steps || [] }];       // セットごとに手順が違うときは、手順ごとに1画面（「第1・第3セット」「第2セット」…）
-      groups.forEach(function (gp, gi) {
-        var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], gp.label ? ['<span class="hi">' + esc(gp.label) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
-          r.matches ? ['<span class="hi">' + r.matches + "試合</span>"] : [], r.stream ? ['<span class="hi live">📺 生配信あり</span>'] : []].map(function (x) { return x[0] || ""; }).join("");
+      var groups = r.stepsets && r.stepsets.length > 1 ? r.stepsets : [{ label: "", steps: r.steps || [] }];       // セットごとに手順が違うときは、同じ画面の中で、手順のパネルの中身だけを入れかえる
+      var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
+        r.matches ? ['<span class="hi">' + r.matches + "試合</span>"] : [], r.stream ? ['<span class="hi live">📺 生配信あり</span>'] : []].map(function (x) { return x[0] || ""; }).join("");
+      var sgs = groups.map(function (gp, gi) {
         var steps = (gp.steps || []).map(function (t) { return '<li class="' + (/^ハンター/.test(t) ? "h" : /^サバイバー/.test(t) ? "s" : "") + '">' + esc(t) + "</li>"; }).join("");
-        if (gi > 0) { panels.push('<div class="bpr"><div class="cols"><div class="rc rise" style="--a:.2s;width:1100px;margin:0 auto"><h4>BAN/PICKの手順（' + esc(gp.label) + '）</h4><ol class="steps">' + steps + "</ol></div></div></div>"); return; }   // 2つ目からは、手順だけ（ラウンド名・ルールは、もう一度出さない）
-        panels.push('<div class="bpr"><div class="hero rise" style="--a:.1s">' + hero + '</div><div class="cols">'
-          + ((r.rows || []).length ? '<div class="rc rise" style="--a:.2s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
-          + (steps ? '<div class="rc rise" style="--a:.3s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順' + (gp.label ? "（" + esc(gp.label) + "）" : "") + '</h4><ol class="steps">' + steps + "</ol></div>" : "")
-          + "</div></div>");
-      });
+        return '<div class="sg' + (gi ? "" : " act") + '">' + (gp.label ? '<div class="slab">' + esc(gp.label) + "</div>" : "") + '<ol class="steps">' + steps + "</ol></div>";
+      }).join("");
+      var hasSteps = groups.some(function (g) { return (g.steps || []).length; });
+      pcount.push(groups.length);
+      panels.push('<div class="bpr"><div class="hero rise" style="--a:.1s">' + hero + '</div><div class="cols">'
+        + ((r.rows || []).length ? '<div class="rc rise" style="--a:.2s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
+        + (hasSteps ? '<div class="rc rise" style="--a:.3s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順</h4><div class="sgs">' + sgs + "</div></div>" : "")
+        + "</div></div>");
     });
-    if (panels.length) S.push([1100 + panels.length * PERR + 900, head("✠ BAN & PICK ✠", "BAN/PICK") + '<div class="body"><div class="bpstack">' + panels.join("") + "</div></div></section>", null, function (sec) {
-      var ps = [].slice.call(sec.querySelectorAll(".bpr"));
-      ps.forEach(function (pn, k) { timers.push(setTimeout(function () { ps.forEach(function (x) { x.classList.remove("act"); }); pn.classList.add("act"); }, 300 + k * PERR)); });
+    var pTotal = pcount.reduce(function (a, n) { return a + n * PERR; }, 0);
+    if (panels.length) S.push([1100 + pTotal + 900, head("✠ BAN & PICK ✠", "BAN/PICK") + '<div class="body"><div class="bpstack">' + panels.join("") + "</div></div></section>", null, function (sec) {
+      var ps = [].slice.call(sec.querySelectorAll(".bpr")), t = 300;
+      ps.forEach(function (pn, k) {
+        timers.push(setTimeout(function () { ps.forEach(function (x) { x.classList.remove("act"); }); pn.classList.add("act"); var gs0 = [].slice.call(pn.querySelectorAll(".sg")); gs0.forEach(function (x, i) { x.classList.toggle("act", i === 0); }); }, t));
+        var gs = [].slice.call(pn.querySelectorAll(".sg"));
+        gs.forEach(function (g, i) { if (i) timers.push(setTimeout(function () { gs.forEach(function (x) { x.classList.remove("act"); }); g.classList.add("act"); }, t + i * PERR)); });   // セットが変わるときは、手順のパネルの中身だけ
+        t += pcount[k] * PERR;
+      });
     }]);
     // 7 賞品（賞品タブと同じカード：優勝チーム・準優勝チーム・順位を問わず・MVP）。該当者が多いときは、カードを分けて、何画面かに出す（小さくなりすぎないように）
     var RANK = { "1": "— 優 勝 —", "2": "— 準優勝 —", any: "— 全 員 へ —", mvp: "— M V P —", cond: "— 条 件 —" }, pz = D.prizes || [], MEDAL = { "1": "🏆", "2": "🥈", any: "🎁", mvp: "🌟", cond: "🧩" };
