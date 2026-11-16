@@ -570,14 +570,18 @@
     if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
     // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
     // ラウンドやセットが変わっても、「BAN/PICK」の見出しは、出入りさせない（1つの場面の中で、中身だけを入れかえる）
-    var PERR = 2600, panels = (bp.rounds || []).map(function (r) {
-      var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
-        r.matches ? ['<span class="hi">' + r.matches + "試合</span>"] : [], r.stream ? ['<span class="hi live">📺 生配信あり</span>'] : []].map(function (x) { return x[0] || ""; }).join("");
-      var steps = (r.steps || []).map(function (t) { return '<li class="' + (/^ハンター/.test(t) ? "h" : /^サバイバー/.test(t) ? "s" : "") + '">' + esc(t) + "</li>"; }).join("");
-      return '<div class="bpr"><div class="hero rise" style="--a:.1s">' + hero + '</div><div class="cols">'
-        + ((r.rows || []).length ? '<div class="rc rise" style="--a:.2s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
-        + (steps ? '<div class="rc rise" style="--a:.3s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順</h4><ol class="steps">' + steps + "</ol></div>" : "")
-        + "</div></div>";
+    var PERR = 2600, panels = [];
+    (bp.rounds || []).forEach(function (r) {
+      var groups = r.stepsets && r.stepsets.length > 1 ? r.stepsets : [{ label: "", steps: r.steps || [] }];       // セットごとに手順が違うときは、手順ごとに1画面（「第1・第3セット」「第2セット」…）
+      groups.forEach(function (gp, gi) {
+        var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], gp.label ? ['<span class="hi">' + esc(gp.label) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
+          r.matches ? ['<span class="hi">' + r.matches + "試合</span>"] : [], r.stream ? ['<span class="hi live">📺 生配信あり</span>'] : []].map(function (x) { return x[0] || ""; }).join("");
+        var steps = (gp.steps || []).map(function (t) { return '<li class="' + (/^ハンター/.test(t) ? "h" : /^サバイバー/.test(t) ? "s" : "") + '">' + esc(t) + "</li>"; }).join("");
+        panels.push('<div class="bpr"><div class="hero rise" style="--a:.1s">' + hero + '</div><div class="cols">'
+          + ((r.rows || []).length ? '<div class="rc rise" style="--a:.2s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
+          + (steps ? '<div class="rc rise" style="--a:.3s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順' + (gp.label ? "（" + esc(gp.label) + "）" : "") + '</h4><ol class="steps">' + steps + "</ol></div>" : "")
+          + "</div></div>");
+      });
     });
     if (panels.length) S.push([1100 + panels.length * PERR + 900, head("✠ BAN & PICK ✠", "BAN/PICK") + '<div class="body"><div class="bpstack">' + panels.join("") + "</div></div></section>", null, function (sec) {
       var ps = [].slice.call(sec.querySelectorAll(".bpr"));
