@@ -475,7 +475,7 @@
   function globalMs(list) {                                                         // 全試合共通のルールの長さ：映るキャラの人数に合わせる（少ないと短く、多いと長く）
     var n = 0, rest = 0;
     (list || []).forEach(function (x) { var kd = KIND[x.label], sec = kd ? bigSection(kd, x.text || "", GORDER.indexOf(kd)) : null; if (sec) n += sec.n; else rest++; });
-    return Math.min(28000, Math.max(6500, 5000 + 800 * n + 1500 * rest));
+    return Math.min(30000, Math.max(8000, 6000 + 1000 * n + 1500 * rest));
   }
   var BAN_RE = /^(サバイバー|ハンター|マップ)(\d+)BAN$/;
   function banParts(text) {                                                         // 「サバイバー4BAN / ハンター1BAN」→ {サバイバー: 4, ハンター: 1}（それ以外の形なら null）
@@ -573,7 +573,7 @@
     if ((bp.global || []).length) S.push([globalMs(bp.global), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
     // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
     // ラウンドやセットが変わっても、「BAN/PICK」の見出しは、出入りさせない（1つの場面の中で、中身だけを入れかえる）
-    var PERR = 2600, panels = [], pcount = [];
+    var panels = [], pcount = [], pdur = [];
     (bp.rounds || []).forEach(function (r) {
       var groups = r.stepsets && r.stepsets.length > 1 ? r.stepsets : [{ label: "", steps: r.steps || [] }];       // セットごとに手順が違うときは、同じ画面の中で、手順のパネルの中身だけを入れかえる
       var hero = [['<span class="hi nm">' + esc(r.name) + "</span>"], r.format ? ['<span class="hi">' + esc(r.format) + "</span>"] : [], r.mode ? ['<span class="hi">' + (r.mode === "sequential" ? "順番進行" : "同時進行") + "</span>"] : [],
@@ -584,19 +584,20 @@
       }).join("");
       var hasSteps = groups.some(function (g) { return (g.steps || []).length; });
       pcount.push(groups.length);
+      pdur.push(Math.min(15000, Math.max(6500, 3000 + 800 * Math.max.apply(null, groups.map(function (g) { return (g.steps || []).length; })) + 500 * (r.rows || []).length)));   // 1つのパネルを見せる長さ：手順とルールの数に合わせる
       panels.push('<div class="bpr"><div class="hero rise" style="--a:.1s">' + hero + '</div><div class="cols">'
         + ((r.rows || []).length ? '<div class="rc rise" style="--a:.2s;flex:1"><h4>このラウンドのルール</h4>' + rowsHtml(r.rows) + "</div>" : "")
         + (hasSteps ? '<div class="rc rise" style="--a:.3s;width:' + ((r.rows || []).length ? 640 : 1100) + 'px;margin:0 auto"><h4>BAN/PICKの手順</h4><div class="sgs">' + sgs + "</div></div>" : "")
         + "</div></div>");
     });
-    var pTotal = pcount.reduce(function (a, n) { return a + n * PERR; }, 0);
+    var pTotal = pcount.reduce(function (a, n, i) { return a + n * pdur[i]; }, 0);
     if (panels.length) S.push([1100 + pTotal + 900, head("✠ BAN & PICK ✠", "BAN/PICK") + '<div class="body"><div class="bpstack">' + panels.join("") + "</div></div></section>", null, function (sec) {
       var ps = [].slice.call(sec.querySelectorAll(".bpr")), t = 300;
       ps.forEach(function (pn, k) {
         timers.push(setTimeout(function () { ps.forEach(function (x) { x.classList.remove("act"); }); pn.classList.add("act"); var gs0 = [].slice.call(pn.querySelectorAll(".sg")); gs0.forEach(function (x, i) { x.classList.toggle("act", i === 0); }); }, t));
         var gs = [].slice.call(pn.querySelectorAll(".sg"));
-        gs.forEach(function (g, i) { if (i) timers.push(setTimeout(function () { gs.forEach(function (x) { x.classList.remove("act"); }); g.classList.add("act"); }, t + i * PERR)); });   // セットが変わるときは、手順のパネルの中身だけ
-        t += pcount[k] * PERR;
+        gs.forEach(function (g, i) { if (i) timers.push(setTimeout(function () { gs.forEach(function (x) { x.classList.remove("act"); }); g.classList.add("act"); }, t + i * pdur[k])); });   // セットが変わるときは、手順のパネルの中身だけ
+        t += pcount[k] * pdur[k];
       });
     }]);
     // 7 賞品（賞品タブと同じカード：優勝チーム・準優勝チーム・順位を問わず・MVP）。該当者が多いときは、カードを分けて、何画面かに出す（小さくなりすぎないように）
