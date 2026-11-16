@@ -329,11 +329,13 @@
   html[data-design="fantasy"] .op-ln { stroke: var(--gold); filter: none; }
 
   /* BAN/PICK：ラウンドごとの中身を重ねて、順番に出す（見出しは、そのまま） */
-  .bpstack { display: grid; width: 100%; justify-items: center; align-items: center; }
+  .bpstack { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; justify-items: center; align-items: center; }
   .bpstack .bpr { grid-area: 1 / 1; width: 100%; display: flex; flex-direction: column; align-items: center; visibility: hidden; }
   .bpstack .bpr.act { visibility: visible; }
   .on .bpstack .bpr .rise { animation: none; }
   .on .bpstack .bpr.act .rise { animation: rise .6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: var(--a,0s); }
+  .on .bpstack .bpr .zoom { animation: none; }
+  .on .bpstack .bpr.act .zoom { animation: zoom 1.6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: var(--a,0s); }
   /* 大会設定ブラウザで決めた背景（画像・動画・YouTube）：どのデザインでも、デザインの背景のかわりに使う。読みやすいように、少し暗くする */
   #bgm { position: absolute; inset: 0; overflow: hidden; }
   #bgm > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; pointer-events: none; }
@@ -595,26 +597,38 @@
     // 1画面の長さ：出てくるまで（1.4秒＋1人ごとに0.35秒）＋読む時間（賞品1つにつき0.8秒）。賞品が多いほど、長くする（最大14秒）
     function pzMs(chunk) { var n = chunk.length, gs = chunk.reduce(function (a, it) { return a + gifts(it).length; }, 0); return Math.min(28000, 2 * (1400 + 350 * n + 2200 + 800 * Math.max(1, gs))); }
     // 受け取れる人（優勝チーム・準優勝チーム・順位を問わず・MVP）ごとに、1つずつ大きく見せる。人数が多いときは、何画面かに分ける
+    var pzPages = [];
     pz.forEach(function (g) {
       var items = (g.items || []).slice(), longest = items.reduce(function (m, it) { return Math.max(m, gifts(it).reduce(function (a, t) { var q = /称号(「[^」]*」)/.exec(t); return Math.max(a, q ? q[1].length : 0); }, 0)); }, 0),
         MAXC = longest > 18 ? 1 : longest > 11 ? 2 : 3, PER = MAXC === 1 ? 3 : MAXC * 2, pages = Math.max(1, Math.ceil(items.length / PER)), per = Math.ceil(items.length / pages), pi, k = String(g.kind);
       for (pi = 0; pi < pages; pi++) {
         var chunk = items.slice(pi * per, (pi + 1) * per), cols = Math.min(MAXC, chunk.length === 1 ? 1 : chunk.length === 2 || chunk.length === 4 ? 2 : 3);
-        S.push([pzMs(chunk), head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="pzs k' + esc(k) + '" style="--c:' + cols + '">'
-          + '<div class="pzh"><div class="nm zoom" style="--a:.7s">' + esc(g.label) + (pi ? '<small>（つづき）</small>' : "") + '</div></div>'
-          + '<div class="pzi">' + chunk.map(function (it, i) { return itemHtml(it, 1.4 + i * .35); }).join("") + "</div></div></div></section>"]);
+        pzPages.push({ ms: pzMs(chunk), html: '<div class="bpr"><div class="pzs k' + esc(k) + '" style="--c:' + cols + '">'
+          + '<div class="pzh"><div class="nm zoom" style="--a:.2s">' + esc(g.label) + (pi ? '<small>（つづき）</small>' : "") + '</div></div>'
+          + '<div class="pzi">' + chunk.map(function (it, i) { return itemHtml(it, .7 + i * .35); }).join("") + "</div></div></div>" });
       }
     });
-    // 8 参加のしかた（エントリー締切・定員のチーム数・チーム内の人数・両陣営の兼任・条件）
-    var E = D.entry || {}, dl = pd(E.deadline), nt = E.max || D.teams, BIG = 'class="big" style="font-size:96px;margin:4px 0 4px"';
-    if (dl || nt || szt) S.push([ms(5 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:20px"><div class="row">'
-      + (dl ? '<div class="card rise" style="--a:.6s;width:740px"><span class="tag red">エントリー締切</span><div ' + BIG + '>' + dl.key + '</div><p>(' + dl.w + ') ' + dl.hm + ' まで</p></div>' : "")
-      + (nt ? '<div class="card rise" style="--a:1.2s;width:740px"><span class="tag">' + (E.max ? "定員" : "チーム数") + '</span><div ' + BIG + '>' + nt + 'チーム</div><p>' + (E.max ? "まで" : "　") + '</p></div>' : "") + '</div>'
-      + '<div class="row">'
-      + (szt ? '<div class="card rise" style="--a:1.8s;width:740px"><span class="tag">チーム内の人数</span><div style="display:flex;align-items:baseline;justify-content:center;gap:14px;margin:4px 0 4px"><div class="big" style="font-size:96px">' + esc(szt) + '</div><p>人</p></div></div>' : "")
-      + '<div class="card rise" style="--a:2.4s;width:740px"><span class="tag' + (D.both ? "" : " red") + '">サバイバーとハンターの兼任</span><div ' + BIG + '>' + (D.both ? "OK" : "NG") + '</div>'
-      + '<p>' + (D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです") + '</p></div></div>'
-      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px"><p style="font-size:34px;line-height:1.6">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
+    if (pzPages.length) {                                                       // 賞品は、1つの場面：「賞品」の見出しは、そのままにして、中身だけを入れかえる（ページが変わるたびに、見出しを出し直さない）
+      var pzTotal = pzPages.reduce(function (a, x) { return a + x.ms; }, 0);
+      S.push([pzTotal + 300, head("✠ PRIZES ✠", "賞品") + '<div class="body"><div class="bpstack">' + pzPages.map(function (x) { return x.html; }).join("") + "</div></div></section>", null, function (sec) {
+        var ps = [].slice.call(sec.querySelectorAll(".bpr")), t = 300;
+        ps.forEach(function (pn, k) { timers.push(setTimeout(function () { ps.forEach(function (x) { x.classList.remove("act"); }); pn.classList.add("act"); }, t)); t += pzPages[k].ms; });
+      }]);
+    }
+    // 8 参加のしかた（エントリー締切／チームの定員・チーム内の人数・両陣営の兼任は、1つのパネルにまとめる／条件）
+    var E = D.entry || {}, dl = pd(E.deadline), nt = E.max || D.teams;
+    function erow(label, val, sub, a) {
+      return '<div class="rise" style="--a:' + a + 's;display:flex;align-items:baseline;gap:30px;padding:10px 6px;border-bottom:1px dashed rgba(255,255,255,.22)"><span class="tag" style="margin:0;min-width:300px;text-align:center;flex:none">' + label + '</span>'
+        + '<span class="big" style="font-size:74px;line-height:1.1">' + val + '</span>' + (sub ? '<span style="font-size:34px;opacity:.92">' + sub + '</span>' : "") + '</div>';
+    }
+    if (dl || nt || szt) S.push([ms(4 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:24px">'
+      + (dl ? '<div class="card rise" style="--a:.5s;width:1506px;padding:18px 30px"><div style="display:flex;align-items:baseline;justify-content:center;gap:30px"><span class="tag red" style="margin:0">エントリー締切</span><span class="big" style="font-size:86px">' + dl.key + '</span><span style="font-size:40px">(' + dl.w + ') ' + dl.hm + ' まで</span></div></div>' : "")
+      + '<div class="card rise" style="--a:1s;width:1506px;padding:14px 40px;text-align:left">'
+      + (nt ? erow(E.max ? "定員" : "チーム数", nt + "チーム", E.max ? "まで" : "", 1.4) : "")
+      + (szt ? erow("チーム内の人数", esc(szt) + "人", "", 1.9) : "")
+      + erow("サバイバーとハンターの兼任", D.both ? "OK" : "NG", D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです", 2.4)
+      + '</div>'
+      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px;padding:18px 30px"><p style="font-size:34px;line-height:1.6">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
       + (E.invite ? '<div class="rise" style="--a:3.6s;font-size:40px;color:var(--gold);letter-spacing:.06em">応援・観戦での参加も、大歓迎！　Discord：' + esc(E.invite) + '</div>' : "")
       + '</div></div></section>']);
     // 9 おわり
