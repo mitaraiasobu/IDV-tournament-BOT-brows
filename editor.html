@@ -505,7 +505,8 @@
     // ── 配信が始まる前（同時進行のラウンド。実況・解説・配信なし） ──
     (TM.pre_rounds || []).forEach(function (r) {
       var prep = parseLocal(r.prep), play = parseLocal(r.play), end = parseLocal(r.end);
-      var vs = (r.cards || []).map(function (c) { return (c[0] || "（未定）") + " vs " + (c[1] || "（未定）"); }).join("\n");
+      var cds = r.cards || [], decided = cds.some(function (c) { return c[0] || c[1]; });
+      var vs = decided ? (r.cards || []).map(function (c) { return (c[0] || "（未定）") + " vs " + (c[1] || "（未定）"); }).join("\n") : (cds.length * 2) + "チーム";       // 対戦が、まだ1つも決まっていないときは、「32チーム」と1行で
       add(prep, "BAN/PICKの開始", vs, "", { cat: "配信前", big: r.name, who: "tm" });
       add(play, "試合開始", "", "", { cat: "配信前", big: r.name, who: "tm" });
       add(end, "試合終了", "", "", { cat: "配信前", big: r.name, who: "tm", dur: play && end ? msec((end - play) / 1000) : "",
@@ -516,7 +517,7 @@
     var openSec = openOther() + (TM.open_greet_sec || 0), openEnd = addSec(open, openSec);
     add(open, "配信開始", "", "",
         { cat: "開会", big: "開会", who: "cm", dur: msec(openSec), xcast: "open",
-          edit: [E("lead_min", TM.stream_round_name + "の開始の", "分前"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代", "秒"), { key: "part_split", label: "ライブブラウザを、日ごとに分ける", pick: [[1, "分ける"], [0, "分けない"]] }, E("part_gap_min", "分ける空き時間", "分")] });
+          edit: [E("lead_min", TM.stream_round_name + "の開始の", "分前"), E("open_greet_sec", "開会のごあいさつ", "秒"), E("swap_sec", "キャスター交代", "秒")] });
     (TM.parts || []).forEach(function (pt, pi) {                                          // 配信が何回かに分かれるとき：部の終わりは「中断」、次の部の始まりは、もう一度「開会」
       if (pi === 0) return;
       var prevEnd = parseLocal(TM.parts[pi - 1].end), st = parseLocal(pt.start);
@@ -716,7 +717,7 @@
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, bases: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.pbreaks || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -1142,6 +1143,7 @@
     Object.keys(st.dls || {}).forEach(function (r) { ops.push({ op: "set_round_deadline", round: Number(r), at: st.dls[r] }); });             // 結果報告の締切
     Object.keys(st.bases || {}).forEach(function (r) { ops.push({ op: "set_round_base", round: Number(r), at: st.bases[r] }); });             // 基本の日時
     Object.keys(st.streams || {}).forEach(function (r) { ops.push({ op: "set_round_stream", round: Number(r), on: st.streams[r] }); });
+    Object.keys(st.pbreaks || {}).forEach(function (r) { ops.push({ op: "set_round_part_break", round: Number(r), on: st.pbreaks[r] }); });           // このラウンドから、配信を分ける
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
     if (st.breaks !== null) ops.push({ op: "set_breaks", items: st.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: (b.label || "休憩").trim() || "休憩" }; }) });
@@ -1250,6 +1252,16 @@
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
+      if (r.no >= 2) {                                                                 // 配信を分けるかどうか：自動では決めない（ここで決める）
+        st.pbreaks = st.pbreaks || {};
+        var pb = st.pbreaks[r.no] != null ? st.pbreaks[r.no] : r.part_break;
+        var pbw = el("div", "muted", "ライブブラウザ：");
+        pbw.appendChild(sseg([["0", "前のラウンドと続けて配信"], ["1", "✂ ここから、配信を分ける"]], pb ? "1" : "0", function (x) {
+          var want = x === "1"; if (want === !!r.part_break) delete st.pbreaks[r.no]; else st.pbreaks[r.no] = want; renderBracket();
+        }));
+        pbw.title = "「分ける」にすると、前のラウンドの終わりで、配信をいったん終え（本日の全試合が終了しました）、このラウンドから、もう一度、開会の演出で始めます";
+        col.appendChild(pbw);
+      }
       var cur = st.starts[r.no] !== undefined ? st.starts[r.no] : (r.no === 1 ? B.start_at : r.override);
       var dt = el("input"); dt.type = "datetime-local"; dt.value = cur || ""; dt.title = r.no === 1 ? "大会日時（ラウンド1の開始）" : "日を分けるときの、このラウンドの開始（空＝前のラウンドから自動）";
       dt.addEventListener("change", function () {

@@ -112,6 +112,11 @@
   .center .sc small { display: block; font-size: 22px; font-weight: 800; letter-spacing: .06em; margin-top: 2px; }
   .center .map { margin-top: 8px; font-size: 22px; color: var(--sub); }
   .center .map b { color: var(--text); }
+  /* 「STANDBY」の場所のMAP（ゴシック以外）：大きく。BANは、その上に小さく */
+  html[data-design].stage .center .st.map, .cp .head .st.map { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; box-sizing: border-box; margin: 2px 0 6px; padding: 2px 12px; font-size: 22px; font-weight: 700; letter-spacing: .04em; line-height: 1.2; color: var(--sub); text-transform: none; }
+  html[data-design].stage .center .st.map .mb, .cp .head .st.map .mb { font-size: 20px; font-weight: 700; color: var(--sub); max-width: 100%; overflow-wrap: anywhere; }
+  html[data-design].stage .center .st.map .mp, .cp .head .st.map .mp { font-size: 36px; font-weight: 900; color: var(--sub); max-width: 100%; overflow-wrap: anywhere; line-height: 1.2; }
+  html[data-design].stage .center .st.map .mp b, .cp .head .st.map .mp b { color: var(--text); }
   .center .map s, .cp .map s { opacity: .75; }
 
   /* キャラに対応する画像・動画：他の要素よりも**下の層**に、画面の背景として出す。縦横の比率は変えずに、画面を埋めるまで拡大する
@@ -566,7 +571,7 @@
   html[data-design="winter"] { --accent: #8fd0f8; --glow: #1c4a78; --line: #3a6a9a; --hue: 205deg;   /* テーマカラーを決めていない大会は、氷の青（決めていれば、そちらが先） */
         --ice: #e4f5ff;--ink: color-mix(in srgb, var(--bg) 70%, #0b2a45); --snow-a: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='white'><circle cx='170' cy='82' r='2.2' opacity='0.52'/><circle cx='279' cy='53' r='2.1' opacity='0.53'/><circle cx='264' cy='114' r='1.6' opacity='0.70'/><circle cx='40' cy='128' r='1.7' opacity='0.69'/><circle cx='294' cy='68' r='3.1' opacity='0.78'/><circle cx='303' cy='36' r='2.5' opacity='0.68'/><circle cx='118' cy='28' r='2.4' opacity='0.56'/><circle cx='219' cy='78' r='2.4' opacity='0.76'/><circle cx='291' cy='354' r='1.8' opacity='0.76'/><circle cx='332' cy='101' r='2.1' opacity='0.75'/><circle cx='37' cy='293' r='1.6' opacity='0.59'/><circle cx='353' cy='277' r='2.2' opacity='0.64'/><circle cx='304' cy='237' r='2.1' opacity='0.61'/><circle cx='97' cy='362' r='2.8' opacity='0.54'/><circle cx='158' cy='273' r='2.3' opacity='0.65'/><circle cx='234' cy='152' r='2.5' opacity='0.53'/></g></svg>"); --snow-b: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='700' height='700'><g fill='white'><circle cx='529' cy='433' r='3.4' opacity='0.65'/><circle cx='505' cy='436' r='3.1' opacity='0.80'/><circle cx='576' cy='591' r='5.0' opacity='0.87'/><circle cx='353' cy='363' r='4.5' opacity='0.76'/><circle cx='472' cy='75' r='5.1' opacity='0.93'/><circle cx='490' cy='685' r='3.2' opacity='0.83'/><circle cx='322' cy='667' r='4.4' opacity='0.81'/><circle cx='461' cy='296' r='4.8' opacity='0.90'/><circle cx='360' cy='28' r='5.4' opacity='0.66'/></g></svg>"); }
   /* ── ウィンター：氷結（四すみから霜がのび、ひびが走り、雪がふる）・氷の結晶のかざり・文字 ── */
-  html[data-design="winter"] { --wf: "Hangyaku", "GName", "Yu Mincho", serif; --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.08'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.5'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.06'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%2523h)'%3E%3Cpolygon points='0,1080 40,860 90,700 130,860 190,1080'/%3E%3Cpolygon points='120,1080 190,930 240,800 280,930 330,1080'/%3E%3Cpolygon points='300,1080 350,990 390,920 420,990 460,1080'/%3E%3Cpolygon points='1500,1080 1560,1000 1600,930 1640,1000 1700,1080'/%3E%3Cpolygon points='1640,1080 1700,900 1770,720 1830,900 1880,1080'/%3E%3Cpolygon points='1800,1080 1850,820 1920,640 1920,1080'/%3E%3C/g%3E%3Cg fill='url(%2523g)'%3E%3Cpolygon points='1920,0 1920,240 1860,330 1800,150 1760,0'/%3E%3Cpolygon points='1700,0 1660,110 1620,0'/%3E%3Cpolygon points='0,0 120,0 70,130 0,200'/%3E%3C/g%3E%3Cg opacity='.5'%3E%3Cg fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M1780,160 L1780,90'/%3E%3Cpath d='M1780,122 L1768,112'/%3E%3Cpath d='M1780,122 L1792,112'/%3E%3Cpath d='M1780,105 L1768,96'/%3E%3Cpath d='M1780,105 L1792,96'/%3E%3Cpath d='M1780,160 L1841,125'/%3E%3Cpath d='M1813,141 L1816,126'/%3E%3Cpath d='M1813,141 L1828,146'/%3E%3Cpath d='M1827,133 L1830,118'/%3E%3Cpath d='M1827,133 L1842,138'/%3E%3Cpath d='M1780,160 L1841,195'/%3E%3Cpath d='M1813,179 L1828,174'/%3E%3Cpath d='M1813,179 L1816,194'/%3E%3Cpath d='M1827,187 L1842,182'/%3E%3Cpath d='M1827,187 L1830,202'/%3E%3Cpath d='M1780,160 L1780,230'/%3E%3Cpath d='M1780,198 L1792,208'/%3E%3Cpath d='M1780,198 L1768,208'/%3E%3Cpath d='M1780,215 L1792,224'/%3E%3Cpath d='M1780,215 L1768,224'/%3E%3Cpath d='M1780,160 L1719,195'/%3E%3Cpath d='M1747,179 L1744,194'/%3E%3Cpath d='M1747,179 L1732,174'/%3E%3Cpath d='M1733,187 L1730,202'/%3E%3Cpath d='M1733,187 L1718,182'/%3E%3Cpath d='M1780,160 L1719,125'/%3E%3Cpath d='M1747,141 L1732,146'/%3E%3Cpath d='M1747,141 L1744,126'/%3E%3Cpath d='M1733,133 L1718,138'/%3E%3Cpath d='M1733,133 L1730,118'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.38'%3E%3Cg fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M140,160 L140,114'/%3E%3Cpath d='M140,135 L132,128'/%3E%3Cpath d='M140,135 L148,128'/%3E%3Cpath d='M140,124 L132,118'/%3E%3Cpath d='M140,124 L148,118'/%3E%3Cpath d='M140,160 L180,137'/%3E%3Cpath d='M162,147 L164,137'/%3E%3Cpath d='M162,147 L171,151'/%3E%3Cpath d='M171,142 L173,132'/%3E%3Cpath d='M171,142 L181,146'/%3E%3Cpath d='M140,160 L180,183'/%3E%3Cpath d='M162,173 L171,169'/%3E%3Cpath d='M162,173 L164,183'/%3E%3Cpath d='M171,178 L181,174'/%3E%3Cpath d='M171,178 L173,188'/%3E%3Cpath d='M140,160 L140,206'/%3E%3Cpath d='M140,185 L148,192'/%3E%3Cpath d='M140,185 L132,192'/%3E%3Cpath d='M140,196 L148,202'/%3E%3Cpath d='M140,196 L132,202'/%3E%3Cpath d='M140,160 L100,183'/%3E%3Cpath d='M118,173 L116,183'/%3E%3Cpath d='M118,173 L109,169'/%3E%3Cpath d='M109,178 L107,188'/%3E%3Cpath d='M109,178 L99,174'/%3E%3Cpath d='M140,160 L100,137'/%3E%3Cpath d='M118,147 L109,151'/%3E%3Cpath d='M118,147 L116,137'/%3E%3Cpath d='M109,142 L99,146'/%3E%3Cpath d='M109,142 L107,132'/%3E%3C/g%3E%3C/g%3E%3Cg opacity='.3'%3E%3Cg fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M260,940 L260,904'/%3E%3Cpath d='M260,920 L254,915'/%3E%3Cpath d='M260,920 L266,915'/%3E%3Cpath d='M260,912 L254,907'/%3E%3Cpath d='M260,912 L266,907'/%3E%3Cpath d='M260,940 L291,922'/%3E%3Cpath d='M277,930 L279,922'/%3E%3Cpath d='M277,930 L285,933'/%3E%3Cpath d='M284,926 L286,918'/%3E%3Cpath d='M284,926 L292,929'/%3E%3Cpath d='M260,940 L291,958'/%3E%3Cpath d='M277,950 L285,947'/%3E%3Cpath d='M277,950 L279,958'/%3E%3Cpath d='M284,954 L292,951'/%3E%3Cpath d='M284,954 L286,962'/%3E%3Cpath d='M260,940 L260,976'/%3E%3Cpath d='M260,960 L266,965'/%3E%3Cpath d='M260,960 L254,965'/%3E%3Cpath d='M260,968 L266,973'/%3E%3Cpath d='M260,968 L254,973'/%3E%3Cpath d='M260,940 L229,958'/%3E%3Cpath d='M243,950 L241,958'/%3E%3Cpath d='M243,950 L235,947'/%3E%3Cpath d='M236,954 L234,962'/%3E%3Cpath d='M236,954 L228,951'/%3E%3Cpath d='M260,940 L229,922'/%3E%3Cpath d='M243,930 L235,933'/%3E%3Cpath d='M243,930 L241,922'/%3E%3Cpath d='M236,926 L228,929'/%3E%3Cpath d='M236,926 L234,918'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
+  html[data-design="winter"] { --wf: "Hangyaku", "GName", "Yu Mincho", serif; --deco: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.08'/%3E%3C/linearGradient%3E%3ClinearGradient id='h' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='white' stop-opacity='.5'/%3E%3Cstop offset='1' stop-color='%25239fd8ff' stop-opacity='.06'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='url(%2523h)'%3E%3Cpolygon points='0,1080 40,860 90,700 130,860 190,1080'/%3E%3Cpolygon points='120,1080 190,930 240,800 280,930 330,1080'/%3E%3Cpolygon points='300,1080 350,990 390,920 420,990 460,1080'/%3E%3Cpolygon points='1500,1080 1560,1000 1600,930 1640,1000 1700,1080'/%3E%3Cpolygon points='1640,1080 1700,900 1770,720 1830,900 1880,1080'/%3E%3Cpolygon points='1800,1080 1850,820 1920,640 1920,1080'/%3E%3C/g%3E%3Cg fill='url(%2523g)'%3E%3Cpolygon points='1920,0 1920,240 1860,330 1800,150 1760,0'/%3E%3Cpolygon points='1700,0 1660,110 1620,0'/%3E%3Cpolygon points='0,0 120,0 70,130 0,200'/%3E%3C/g%3E%3C/svg%3E"); }
   html[data-design="winter"] #bg { background: radial-gradient(ellipse at 50% 55%, transparent 50%, rgba(0,8,24,.6) 100%), radial-gradient(ellipse at 50% 0%, color-mix(in srgb, #9fd8ff 30%, transparent), transparent 62%),
         linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, #0d2f52), color-mix(in srgb, var(--bg) 85%, #020b18) 70%, var(--bg)); }
   html[data-design="winter"] #bg::before, html[data-design="winter"] .in-bg::before, html[data-design="winter"] .in-half .bgc::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
@@ -579,6 +584,11 @@
   html[data-design="winter"] #stage::before { content: ""; position: absolute; left: -6%; right: -6%; top: 12%; height: 52%; pointer-events: none; z-index: 1; mix-blend-mode: screen;
         background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,10,30,.38) 22px 40px), linear-gradient(90deg, transparent 2%, rgba(44,240,166,.75) 18%, rgba(74,168,255,.75) 42%, rgba(154,108,255,.7) 66%, rgba(44,240,166,.55) 84%, transparent 98%); filter: blur(18px); opacity: .5; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 30%, transparent 95%); animation: auroraW 15s ease-in-out infinite alternate-reverse; }
   html[data-design="winter"].flow #stage::before, html[data-design="winter"].black #stage::before { display: none; }
+  @keyframes fadeOutW { to { opacity: 0; } }
+  html[data-design="winter"].leaving #stage::before { animation: auroraW 15s ease-in-out infinite alternate-reverse, fadeOutW 1s .2s ease forwards; }         /* 試合中へ切り替わるとき：背景（1秒）と同じように、すっと消す */
+  html[data-design="winter"].leaving #stage::after { animation: glintW 7s ease-in-out infinite alternate, fadeOutW 1s .2s ease forwards; }
+  html[data-design="winter"].clear #stage::before, html[data-design="winter"].clear #stage::after { display: none; }                   /* 試合中（背景が透明で、ゲーム画面が見えるとき）：オーロラ・氷のかざりは、出さない */
+  html[data-design="winter"] #stage:has(#bgmedia > *)::before { display: none; }                                                       /* 設定した背景（画像・動画）があるときは、オーロラを、その手前に出さない（背景の中のオーロラは、背景のうしろ） */
   @keyframes auroraW { from { transform: translateX(-3.5%) scaleY(.88); } to { transform: translateX(3.5%) scaleY(1.1); } }
   html[data-design="winter"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: var(--deco) 0 0 / 100% 100% no-repeat; animation: glintW 7s ease-in-out infinite alternate; }
   @keyframes glintW { from { opacity: .7; } to { opacity: 1; } }
@@ -661,7 +671,8 @@
   html[data-design="winter"] .iv-count,
   html[data-design="winter"] .in-nm,
   html[data-design="winter"] .in-team .tnm,
-  html[data-design="winter"] .in-half .tnm { color: transparent; -webkit-text-fill-color: transparent; -webkit-background-clip: text; background-clip: text;
+  html[data-design="winter"] .in-half .tnm,
+  html[data-design="winter"] .fin-title { color: transparent; -webkit-text-fill-color: transparent; -webkit-background-clip: text; background-clip: text;
         background-image: linear-gradient(180deg, #ffffff 0%, #e4f6ff 26%, #b5e1fb 47%, #5fb0e6 50%, #9fd6f5 72%, #e9f9ff 100%);
         -webkit-text-stroke: 1.1px rgba(240,252,255,.9); text-shadow: 0 0 10px rgba(150,210,255,.75), 0 0 34px rgba(110,180,255,.5), 0 6px 18px rgba(20,60,120,.55); }
   html[data-design="winter"].stage .rs-title .big,
@@ -678,6 +689,10 @@
   html[data-design="winter"].stage .rs-title .big,
   html[data-design="winter"].stage .rs-title .small,
   html[data-design="winter"].stage .fin-title { font-family: "WinterTitle", var(--wf); }
+  /* 閉会の「大会タイトル」と「ありがとうございました」は、「皆様のご参加とご視聴」と同じ文字（氷のグラデーションにはしない） */
+  html[data-design="winter"] .cl-c .cl-title, html[data-design="winter"] .cl-c .cl-thx2 { font-family: var(--wf); font-weight: 700; color: var(--ice); -webkit-text-fill-color: var(--ice); background: none; -webkit-background-clip: border-box; background-clip: border-box;
+        -webkit-text-stroke: 0; text-shadow: none; }
+  html[data-design="winter"] .cl-c .cl-title { font-weight: 400; }                                       /* 大会タイトルは、画数の多い字が潰れないように、細く */
   html[data-design="fantasy"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
   /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
   html[data-design="fantasy"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
@@ -2104,7 +2119,7 @@
     bar.appendChild(surv);
     var c = el("div", "center");
     c.appendChild(el("div", "ttl", lv.title || ""));
-    c.appendChild(el("div", "st", k >= (lv.n_steps || 1) - 1 ? "STANDBY" : "BAN / PICK"));
+    var st = stSlot(lv, k); if (st) c.appendChild(st);                                   // 「STANDBY」の場所：マップが決まっていれば、MAP（ゴシック以外）
     var vs = el("div", "vs");
     vs.appendChild(el("div", "tm", teamName(lv.survivor)));
     vs.appendChild(el("div", "mid", "VS"));
@@ -2113,7 +2128,7 @@
     var role = el("div", "role");
     role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
     c.appendChild(role);
-    var mi = mapInfo(lv, k); if (mi) c.appendChild(mi);                                  // マップのBAN/PICK：点数の枠の中、点数の上に
+    if (isGothic()) { var mi = mapInfo(lv, k); if (mi) c.appendChild(mi); }              // ゴシック：マップのBAN/PICKは、点数の枠の中、点数の上に
     var sc = el("div", "sc");
     [lv.survivor, lv.hunter].forEach(function (t) {
       var d = el("div", null, String((t && t.points) || 0));
@@ -2132,20 +2147,41 @@
   }
 
   // マップのBAN/PICK（決まったものから出す）：「MAP BAN：A・B」「MAP：C」。どちらもまだなら、出さない
+  function isGothic() { return root.getAttribute("data-design") === "gothic"; }
   function mapInfo(lv, k) {
     var bans = arr(lv.map_bans).filter(function (m) { return m && m.s <= k; });
     var pick = lv.map && lv.map.s <= k ? lv.map : null;
     if (!bans.length && !pick) return null;
     var mp = el("div", "map");
+    if (isGothic()) {                                                                    // ゴシック：点数の上に、1行で
+      if (bans.length) {
+        mp.appendChild(document.createTextNode("MAP BAN："));
+        bans.forEach(function (m, i) { if (i) mp.appendChild(document.createTextNode("・")); mp.appendChild(el("s", null, m.name)); });
+      }
+      if (pick) {
+        if (bans.length) mp.appendChild(document.createTextNode("　"));
+        mp.appendChild(document.createTextNode("MAP：")); mp.appendChild(el("b", null, pick.name));
+      }
+      return mp;
+    }
+    mp.className = "st map";                                                             // 「STANDBY」「BAN / PICK」の場所に、MAPを大きく（BANは、その上に小さく）
     if (bans.length) {
-      mp.appendChild(document.createTextNode("MAP BAN："));
-      bans.forEach(function (m, i) { if (i) mp.appendChild(document.createTextNode("・")); mp.appendChild(el("s", null, m.name)); });
+      var mb = el("div", "mb");
+      mb.appendChild(document.createTextNode("MAP BAN："));
+      bans.forEach(function (m, i) { if (i) mb.appendChild(document.createTextNode("・")); mb.appendChild(el("s", null, m.name)); });
+      mp.appendChild(mb);
     }
     if (pick) {
-      if (bans.length) mp.appendChild(document.createTextNode("　"));
-      mp.appendChild(document.createTextNode("MAP：")); mp.appendChild(el("b", null, pick.name));
+      var mpk = el("div", "mp");
+      mpk.appendChild(document.createTextNode("MAP：")); mpk.appendChild(el("b", null, pick.name));
+      mp.appendChild(mpk);
     }
     return mp;
+  }
+  function stSlot(lv, k) {                                                               // 上の見出しの場所：マップが決まっていればMAP。なければ、途中は「BAN / PICK」・最後（待機）は、何も出さない（「STANDBY」の文字は、やめた）
+    var mi = isGothic() ? null : mapInfo(lv, k);
+    if (mi) return mi;
+    return k >= (lv.n_steps || 1) - 1 ? null : el("div", "st", "BAN / PICK");
   }
 
   // ═══ flow：スマホなど狭い画面のBAN/PICKの画面 ═══
@@ -2163,7 +2199,7 @@
     var wrap = el("div", "cp bpwrap" + (bpFresh ? " in" : ""));
     var head = el("div", "box head");
     head.appendChild(el("div", "ttl", lv.title || ""));
-    head.appendChild(el("div", "st", k >= (lv.n_steps || 1) - 1 ? "STANDBY" : "BAN / PICK"));
+    var st = stSlot(lv, k); if (st) head.appendChild(st);
     var vs = el("div", "vs");
     vs.appendChild(el("div", "tm", teamName(lv.survivor)));
     vs.appendChild(el("div", "mid", "VS"));
@@ -2172,7 +2208,7 @@
     var role = el("div", "role");
     role.appendChild(el("span", null, "SURVIVOR")); role.appendChild(el("span", null, "HUNTER"));
     head.appendChild(role);
-    var mi = mapInfo(lv, k); if (mi) head.appendChild(mi);
+    if (isGothic()) { var mi = mapInfo(lv, k); if (mi) head.appendChild(mi); }
     var sc = el("div", "sc");
     [lv.survivor, lv.hunter].forEach(function (t) {
       var d = el("div", null, String((t && t.points) || 0));
@@ -2973,17 +3009,15 @@
   }
 
   var lastSig = null;
-  // ── ブラウザ音楽（music.js）：場面ごとの音楽。優勝・インタビューの画面 → BAN/PICK → 大会開始前／試合と試合の間 の順に、場面を決める ──
+  // ── ブラウザ音楽（music.js）：場面ごとの音楽。優勝・インタビューの画面 → BAN/PICK → 試合と試合の間 の順に、場面を決める ──
   var musicOn = params.get("music") !== "0";                                      // ?music=0 で、音楽を流さない（OBSで流しているときに、ふつうのブラウザでも開いて見るとき）
   function bpScene(m) { return m.final && (m.scenes || {}).final ? "final" : "banpick"; }                     // 決勝戦のBAN/PICKは、別の音楽（設定があれば）
   function updateMusic(data, fm) {
     if (!window.MusicPlayer || !musicOn) return;
     var m = data.music;
     if (!m) { MusicPlayer.set(null); return; }
-    var until = m.until ? Date.parse(m.until) : NaN;
-    var pre = m.hint === "pre" && !(until && NOW() > until);                  // 大会開始前：まだ試合開始が押されておらず、大会日時の前
     var src;
-    if (window.PAGE_KIND === "rules") src = pre ? (m.scenes || {}).pre : null;      // ルールだけの公開ページは、大会開始前の音楽だけ
+    if (window.PAGE_KIND === "rules") src = null;                                   // ルールだけの公開ページは、音楽を流さない
     else {
       var scene;
       clearTimeout(musicTimer);
@@ -3000,8 +3034,8 @@
         var left = BANPICK_TAIL_MS - (NOW() - ended);
         if (left > 0) { scene = bpScene(m); musicTimer = setTimeout(function () { if (lastData) updateMusic(lastData, lastFm); }, left + 50); }
         else scene = "wait";
-      } else if (data.state === "intro") scene = lastScene === "pre" || lastScene === "wait" ? lastScene : (pre ? "pre" : "wait");       // 紹介の場面：途中で、音楽を変えない（大会開始の時刻を過ぎても、紹介が終わるまで、そのまま）
-      else scene = pre ? "pre" : "wait";
+      } else if (data.state === "intro") scene = "wait";       // 紹介の場面：途中で、音楽を変えない（大会開始の時刻を過ぎても、紹介が終わるまで、そのまま）
+      else scene = "wait";
       if (data.state !== "result") resultSeenAt = 0;
       src = scene ? (m.scenes || {})[scene] : null;
       if ((scene === "banpick" || scene === "final") && !src && data.state === "result") { scene = "wait"; src = (m.scenes || {}).wait; }     // BAN/PICKの音楽が無いときは、すぐ試合の間の音楽
@@ -3019,7 +3053,6 @@
   }
   var lastFm = null, lastScene = null, musicTimer = null, resultSeenAt = 0, heldScene = null, heldAt = 0, holdTimer = null, MUSIC_HOLD_MS = 1200;
   var BANPICK_TAIL_MS = 30000, FADE_MS = 4000;                                      // 試合終了のあと、BAN/PICKの音楽を流し続ける時間／試合の間の音楽へ切り替えるフェードの時間
-  setInterval(function () { if (lastData) updateMusic(lastData, lastFm); }, 5000);            // 大会日時を過ぎたら、「大会開始前」の音楽から切り替える
   var musicInit = false;
   function initMusic() {
     if (musicInit || !window.MusicPlayer) return;
