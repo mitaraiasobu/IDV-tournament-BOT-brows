@@ -321,9 +321,16 @@
         b.addEventListener("click", function () { K.send([{ op: "intro_speed_set", speed: o[0] }], "速さを保存しています…"); }); sr.appendChild(b);
       });
       sc.appendChild(sr); root.appendChild(sc);
+      var vc = box(el, "🔊 音楽の音量", "紹介動画の音楽の大きさです（見る人は、ページの中では変えられません）。Discordの「🎞 紹介動画の音量」と同じです。");
+      var vr = el("div", "row");
+      [10, 20, 35, 50, 70, 100].forEach(function (v) {
+        var on = (D.intro_volume || 35) === v, b = el("button", on ? "primary" : "", (on ? "✅ " : "") + v + "%"); b.type = "button"; b.disabled = on;
+        b.addEventListener("click", function () { K.send([{ op: "intro_volume_set", volume: v }], "音量を保存しています…"); }); vr.appendChild(b);
+      });
+      vc.appendChild(vr); root.appendChild(vc);
       var m = (D.music || []).filter(function (x) { return x.key === "intro"; })[0];
       if (m) {
-        var mc = box(el, "🎵 紹介動画の音楽", "URLは、YouTube か、音声ファイル（.mp3 .wav .ogg .m4a など）です。⚠ 音楽の利用規約・著作権に、ご注意ください。ブラウザによっては、ページを開いたあと、キーを押すかクリックするまで、音が出ません。見る人は、左下のバーで、音量を変えられます。");
+        var mc = box(el, "🎵 紹介動画の音楽", "URLは、YouTube か、音声ファイル（.mp3 .wav .ogg .m4a など）です。⚠ 音楽の利用規約・著作権に、ご注意ください。ブラウザによっては、ページを開いたあと、キーを押すかクリックするまで、音が出ません。");
         mediaForm(el, K, mc, m, "音楽のURL", "https://…（YouTube・音声ファイル）",
           function (u, s, l) { K.send([{ op: "music_set", scene: "intro", url: u, start: s, loop: l }], "音楽を保存しています…"); }, function () { K.send([{ op: "music_set", scene: "intro", url: "" }], "音楽を消しています…"); }, true);
         root.appendChild(mc);

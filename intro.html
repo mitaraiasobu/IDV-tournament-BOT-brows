@@ -624,8 +624,12 @@
     return S;
   }
 
+  var bgKey = null;
+  function box0() { return document.getElementById("bgm"); }
   function setBgMedia(bg) {                                                                // 背景の画像・動画・YouTube
-    var box = document.getElementById("bgm"), root = document.documentElement; box.textContent = "";
+    var bk = JSON.stringify(bg || null); if (bk === bgKey && box0().firstChild || bk === bgKey && !bg) return;   // 同じ背景なら、作り直さない（ページを進めるたびに、一瞬消えてしまうため）
+    bgKey = bk;
+    var box = box0(), root = document.documentElement; box.textContent = "";
     var e = null;
     if (bg && bg.kind === "image" && /^https?:\/\//.test(bg.url || "")) { e = new Image(); e.alt = ""; e.draggable = false; e.src = bg.url; }
     else if (bg && bg.kind === "video" && /^https?:\/\//.test(bg.url || "")) { e = document.createElement("video"); e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.src = bg.url; try { e.currentTime = parseInt(bg.start, 10) || 0; } catch (x) { /* なくてもよい */ } var pl = e.play; if (pl) { try { e.play().catch(function () {}); } catch (x2) { /* なくてもよい */ } } }
@@ -702,7 +706,7 @@
   });
   function load() {
     function go(d) {
-      if (d && d.title) { var first = !D; D = d; speed = d.speed === 0.75 || d.speed === 0.5 ? d.speed : 1; document.getElementById("msg").textContent = ""; if (window.MusicPlayer) { if (!mpInit) { mpInit = true; MusicPlayer.init({ ui: true, volume: 0.35 }); } MusicPlayer.set(D.music || null); }
+      if (d && d.title) { var first = !D; D = d; speed = d.speed === 0.75 || d.speed === 0.5 ? d.speed : 1; document.getElementById("msg").textContent = ""; if (window.MusicPlayer) { if (!mpInit) { mpInit = true; MusicPlayer.init({ ui: false, volume: (D.volume || 35) / 100 }); } MusicPlayer.set(D.music || null); }
         if (first && !AUTO0) show(0); else if (auto || first) play(); }
       else if (!D) document.getElementById("msg").textContent = "まだ、紹介動画の内容がありません。"; else if (auto) play();
     }
