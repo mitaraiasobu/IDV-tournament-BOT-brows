@@ -80,12 +80,12 @@
   .bktag { position:absolute; left:70px; top:46px; z-index:5; font-family:var(--fa); font-size:60px; letter-spacing:.1em; color:#fff; text-shadow:0 0 22px var(--accent), 0 3px 0 #000; }
   .bktag::before { content:"✠ "; color:var(--gold); font-size:40px; }
   .op-br { position:absolute; left:0; top:0; transform-origin:0 0; transition:transform 1.2s cubic-bezier(.45,0,.2,1); will-change:transform; }
-  .pc { position:absolute; display:flex; align-items:center; gap:12px; padding:0 14px 0 12px; opacity:0; transform:translateY(16px) scale(.94); transition:opacity .3s ease, transform .35s cubic-bezier(.2,.9,.2,1);
+  .pc { position:absolute; display:flex; align-items:center; gap:12px; padding:0 14px 0 12px; opacity:0; transform:translateX(-70px); transition:opacity .35s ease, transform .5s cubic-bezier(.2,.9,.2,1);
         background:linear-gradient(180deg,rgba(30,18,50,.94),rgba(12,6,24,.95)); border:2px solid var(--gold); border-left-width:7px; box-shadow:0 8px 22px rgba(0,0,0,.5), 0 0 18px color-mix(in srgb,var(--accent) 40%,transparent); }
   .pc.on { opacity:1; transform:none; }
   .pc .pn { font-family:var(--fa); color:var(--gold); flex:none; margin:0 auto; text-shadow:0 0 12px var(--accent); }
   .pc.bye { border-color:color-mix(in srgb,var(--gold) 35%,transparent); box-shadow:none; background:rgba(20,10,40,.55); }
-  .ph { position:absolute; top:0; text-align:center; opacity:0; transform:translateY(-14px); transition:opacity .45s ease, transform .5s cubic-bezier(.2,.9,.2,1); }
+  .ph { position:absolute; top:0; text-align:center; opacity:0; transform:translateX(-50px); transition:opacity .45s ease, transform .55s cubic-bezier(.2,.9,.2,1); }
   .ph.on { opacity:1; transform:none; }
   .ph .nm { font-family:var(--fa); font-size:44px; color:var(--gold); letter-spacing:.08em; text-shadow:0 0 16px var(--accent); }
   .ph .dt { font-family:var(--fa); font-size:78px; line-height:1.05; color:#fff; text-shadow:0 0 24px var(--accent), 0 0 48px var(--accent), 0 3px 0 #000; white-space:nowrap; }
@@ -621,17 +621,16 @@
       return '<div class="rise" style="--a:' + a + 's;display:flex;align-items:baseline;gap:30px;padding:6px 6px;border-bottom:1px dashed rgba(255,255,255,.22)"><span class="tag" style="margin:0;min-width:300px;text-align:center;flex:none">' + label + '</span>'
         + '<span class="big" style="font-size:56px;line-height:1.1">' + val + '</span>' + (sub ? '<span style="font-size:30px;opacity:.92">' + sub + '</span>' : "") + '</div>';
     }
-    if (dl || nt || szt) S.push([ms(6 + (E.cond || []).length), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:16px">'
-      + (dl ? '<div class="card rise" style="--a:.5s;width:1506px;padding:18px 30px"><div style="display:flex;align-items:baseline;justify-content:center;gap:30px"><span class="tag red" style="margin:0">エントリー締切</span><span class="big" style="font-size:64px">' + dl.key + '</span><span style="font-size:40px">(' + dl.w + ') ' + dl.hm + ' まで</span></div></div>' : "")
-      + '<div class="card rise" style="--a:1s;width:1506px;padding:14px 40px;text-align:left">'
-      + (nt ? erow(E.max ? "定員" : "チーム数", nt + "チーム", E.max ? "まで" : "", 1.4) : "")
-      + (szt ? erow("チーム内の人数", esc(szt) + "人", "", 1.9) : "")
-      + erow("サバイバーとハンターの兼任", D.both ? "OK" : "NG", D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです", 2.4)
+    if (dl || nt || szt) S.push([ms(6), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:34px">'
+      + '<div class="card rise" style="--a:.6s;width:1506px;padding:14px 40px;text-align:left">'
+      + (dl ? erow("エントリー締切", dl.key, "(" + dl.w + ") " + dl.hm + " まで", .8) : "")
+      + (nt ? erow(E.max ? "定員" : "チーム数", nt + "チーム", E.max ? "まで" : "", 1.2) : "")
+      + (szt ? erow("チーム内の人数", esc(szt) + "人", "", 1.6) : "")
+      + erow("サバイバーとハンターの兼任", D.both ? "OK" : "NG", D.both ? "同一人物が両陣営で参加できます" : "同一人物は、どちらか1つの陣営だけです", 2)
       + '</div>'
-      + ((E.cond || []).length ? '<div class="card rise" style="--a:3s;width:1506px;padding:18px 30px"><p style="font-size:30px;line-height:1.5">' + E.cond.map(fmt).join("<br>") + '</p></div>' : "")
-      + (E.invite ? '<div class="card rise" style="--a:3.6s;width:1506px;padding:14px 30px;box-shadow:0 0 40px var(--accent)"><div style="font-size:70px;line-height:1.2;white-space:nowrap;color:#fff;font-weight:800;letter-spacing:.04em;text-shadow:0 0 18px var(--accent)">エントリーは、Discordサーバーから！</div>'
-        + '<p style="font-size:34px;line-height:1.45;margin:6px 0 4px">仲間探しに困っているなら、ここで新しい仲間があなたを待っています。<br>応援・観戦での参加も、大歓迎です。</p>'
-        + '<div style="font-size:60px;color:var(--gold);letter-spacing:.06em">Discord：' + esc(E.invite) + '</div></div>' : "")
+      + (E.invite ? '<div class="rise" style="--a:2.8s;text-align:center"><div style="font-size:84px;line-height:1.2;white-space:nowrap;color:#fff;font-weight:800;letter-spacing:.04em;text-shadow:0 0 22px var(--accent),0 0 8px rgba(0,0,0,.6)">エントリーは、Discordサーバーから！</div>'
+        + '<p style="font-size:38px;line-height:1.5;margin:14px 0 8px;text-shadow:0 0 8px rgba(0,0,0,.7)">仲間探しに困っているなら、ここで新しい仲間があなたを待っています。<br>応援・観戦での参加も、大歓迎です。</p>'
+        + '<div style="font-size:66px;color:var(--gold);letter-spacing:.06em;text-shadow:0 0 8px rgba(0,0,0,.7)">Discord：' + esc(E.invite) + '</div></div>' : "")
       + '</div></div></section>']);
     // 9 おわり
     var d2 = pd(E.deadline);
