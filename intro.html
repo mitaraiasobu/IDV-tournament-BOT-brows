@@ -472,6 +472,11 @@
     if (rest.length) h += '<div class="rc rise gx" style="--a:1.2s;padding:12px 30px">' + rowsHtml(rest, true) + "</div>";
     return h + "</div>";
   }
+  function globalMs(list) {                                                         // 全試合共通のルールの長さ：映るキャラの人数に合わせる（少ないと短く、多いと長く）
+    var n = 0, rest = 0;
+    (list || []).forEach(function (x) { var kd = KIND[x.label], sec = kd ? bigSection(kd, x.text || "", GORDER.indexOf(kd)) : null; if (sec) n += sec.n; else rest++; });
+    return Math.min(28000, Math.max(6500, 5000 + 800 * n + 1500 * rest));
+  }
   var BAN_RE = /^(サバイバー|ハンター|マップ)(\d+)BAN$/;
   function banParts(text) {                                                         // 「サバイバー4BAN / ハンター1BAN」→ {サバイバー: 4, ハンター: 1}（それ以外の形なら null）
     var out = {}, ok = true;
@@ -565,7 +570,7 @@
       + (D.ext && D.ext.length ? '<div class="row">' + D.ext.map(function (t, i) { return '<div class="card rise" style="--a:' + A(i, 2.6) + ';width:740px"><h3>延長戦' + "①②"[i] + '</h3><p class="s" style="font-size:34px">' + fmt(t).replace("：", "：<br>") + '</p></div>'; }).join("") + '</div>' : "")
       + '</div></div></section>']);
     // 5 全試合共通のルール（BAN/PICKの前に見せる）
-    if ((bp.global || []).length) S.push([ms(bp.global.length * 2.4), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
+    if ((bp.global || []).length) S.push([globalMs(bp.global), head("✠ COMMON RULES ✠", "全試合共通のルール") + '<div class="body">' + globalHtml(bp.global) + '</div></section>']);
     // 6 BAN/PICK（大会ルールの「BAN/PICK」タブと同じ：ラウンドごと）
     // ラウンドやセットが変わっても、「BAN/PICK」の見出しは、出入りさせない（1つの場面の中で、中身だけを入れかえる）
     var PERR = 2600, panels = [], pcount = [];
@@ -632,7 +637,7 @@
       return '<div class="rise" style="--a:' + a + 's;display:flex;align-items:baseline;gap:30px;padding:6px 6px;border-bottom:1px dashed rgba(255,255,255,.22)"><span class="tag" style="margin:0;min-width:300px;text-align:center;flex:none">' + label + '</span>'
         + '<span class="big" style="font-size:56px;line-height:1.1">' + val + '</span>' + (sub ? '<span style="font-size:30px;opacity:.92">' + sub + '</span>' : "") + '</div>';
     }
-    if (dl || nt || szt) S.push([ms(6), head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:34px">'
+    if (dl || nt || szt) S.push([ms(6) + 10000, head("✠ ENTRY ✠", "参加のしかた") + '<div class="body"><div class="col" style="gap:34px">'
       + '<div class="card rise" style="--a:.6s;width:1506px;padding:14px 40px;text-align:left">'
       + (dl ? erow("エントリー締切", dl.key, "(" + dl.w + ") " + dl.hm + " まで", .8) : "")
       + (nt ? erow(E.max ? "定員" : "チーム数", nt + "チーム", E.max ? "まで" : "", 1.2) : "")
