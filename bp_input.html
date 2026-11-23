@@ -590,6 +590,11 @@
   .lotraits button { padding: 8px 4px; border-radius: 6px; border: 2px solid #4a5170; background: #12172c; color: #e8ecff; font-weight: 800; font-size: 14px; cursor: pointer; }
   .lotraits button.on { border-color: #ffb03b; background: #3a2a0c; color: #ffd24a; }
   .losum { font-weight: 800; font-size: 14px; line-height: 1.5; color: #dfe6ff; }
+  .lolate { font-weight: 900; font-size: 14px; color: #fff; background: #d12a2a; padding: 6px 8px; margin: 6px 0; border-radius: 6px; }
+  .lonotice { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: rgba(4, 6, 16, .93); text-align: center; padding: 24px; cursor: pointer; }
+  .lonbig { font-weight: 900; font-size: min(7.4vw, 60px); line-height: 1.5; color: #fff; text-shadow: 0 0 22px rgba(120, 160, 255, .6); }
+  .lonok { font-size: 1.7em; margin: 0 .08em; color: #ffd21f; text-shadow: 0 0 18px rgba(255, 210, 31, .85), 0 0 46px rgba(255, 150, 0, .6); }
+  .lonsub { font-weight: 700; font-size: 18px; color: #9aa6cf; }
   .cosnote { color: #cdd3ea; font-size: 14px; text-align: center; }
   .costitle { font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 8px; background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%;
               -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: cosflow 2.2s linear infinite; text-shadow: none; }
@@ -1416,12 +1421,27 @@
     var d = loDraft(); if (d.p.length !== 2 || d.t == null || LO.busy) return;
     var p = d.p.slice().sort(function (a, b) { return a - b; }), t = d.t;
     LO.busy = true;
-    if (window.BP_DEMO) { DEMO_LO = { p: p, t: t }; S.loadout_pending = false; LO.busy = false; LO.edit = false; LO.p = null; render(); return; }
+    if (window.BP_DEMO) { DEMO_LO = { p: p, t: t }; S.loadout_pending = false; LO.busy = false; LO.edit = false; LO.p = null; render(); showLoNotice(); return; }
     sendAct("loadout", { p: p, t: t }).then(function (res) {
       if (!(res && res.ok)) { SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; }
-      else { LO.edit = false; LO.p = null; }
+      else { LO.edit = false; LO.p = null; showLoNotice(); }
       return refresh();
     }).catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; }).then(function () { LO.busy = false; render(); });
+  }
+  function showLoNotice() {                                                               // 決定したあと：画面いっぱいに、「あとで変えてもOK」と知らせる（OKは、目立つ色で）
+    var old = $("lonotice"); if (old) old.remove();
+    var ov = el("div", "lonotice"); ov.id = "lonotice";
+    var t = el("div", "lonbig");
+    t.appendChild(document.createTextNode("後で考え直して"));
+    t.appendChild(el("br"));
+    t.appendChild(document.createTextNode("人格・特質を変えても"));
+    t.appendChild(el("span", "lonok", "OK"));
+    t.appendChild(document.createTextNode("です！"));
+    ov.appendChild(t);
+    ov.appendChild(el("div", "lonsub", "（タップで閉じます）"));
+    ov.addEventListener("click", function () { ov.remove(); });
+    document.body.appendChild(ov);
+    setTimeout(function () { if (ov.parentNode) ov.remove(); }, 6000);
   }
   function loadoutBox() {                                                                 // 左の枠（衣装より上）：ハンターには、選ぶまで目立つように。ほかの人には、待っていると知らせる
     if (!S || S.status !== "done" || S.stage === "play" || !MY) return null;
@@ -1441,6 +1461,7 @@
     }
     var d = loDraft(), box = el("div", "lobox");
     box.appendChild(el("div", "lotitle", "🎭 人格（2つ）と特質（1つ）を選んでください！"));
+    if (S.loadout_late) box.appendChild(el("div", "lolate", "⏰ 90秒を過ぎました！早く選んでください！（選び終えるまで、部屋に入る案内は出ません）"));
     box.appendChild(el("div", "lonote", "生配信でキャスターが紹介します。ただし試合の前に変えても大丈夫です！ここで決定したものが絶対ではないため、最善の人格・特質で試合開始してください！"));
     box.appendChild(el("div", "lolab", "人格（2つ）　" + d.p.length + "/2"));
     var pr = el("div", "lopers");
@@ -1471,7 +1492,7 @@
     return box;
   }
   function ensurePickCol() {                                                              // 左の「PICK」の枠：説明の枠の外に置いて、説明が更新されても、描き直さない（チカチカしない）。PICKの中身が変わったときだけ、作り直す
-    var sig = JSON.stringify([S.steps.map(function (s) { return s.ids || null; }), myHunterPick(), ownPers(), MY, !!UID, myCostumeCards().map(function (c) { return c.c; }), !!S.costume_pending, !!S.loadout_pending, ownLoadout(), LO.edit, LO.p, LO.t, LO.busy]);
+    var sig = JSON.stringify([S.steps.map(function (s) { return s.ids || null; }), myHunterPick(), ownPers(), MY, !!UID, myCostumeCards().map(function (c) { return c.c; }), !!S.costume_pending, !!S.loadout_pending, !!S.loadout_late, ownLoadout(), LO.edit, LO.p, LO.t, LO.busy]);
     var pc = $("sppick");
     if (pc && pc.getAttribute("data-sig") === sig) return pc;
     var top = pc ? pc.scrollTop : 0; if (pc) pc.remove();
