@@ -1655,7 +1655,7 @@
     if (missL.length) c.appendChild(el("div", "subwarn", "⚠ まだ未入力の事項があります：" + missL.join("・") + "。保留したままでも募集は始められますが、エントリー締切までに必ず登録してください（締切の1週間前・3日前・1日前の18時に、お知らせします）。"));
     if (!TN || TN._team !== u.leader) TN = { _team: u.leader, name: fm.team_name || teamName(u.leader), reading: fm.team_reading || "", abbr: u.abbr || "", abbr_reading: fm.abbr_reading || "", color: u.color || "", flex: JSON.parse(JSON.stringify(u.flex || {})) };
     var nb = null;                                                                     // 「メンバー募集へ」：保存していない内容が1つでもあれば、押せない
-    function tnKey() { return JSON.stringify([TN.name, TN.reading, TN.abbr, TN.abbr_reading, TN.color, u.recruiting ? (TN.auto == null ? !!u.auto_enter : !!TN.auto) : null, TN.flex]); }
+    function tnKey() { return JSON.stringify([TN.name, TN.reading, TN.abbr, TN.abbr_reading, TN.color, TN.flex]); }
     if (TN._snap === undefined) TN._snap = tnKey();
     function chk() { if (nb) { nb.disabled = BUSY || !!LOGO || tnKey() !== TN._snap; nb.title = nb.disabled ? "保存していない内容があります。先に「💾 チーム情報を保存」を押してください" : ""; } }
     var f = el("div", "frm");
@@ -1691,13 +1691,8 @@
       f.appendChild(lbox);
     }
     if (u.recruiting) {                                                              // 自動エントリー（チェック推奨）
-      if (TN.auto == null) TN.auto = !!u.auto_enter;
-      var ae = el("div", "card"); ae.style.marginTop = "8px"; ae.style.borderColor = "var(--ok)";
-      ae.appendChild(el("div", "tag ok", "✅ チェック推奨"));
-      var aer = el("label", ""); aer.style.cssText = "display:flex;gap:8px;align-items:flex-start;font-weight:700;cursor:pointer";
-      var aec = el("input"); aec.type = "checkbox"; aec.checked = TN.auto; aec.addEventListener("change", function () { TN.auto = aec.checked; chk(); });
-      aer.appendChild(aec); aer.appendChild(el("span", "", "大会のチーム最低人数を満たしたうえで、少なくともサバイバー4人ハンター1人が所属していれば、自動でエントリーする。")); ae.appendChild(aer);
-      ae.appendChild(el("div", "lim", "自動でエントリーしたら、チーム専用チャンネルでお知らせします。"));
+      var ae = el("div", "card"); ae.style.marginTop = "8px";
+      ae.appendChild(el("div", "lim", "大会のチーム最低人数を満たしたうえで、少なくともサバイバー4人ハンター1人が所属していれば、自動でエントリーします。自動でエントリーしたら、チーム専用チャンネルでお知らせします。"));
       c.appendChild(ae);
     }
     c.appendChild(f); decorateRules(f);
@@ -1711,7 +1706,6 @@
       var fxm = missingFlex(TN.flex); if (fxm.length) { setMsg("ng", "⚠ 試合日時の確認で、入れていない項目があります：" + fxm.join("、")); return; }
       if (TN.color && !/^#[0-9a-fA-F]{6}$/.test(TN.color)) { setMsg("ng", "⚠ チームカラーは、#ff69b4 のような形にしてください（空なら標準の色）。"); return; }
       var info = { name: TN.name.trim(), reading: TN.reading.trim(), color: TN.color };
-      if (u.recruiting && TN.auto != null) info.auto_enter = !!TN.auto;
       if (D.abbr) { info.abbr = TN.abbr.trim(); info.abbr_reading = TN.abbr_reading.trim(); }
       if (LOGO) info.logo = LOGO;
       if (arr((D.entry || {}).flex).length) info.flex = TN.flex;
