@@ -1588,6 +1588,13 @@
   .wt-gb .fs { display: flex; flex-wrap: wrap; gap: calc(8 * var(--u)); min-height: calc(100 * var(--u)); align-items: center; }
   .wt-gb .rl-face { width: calc(92 * var(--u)); height: calc(92 * var(--u)); border-width: calc(4 * var(--u)); font-size: calc(40 * var(--u)); }
   .wt-gb .none { font-family: var(--cond); font-weight: 700; font-size: calc(30 * var(--u)); color: var(--sub); opacity: .8; }
+  /* 第1セットの前半戦の前：選手のアイコンと名前だけ。大きめに、順にふわっと出て、ゆっくり浮き沈みする（控えめ） */
+  .wt.first .wt-ps { min-height: calc(380 * var(--u)); gap: calc(26 * var(--u)) calc(14 * var(--u)); align-content: center; justify-content: center; }
+  .wt.first .wt-p { width: calc(150 * var(--u)); gap: calc(10 * var(--u)); animation: wtIn .9s ease-out both, wtFloat 6s ease-in-out infinite; }
+  .wt.first .wt-p .pic { width: calc(120 * var(--u)); height: calc(120 * var(--u)); border-width: calc(5 * var(--u)); }
+  .wt.first .wt-p .nm { font-size: calc(26 * var(--u)); max-width: calc(150 * var(--u)); }
+  @keyframes wtIn { from { opacity: 0; transform: translateY(calc(14 * var(--u))); } to { opacity: 1; transform: none; } }
+  @keyframes wtFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(-6 * var(--u))); } }
   .wt .rl-face.off { filter: grayscale(1) brightness(.8); opacity: .7; border-color: #8a8a8a; }
   .rl-nm { font-family: var(--cond); font-weight: 700; font-size: 30px; line-height: 1.2; text-shadow: 0 0 10px rgba(0, 0, 0, .8); white-space: nowrap; }
   .rl-pair { display: flex; align-items: center; gap: 18px; padding: 10px 30px; background: rgba(0, 0, 0, .4); border-radius: 90px; }
@@ -2295,15 +2302,16 @@
 
   // ═══ flow：ルール表示（待機中）。開催日より前は、全ラウンドの情報を載せて、見たいラウンドを選べる ═══
   var chosenRound = null, lastRules = null;
-  function waitTeam(t) {
+  function waitTeam(t, first) {
     var c = el("div", "wt-team");
     var nm = el("div", "wt-name");
     nm.appendChild(finLogo(t));
     nm.appendChild(el("span", "", t.name || ""));
     c.appendChild(nm);
     var ps = el("div", "wt-ps");
-    arr(t.players).forEach(function (p) {
+    arr(t.players).forEach(function (p, pi) {
       var b = el("div", "wt-p"), pic = el("div", "pic");
+      if (first) b.style.animationDelay = (0.15 * pi) + "s, " + (0.15 * pi + 0.9) + "s";           // 1人ずつ、順にふわっと出て、そのあと、ゆっくり浮き沈みする
       if (p.avatar) { var im = new Image(); im.src = p.avatar; im.alt = ""; pic.appendChild(im); } else pic.textContent = (p.name || "").slice(0, 1);
       b.appendChild(pic);
       b.appendChild(el("div", "nm", p.name || ""));
@@ -2313,6 +2321,7 @@
       ps.appendChild(b);
     });
     c.appendChild(ps);
+    if (first) return c;                                                                 // 第1セットの前半戦の前：選手のアイコンと名前だけ
     [["survivor", "サバイバー GLOBAL BAN"], ["hunter", "ハンター GLOBAL BAN"]].forEach(function (x) {
       var g = el("div", "wt-gb"), fs = el("div", "fs");
       g.appendChild(el("div", "lb", x[1]));
@@ -2325,14 +2334,14 @@
     return c;
   }
   function renderWait(r) {                                                              // 配信の待機の画面：対戦する2チームの、選手・得意キャラ・グローバルBAN
-    var w = r.wait, wrap = el("div", "rv wt"), box = el("div", "box");
+    var w = r.wait, wrap = el("div", "rv wt" + (w.first ? " first" : "")), box = el("div", "box");
     var top = el("div", "wt-top");
     top.appendChild(el("h1", null, r.round || ""));
     if (r.next) top.appendChild(el("span", "pill", r.next));
     box.appendChild(top);
     var cols = el("div", "wt-cols");
-    cols.appendChild(waitTeam(w.a || {}));
-    cols.appendChild(waitTeam(w.b || {}));
+    cols.appendChild(waitTeam(w.a || {}, !!w.first));
+    cols.appendChild(waitTeam(w.b || {}, !!w.first));
     box.appendChild(cols);
     wrap.appendChild(box);
     screenEl.replaceChildren(wrap);
