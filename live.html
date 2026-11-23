@@ -221,6 +221,9 @@
   html.leaving #screen { animation: wipeOut 1s ease-in both; }
   html.leaving #bg, html.leaving #bgmedia, html.leaving #media { opacity: 0; transition: opacity 1s .2s; }
   html.clear #bg, html.clear #bgmedia, html.clear #media, html.clear #screen, html.clear #msg { display: none; }
+  /* 試合中（背景が透明で、ゲーム画面が見えるとき）：背景・飾り・粒・オーロラなど、全ての要素を、完全に消す（無色透明）。どのデザインでも。新しい飾りを足すときは、ここで消えることを確かめる */
+  html.clear body::before, html.clear body::after, html.clear #stage::before, html.clear #stage::after, html.clear #bg::before, html.clear #bg::after { display: none !important; }
+  html.clear, html.clear body { background: transparent !important; background-image: none !important; }
   html.clear, html.clear body { background: transparent; }
 
   /* ═══ 成績の画面（ROUND 1 RESULT など）：斜めの切り口・筆の文字・傷のような質感。色は、ベース色とアクセント色（テーマカラー）から作る ═══ */
@@ -1452,6 +1455,8 @@
       background-image: radial-gradient(circle, rgba(255, 226, 150, .55) 0 1.5px, transparent 2.5px), radial-gradient(circle, rgba(255, 226, 150, .35) 0 1px, transparent 2px);
       background-size: 220px 260px, 140px 180px; animation: gtDrift 42s linear infinite; }
   html[data-design="gothic"].black body::after { opacity: 0; }
+  html[data-design="gothic"] body::after { transition: opacity 1s .2s; }
+  html[data-design="gothic"].leaving body::after { opacity: 0; }
   html[data-design="gothic"] .in-half .pl { animation: gtBob 5s ease-in-out infinite; }
   html[data-design="gothic"] .in-half .pl:nth-child(2) { animation-delay: -1.3s; } html[data-design="gothic"] .in-half .pl:nth-child(3) { animation-delay: -2.6s; } html[data-design="gothic"] .in-half .pl:nth-child(4) { animation-delay: -3.9s; }
   html[data-design="gothic"] .in-half.hn .pl { animation-duration: 6.5s; }
