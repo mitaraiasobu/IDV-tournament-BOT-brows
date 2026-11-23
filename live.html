@@ -3159,7 +3159,7 @@
     var row = el("div", "sw-row"), from = el("div", "sw-grp from"), to = el("div", "sw-grp to");
     arr(sw.from).forEach(function (p) {
       var b = personBox(p, "fr");
-      if (p.leaving) b.appendChild(el("div", "sw-bye", "ありがとうございました！"));
+      if (p.leaving) b.appendChild(el("div", "sw-bye", "お別れの挨拶"));
       from.appendChild(b);
     });
     arr(sw.to).forEach(function (p) { to.appendChild(personBox(p, "to")); });
