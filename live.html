@@ -1577,22 +1577,22 @@
   .wt-team + .wt-team { border-left: calc(3 * var(--u)) solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: calc(40 * var(--u)); }
   .wt-name { display: flex; align-items: center; gap: calc(20 * var(--u)); font-family: var(--cond); font-weight: 800; font-size: calc(62 * var(--u)); line-height: 1.1; overflow-wrap: anywhere; }
   .wt .wt-name .fin-logo { width: calc(84 * var(--u)) !important; height: calc(84 * var(--u)) !important; min-width: calc(84 * var(--u)); font-size: calc(34 * var(--u)) !important; border-width: calc(4 * var(--u)) !important; flex: none; margin: 0 !important; }
-  .wt-ps { display: flex; flex-wrap: wrap; gap: calc(20 * var(--u)) calc(8 * var(--u)); min-height: calc(218 * var(--u)); align-content: flex-start; }
-  .wt-p { width: calc(152 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--u)); }
-  .wt-p .pic { width: calc(108 * var(--u)); height: calc(108 * var(--u)); border-radius: 50%; overflow: hidden; background: var(--panel2); border: calc(5 * var(--u)) solid var(--accent); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: calc(40 * var(--u)); }
+  .wt-ps { display: flex; flex-wrap: wrap; gap: calc(16 * var(--u)) calc(10 * var(--u)); align-content: flex-start; }                 /* 4人ずつで、折り返す */
+  .wt-p { width: calc(192 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--u)); }
+  .wt-p .pic { width: calc(92 * var(--u)); height: calc(92 * var(--u)); border-radius: 50%; overflow: hidden; background: var(--panel2); border: calc(4 * var(--u)) solid var(--accent); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: calc(40 * var(--u)); }
   .wt-p .pic img { width: 100%; height: 100%; object-fit: cover; }
-  .wt-p .nm { font-family: var(--cond); font-weight: 700; font-size: calc(27 * var(--u)); line-height: 1.15; text-align: center; max-width: calc(152 * var(--u)); overflow-wrap: anywhere; }
-  .wt-p .fv { display: flex; gap: calc(6 * var(--u)); justify-content: center; min-height: calc(52 * var(--u)); }
-  .wt .rl-face { width: calc(52 * var(--u)); height: calc(52 * var(--u)); border-width: calc(3 * var(--u)); font-size: calc(24 * var(--u)); box-shadow: none; animation: none !important; }
+  .wt-p .nm { font-family: var(--cond); font-weight: 700; font-size: calc(25 * var(--u)); line-height: 1.15; text-align: center; max-width: calc(192 * var(--u)); overflow-wrap: anywhere; }
+  .wt-p .fv { display: flex; gap: calc(6 * var(--u)); justify-content: center; min-height: calc(56 * var(--u)); }
+  .wt .rl-face { width: calc(56 * var(--u)); height: calc(56 * var(--u)); border-width: calc(3 * var(--u)); font-size: calc(24 * var(--u)); box-shadow: none; animation: none !important; }
   .wt-gb .lb { font-family: var(--cond); font-weight: 800; font-size: calc(34 * var(--u)); letter-spacing: .08em; color: var(--sub); margin-bottom: calc(8 * var(--u)); }
   .wt-gb .fs { display: flex; flex-wrap: wrap; gap: calc(8 * var(--u)); min-height: calc(100 * var(--u)); align-items: center; }
   .wt-gb .rl-face { width: calc(92 * var(--u)); height: calc(92 * var(--u)); border-width: calc(4 * var(--u)); font-size: calc(40 * var(--u)); }
   .wt-gb .none { font-family: var(--cond); font-weight: 700; font-size: calc(30 * var(--u)); color: var(--sub); opacity: .8; }
   /* 第1セットの前半戦の前：選手のアイコンと名前だけ。大きめに、順にふわっと出て、ゆっくり浮き沈みする（控えめ） */
-  .wt.first .wt-ps { min-height: calc(380 * var(--u)); gap: calc(26 * var(--u)) calc(14 * var(--u)); align-content: center; justify-content: center; }
-  .wt.first .wt-p { width: calc(150 * var(--u)); gap: calc(10 * var(--u)); animation: wtIn .9s ease-out both, wtFloat 6s ease-in-out infinite; }
+  .wt.first .wt-ps { align-content: center; justify-content: center; min-height: calc(380 * var(--u)); gap: calc(26 * var(--u)) calc(10 * var(--u)); }
+  .wt.first .wt-p { width: calc(192 * var(--u)); gap: calc(10 * var(--u)); animation: wtIn .9s ease-out both, wtFloat 6s ease-in-out infinite; }
   .wt.first .wt-p .pic { width: calc(120 * var(--u)); height: calc(120 * var(--u)); border-width: calc(5 * var(--u)); }
-  .wt.first .wt-p .nm { font-size: calc(26 * var(--u)); max-width: calc(150 * var(--u)); }
+  .wt.first .wt-p .nm { font-size: calc(26 * var(--u)); max-width: calc(192 * var(--u)); }
   @keyframes wtIn { from { opacity: 0; transform: translateY(calc(14 * var(--u))); } to { opacity: 1; transform: none; } }
   @keyframes wtFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(-6 * var(--u))); } }
   .wt .rl-face.off { filter: grayscale(1) brightness(.8); opacity: .7; border-color: #8a8a8a; }
@@ -2345,6 +2345,9 @@
     box.appendChild(cols);
     wrap.appendChild(box);
     screenEl.replaceChildren(wrap);
+    wrap.style.zoom = "";
+    var avail = (kind === "stage" ? 1080 : window.innerHeight) * 0.93, hh = wrap.offsetHeight;          // 選手が多くて、縦に収まらないときは、全体を縮める（何人でも、得意キャラが3人ずつでも、収まる）
+    if (hh > avail) wrap.style.zoom = String(Math.max(0.45, avail / hh));
     fit();
   }
   function renderRules(r) {
