@@ -1962,9 +1962,9 @@
     teams.sort(function (a, b) { return (rk(a) - rk(b)) || ((a.friends ? 1 : 0) - (b.friends ? 1 : 0)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || ((fxMatch(a) === "ok" ? 0 : 1) - (fxMatch(b) === "ok" ? 0 : 1)) || a.id - b.id; });
     document.getElementById("empty").hidden = teams.length > 0;
     // 上から：あなたに合うチーム → 制限に合わないチーム → 募集終了したチーム（区切りの線つき。押すと折りたためる）
-    var SECS = me ? [["fit", "✅ あなたに合うチーム"], ["nofit", "⚠ 制限に合わないチーム"], ["end", "⏹ 募集終了したチーム"]] : [["fit", "📣 募集中のチーム"], ["end", "⏹ 募集終了したチーム"]];
+    var SECS = me ? [["fit", "✅ あなたに合うチーム"], ["friends", "👫 友達だけのチーム"], ["nofit", "⚠ 制限に合わないチーム"], ["end", "⏹ 募集終了したチーム"]] : [["fit", "📣 募集中のチーム"], ["friends", "👫 友達だけのチーム"], ["end", "⏹ 募集終了したチーム"]];
     var secGrid = {};
-    function secOf(t) { return (t.state === "open" || t.state === "extra") ? (t._fit || !me ? "fit" : "nofit") : "end"; }
+    function secOf(t) { return (t.state === "open" || t.state === "extra") ? (t.friends ? "friends" : t._fit || !me ? "fit" : "nofit") : "end"; }   // 友達だけのチームは、「あなたに合うチーム」の下に、別の区分で
     SECS.forEach(function (sc) {
       var list = teams.filter(function (t) { return secOf(t) === sc[0]; }); if (!list.length) return;
       var dt = el("details", "sec"); dt.open = SEC_OPEN[sc[0]] !== undefined ? SEC_OPEN[sc[0]] : sc[0] !== "end";
