@@ -186,7 +186,7 @@
     <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
-      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別）。抽選のあとは、保存すると、そのまま公開されます（対戦カードチャンネルの用意と、サイレントのお知らせ。1分ほどかかります）。</div>
+      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別）。</div>
       <div id="brview"></div>
     </div>
     <div id="tab-time" hidden>
@@ -1144,24 +1144,24 @@
     brNorm(B);
     var st = brState(), pairs = brPairs(B), brks = brBreaks(B);
     if (B.locked) v.appendChild(el("div", "warn", "この大会は優勝が決まって終了しているため、トーナメント表は変えられません。"));
+    v.appendChild(el("div", "warn", "⚠ 現段階での変更は選手やキャスターに影響があります。注意して変更してください。変更を保存したタイミングで選手やキャスターに変更内容が伝わります。"));
     // 保存の帯
     var bar = el("div", "brbar");
     bar.appendChild(el("span", brDirty() ? "fwarn" : "muted", brDirty() ? "● トーナメント表に、保存していない変更があります" : "トーナメント表の変更はありません"));
-    // 保存＝公開（抽選のあとは、保存すると、そのまま公開する。公開するかは聞かない。抽選の前は、公開できないので、保存だけ）
-    var sv = el("button", "primary", B.drawn ? "💾📣 保存して公開" : "💾 トーナメント表を保存");
-    sv.type = "button"; sv.disabled = B.locked || (B.drawn ? B.publish_pending : !brDirty());
+    // 保存するだけ（「公開」という言葉は出さない）。抽選のあとは、保存すると、裏で、対戦カードの用意とお知らせも行う。抽選の前は、保存だけ
+    var sv = el("button", "primary", "💾 トーナメント表を保存");
+    sv.type = "button"; sv.disabled = B.locked || B.publish_pending || (!brDirty() && !(B.drawn && !B.published));
     sv.addEventListener("click", function () {
       var bad = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
       if (bad.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
       var ops = brOps(B);
       if (!B.drawn) { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); return; }
-      brSend(ops.concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…");
+      brSend(ops.concat([{ op: "bracket_publish" }]), "トーナメント表を保存しています…（1分ほどで、選手・キャスターに伝わります）");
     });
     var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
     undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
     bar.appendChild(sv); bar.appendChild(undo);
-    bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定（抽選のあと、保存すると公開されます）") + "・" +
-                       (B.published ? "公開済み" : B.publish_pending ? "公開の準備中" : "未公開")));
+    bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + (B.publish_pending ? "・保存の処理中" : "")));
     v.appendChild(bar);
     var dlg = el("div", "card brdialog"); dlg.id = "brdialog"; dlg.hidden = true; v.appendChild(dlg);
     // 組み合わせの決め方
