@@ -186,7 +186,6 @@
     <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
-      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別）。</div>
       <div id="brview"></div>
     </div>
     <div id="tab-time" hidden>
@@ -340,7 +339,8 @@
   }
 
   // ───────── 画面
-  function dirty() { return JSON.stringify([P, ROUNDS, DELETED, TM, ST]) !== BASEJSON || (typeof RB_DIRTY !== "undefined" && RB_DIRTY); }       // 大会ルールの変更も、上の「💾 保存」で保存する
+  function dirtyBase() { return JSON.stringify([P, ROUNDS, DELETED, TM, ST]) !== BASEJSON || (typeof RB_DIRTY !== "undefined" && RB_DIRTY); }       // 大会ルールの変更も、上の「💾 保存」で保存する
+  function dirty() { return dirtyBase() || (typeof brDirty === "function" && brDirty()); }                                                              // トーナメント表の変更も、上の「💾 保存」で保存する
   var SAVING = false, SAVE_MSG = null;                                              // 保存中か・保存の結果（画面の上の表示に出す。下の方で押しても、上で分かる）
   function refreshDirty() {
     var d = dirty(), e = $("dirty"), bad = typeof limitProblems === "function" && ST ? limitProblems() : [];
@@ -714,7 +714,7 @@
   }
   function OVR() { return TM.intro_overrides || {}; }
   // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
-  //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
+  //        変えた内容は、上の「💾 保存」で、ほかのタブの変更といっしょに送る（抽選のあとは、裏で、対戦カードの用意とお知らせも行う） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, bases: {}, breaks: null }; return BRS; }
   function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.pbreaks || {}).length > 0 || Object.keys(b.confirms || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
@@ -1116,7 +1116,7 @@
     });
   }
   function brSend(ops, busy) {
-    if (dirty()) { setResult("ng", "⚠ ほかのタブに、保存していない変更があります。先に「💾 保存」してから、トーナメント表を保存してください。"); return; }
+    if (dirtyBase()) { setResult("ng", "⚠ ほかのタブに、保存していない変更があります。先に上の「💾 保存」を押してから、もう一度やってください。"); return; }
     runOps(ops, busy);
   }
   function brOps(B) {                                                               // 保存していない変更を、BOTへ送る操作に
@@ -1145,22 +1145,11 @@
     var st = brState(), pairs = brPairs(B), brks = brBreaks(B);
     if (B.locked) v.appendChild(el("div", "warn", "この大会は優勝が決まって終了しているため、トーナメント表は変えられません。"));
     v.appendChild(el("div", "warn", "⚠ 現段階での変更は選手やキャスターに影響があります。注意して変更してください。変更を保存したタイミングで選手やキャスターに変更内容が伝わります。"));
-    // 保存の帯
+    if (typeof refreshDirty === "function") refreshDirty();                            // 保存は、上の「💾 保存」だけ（ここの変更も、上の「変更があります」に出る）
     var bar = el("div", "brbar");
-    bar.appendChild(el("span", brDirty() ? "fwarn" : "muted", brDirty() ? "● トーナメント表に、保存していない変更があります" : "トーナメント表の変更はありません"));
-    // 保存するだけ（「公開」という言葉は出さない）。抽選のあとは、保存すると、裏で、対戦カードの用意とお知らせも行う。抽選の前は、保存だけ
-    var sv = el("button", "primary", "💾 トーナメント表を保存");
-    sv.type = "button"; sv.disabled = B.locked || B.publish_pending || (!brDirty() && !(B.drawn && !B.published));
-    sv.addEventListener("click", function () {
-      var bad = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
-      if (bad.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
-      var ops = brOps(B);
-      if (!B.drawn) { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); return; }
-      brSend(ops.concat([{ op: "bracket_publish" }]), "トーナメント表を保存しています…（1分ほどで、選手・キャスターに伝わります）");
-    });
     var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
     undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
-    bar.appendChild(sv); bar.appendChild(undo);
+    bar.appendChild(undo);
     bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + (B.publish_pending ? "・保存の処理中" : "")));
     v.appendChild(bar);
     var dlg = el("div", "card brdialog"); dlg.id = "brdialog"; dlg.hidden = true; v.appendChild(dlg);
@@ -1631,6 +1620,13 @@
     var sv = {}, sany = false;                                                        // 「⚙ 大会設定」：変えた項目だけを送る
     Object.keys(ST).forEach(function (k) { if (JSON.stringify(ST[k]) !== JSON.stringify(ST0[k])) { sv[k] = ST[k]; sany = true; } });
     if (sany) ops.push({ op: "set_settings", values: sv });
+    if (data.bracket && typeof brDirty === "function" && brDirty()) {                  // 「🏆 トーナメント表」：変えた内容も、上の「💾 保存」でいっしょに保存する（抽選のあとは、裏で、対戦カードの用意とお知らせも行う）
+      var BB = data.bracket, bks = brBreaks(BB);
+      if (bks.some(function (b) { return !(b.minutes >= BB.break_limits[0] && b.minutes <= BB.break_limits[1]); })) bad = bad || "休憩の長さは、" + BB.break_limits[0] + "〜" + BB.break_limits[1] + "分で入れてください。";
+      var bops = brOps(BB);
+      if (BB.drawn && !BB.locked && !BB.publish_pending) bops.push({ op: "bracket_publish" });
+      bops.forEach(function (o) { ops.push(o); });
+    }
     if (share === true) {                                                             // 「📣 共有」：保存と同時に、全体の流れを、キャスターとモデレーターへ
       if (!TM || TMOK === false) bad = bad || "時間の設定に、赤い警告があります。直してから、共有してください。";
       else { renderTimeline(); if (!TLEV.length) bad = bad || "共有する「全体の流れ」がありません（上の「配信開始」を入れてください）。"; }
