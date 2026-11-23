@@ -1234,19 +1234,6 @@
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
-      if (r.no < B.rounds.length) {                                                                   // ラウンドの確定：初期は「確定ボタンを使わない」（同時進行で、次が続けて始まるなら、結果が入ると、自動で次のラウンドへ）
-        st.confirms = st.confirms || {};
-        var cq = st.confirms[r.no] != null ? st.confirms[r.no] : !!r.confirm_required;
-        var cqw = el("div", "muted", "ラウンドの確定：");
-        cqw.appendChild(sseg([["0", "自動で次のラウンドへ"], ["1", "確定ボタンを使う"]], cq ? "1" : "0", function (x) {
-          var want = x === "1"; if (want === !!r.confirm_required) delete st.confirms[r.no]; else st.confirms[r.no] = want; renderBracket();
-        }));
-        var nx = B.rounds[r.no], nxStart = st.starts[r.no + 1] !== undefined ? st.starts[r.no + 1] : nx.override, nxBreak = st.pbreaks && st.pbreaks[r.no + 1] != null ? st.pbreaks[r.no + 1] : nx.part_break;
-        if (!cq) cqw.appendChild(el("div", "muted", (conc && !fx && !nxStart && !nxBreak) ? "全試合の結果が入ると、自動で確定して、次のラウンドの対戦カードを用意します。"
-                                                      : "このラウンドは、" + (fx ? "任意の日時" : !conc ? "順番進行" : "次のラウンドが別の日から始まる") + "ため、これまでどおり、確定ボタンを待ちます。"));
-        cqw.title = "同時進行で、次のラウンドが続けて始まるときだけ、自動で次へ進みます（順番進行・任意の日時・別の日に始まるときは、確定ボタンを待ちます）";
-        col.appendChild(cqw);
-      }
       var prevStream = B.rounds.some(function (q) { var sv = st.streams[q.no] != null ? st.streams[q.no] : q.stream; return q.no < r.no && sv; });
       if (r.no >= 2 && strm && prevStream) {                                                         // 配信を分けるかどうか：自動では決めない（ここで決める）
         st.pbreaks = st.pbreaks || {};
