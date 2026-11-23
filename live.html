@@ -1550,6 +1550,38 @@
   .rl-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; animation: rlPop .8s cubic-bezier(.2, 1.3, .3, 1) both; }
   .rl-face { position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 6px solid var(--accent); box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 50%, transparent); display: flex; align-items: center; justify-content: center; font-size: 62px; flex: none; }
   .rl-face img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 14%; }
+  /* 試合中（後半戦だけ）：右上の「セット獲得条件」（ラウンドの勝ちが決まるときは「ラウンド勝利条件」）。ほかの飾りは、試合中は全部消す */
+  #wincond { display: none; position: fixed; top: 26px; right: 34px; z-index: 60; padding: 14px 26px 16px; background: rgba(0,0,0,.55); border-radius: 10px; text-align: left; color: #fff; pointer-events: none; text-shadow: 0 0 10px rgba(0,0,0,.8); }
+  #wincond .wc-h { font-family: var(--cond); font-weight: 800; font-size: 30px; letter-spacing: .1em; color: #ffd24a; margin-bottom: 4px; }
+  #wincond .wc-h + .wc-r { margin-top: 0; }
+  #wincond .wc-g + .wc-g { margin-top: 12px; }
+  #wincond .wc-r { display: flex; align-items: center; gap: 14px; font-family: var(--cond); font-weight: 800; font-size: 40px; line-height: 1.25; }
+  #wincond .wc-ic { width: 52px; height: 52px; flex: none; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  #wincond .wc-ic.survivor { background: #1768ff; }
+  #wincond .wc-ic.hunter { background: #ff1f1f; }
+  /* 待機の画面：左がAチーム・右がBチーム。上＝選手と得意キャラ／真ん中＝グローバルBANのサバイバー／下＝グローバルBANのハンター */
+  .wt { max-width: none; width: 1840px; margin: 0 auto; padding: 30px 0; }
+  .wt .box { padding: 22px 34px 26px; }
+  .wt-top { display: flex; align-items: baseline; gap: 26px; margin-bottom: 14px; }
+  .wt-top h1 { margin: 0; font-family: var(--cond); font-weight: 800; font-size: 64px; line-height: 1.1; }
+  .wt-top .pill { font-family: var(--cond); font-weight: 700; font-size: 36px; padding: 2px 22px; border: 2px solid var(--accent); border-radius: 999px; }
+  .wt-cols { display: flex; gap: 40px; align-items: stretch; }
+  .wt-team { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .wt-team + .wt-team { border-left: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: 40px; }
+  .wt-name { display: flex; align-items: center; gap: 20px; font-family: var(--cond); font-weight: 800; font-size: 62px; line-height: 1.1; overflow-wrap: anywhere; }
+  .wt .wt-name .fin-logo { width: 84px !important; height: 84px !important; min-width: 84px; font-size: 34px !important; border-width: 4px !important; flex: none; margin: 0 !important; }
+  .wt-ps { display: flex; flex-wrap: wrap; gap: 20px 8px; min-height: 218px; align-content: flex-start; }
+  .wt-p { width: 152px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .wt-p .pic { width: 108px; height: 108px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 5px solid var(--accent); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: 40px; }
+  .wt-p .pic img { width: 100%; height: 100%; object-fit: cover; }
+  .wt-p .nm { font-family: var(--cond); font-weight: 700; font-size: 27px; line-height: 1.15; text-align: center; max-width: 152px; overflow-wrap: anywhere; }
+  .wt-p .fv { display: flex; gap: 6px; justify-content: center; min-height: 52px; }
+  .wt .rl-face { width: 52px; height: 52px; border-width: 3px; font-size: 24px; box-shadow: none; animation: none !important; }
+  .wt-gb .lb { font-family: var(--cond); font-weight: 800; font-size: 34px; letter-spacing: .08em; color: var(--sub); margin-bottom: 8px; }
+  .wt-gb .fs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px; align-items: center; }
+  .wt-gb .rl-face { width: 92px; height: 92px; border-width: 4px; font-size: 40px; }
+  .wt-gb .none { font-family: var(--cond); font-weight: 700; font-size: 30px; color: var(--sub); opacity: .8; }
+  .wt .rl-face.off { filter: grayscale(1) brightness(.8); opacity: .7; border-color: #8a8a8a; }
   .rl-nm { font-family: var(--cond); font-weight: 700; font-size: 30px; line-height: 1.2; text-shadow: 0 0 10px rgba(0, 0, 0, .8); white-space: nowrap; }
   .rl-pair { display: flex; align-items: center; gap: 18px; padding: 10px 30px; background: rgba(0, 0, 0, .4); border-radius: 90px; }
   .rl-plus { font-size: 54px; font-weight: 800; color: #b080ff; }
@@ -1678,6 +1710,7 @@
   <div id="screen"></div>
   <div id="media"></div>
   <div id="msg"></div>
+  <div id="wincond"></div>
 </div>
 
 <script src="music.js"></script>
@@ -2255,8 +2288,52 @@
 
   // ═══ flow：ルール表示（待機中）。開催日より前は、全ラウンドの情報を載せて、見たいラウンドを選べる ═══
   var chosenRound = null, lastRules = null;
+  function waitTeam(t) {
+    var c = el("div", "wt-team");
+    var nm = el("div", "wt-name");
+    nm.appendChild(finLogo(t));
+    nm.appendChild(el("span", "", t.name || ""));
+    c.appendChild(nm);
+    var ps = el("div", "wt-ps");
+    arr(t.players).forEach(function (p) {
+      var b = el("div", "wt-p"), pic = el("div", "pic");
+      if (p.avatar) { var im = new Image(); im.src = p.avatar; im.alt = ""; pic.appendChild(im); } else pic.textContent = (p.name || "").slice(0, 1);
+      b.appendChild(pic);
+      b.appendChild(el("div", "nm", p.name || ""));
+      var fv = el("div", "fv");
+      arr(p.favs).forEach(function (f) { fv.appendChild(faceBox(f, f.banned ? "off" : "")); });          // 得意キャラ：もう使えないキャラは、白黒
+      b.appendChild(fv);
+      ps.appendChild(b);
+    });
+    c.appendChild(ps);
+    [["survivor", "サバイバー GLOBAL BAN"], ["hunter", "ハンター GLOBAL BAN"]].forEach(function (x) {
+      var g = el("div", "wt-gb"), fs = el("div", "fs");
+      g.appendChild(el("div", "lb", x[1]));
+      var items = arr((t.gb || {})[x[0]]);
+      if (!items.length) fs.appendChild(el("div", "none", (t.gb_on || {})[x[0]] ? "なし" : "—"));
+      items.forEach(function (f) { fs.appendChild(faceBox(f, "")); });
+      g.appendChild(fs);
+      c.appendChild(g);
+    });
+    return c;
+  }
+  function renderWait(r) {                                                              // 配信の待機の画面：対戦する2チームの、選手・得意キャラ・グローバルBAN
+    var w = r.wait, wrap = el("div", "rv wt"), box = el("div", "box");
+    var top = el("div", "wt-top");
+    top.appendChild(el("h1", null, r.round || ""));
+    if (r.next) top.appendChild(el("span", "pill", r.next));
+    box.appendChild(top);
+    var cols = el("div", "wt-cols");
+    cols.appendChild(waitTeam(w.a || {}));
+    cols.appendChild(waitTeam(w.b || {}));
+    box.appendChild(cols);
+    wrap.appendChild(box);
+    screenEl.replaceChildren(wrap);
+    fit();
+  }
   function renderRules(r) {
     lastRules = r;
+    if (r.wait) { renderWait(r); return; }
     var rounds = arr(r.rounds);
     var entry = r, focus = true;
     if (rounds.length) {
@@ -2650,6 +2727,33 @@
   function setPhase(cls) {
     root.classList.remove("leaving", "clear");
     if (cls) root.classList.add(cls);
+    drawWinCond();
+  }
+  var wcBox = document.getElementById("wincond"), wcKey = "";
+  function drawWinCond() {                                                              // 試合中（後半戦）の右上：セット獲得条件／ラウンド勝利条件。試合中以外は、出さない
+    if (!wcBox) return;
+    var wc = replay && replay.lv && replay.lv.win_cond, rows = wc ? arr(wc.rows) : [];
+    if (!(root.classList.contains("clear") && rows.length) || window.PAGE_KIND === "rules") { wcBox.style.display = "none"; return; }
+    var key = JSON.stringify(wc);
+    if (key !== wcKey) {
+      wcKey = key;
+      wcBox.replaceChildren();
+      [["round", "ラウンド勝利条件"], ["set", "セット獲得条件"]].forEach(function (g) {
+        var rs = rows.filter(function (x) { return x.kind === g[0]; });
+        if (!rs.length) return;
+        var grp = el("div", "wc-g");
+        grp.appendChild(el("div", "wc-h", g[1]));
+        rs.forEach(function (x) {
+          var r = el("div", "wc-r"), ic = el("i", "wc-ic " + x.side), src = (wc.icons || {})[x.side];
+          if (src) ic.style.setProperty("--m", 'url("' + imgUrl(src) + '")');
+          r.appendChild(ic);
+          r.appendChild(el("span", "", (x.side === "survivor" ? "サバイバー" : "ハンター") + "：" + x.text));
+          grp.appendChild(r);
+        });
+        wcBox.appendChild(grp);
+      });
+    }
+    wcBox.style.display = "block";
   }
   function tickReplay() {
     var r = replay;
