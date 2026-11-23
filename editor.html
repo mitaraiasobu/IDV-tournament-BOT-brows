@@ -775,8 +775,9 @@
   }
   function brBreaks(B) { var st = brState(); return st.breaks !== null ? st.breaks : B.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: b.label }; }); }
   function brSaveDialog(ops) {                                                      // 保存のとき：公開するかを聞く
-    var box = $("brdialog"); box.textContent = ""; box.hidden = false;
     var B = data.bracket;
+    if (!B.drawn) { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); return; }   // まだ抽選前は、公開できない（保存だけ）
+    var box = $("brdialog"); box.textContent = ""; box.hidden = false;
     box.appendChild(el("h2", "", "トーナメント表を保存します"));
     box.appendChild(el("div", "", "このトーナメント表を、公開しますか？"));
     box.appendChild(el("div", "muted", "公開すると、対戦カードチャンネルを用意して、大会名チャンネルと各チームのチャンネルに、サイレントでお知らせします（1分ほどかかります）。" +
@@ -1252,7 +1253,8 @@
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
-      if (r.no >= 2 && strm) {                                                         // 配信を分けるかどうか：自動では決めない（ここで決める）
+      var prevStream = B.rounds.some(function (q) { var sv = st.streams[q.no] != null ? st.streams[q.no] : q.stream; return q.no < r.no && sv; });
+      if (r.no >= 2 && strm && prevStream) {                                                         // 配信を分けるかどうか：自動では決めない（ここで決める）
         st.pbreaks = st.pbreaks || {};
         var pb = st.pbreaks[r.no] != null ? st.pbreaks[r.no] : r.part_break;
         var pbw = el("div", "muted", "ライブブラウザ：");
