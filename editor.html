@@ -1252,7 +1252,7 @@
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
-      if (r.no >= 2) {                                                                 // 配信を分けるかどうか：自動では決めない（ここで決める）
+      if (r.no >= 2 && strm) {                                                         // 配信を分けるかどうか：自動では決めない（ここで決める）
         st.pbreaks = st.pbreaks || {};
         var pb = st.pbreaks[r.no] != null ? st.pbreaks[r.no] : r.part_break;
         var pbw = el("div", "muted", "ライブブラウザ：");
