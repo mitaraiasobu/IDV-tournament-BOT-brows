@@ -591,7 +591,9 @@
   html[data-design="winter"].leaving #stage::before { animation: auroraW 15s ease-in-out infinite alternate-reverse, fadeOutW 1s .2s ease forwards; }         /* 試合中へ切り替わるとき：背景（1秒）と同じように、すっと消す */
   html[data-design="winter"].leaving #stage::after { animation: glintW 7s ease-in-out infinite alternate, fadeOutW 1s .2s ease forwards; }
   html[data-design="winter"].clear #stage::before, html[data-design="winter"].clear #stage::after { display: none; }                   /* 試合中（背景が透明で、ゲーム画面が見えるとき）：オーロラ・氷のかざりは、出さない */
-  html[data-design="winter"] #stage:has(#bgmedia > *)::before { display: none; }                                                       /* 設定した背景（画像・動画）があるときは、オーロラを、その手前に出さない（背景の中のオーロラは、背景のうしろ） */
+  html[data-design="winter"] #stage:has(#bgmedia > *) #bg::after, html[data-design="winter"] #stage:has(#bgmedia > *) .in-bg::after, html[data-design="winter"] #stage:has(#bgmedia > *) .in-half .bgc::after,
+  html[data-design="winter"]:has(#bgmedia > *) #bg::after, html[data-design="winter"]:has(#bgmedia > *) .in-bg::after, html[data-design="winter"]:has(#bgmedia > *) .in-half .bgc::after { display: none; }          /* 背景画像・動画が設定されているところでは、オーロラは、どこにも出さない（紹介の場面の背景も） */
+  html[data-design="winter"] #stage:has(#bgmedia > *)::before { display: none; }                                                     /* 設定した背景（画像・動画）があるときは、オーロラを、その手前に出さない（背景の中のオーロラは、背景のうしろ） */
   @keyframes auroraW { from { transform: translateX(-3.5%) scaleY(.88); } to { transform: translateX(3.5%) scaleY(1.1); } }
   html[data-design="winter"] #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: var(--deco) 0 0 / 100% 100% no-repeat; animation: glintW 7s ease-in-out infinite alternate; }
   @keyframes glintW { from { opacity: .7; } to { opacity: 1; } }
