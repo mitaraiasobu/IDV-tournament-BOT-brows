@@ -2798,14 +2798,15 @@
   var CHAMPION_MS = 40000;                    // インタビューを使わない大会：優勝画面を見せる時間（そのあと、最後のトーナメント表）
   var championSeen = { key: null, at: 0 }, championTimer = null;
   // 賞品の贈呈：優勝の発表（CHAMPION）を少し見せたあと、賞品のページを1ページずつ。MVPも同じ（MVPの発表のあと、MVPインタビューの前）。インタビューが始まれば、そちらを優先する。
-  var CHAMP_SHOW_MS = 12000, MVP_SHOW_MS = 12000, PRIZE_PAGE_MS = 12000;
+  var CHAMP_SHOW_MS = 12000, MVP_SHOW_MS = 12000, PRIZE_PAGE_MS = 12000, PRIZE_ITEM_MS = 2000;
+  function pzMs(pg) { return PRIZE_PAGE_MS + PRIZE_ITEM_MS * arr(pg && pg.items).length; }           // 賞品の贈呈の1ページ：賞品が多いページは、1つにつき2秒、長く見せる
   var prizeIdx = 0, mvpPrizeIdx = 0, mvpSeen = { key: null, at: 0 };
   function prizeStep(pages, age, showMs, setIdx, names) {      // 贈呈のページを出す時間なら、true（どのページかは setIdx で渡す）。次に描き直す時刻を決める。names：次のシーンの名前
     if (!pages.length) return false;
-    var dur = pages.length * PRIZE_PAGE_MS, wait = -1, on = false;
+    var durs = pages.map(pzMs), dur = durs.reduce(function (a, b) { return a + b; }, 0), wait = -1, on = false;
     names = names || {};
     if (age < showMs) { wait = showMs - age; setNext(names.first || "賞品の贈呈", NOW() + wait); }
-    else if (age < showMs + dur) { var i = Math.floor((age - showMs) / PRIZE_PAGE_MS); setIdx(i); on = true; wait = showMs + (i + 1) * PRIZE_PAGE_MS - age; if (i + 1 < pages.length) setNext("次の賞品", NOW() + wait); else if (names.after) setNext(names.after, NOW() + wait); }
+    else if (age < showMs + dur) { var t = age - showMs, i = 0, acc = 0; while (i < durs.length - 1 && t >= acc + durs[i]) { acc += durs[i]; i++; } setIdx(i); on = true; wait = showMs + acc + durs[i] - age; if (i + 1 < pages.length) setNext("次の賞品", NOW() + wait); else if (names.after) setNext(names.after, NOW() + wait); }
     if (wait >= 0) { clearTimeout(championTimer); championTimer = setTimeout(function () { if (lastData) render(lastData, true); }, wait + 60); }
     return on;
   }
@@ -2816,7 +2817,7 @@
     var mvAwards = arr(mv.awards), mvIv = mv.interview || {};
     var tm = f.timing;                                                                    // 流れの時間：BOTが決めた起点から数える（開き直しても、ずれない）。秒数は、管理者が決める
     if (tm) {
-      FINAL_RESULT_MS = tm.final_ms || FINAL_RESULT_MS; CHAMP_SHOW_MS = tm.champ_ms || CHAMP_SHOW_MS; PRIZE_PAGE_MS = tm.prize_ms || PRIZE_PAGE_MS; MVP_SHOW_MS = tm.mvp_ms || MVP_SHOW_MS;
+      FINAL_RESULT_MS = tm.final_ms || FINAL_RESULT_MS; CHAMP_SHOW_MS = tm.champ_ms || CHAMP_SHOW_MS; PRIZE_PAGE_MS = tm.prize_ms || PRIZE_PAGE_MS; PRIZE_ITEM_MS = tm.prize_item_ms != null ? tm.prize_item_ms : PRIZE_ITEM_MS; MVP_SHOW_MS = tm.mvp_ms || MVP_SHOW_MS;
       var ckey0 = (f.champion || {}).name || "";
       finalSeen = { key: finalSeen.key, at: tm.t0 * 1000 };
       championSeen = { key: ckey0, at: tm.t0 * 1000 + FINAL_RESULT_MS };
@@ -2852,7 +2853,7 @@
     var pzC = arr((f.prizes || {}).champion), cage = NOW() - championSeen.at;
     if (prizeStep(pzC, cage, CHAMP_SHOW_MS, function (i) { prizeIdx = i; }, { first: "賞品の贈呈", after: iv.enabled ? "" : "トーナメント表" })) return "prize";          // 賞品の贈呈
     if (!iv.enabled && f.bracket) {                                         // インタビューを使わない大会：優勝画面（と贈呈）のあと、最後のトーナメント表
-      var cleft = CHAMPION_MS + pzC.length * PRIZE_PAGE_MS - cage;
+      var cleft = CHAMPION_MS + pzC.reduce(function (a, x) { return a + pzMs(x); }, 0) - cage;
       if (cleft <= 0) return "bracket";
       if (!pzC.length) setNext("トーナメント表", NOW() + cleft);
       clearTimeout(championTimer);
@@ -3800,11 +3801,11 @@
       add("最終戦の戦績", ft, fin); ft += fin;
       var cdur = pzC.length ? ch : 40;
       add("優勝発表", ft, cdur); ft += cdur;
-      pzC.forEach(function (x, i) { add("賞品の贈呈 " + (i + 1) + "/" + pzC.length, ft, pg); ft += pg; });
+      pzC.forEach(function (x, i) { var pd = pg + (PRIZE_ITEM_MS / 1000) * arr(x.items).length; add("賞品の贈呈 " + (i + 1) + "/" + pzC.length, ft, pd); ft += pd; });
     } else if (data && data.finale && data.finale.timing && !data.finale.entering && data.finale.stage === "mvp" && arr(((data.finale.mvp || {}).awards)).length && !(((data.finale.mvp || {}).interview || {}).current)) {
       var f2 = data.finale, tm2 = f2.timing, pzM = arr((f2.prizes || {}).mvp), mv = (tm2.mvp_ms || 12000) / 1000, pg2 = (tm2.prize_ms || 12000) / 1000, mt = tm2.mvp_at || Date.now() / 1000;
       add("MVP発表", mt, mv); mt += mv;
-      pzM.forEach(function (x, i) { add("MVPの賞品の贈呈 " + (i + 1) + "/" + pzM.length, mt, pg2); mt += pg2; });
+      pzM.forEach(function (x, i) { var pd2 = pg2 + (PRIZE_ITEM_MS / 1000) * arr(x.items).length; add("MVPの賞品の贈呈 " + (i + 1) + "/" + pzM.length, mt, pd2); mt += pd2; });
     } else if (st === "play" && data.live) {
       var lv = data.live, start = Date.parse(lv.play_started_at), n = lv.n_steps || 1;
       if (isNaN(start)) start = Date.now();
@@ -3877,6 +3878,13 @@
     }
     stopReplay();
     root.className = kind;
+    var pit = data.part_interview;                             // 部の最後のインタビュー：入室のお知らせ（20秒）→ 話している間（優勝のインタビューと同じ画面）
+    if (!fm && pit && (pit.entering || pit.current) && window.PAGE_KIND !== "rules") {
+      setMedia([]);
+      if (pit.entering) renderEnter({ finale: { entering: pit.entering } }); else renderInterview({ finale: { interview: pit } }, "interview");
+      fit();
+      return;
+    }
     var media = [];
     if (fm) renderFinale(data, fm);
     else if (data.state === "result") renderResult(data.result || {});

@@ -964,6 +964,22 @@
           ic.appendChild(mb2);
         }
       }
+      if (I.enabled && (I.part_teams || []).length) {                                       // 部の最後のインタビュー：その時に「する」と決めて、チーム→選手の順に選ぶ
+        var PT = K.state("iv_part", { team: I.part_team || "", ids: (I.part_chosen || []).slice() });
+        ic.appendChild(el("div", "", "部の最後のインタビュー（良い試合のあとだけ。この部の最後のラウンドに出たチームから選びます）"));
+        var ps = el("select"); ps.appendChild(new Option("（インタビューしない）", ""));
+        I.part_teams.forEach(function (t) { ps.appendChild(new Option(t[1], String(t[0]))); });
+        ps.value = String(PT.team || ""); ps.disabled = !!I.part_team && (I.part_chosen || []).length > 0;
+        ps.addEventListener("change", function () { PT.team = ps.value; PT.ids = []; K.redraw(); });
+        ic.appendChild(ps);
+        var pt = I.part_teams.filter(function (t) { return String(t[0]) === String(PT.team); })[0];
+        if (pt) {
+          ic.appendChild(pickList(el, pt[2] || [], PT.ids, I.part_chosen || []));
+          var pb = el("button", "primary", "🎤 このチームの選手に、確認を送る"); pb.type = "button";
+          pb.addEventListener("click", function () { if (!PT.ids.length) { K.msg("ng", "⚠ 選手を選んでください。"); return; } if (confirm("選んだ選手に、確認を送ります（取り消せません）。よろしいですか？")) K.send([{ op: "interview_pick", kind: "part", team: PT.team, ids: PT.ids.slice() }], "確認を頼んでいます…"); });
+          ic.appendChild(pb);
+        }
+      }
       var fb = el("button", "", "🏁 最後のトーナメント表を映す"); fb.type = "button"; fb.disabled = !I.champion; fb.addEventListener("click", function () { K.send([{ op: "final_bracket" }], "切り替えています…"); }); ic.appendChild(fb);
       root.appendChild(ic);
       // 集計
