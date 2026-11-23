@@ -1422,7 +1422,7 @@
       }
       lab("志望動機（" + (S.max || 200) + "字以内）"); if (SKIND === "caster") f.appendChild(el("div", "hint", "生配信に映ります。")); var ta = el("textarea"); ta.maxLength = S.max || 200; ta.rows = 6; ta.style.cssText = "width:100%;min-height:9em;grid-column:1 / -1;white-space:pre-wrap;resize:vertical"; ta.value = SF.message || ""; ta.addEventListener("input", function () { SF.message = ta.value; }); f.appendChild(ta);
       lab("経験"); var er = el("div", "row"); er.style.marginTop = "0"; var ec = el("input"); ec.type = "checkbox"; ec.checked = !!SF.exp; ec.addEventListener("change", function () { SF.exp = ec.checked; again(); }); er.appendChild(ec); er.appendChild(el("span", "", "経験がある")); f.appendChild(er);
-      if (SF.exp) { lab("経験の詳細"); var ed = el("textarea"); ed.maxLength = S.max || 200; ed.rows = 4; ed.style.cssText = "width:100%;min-height:6em;grid-column:1 / -1;white-space:pre-wrap;resize:vertical"; ed.value = SF.exp_detail || ""; ed.addEventListener("input", function () { SF.exp_detail = ed.value; }); f.appendChild(ed); }
+      if (SF.exp) { lab("経験の詳細"); if (SKIND === "caster") f.appendChild(el("div", "hint", "生配信に映ります。")); var ed = el("textarea"); ed.maxLength = S.max || 200; ed.rows = 4; ed.style.cssText = "width:100%;min-height:6em;grid-column:1 / -1;white-space:pre-wrap;resize:vertical"; ed.value = SF.exp_detail || ""; ed.addEventListener("input", function () { SF.exp_detail = ed.value; }); f.appendChild(ed); }
       if (arr(S.dates).length) chips("dates", S.dates, "📅 参加できる日（すべて選んでください）");
       if (arr(S.times).length) chips("times", S.times, "🕒 参加できる時間帯（すべて選んでください）");
       d.appendChild(f);

@@ -3176,6 +3176,8 @@
       row.appendChild(introAvatar(ph.p, true));
       var info = el("div", "in-info");
       info.appendChild(el("div", "in-nm", ph.p.name || ""));
+      if (ph.p.message) info.appendChild(kvRow("志望動機", ph.p.message));
+      if (ph.p.exp) info.appendChild(kvRow("経験", ph.p.exp));
       row.appendChild(info);
       w.appendChild(row);
       w.appendChild(introTimerBox(""));
