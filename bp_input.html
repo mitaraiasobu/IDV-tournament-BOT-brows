@@ -575,6 +575,21 @@
             background-image: linear-gradient(rgba(8, 10, 22, .94), rgba(8, 10, 22, .94)), linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b);
             background-origin: border-box; background-clip: padding-box, border-box; background-size: 100% 100%, 200% 100%; animation: cosflow 3s linear infinite, cospulse 1.6s ease-in-out infinite; }
   .cosbox.wait { animation: none; background-image: none; border: 2px dashed #6b7390; }
+  /* ハンターの人格（2つ）・特質（1つ）：衣装より先に、必ず選ぶ */
+  .lobox { margin: 0 0 12px; padding: 12px 12px 14px; border-radius: 14px; background: rgba(8, 10, 22, .94); border: 3px solid #ffb03b; box-shadow: 0 0 18px rgba(255, 176, 59, .35); }
+  .lobox.wait { background: rgba(8, 10, 22, .7); border: 2px dashed #6b7390; box-shadow: none; }
+  .lobox.done { border-color: #4b8f66; box-shadow: none; }
+  .lotitle { font-weight: 900; font-size: 17px; color: #ffd24a; margin-bottom: 6px; }
+  .lonote { font-weight: 900; font-size: 14px; line-height: 1.55; color: #ff7b7b; background: rgba(255, 90, 90, .12); border-left: 4px solid #ff5a5a; padding: 6px 8px; margin: 6px 0 10px; }
+  .lolab { font-weight: 800; font-size: 13px; color: #cfd6ee; margin: 8px 0 5px; }
+  .lopers { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lopers button { width: 62px; height: 62px; padding: 2px; border-radius: 12px; border: 3px solid #4a5170; background: #12172c; cursor: pointer; }
+  .lopers button img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .lopers button.on { border-color: #ffb03b; box-shadow: 0 0 10px rgba(255, 176, 59, .7); }
+  .lotraits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .lotraits button { padding: 8px 4px; border-radius: 6px; border: 2px solid #4a5170; background: #12172c; color: #e8ecff; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .lotraits button.on { border-color: #ffb03b; background: #3a2a0c; color: #ffd24a; }
+  .losum { font-weight: 800; font-size: 14px; line-height: 1.5; color: #dfe6ff; }
   .cosnote { color: #cdd3ea; font-size: 14px; text-align: center; }
   .costitle { font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 8px; background-image: linear-gradient(90deg, #ff3b3b, #ffb03b, #fff23b, #3bff6a, #3bd5ff, #5a6bff, #c63bff, #ff3b9a, #ff3b3b); background-size: 200% 100%;
               -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: cosflow 2.2s linear infinite; text-shadow: none; }
@@ -1315,11 +1330,20 @@
       : { pre: "ゲーム内でサバイバーの一番上に並んでいる人がBANPICKを行います。BANPICK時間がかなり短いため、操作が得意な人が担当してください。", em: "キャラを選んだら必ず確定ボタンを押してください。", post: "時間が過ぎたり確定ボタンが押せないと幸運児や弁護士が自動で選ばれてしまい場合によっては不戦敗となります。" };
   }
   function tipInto(node, x) { node.appendChild(document.createTextNode(x.pre)); node.appendChild(el("strong", "", x.em)); node.appendChild(document.createTextNode(x.post)); }
+  function hunterWaitNote(card) {                                                           // ハンター側：人格・特質（と衣装）を選び終えるまで、部屋に入る案内は出さない（混乱しないように）
+    if (MY !== "h" || S.hunter_room_ready !== false) return false;
+    var box = el("div", "hrn"); box.appendChild(el("div", "big", "🎭 先に、左の枠で選んでください"));
+    box.appendChild(el("div", "sub2", S.loadout_pending ? "人格（2つ）と特質（1つ）を選ぶと、次に進みます。（衣装がある場合は、そのあとに衣装も選びます）" : "使用する衣装を選ぶと、部屋に入る案内が出ます。"));
+    box.appendChild(el("div", "sub2", "全部選び終わるまで、部屋には入らないでください。"));
+    card.appendChild(box);
+    return true;
+  }
   function holdNote(card) {                                                                 // ハンター側：部屋に入っても、合図があるまで始めない（強調）
-    if (MY !== "h") return;
+    if (MY !== "h" || S.hunter_room_ready === false) return;
     card.appendChild(el("div", "hrnwarn", "⚠ 部屋に入っても、合図（カウントダウンが00:00になる）があるまで、まだ試合を始めないでください。"));
   }
-  function hunterRoomNote(card) {                                                           // ハンター側：入る部屋の名前（部屋を開くのは、サバイバー）
+  function hunterRoomNote(card) {                                                           // ハンター側：入る部屋の名前（部屋を開くのは、サバイバー）。人格・特質・衣装を選び終えてから
+    if (hunterWaitNote(card)) return;
     if (!(MY === "h" && S.room_name)) return;
     var box = el("div", "hrn");
     box.appendChild(el("div", "sub2", "サバイバーがゲーム内で公開募集を開いているので、"));
@@ -1358,6 +1382,7 @@
     }).catch(function (e) { delete LOCALC[c.c]; SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; }).then(function () { render(); });
   }
   function costumeBox() {                                                                   // 左の枠：そのキャラをPICKした人にだけ、虹色で目立つように出す
+    if (MY === "h" && S.loadout_pending) return null;                                      // ハンターは、人格・特質を選んでから（衣装は、そのあと）
     var list = myCostumeCards();
     if (!list.length) {
       if (!S.costume_pending) return null;
@@ -1378,12 +1403,80 @@
     });
     return box;
   }
+  // ───── ハンターの人格（2つ）・特質（1つ）：衣装より先に、ハンターが必ず選ぶ（選ぶまで、次に進めない）。生配信でキャスターが紹介する ─────
+  var TRAITS = ["リッスン", "異常", "興奮", "巡視者", "瞬間移動", "監視者", "神出鬼没", "移形"];                  // 特質（まだ画像が無いので、名前を四角の中に）
+  var LO = { p: null, t: null, edit: false, busy: false }, DEMO_LO = null;
+  function ownLoadout() {                                                                 // 自分の側（ハンター）の、いまの人格・特質（BOTが覚えているもの）
+    var o = OPENED.data && OPENED.data.lo;
+    if (o && o.p && o.p.length === 2 && o.t != null) return { p: o.p.slice(), t: o.t };
+    return window.BP_DEMO && DEMO_LO ? DEMO_LO : null;
+  }
+  function loDraft() { if (!LO.p) { var cur = ownLoadout(); LO.p = cur ? cur.p.slice() : []; LO.t = cur ? cur.t : null; } return LO; }
+  function saveLoadout() {
+    var d = loDraft(); if (d.p.length !== 2 || d.t == null || LO.busy) return;
+    var p = d.p.slice().sort(function (a, b) { return a - b; }), t = d.t;
+    LO.busy = true;
+    if (window.BP_DEMO) { DEMO_LO = { p: p, t: t }; S.loadout_pending = false; LO.busy = false; LO.edit = false; LO.p = null; render(); return; }
+    sendAct("loadout", { p: p, t: t }).then(function (res) {
+      if (!(res && res.ok)) { SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; }
+      else { LO.edit = false; LO.p = null; }
+      return refresh();
+    }).catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; }).then(function () { LO.busy = false; render(); });
+  }
+  function loadoutBox() {                                                                 // 左の枠（衣装より上）：ハンターには、選ぶまで目立つように。ほかの人には、待っていると知らせる
+    if (!S || S.status !== "done" || S.stage === "play" || !MY) return null;
+    if (MY !== "h" || !UID) {
+      if (!S.loadout_pending) return null;
+      var w = el("div", "lobox wait"); w.appendChild(el("div", "cosnote", "🎭 ハンターの選手が、人格と特質を選んでいます…")); return w;
+    }
+    var cur = ownLoadout(), editing = LO.edit || !cur;
+    if (!editing) {                                                                       // 選び終わった：まとめだけ（試合の前なら、選び直せる）
+      var dn = el("div", "lobox done");
+      dn.appendChild(el("div", "lotitle", "🎭 ハンターの人格・特質（決定済み）"));
+      var sm = el("div", "losum", cur.p.map(function (i) { return PERSONA.h[i][1]; }).join("・") + "／" + TRAITS[cur.t]); dn.appendChild(sm);
+      var ch = el("button", "btn", "選び直す"); ch.type = "button"; ch.style.marginTop = "8px";
+      ch.addEventListener("click", function () { LO.edit = true; LO.p = null; render(); });
+      dn.appendChild(ch);
+      return dn;
+    }
+    var d = loDraft(), box = el("div", "lobox");
+    box.appendChild(el("div", "lotitle", "🎭 人格（2つ）と特質（1つ）を選んでください！"));
+    box.appendChild(el("div", "lonote", "生配信でキャスターが紹介します。ただし試合の前に変えても大丈夫です！ここで決定したものが絶対ではないため、最善の人格・特質で試合開始してください！"));
+    box.appendChild(el("div", "lolab", "人格（2つ）　" + d.p.length + "/2"));
+    var pr = el("div", "lopers");
+    PERSONA.h.forEach(function (pp, i) {
+      var b = el("button", d.p.indexOf(i) >= 0 ? "on" : ""); b.type = "button"; b.title = pp[1];
+      var im = el("img"); im.src = personaUrl("h", i); im.alt = pp[1]; b.appendChild(im);
+      b.addEventListener("click", function () {
+        var k = d.p.indexOf(i);
+        if (k >= 0) d.p.splice(k, 1); else if (d.p.length < 2) d.p.push(i); else return;
+        render();
+      });
+      pr.appendChild(b);
+    });
+    box.appendChild(pr);
+    box.appendChild(el("div", "lolab", "特質（1つ）"));
+    var tr = el("div", "lotraits");
+    TRAITS.forEach(function (name, i) {
+      var b = el("button", d.t === i ? "on" : "", name); b.type = "button";
+      b.addEventListener("click", function () { d.t = i; render(); });
+      tr.appendChild(b);
+    });
+    box.appendChild(tr);
+    var ok = el("button", "btn go", LO.busy ? "送信中…" : "決定する"); ok.type = "button"; ok.style.marginTop = "10px";
+    ok.disabled = d.p.length !== 2 || d.t == null || LO.busy;
+    ok.addEventListener("click", saveLoadout);
+    box.appendChild(ok);
+    if (cur) { var cn = el("button", "btn", "やめる"); cn.type = "button"; cn.style.cssText = "margin:10px 0 0 8px"; cn.addEventListener("click", function () { LO.edit = false; LO.p = null; render(); }); box.appendChild(cn); }
+    return box;
+  }
   function ensurePickCol() {                                                              // 左の「PICK」の枠：説明の枠の外に置いて、説明が更新されても、描き直さない（チカチカしない）。PICKの中身が変わったときだけ、作り直す
-    var sig = JSON.stringify([S.steps.map(function (s) { return s.ids || null; }), myHunterPick(), ownPers(), MY, !!UID, myCostumeCards().map(function (c) { return c.c; }), !!S.costume_pending]);
+    var sig = JSON.stringify([S.steps.map(function (s) { return s.ids || null; }), myHunterPick(), ownPers(), MY, !!UID, myCostumeCards().map(function (c) { return c.c; }), !!S.costume_pending, !!S.loadout_pending, ownLoadout(), LO.edit, LO.p, LO.t, LO.busy]);
     var pc = $("sppick");
     if (pc && pc.getAttribute("data-sig") === sig) return pc;
     var top = pc ? pc.scrollTop : 0; if (pc) pc.remove();
     pc = el("div", "sppick"); pc.id = "sppick"; pc.setAttribute("data-sig", sig);
+    var lb = loadoutBox(); if (lb) pc.appendChild(lb);                                       // ハンターの人格・特質（衣装より先）
     var cb = costumeBox(); if (cb) pc.appendChild(cb);                                       // 衣装を選ぶ人にだけ、いちばん上に、虹色で目立つように
     pc.appendChild(picksBlock(true, true));
     pc.appendChild(el("div", "pknote", "キャラの名札を押すと人格を設定できます。ただの相談用なので、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
@@ -1530,11 +1623,12 @@
       card.appendChild(el("div", "big rainbowtx", "カウントダウンが始まるまでは" + "\n" + "試合を始めないでください"));                    // 大きな文字
       holdNote(card);
       if (S.expo) card.appendChild(el("div", "sub2", "※今回は体験会なので、試合を省く場合は何も送らずに進めます。"));
+      if (S.loadout_pending) card.appendChild(el("div", "warn", "🎭 ハンターの人格と特質が、まだ選ばれていません。ハンターの選手が、左の枠で選んでください。"));
       if (S.costume_pending) card.appendChild(el("div", "warn", "👗 使用する衣装が、まだ選ばれていません。先に、Discordの「📸 送信した」ボタンから衣装を選んでください。"));
       if (can && (!S.opener || HOST)) {
         var inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.style.display = "none"; inp.id = "shotfile";
         var pick = el("button", "btn", SHOT_IMG ? "📷 選び直す" : "📷 スクショを選ぶ"); pick.type = "button";
-        var snd = el("button", "btn go", SHOT_BUSY ? "データ送信中…" : SHOT_IMG ? "📸 送信する" : "📸 送信する（先に画像を選ぶ）"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending;
+        var snd = el("button", "btn go", SHOT_BUSY ? "データ送信中…" : SHOT_IMG ? "📸 送信する" : "📸 送信する（先に画像を選ぶ）"); snd.type = "button"; snd.disabled = !SHOT_IMG || SHOT_BUSY || !!S.costume_pending || !!S.loadout_pending;
         pick.addEventListener("click", function () { inp.click(); });
         inp.addEventListener("change", function () {
           var f = inp.files && inp.files[0]; if (!f) return;
@@ -2014,7 +2108,7 @@
       }
       NULLS = 0;
       var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
-      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.gate !== S.gate
+      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.loadout_pending !== S.loadout_pending || d.hunter_room_ready !== S.hunter_room_ready || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
         || JSON.stringify([d.select, d.sealed, d.pm, d.sync, d.rec]) !== JSON.stringify([S.select, S.sealed, S.pm, S.sync, S.rec]);
       if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; TSLOT = null; PSLOT = {}; }
