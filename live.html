@@ -698,6 +698,11 @@
   html[data-design="winter"] .cl-c .cl-title, html[data-design="winter"] .cl-c .cl-thx2 { font-family: var(--wf); font-weight: 700; color: var(--ice); -webkit-text-fill-color: var(--ice); background: none; -webkit-background-clip: border-box; background-clip: border-box;
         -webkit-text-stroke: 0; text-shadow: none; }
   html[data-design="winter"] .cl-c .cl-title { font-weight: 400; }                                       /* 大会タイトルは、画数の多い字が潰れないように、細く */
+  /* 閉会の3行（大会タイトル・ご参加とご視聴・ありがとうございました）は、同じ太さ（無理に太くすると、字の雰囲気が行ごとに変わる）・同じ氷のひかりで、大きさの差も小さくする */
+  html[data-design="winter"] .cl-c .cl-title, html[data-design="winter"] .cl-c .cl-thx1, html[data-design="winter"] .cl-c .cl-thx2 { font-family: var(--wf); font-weight: 400; letter-spacing: .1em; color: var(--ice); -webkit-text-fill-color: var(--ice);
+        text-shadow: 0 0 10px rgba(180,225,255,.55), 0 0 28px rgba(120,190,255,.3); }
+  html[data-design="winter"] .cl-c .cl-thx1 { font-size: 56px; }
+  html[data-design="winter"] .cl-c .cl-thx2 { font-size: 80px; }
   html[data-design="fantasy"] { --noise-f: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .8 -.2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
   /* レースの縁：半円の連なり（アクセントカラー）。枠の内側の、上と下に */
   html[data-design="fantasy"].stage .rs-rows::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--lace-t), var(--lace-b); }
@@ -1550,37 +1555,39 @@
   .rl-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; animation: rlPop .8s cubic-bezier(.2, 1.3, .3, 1) both; }
   .rl-face { position: relative; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 6px solid var(--accent); box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 50%, transparent); display: flex; align-items: center; justify-content: center; font-size: 62px; flex: none; }
   .rl-face img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 14%; }
+  :root { --u: min(calc(100vw / 1920), calc(100vh / 1080)); }                                          /* 画面の大きさに合わせる単位（1920×1080 のとき 1px）。待機の画面・右上の獲得条件は、これで大きさを決める */
+  html.stage .wt { --u: 1px; }                                                                           /* 舞台（1920×1080を、まるごと縮める）のときは、そのまま px */
   /* 試合中（後半戦だけ）：右上の「セット獲得条件」（ラウンドの勝ちが決まるときは「ラウンド勝利条件」）。ほかの飾りは、試合中は全部消す */
-  #wincond { display: none; position: fixed; top: 26px; right: 34px; z-index: 60; padding: 14px 26px 16px; background: rgba(0,0,0,.55); border-radius: 10px; text-align: left; color: #fff; pointer-events: none; text-shadow: 0 0 10px rgba(0,0,0,.8); }
-  #wincond .wc-h { font-family: var(--cond); font-weight: 800; font-size: 30px; letter-spacing: .1em; color: #ffd24a; margin-bottom: 4px; }
+  #wincond { display: none; position: fixed; top: calc(26 * var(--u)); right: calc(34 * var(--u)); z-index: 60; padding: calc(14 * var(--u)) calc(26 * var(--u)) calc(16 * var(--u)); background: rgba(0,0,0,.55); border-radius: calc(10 * var(--u)); text-align: left; color: #fff; pointer-events: none; text-shadow: 0 0 calc(10 * var(--u)) rgba(0,0,0,.8); }
+  #wincond .wc-h { font-family: var(--cond); font-weight: 800; font-size: calc(30 * var(--u)); letter-spacing: .1em; color: #ffd24a; margin-bottom: calc(4 * var(--u)); }
   #wincond .wc-h + .wc-r { margin-top: 0; }
-  #wincond .wc-g + .wc-g { margin-top: 12px; }
-  #wincond .wc-r { display: flex; align-items: center; gap: 14px; font-family: var(--cond); font-weight: 800; font-size: 40px; line-height: 1.25; }
-  #wincond .wc-ic { width: 52px; height: 52px; flex: none; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  #wincond .wc-g + .wc-g { margin-top: calc(12 * var(--u)); }
+  #wincond .wc-r { display: flex; align-items: center; gap: calc(14 * var(--u)); font-family: var(--cond); font-weight: 800; font-size: calc(40 * var(--u)); line-height: 1.25; }
+  #wincond .wc-ic { width: calc(52 * var(--u)); height: calc(52 * var(--u)); flex: none; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
   #wincond .wc-ic.survivor { background: #1768ff; }
   #wincond .wc-ic.hunter { background: #ff1f1f; }
   /* 待機の画面：左がAチーム・右がBチーム。上＝選手と得意キャラ／真ん中＝グローバルBANのサバイバー／下＝グローバルBANのハンター */
-  .wt { max-width: none; width: 1840px; margin: 0 auto; padding: 30px 0; }
-  .wt .box { padding: 22px 34px 26px; }
-  .wt-top { display: flex; align-items: baseline; gap: 26px; margin-bottom: 14px; }
-  .wt-top h1 { margin: 0; font-family: var(--cond); font-weight: 800; font-size: 64px; line-height: 1.1; }
-  .wt-top .pill { font-family: var(--cond); font-weight: 700; font-size: 36px; padding: 2px 22px; border: 2px solid var(--accent); border-radius: 999px; }
-  .wt-cols { display: flex; gap: 40px; align-items: stretch; }
-  .wt-team { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-  .wt-team + .wt-team { border-left: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: 40px; }
-  .wt-name { display: flex; align-items: center; gap: 20px; font-family: var(--cond); font-weight: 800; font-size: 62px; line-height: 1.1; overflow-wrap: anywhere; }
-  .wt .wt-name .fin-logo { width: 84px !important; height: 84px !important; min-width: 84px; font-size: 34px !important; border-width: 4px !important; flex: none; margin: 0 !important; }
-  .wt-ps { display: flex; flex-wrap: wrap; gap: 20px 8px; min-height: 218px; align-content: flex-start; }
-  .wt-p { width: 152px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .wt-p .pic { width: 108px; height: 108px; border-radius: 50%; overflow: hidden; background: var(--panel2); border: 5px solid var(--accent); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: 40px; }
+  .wt { max-width: none; width: calc(1840 * var(--u)); margin: 0 auto; padding: calc(30 * var(--u)) 0; }
+  .wt .box { padding: calc(22 * var(--u)) calc(34 * var(--u)) calc(26 * var(--u)); }
+  .wt-top { display: flex; align-items: baseline; gap: calc(26 * var(--u)); margin-bottom: calc(14 * var(--u)); }
+  .wt-top h1 { margin: 0; font-family: var(--cond); font-weight: 800; font-size: calc(64 * var(--u)); line-height: 1.1; }
+  .wt-top .pill { font-family: var(--cond); font-weight: 700; font-size: calc(36 * var(--u)); padding: calc(2 * var(--u)) calc(22 * var(--u)); border: calc(2 * var(--u)) solid var(--accent); border-radius: calc(999 * var(--u)); }
+  .wt-cols { display: flex; gap: calc(40 * var(--u)); align-items: stretch; }
+  .wt-team { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(14 * var(--u)); }
+  .wt-team + .wt-team { border-left: calc(3 * var(--u)) solid color-mix(in srgb, var(--accent) 60%, transparent); padding-left: calc(40 * var(--u)); }
+  .wt-name { display: flex; align-items: center; gap: calc(20 * var(--u)); font-family: var(--cond); font-weight: 800; font-size: calc(62 * var(--u)); line-height: 1.1; overflow-wrap: anywhere; }
+  .wt .wt-name .fin-logo { width: calc(84 * var(--u)) !important; height: calc(84 * var(--u)) !important; min-width: calc(84 * var(--u)); font-size: calc(34 * var(--u)) !important; border-width: calc(4 * var(--u)) !important; flex: none; margin: 0 !important; }
+  .wt-ps { display: flex; flex-wrap: wrap; gap: calc(20 * var(--u)) calc(8 * var(--u)); min-height: calc(218 * var(--u)); align-content: flex-start; }
+  .wt-p { width: calc(152 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--u)); }
+  .wt-p .pic { width: calc(108 * var(--u)); height: calc(108 * var(--u)); border-radius: 50%; overflow: hidden; background: var(--panel2); border: calc(5 * var(--u)) solid var(--accent); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-family: var(--cond); font-weight: 800; font-size: calc(40 * var(--u)); }
   .wt-p .pic img { width: 100%; height: 100%; object-fit: cover; }
-  .wt-p .nm { font-family: var(--cond); font-weight: 700; font-size: 27px; line-height: 1.15; text-align: center; max-width: 152px; overflow-wrap: anywhere; }
-  .wt-p .fv { display: flex; gap: 6px; justify-content: center; min-height: 52px; }
-  .wt .rl-face { width: 52px; height: 52px; border-width: 3px; font-size: 24px; box-shadow: none; animation: none !important; }
-  .wt-gb .lb { font-family: var(--cond); font-weight: 800; font-size: 34px; letter-spacing: .08em; color: var(--sub); margin-bottom: 8px; }
-  .wt-gb .fs { display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px; align-items: center; }
-  .wt-gb .rl-face { width: 92px; height: 92px; border-width: 4px; font-size: 40px; }
-  .wt-gb .none { font-family: var(--cond); font-weight: 700; font-size: 30px; color: var(--sub); opacity: .8; }
+  .wt-p .nm { font-family: var(--cond); font-weight: 700; font-size: calc(27 * var(--u)); line-height: 1.15; text-align: center; max-width: calc(152 * var(--u)); overflow-wrap: anywhere; }
+  .wt-p .fv { display: flex; gap: calc(6 * var(--u)); justify-content: center; min-height: calc(52 * var(--u)); }
+  .wt .rl-face { width: calc(52 * var(--u)); height: calc(52 * var(--u)); border-width: calc(3 * var(--u)); font-size: calc(24 * var(--u)); box-shadow: none; animation: none !important; }
+  .wt-gb .lb { font-family: var(--cond); font-weight: 800; font-size: calc(34 * var(--u)); letter-spacing: .08em; color: var(--sub); margin-bottom: calc(8 * var(--u)); }
+  .wt-gb .fs { display: flex; flex-wrap: wrap; gap: calc(8 * var(--u)); min-height: calc(100 * var(--u)); align-items: center; }
+  .wt-gb .rl-face { width: calc(92 * var(--u)); height: calc(92 * var(--u)); border-width: calc(4 * var(--u)); font-size: calc(40 * var(--u)); }
+  .wt-gb .none { font-family: var(--cond); font-weight: 700; font-size: calc(30 * var(--u)); color: var(--sub); opacity: .8; }
   .wt .rl-face.off { filter: grayscale(1) brightness(.8); opacity: .7; border-color: #8a8a8a; }
   .rl-nm { font-family: var(--cond); font-weight: 700; font-size: 30px; line-height: 1.2; text-shadow: 0 0 10px rgba(0, 0, 0, .8); white-space: nowrap; }
   .rl-pair { display: flex; align-items: center; gap: 18px; padding: 10px 30px; background: rgba(0, 0, 0, .4); border-radius: 90px; }
