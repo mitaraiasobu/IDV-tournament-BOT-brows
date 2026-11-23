@@ -186,7 +186,7 @@
     <div id="tab-rl" hidden><div class="note" style="margin-top:10px">応募・チーム作成の前に読んでもらうルールと、項目ごとのルール（エントリーのページで、項目の横の「ⓘ ルール」を押すと出ます）を書きます。項目は、自由記述・選択肢で増やせます。Discordと同じ書き方（# 見出し、**太字**、- 箇条書き）が使えます。</div><div id="rllist"></div></div>
     <div id="tab-rc" hidden><div class="note" style="margin-top:10px">メンバー募集の投稿を、運営として見て、「募集停止」「警告」（問題点を書いて、チームリーダーへ送る）「削除」ができます。募集停止は、「再開」を押せば、同じ内容で募集を再開します（チームのリーダーは、停止を外せません）。削除すると、投稿の内容は消え、返事待ちの応募は取り消しになります（チームとメンバーは、そのまま残ります）。</div><div id="rclist"></div></div>
     <div id="tab-br" hidden>
-      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別。保存のときに、公開するかを聞きます）。</div>
+      <div class="note" style="margin-top:10px">組み合わせの抽選・チームの入れ替え・ラウンドの日程（日を分ける）・休憩を、ここで決めます。変えた内容は、このタブの「💾 トーナメント表を保存」で保存します（上の「💾 保存」とは別）。抽選のあとは、保存すると、そのまま公開されます（対戦カードチャンネルの用意と、サイレントのお知らせ。1分ほどかかります）。</div>
       <div id="brview"></div>
     </div>
     <div id="tab-time" hidden>
@@ -717,7 +717,7 @@
   //        変えた内容は、このタブの「💾 トーナメント表を保存」でまとめて送る（そのとき、公開するかを聞く） ─────
   var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, bases: {}, breaks: null }; return BRS; }
-  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.pbreaks || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
+  function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.pbreaks || {}).length > 0 || Object.keys(b.confirms || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
   function brNorm(B) {
     ["teams", "current", "rounds", "breaks"].forEach(function (k) { if (!Array.isArray(B[k])) B[k] = []; });   // 空のリストは、データ置き場（Firebase）で消えて届かない
@@ -774,21 +774,6 @@
     window.addEventListener("pointerup", function () { on = false; wrap.classList.remove("grab"); });
   }
   function brBreaks(B) { var st = brState(); return st.breaks !== null ? st.breaks : B.breaks.map(function (b) { return { after: b.after, minutes: b.minutes, label: b.label }; }); }
-  function brSaveDialog(ops) {                                                      // 保存のとき：公開するかを聞く
-    var B = data.bracket;
-    if (!B.drawn) { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); return; }   // まだ抽選前は、公開できない（保存だけ）
-    var box = $("brdialog"); box.textContent = ""; box.hidden = false;
-    box.appendChild(el("h2", "", "トーナメント表を保存します"));
-    box.appendChild(el("div", "", "このトーナメント表を、公開しますか？"));
-    box.appendChild(el("div", "muted", "公開すると、対戦カードチャンネルを用意して、大会名チャンネルと各チームのチャンネルに、サイレントでお知らせします（1分ほどかかります）。" +
-                     (B.published ? "いまは公開済みです。組み合わせを変えたときは、もう一度公開してください。" : "")));
-    var row = el("div", "brrow");
-    function bt(label, cls, fn) { var b = el("button", cls, label); b.type = "button"; b.addEventListener("click", function () { box.hidden = true; fn(); }); row.appendChild(b); }
-    bt("保存して公開する", "primary", function () { brSend(ops.concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…"); });
-    bt("保存だけする（公開しない）", "", function () { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); });
-    bt("やめる", "", function () {});
-    box.appendChild(row);
-  }
   function mdRender(text) {                                                          // ルールの文：Discordと同じ書き方（# 見出し・**太字**・- 箇条書き・__下線__・~~取り消し~~）を、安全に（HTMLは使わない）
     var box = document.createElement("div"); box.className = "md";
     String(text || "").split("\n").forEach(function (line) {
@@ -1144,6 +1129,7 @@
     Object.keys(st.dls || {}).forEach(function (r) { ops.push({ op: "set_round_deadline", round: Number(r), at: st.dls[r] }); });             // 結果報告の締切
     Object.keys(st.bases || {}).forEach(function (r) { ops.push({ op: "set_round_base", round: Number(r), at: st.bases[r] }); });             // 基本の日時
     Object.keys(st.streams || {}).forEach(function (r) { ops.push({ op: "set_round_stream", round: Number(r), on: st.streams[r] }); });
+    Object.keys(st.confirms || {}).forEach(function (r) { ops.push({ op: "set_round_confirm", round: Number(r), on: st.confirms[r] }); });      // ラウンドの確定ボタン
     Object.keys(st.pbreaks || {}).forEach(function (r) { ops.push({ op: "set_round_part_break", round: Number(r), on: st.pbreaks[r] }); });           // このラウンドから、配信を分ける
     Object.keys(st.starts).forEach(function (r) { ops.push({ op: "set_round_start", round: Number(r), at: st.starts[r] }); });
     if (st.half !== undefined) ops.push({ op: "set_settings", values: { half_minutes: st.half == null ? "" : st.half } });     // 想定時間（大会設定と同じ設定）
@@ -1161,25 +1147,20 @@
     // 保存の帯
     var bar = el("div", "brbar");
     bar.appendChild(el("span", brDirty() ? "fwarn" : "muted", brDirty() ? "● トーナメント表に、保存していない変更があります" : "トーナメント表の変更はありません"));
-    var sv = el("button", "primary", "💾 トーナメント表を保存"); sv.type = "button"; sv.disabled = B.locked || !brDirty();
+    // 保存＝公開（抽選のあとは、保存すると、そのまま公開する。公開するかは聞かない。抽選の前は、公開できないので、保存だけ）
+    var sv = el("button", "primary", B.drawn ? "💾📣 保存して公開" : "💾 トーナメント表を保存");
+    sv.type = "button"; sv.disabled = B.locked || (B.drawn ? B.publish_pending : !brDirty());
     sv.addEventListener("click", function () {
       var bad = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
       if (bad.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
-      brSaveDialog(brOps(B));
+      var ops = brOps(B);
+      if (!B.drawn) { if (ops.length) brSend(ops, "トーナメント表を保存しています…"); return; }
+      brSend(ops.concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…");
     });
     var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
     undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
     bar.appendChild(sv); bar.appendChild(undo);
-    if (B.drawn && !B.locked) {                                                        // いつでも「保存して公開」（変更が無いときは、公開だけ）
-      var pub = el("button", "primary", "💾📣 保存して公開" + (!brDirty() && B.published ? "（もう一度）" : "")); pub.type = "button"; pub.disabled = B.publish_pending;
-      pub.addEventListener("click", function () {
-        var bad2 = brks.filter(function (b) { return !(b.minutes >= B.break_limits[0] && b.minutes <= B.break_limits[1]); });
-        if (bad2.length) { setResult("ng", "⚠ 休憩の長さは、" + B.break_limits[0] + "〜" + B.break_limits[1] + "分で入れてください。"); return; }
-        if (confirm((brDirty() ? "変更を保存して、" : "") + "トーナメント表を公開します（対戦カードの用意と、サイレントのお知らせ）。よろしいですか？")) brSend(brOps(B).concat([{ op: "bracket_publish" }]), "保存して、公開を依頼しています…");
-      });
-      bar.appendChild(pub);
-    }
-    bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + "・" +
+    bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定（抽選のあと、保存すると公開されます）") + "・" +
                        (B.published ? "公開済み" : B.publish_pending ? "公開の準備中" : "未公開")));
     v.appendChild(bar);
     var dlg = el("div", "card brdialog"); dlg.id = "brdialog"; dlg.hidden = true; v.appendChild(dlg);
@@ -1253,6 +1234,19 @@
       col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
+      if (r.no < B.rounds.length) {                                                                   // ラウンドの確定：初期は「確定ボタンを使わない」（同時進行で、次が続けて始まるなら、結果が入ると、自動で次のラウンドへ）
+        st.confirms = st.confirms || {};
+        var cq = st.confirms[r.no] != null ? st.confirms[r.no] : !!r.confirm_required;
+        var cqw = el("div", "muted", "ラウンドの確定：");
+        cqw.appendChild(sseg([["0", "自動で次のラウンドへ"], ["1", "確定ボタンを使う"]], cq ? "1" : "0", function (x) {
+          var want = x === "1"; if (want === !!r.confirm_required) delete st.confirms[r.no]; else st.confirms[r.no] = want; renderBracket();
+        }));
+        var nx = B.rounds[r.no], nxStart = st.starts[r.no + 1] !== undefined ? st.starts[r.no + 1] : nx.override, nxBreak = st.pbreaks && st.pbreaks[r.no + 1] != null ? st.pbreaks[r.no + 1] : nx.part_break;
+        if (!cq) cqw.appendChild(el("div", "muted", (conc && !fx && !nxStart && !nxBreak) ? "全試合の結果が入ると、自動で確定して、次のラウンドの対戦カードを用意します。"
+                                                      : "このラウンドは、" + (fx ? "任意の日時" : !conc ? "順番進行" : "次のラウンドが別の日から始まる") + "ため、これまでどおり、確定ボタンを待ちます。"));
+        cqw.title = "同時進行で、次のラウンドが続けて始まるときだけ、自動で次へ進みます（順番進行・任意の日時・別の日に始まるときは、確定ボタンを待ちます）";
+        col.appendChild(cqw);
+      }
       var prevStream = B.rounds.some(function (q) { var sv = st.streams[q.no] != null ? st.streams[q.no] : q.stream; return q.no < r.no && sv; });
       if (r.no >= 2 && strm && prevStream) {                                                         // 配信を分けるかどうか：自動では決めない（ここで決める）
         st.pbreaks = st.pbreaks || {};
