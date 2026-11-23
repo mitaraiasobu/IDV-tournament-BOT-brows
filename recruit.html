@@ -1959,7 +1959,7 @@
     var rank = { open: 0, extra: 1, done: 2, full: 2, closed: 3 };
     teams.forEach(function (t) { t._fit = fits(t); });
     function rk(x) { return x.state in rank ? rank[x.state] : 3; }                     // 募集中 → 余分募集（下のほう） → そろった・満員 → 締め切り
-    teams.sort(function (a, b) { return (rk(a) - rk(b)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || ((fxMatch(a) === "ok" ? 0 : 1) - (fxMatch(b) === "ok" ? 0 : 1)) || a.id - b.id; });
+    teams.sort(function (a, b) { return (rk(a) - rk(b)) || ((a.friends ? 1 : 0) - (b.friends ? 1 : 0)) || (a._fit === b._fit ? 0 : a._fit ? -1 : 1) || ((fxMatch(a) === "ok" ? 0 : 1) - (fxMatch(b) === "ok" ? 0 : 1)) || a.id - b.id; });
     document.getElementById("empty").hidden = teams.length > 0;
     // 上から：あなたに合うチーム → 制限に合わないチーム → 募集終了したチーム（区切りの線つき。押すと折りたためる）
     var SECS = me ? [["fit", "✅ あなたに合うチーム"], ["nofit", "⚠ 制限に合わないチーム"], ["end", "⏹ 募集終了したチーム"]] : [["fit", "📣 募集中のチーム"], ["end", "⏹ 募集終了したチーム"]];
