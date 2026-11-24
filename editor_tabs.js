@@ -499,7 +499,8 @@
         var nm = function (n) { var rr = (D.rounds || []).filter(function (x) { return x.no === n; })[0]; return rr ? rr.name : n; };
         var part = (r.rounds || []).filter(function (n) { return (r.full || []).indexOf(n) < 0; });
         var on = (r.rounds || []).length ? ((r.full || []).length ? "ぜんぶ必須のラウンド：" + r.full.map(nm).join("、") : "") + (part.length ? ((r.full || []).length ? "　／　" : "") + "一部のシーンだけ必須：" + part.map(nm).join("、") : "") : "いまは、どのラウンドも自由";
-        if (!r.everywhere && (r.rounds || []).length) on += "　⚠ 全ラウンドのぜんぶのシーン（延長戦も）が必須になるまでは、「全試合共通のルール」には出ず、ラウンドごとのルールに出ます。";
+        if (!r.everywhere || (r.free || []).length) on += "　⚠ 必須になっていないシーン：" + ((r.free || []).length ? r.free.join("、") + ((r.free || []).length >= 8 ? "…" : "") : "（なし）") + "。全ラウンドのぜんぶのシーン（延長戦も）が必須になるまでは、「全試合共通のルール」には出ず、ラウンドごとのルールに出ます。";
+        else on += "　✅ すべてのシーンが必須です（全試合共通のルールに出ます）。";
         var h = el("div", "", r.item); h.style.fontWeight = "800"; row.appendChild(h); row.appendChild(el("div", "note", on + ((r.groups || []).length ? "（組み分けあり：Discordで設定）" : "")));
         var br = el("div", "row");
         var all = el("button", "primary", "ぜんぶ必須"); all.type = "button"; all.disabled = locked; all.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: "req" }], "必須にしています…"); });
