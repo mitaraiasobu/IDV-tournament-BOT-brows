@@ -1682,38 +1682,47 @@ html[data-design="winter"] .intro.enter .in-slash { -webkit-mask-image: linear-g
   html[data-design="fantasy"] .cl-end, html[data-design="gothic"] .cl-end, html[data-design="fantasy"] .cl-title, html[data-design="gothic"] .cl-title,
   html[data-design="fantasy"] .cl-thx1, html[data-design="gothic"] .cl-thx1, html[data-design="fantasy"] .cl-thx2, html[data-design="gothic"] .cl-thx2 { font-family: var(--fa); font-weight: 400; color: var(--cream); }
   /* 最後のトーナメント表：負けたチームは暗く／優勝チームの欄に、ロゴ・名前・全員の選手名 */
-  .fbframe { position: absolute; inset: 0; }
-  .fbframe iframe { width: 100%; height: 100%; border: 0; background: transparent; }
-  html.flow .fbframe { position: relative; height: 100vh; }
-  .fb { position: absolute; inset: 0; color: var(--text); }
-  .fb-title { position: absolute; left: 70px; top: 26px; font-family: var(--disp); font-size: 54px; letter-spacing: .14em; color: var(--accent); text-shadow: 3px 3px 0 rgba(0,0,0,.5); }
-  .fb-inner { position: absolute; left: 70px; top: 110px; }
-  .fb-grid { display: flex; align-items: stretch; gap: 54px; min-height: 800px; }
-  .fb-round { display: flex; flex-direction: column; min-width: 400px; }
-  .fb-round h3 { margin: 0 0 14px; font-family: var(--cond); font-weight: 800; font-size: 30px; letter-spacing: .12em; color: var(--sub); border-bottom: 3px solid var(--accent); padding-bottom: 6px; }
-  .fb-ms { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 22px; }
-  .fb-m { background: rgba(0,0,0,.5); border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 6px 16px rgba(0,0,0,.45); }
-  .fb-t { display: flex; align-items: center; gap: 14px; padding: 10px 18px; font-family: var(--cond); font-weight: 800; font-size: 34px; line-height: 1.1; }
-  .fb-t + .fb-t { border-top: 1px solid rgba(255,255,255,.15); }
-  .fb-t .fb-lg { width: 1.2em; height: 1.2em; object-fit: contain; flex: none; filter: drop-shadow(0 0 1px rgba(0,0,0,.9)); }
-  .fb-t .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fb-t.win { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 38%, transparent), transparent); }
-  .fb-t.lose { opacity: .36; filter: brightness(.55) saturate(.5); background: rgba(0,0,0,.35); }
-  .fb-t.tbd, .fb-t.bye { opacity: .5; font-style: italic; font-weight: 600; }
-  .fb-champ { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-width: 460px; max-width: 520px; padding: 20px 26px; text-align: center;
-              border: 3px solid var(--accent); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 20%, rgba(0,0,0,.6)), rgba(0,0,0,.55));
-              box-shadow: 0 0 50px color-mix(in srgb, var(--accent) 40%, transparent); }
-  .fb-champ .lbl { font-family: var(--disp); font-size: 54px; letter-spacing: .12em; color: var(--accent); text-shadow: 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent); }
-  .fb-champ .fin-logo { width: 230px; height: 230px; font-size: 90px; }
-  .fb-champ .nm { font-family: var(--cond); font-weight: 800; font-size: 60px; line-height: 1.1; overflow-wrap: anywhere; }
-  .fb-champ .pls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-family: var(--cond); font-weight: 700; font-size: 30px; color: var(--sub); }
-  html[data-design="fantasy"] .fb-title, html[data-design="gothic"] .fb-title, html[data-design="fantasy"] .fb-champ .lbl, html[data-design="gothic"] .fb-champ .lbl { font-family: var(--fa); font-weight: 400; color: var(--gold); }
-  html[data-design="fantasy"] .fb-t, html[data-design="gothic"] .fb-t, html[data-design="fantasy"] .fb-champ .nm, html[data-design="gothic"] .fb-champ .nm,
-  html[data-design="fantasy"] .fb-round h3, html[data-design="gothic"] .fb-round h3 { font-family: var(--fa); font-weight: 400; }
-  html[data-design="fantasy"] .fb-m, html[data-design="gothic"] .fb-m, html[data-design="fantasy"] .fb-champ, html[data-design="gothic"] .fb-champ { border-color: var(--gold); }
-  html.flow .fb-title { position: static; font-size: 1.6em; padding: .4em 1em; } html.flow .fb-inner { position: static; padding: 0 1em; overflow-x: auto; }
-  html.flow .fb-grid { gap: 1em; min-height: 0; } html.flow .fb-round { min-width: 12em; } html.flow .fb-t { font-size: 1em; }
-  html.flow .fb-champ { min-width: 12em; } html.flow .fb-champ .fin-logo { width: 5em; height: 5em; font-size: 2em; } html.flow .fb-champ .nm { font-size: 1.4em; } html.flow .fb-champ .pls { font-size: .9em; }
+  /* 最後のトーナメント表（専用）：ラウンドごとに、チームが順に現れて、勝ち上がりの線が引かれ、優勝チームの道のりが光ってから、優勝チーム（全選手の名前つき）が、きらきら輝いて出る。動くのは、1回だけ（ゆっくり点滅する星のほかは、止まる） */
+  .fbx { position: absolute; inset: 0; --g: var(--gold, #ffd24a); }
+  html.flow .fbx { position: relative; width: 1920px; height: 1080px; transform-origin: top left; }
+  .fbx-title { position: absolute; left: 70px; top: 24px; font-family: var(--disp); font-size: 54px; letter-spacing: .14em; color: var(--accent); text-shadow: 3px 3px 0 rgba(0,0,0,.5); animation: fbxIn .8s ease-out both; }
+  .fbx-body { position: absolute; left: 60px; top: 112px; display: flex; gap: 56px; align-items: flex-start; }
+  .fbx-rh { position: relative; height: 40px; margin-bottom: 8px; }
+  .fbx-rh span { position: absolute; top: 0; font-family: var(--cond); font-weight: 800; font-size: 22px; letter-spacing: .1em; color: var(--sub); border-bottom: 3px solid var(--accent); padding-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: fbxIn .6s ease-out both; animation-delay: var(--d); }
+  .fbx-board { position: relative; }
+  .fbx-lines { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+  .fbx-l { fill: none; stroke: rgba(255,255,255,.24); stroke-width: 2; stroke-dasharray: 1; stroke-dashoffset: 1; animation: fbxDraw .6s ease-out both; animation-delay: var(--d); }
+  .fbx-l.on { stroke: color-mix(in srgb, var(--accent) 80%, #fff); stroke-width: 3; }
+  .fbx-l.cp { animation: fbxDraw .6s ease-out both, fbxLg .8s ease-out both; animation-delay: var(--d), var(--cd); }
+  .fbx-m { position: absolute; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255,255,255,.3);
+           background: linear-gradient(135deg, rgba(255,255,255,.11), rgba(255,255,255,.03)), rgba(6,10,24,.55); box-shadow: 0 6px 16px rgba(0,0,0,.4); animation: fbxIn .6s ease-out both; animation-delay: var(--d); }
+  .fbx-m.cp { animation: fbxIn .6s ease-out both, fbxCp .9s ease-out both; animation-delay: var(--d), var(--cd); }
+  .fbx-t { flex: 1; min-height: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; font-family: var(--cond); font-weight: 800; line-height: 1; }
+  .fbx-t + .fbx-t { border-top: 1px solid rgba(255,255,255,.16); }
+  .fbx-t .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fbx-t .lg { width: 1.3em; height: 1.3em; object-fit: contain; flex: none; }
+  .fbx-t.win { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 44%, transparent), transparent 92%); }
+  .fbx-t.lose { opacity: .4; filter: saturate(.4); }
+  .fbx-t.tbd, .fbx-t.bye { opacity: .5; font-style: italic; font-weight: 600; }
+  .fbx-champ { position: relative; width: 440px; align-self: center; margin-top: 56px; padding: 26px 22px 30px; text-align: center; border-radius: 22px; border: 3px solid var(--g); opacity: 0;
+               background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--g) 30%, transparent), transparent 72%), rgba(8,10,24,.72);
+               box-shadow: 0 0 60px color-mix(in srgb, var(--g) 45%, transparent), inset 0 0 40px color-mix(in srgb, var(--g) 12%, transparent); animation: fbxChamp 1s ease-out both; animation-delay: var(--cd); }
+  .fbx-champ .lbl { font-family: var(--disp); font-size: 58px; letter-spacing: .14em; background: linear-gradient(90deg, #fff3b0, #ffd24a, #fff3b0, #ffb81f, #fff3b0); background-size: 240% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: fbxShine 7s ease-in-out infinite alternate; }
+  .fbx-champ .fin-logo { width: 170px; height: 170px; font-size: 68px; margin: 12px auto; }
+  .fbx-champ .nm { font-family: var(--cond); font-weight: 800; font-size: 52px; line-height: 1.1; overflow-wrap: anywhere; text-shadow: 0 0 22px color-mix(in srgb, var(--g) 55%, transparent); }
+  .fbx-champ .pls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 12px; margin-top: 18px; }
+  .fbx-champ .pls span { font-family: var(--cond); font-weight: 700; font-size: 28px; padding: 4px 16px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--g) 70%, transparent); background: rgba(255,255,255,.07); text-shadow: 0 0 12px color-mix(in srgb, var(--g) 50%, transparent); }
+  .fbx-sp { position: absolute; width: 18px; height: 18px; background: #fff7c2; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; pointer-events: none; filter: drop-shadow(0 0 5px #ffe27a); animation: fbxTw 3s ease-in-out infinite; animation-delay: var(--sd); }
+  @keyframes fbxIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+  @keyframes fbxDraw { to { stroke-dashoffset: 0; } }
+  @keyframes fbxLg { to { stroke: var(--g); stroke-width: 4; filter: drop-shadow(0 0 6px var(--g)); } }
+  @keyframes fbxCp { to { border-color: var(--g); box-shadow: 0 0 0 1px var(--g), 0 0 22px color-mix(in srgb, var(--g) 70%, transparent); } }
+  @keyframes fbxChamp { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+  @keyframes fbxShine { to { background-position: 100% 0; } }
+  @keyframes fbxTw { 0%, 100% { opacity: 0; transform: scale(.5); } 50% { opacity: 1; transform: scale(1); } }
+  html[data-design="fantasy"] .fbx-title, html[data-design="gothic"] .fbx-title, html[data-design="fantasy"] .fbx-champ .lbl, html[data-design="gothic"] .fbx-champ .lbl { font-family: var(--fa); font-weight: 400; }
+  html[data-design="fantasy"] .fbx-t, html[data-design="gothic"] .fbx-t, html[data-design="fantasy"] .fbx-champ .nm, html[data-design="gothic"] .fbx-champ .nm,
+  html[data-design="fantasy"] .fbx-rh span, html[data-design="gothic"] .fbx-rh span { font-family: var(--fa); font-weight: 400; }
   /* チームの文字・ロゴの見やすさ（色を塗った面の上）。
      ・文字は、白（黒に近い・ふつうの色）か、黒（白に近い色）に統一し、反対の色の、細いぼかしの縁取りを付ける。
      ・ロゴの画像は、透明な部分の形に合わせて、黒い、細いぼかしの縁取りを付ける（白いチームの色の上でも、白いロゴが見えるように）。
@@ -3105,83 +3114,103 @@ html[data-design="winter"] .intro.enter .in-slash { -webkit-mask-image: linear-g
     ivTimer = setInterval(tick, 250);
   }
 
-  // ── 最後のトーナメント表：負けたチームは、暗くする／優勝チームの欄に、ロゴ・名前・全員の選手名（出場していない選手も） ──
-  // 公開のトーナメント表のページ（index.html）を、そのまま埋め込む。違いは、優勝チームの欄に、ロゴと全選手の名前（出場していない選手も）が載ること。
-  function renderBracketFrame(b) {
-    var cur = screenEl.firstChild;
-    var src = "index.html?t=" + encodeURIComponent(b.public_key) + "&embed=1";
-    var players = arr((b.champion || {}).players);
-    var frame = cur && cur.classList && cur.classList.contains("fbframe") && cur.getAttribute("data-src") === src ? cur.firstChild : null;
-    if (!frame) {
-      var wrap = el("div", "fbframe");
-      wrap.setAttribute("data-src", src);
-      frame = document.createElement("iframe");
-      frame.src = src;
-      frame.setAttribute("title", "トーナメント表");
-      frame.addEventListener("load", function () { frame.setAttribute("data-loaded", "1"); sendPlayers(frame); });
-      wrap.appendChild(frame);
-      screenEl.replaceChildren(wrap);
-    }
-    frame._players = players;
-    sendPlayers(frame);
-  }
-  function sendPlayers(frame) {
-    try { if (frame.contentWindow) frame.contentWindow.postMessage({ type: "champion_players", players: frame._players || [] }, location.origin); } catch (e) { /* 読み込み前は、読み込み後に送る */ }
-  }
+  // ── 最後のトーナメント表（専用）：登録状況などは出さない。ラウンドごとに、チームが順に現れて、勝ち上がりの線が引かれ、優勝チームの道のりが光ってから、優勝チーム（全選手の名前つき）が、きらきら輝いて出る ──
   function renderBracket(data) {
-    var b = (data.finale || {}).bracket || {};
-    if (/^[A-Za-z0-9]{12}$/.test(b.public_key || "")) { renderBracketFrame(b); return; }
-    var wrap = el("div", "fb");
-    wrap.appendChild(el("div", "fb-title", "TOURNAMENT"));
-    var inner = el("div", "fb-inner");
-    var grid = el("div", "fb-grid");
-    arr(b.rounds).forEach(function (r, ri) {
-      var col = el("div", "fb-round");
-      col.appendChild(el("h3", null, r.name || ""));
-      var list = el("div", "fb-ms");
-      arr(r.matches).forEach(function (m) {
-        var box = el("div", "fb-m" + (m.bye ? " bye" : ""));
+    var b = (data.finale || {}).bracket || {}, rounds = arr(b.rounds), R = rounds.length, ch = b.champion || null;
+    var wrap = el("div", "fbx");
+    wrap.appendChild(el("div", "fbx-title", "TOURNAMENT"));
+    var AW = 1330, AH = 840, GAP = 52, T_ROUND = 0.8, T0 = 0.3;
+    var M1 = Math.max(1, arr((rounds[0] || {}).matches).length);
+    var cw = Math.min(300, Math.floor((AW - GAP * Math.max(0, R - 1)) / Math.max(1, R)));
+    var chh = Math.max(34, Math.min(84, Math.floor(AH / M1) - 8)), fs = Math.max(14, Math.min(30, Math.floor(chh * 0.36)));
+    var used = cw * R + GAP * Math.max(0, R - 1);
+    var cy = rounds.map(function (r) { return []; });
+    rounds.forEach(function (r, ri) {
+      arr(r.matches).forEach(function (m, j) {
+        if (ri === 0) { cy[ri][j] = (j + 0.5) * AH / M1; return; }
+        var c1 = cy[ri - 1][2 * j], c2 = cy[ri - 1][2 * j + 1];
+        cy[ri][j] = c1 != null && c2 != null ? (c1 + c2) / 2 : c1 != null ? c1 : c2 != null ? c2 : (j + 0.5) * AH / Math.max(1, arr(r.matches).length);
+      });
+    });
+    var chId = ch && ch.id != null ? ch.id : null;                                         // 優勝チームの道のり：決勝から、さかのぼって、優勝チームが出たカードに印をつける
+    function plays(m) { return chId != null && m && [m.a, m.b].some(function (t) { return t && !t.bye && t.id === chId; }); }
+    var cp = rounds.map(function (r) { return []; });
+    if (R && chId != null) {
+      var fin = arr(rounds[R - 1].matches)[0];
+      if (plays(fin)) cp[R - 1][0] = true;
+      for (var ri = R - 1; ri > 0; ri--) {
+        arr(rounds[ri].matches).forEach(function (m, j) {
+          if (!cp[ri][j]) return;
+          [2 * j, 2 * j + 1].forEach(function (k) { if (plays(arr(rounds[ri - 1].matches)[k])) cp[ri - 1][k] = true; });
+        });
+      }
+    }
+    var tCp = T0 + R * T_ROUND + 0.6, tChamp = tCp + R * 0.4 + 0.4;                       // 優勝チームの道のりが光り始める／優勝チームが現れる（秒）
+    var body = el("div", "fbx-body"), left = el("div");
+    var rh = el("div", "fbx-rh"); rh.style.width = used + "px";
+    rounds.forEach(function (r, ri) {
+      var sp = el("span", null, r.name || ""); sp.style.left = ri * (cw + GAP) + "px"; sp.style.width = cw + "px"; sp.style.setProperty("--d", (T0 + ri * T_ROUND) + "s"); rh.appendChild(sp);
+    });
+    left.appendChild(rh);
+    var board = el("div", "fbx-board"); board.style.width = used + "px"; board.style.height = AH + "px";
+    var NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "fbx-lines"); svg.setAttribute("width", used); svg.setAttribute("height", AH);
+    board.appendChild(svg);
+    rounds.forEach(function (r, ri) {
+      var ms = arr(r.matches);
+      ms.forEach(function (m, j) {
+        var x = ri * (cw + GAP), y = cy[ri][j] - chh / 2, d = T0 + ri * T_ROUND + Math.min(j * 0.05, 0.5);
+        var box = el("div", "fbx-m" + (cp[ri][j] ? " cp" : "") + (m.bye ? " bye" : ""));
+        box.style.cssText = "left:" + x + "px;top:" + y.toFixed(1) + "px;width:" + cw + "px;height:" + chh + "px;font-size:" + fs + "px";
+        box.style.setProperty("--d", d.toFixed(2) + "s"); box.style.setProperty("--cd", (tCp + ri * 0.4).toFixed(2) + "s");
         ["a", "b"].forEach(function (side) {
-          var t = m[side];
-          var win = m.winner === side, lose = m.winner && m.winner !== side && t && !t.bye;
-          var row = el("div", "fb-t" + (win ? " win" : "") + (lose ? " lose" : "") + (!t ? " tbd" : "") + (t && t.bye ? " bye" : ""));
-          if (t && !t.bye && logoSrc(t)) { var li = new Image(); li.className = "fb-lg"; li.src = logoSrc(t); li.alt = ""; row.appendChild(li); }
+          var t = m[side], win = m.winner === side, lose = m.winner && m.winner !== side && t && !t.bye;
+          var row = el("div", "fbx-t" + (win ? " win" : "") + (lose ? " lose" : "") + (!t ? " tbd" : "") + (t && t.bye ? " bye" : ""));
+          if (t && !t.bye && logoSrc(t)) { var li = new Image(); li.className = "lg"; li.src = logoSrc(t); li.alt = ""; row.appendChild(li); }
           row.appendChild(el("span", "nm", t ? (t.bye ? "シード" : t.name) : "未定"));
           box.appendChild(row);
         });
-        list.appendChild(box);
+        board.appendChild(box);
+        if (ri > 0) {                                                                      // 前のラウンドの2つのカードから、このカードへ、勝ち上がりの線
+          [2 * j, 2 * j + 1].forEach(function (k) {
+            var f = arr(rounds[ri - 1].matches)[k]; if (!f || cy[ri - 1][k] == null) return;
+            var x1 = (ri - 1) * (cw + GAP) + cw, y1 = cy[ri - 1][k], xm = x1 + GAP / 2, y2 = cy[ri][j], x2 = ri * (cw + GAP);
+            var pth = document.createElementNS(NS, "path");
+            pth.setAttribute("d", "M" + x1 + " " + y1.toFixed(1) + " H" + xm + " V" + y2.toFixed(1) + " H" + x2); pth.setAttribute("pathLength", "1");
+            pth.setAttribute("class", "fbx-l" + (f.winner ? " on" : "") + (cp[ri - 1][k] ? " cp" : ""));
+            pth.style.setProperty("--d", (T0 + (ri - 1) * T_ROUND + 0.5).toFixed(2) + "s"); pth.style.setProperty("--cd", (tCp + (ri - 1) * 0.4 + 0.2).toFixed(2) + "s");
+            svg.appendChild(pth);
+          });
+        }
       });
-      col.appendChild(list);
-      grid.appendChild(col);
     });
-    var ch = b.champion;
-    var cc = el("div", "fb-champ");
+    left.appendChild(board);
+    body.appendChild(left);
+    var cc = el("div", "fbx-champ"); cc.style.setProperty("--cd", tChamp.toFixed(2) + "s");
+    if (ch && okColor(ch.color)) cc.style.setProperty("--g", ch.color);
     cc.appendChild(el("div", "lbl", "CHAMPION"));
     if (ch) {
       cc.appendChild(finLogo(ch));
       cc.appendChild(el("div", "nm", ch.name || ""));
       var pl = el("div", "pls");
-      arr(ch.players).forEach(function (n) { pl.appendChild(el("span", null, n)); });
+      arr(ch.players).forEach(function (n) { pl.appendChild(el("span", null, n)); });        // 優勝チームの、全員の選手名（出場していない選手も）
       cc.appendChild(pl);
+      for (var i = 0; i < 18; i++) {                                                       // きらきら：ゆっくり点滅する星（位置と間隔は、決まった並び）
+        var st = el("i", "fbx-sp"), u = (i * 0.61803) % 1, v = (i * 0.38197 + 0.17) % 1, sz = 12 + (i % 4) * 5;
+        st.style.cssText = "left:" + (u * 96 - 4).toFixed(1) + "%;top:" + (v * 104 - 6).toFixed(1) + "%;width:" + sz + "px;height:" + sz + "px";
+        st.style.setProperty("--sd", (tChamp + 0.8 + (i % 7) * 0.4).toFixed(2) + "s");
+        cc.appendChild(st);
+      }
     } else {
       cc.appendChild(el("div", "nm", "未定"));
     }
-    grid.appendChild(cc);
-    inner.appendChild(grid);
-    wrap.appendChild(inner);
+    body.appendChild(cc);
+    wrap.appendChild(body);
     screenEl.replaceChildren(wrap);
-    fitBracket(wrap, inner);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitBracket(wrap, inner); });
-  }
-  function fitBracket(wrap, inner) {                       // 画面に収まるように、全体を縮める（ステージのときだけ）
-    inner.style.transform = "";
-    if (kind !== "stage") return;
-    var w = inner.scrollWidth, h = inner.scrollHeight;
-    var maxW = 1780, maxH = 880;
-    var s = Math.min(1, maxW / Math.max(1, w), maxH / Math.max(1, h));
-    inner.style.transform = "scale(" + s.toFixed(3) + ")";
-    inner.style.transformOrigin = "top left";
-    inner.style.left = Math.max(0, (1920 - w * s) / 2) + "px";
+    if (kind !== "stage") {                                                                // ステージでないとき：画面に収まるように、全体を縮める
+      var sc = Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080);
+      wrap.style.zoom = sc < 1 ? sc.toFixed(3) : "";
+    }
   }
 
   // 賞品の贈呈：上に「PRIZE」／受け取るチーム（選手）のロゴと名前／賞品の対象と内容（個人宛ては、選手の名前も）
