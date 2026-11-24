@@ -496,15 +496,18 @@
       if (!(D.required || []).length) rc.appendChild(el("div", "note", "（ありません）"));
       (D.required || []).forEach(function (r) {
         var row = el("div", ""); row.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0";
-        var on = (r.rounds || []).length ? "必須のラウンド：" + r.rounds.map(function (n) { var rr = (D.rounds || []).filter(function (x) { return x.no === n; })[0]; return rr ? rr.name : n; }).join("、") : "いまは、どのラウンドも自由";
+        var nm = function (n) { var rr = (D.rounds || []).filter(function (x) { return x.no === n; })[0]; return rr ? rr.name : n; };
+        var part = (r.rounds || []).filter(function (n) { return (r.full || []).indexOf(n) < 0; });
+        var on = (r.rounds || []).length ? ((r.full || []).length ? "ぜんぶ必須のラウンド：" + r.full.map(nm).join("、") : "") + (part.length ? ((r.full || []).length ? "　／　" : "") + "一部のシーンだけ必須：" + part.map(nm).join("、") : "") : "いまは、どのラウンドも自由";
+        if (!r.everywhere && (r.rounds || []).length) on += "　⚠ 全ラウンドのぜんぶのシーン（延長戦も）が必須になるまでは、「全試合共通のルール」には出ず、ラウンドごとのルールに出ます。";
         var h = el("div", "", r.item); h.style.fontWeight = "800"; row.appendChild(h); row.appendChild(el("div", "note", on + ((r.groups || []).length ? "（組み分けあり：Discordで設定）" : "")));
         var br = el("div", "row");
         var all = el("button", "primary", "ぜんぶ必須"); all.type = "button"; all.disabled = locked; all.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: "req" }], "必須にしています…"); });
         var fr = el("button", "", "ぜんぶ自由"); fr.type = "button"; fr.disabled = locked; fr.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: "free" }], "自由にしています…"); });
         br.appendChild(all); br.appendChild(fr);
         (D.rounds || []).forEach(function (rd) {
-          var isReq = (r.rounds || []).indexOf(rd.no) >= 0, b = el("button", isReq ? "primary" : "", (isReq ? "✅ " : "") + rd.name); b.type = "button"; b.disabled = locked;
-          b.title = isReq ? "押すと、このラウンドを自由にします" : "押すと、このラウンドを必須にします";
+          var isFull = (r.full || []).indexOf(rd.no) >= 0, isPart = !isFull && (r.rounds || []).indexOf(rd.no) >= 0, isReq = isFull, b = el("button", isFull ? "primary" : "", (isFull ? "✅ " : isPart ? "△ " : "") + rd.name); b.type = "button"; b.disabled = locked;
+          b.title = isFull ? "押すと、このラウンドを自由にします" : isPart ? "一部のシーンだけ必須です。押すと、このラウンドをぜんぶ必須にします" : "押すと、このラウンドを必須にします";
           b.addEventListener("click", function () { K.send([{ op: "bpr_req_all", id: r.id, state: isReq ? "free" : "req", round: rd.no }], "変えています…"); });
           br.appendChild(b);
         });
