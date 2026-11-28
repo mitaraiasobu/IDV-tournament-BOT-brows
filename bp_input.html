@@ -1052,6 +1052,11 @@
       ss.textContent = "⏱ " + mmss(el0) + " / " + lim0 + "秒" + (over0 ? "　⏰ 時間をこえています。早く選んでください！" : "");
       ss.className = over0 ? "ng" : el0 >= lim0 - 20 ? "warn" : "";
     }
+    var ds = document.getElementById("dshot");
+    if (ds && S && S.dummy_shot_at) {                                                     // ダミーのサバイバーが、スクショを送るまで（ハンターが部屋に入る時間）
+      var dl = Math.max(0, Math.ceil(S.dummy_shot_at - Date.now() / 1000));
+      ds.textContent = dl > 0 ? "⏳ あと " + dl + " 秒で、サバイバー（ダミー）が準備を終えます。それまでに部屋に入ってください。" : "⏳ サバイバー（ダミー）の準備が終わりました。少しお待ちください…";
+    }
     var ei = document.getElementById("endin");
     if (ei && S && S.end_ok_at) {
       var left = Math.ceil(S.end_ok_at - Date.now() / 1000), eb = document.getElementById("endbtn");
@@ -1677,6 +1682,7 @@
       hunterRoomNote(card); holdNote(card);
       var tipBox = el("div", "sub2 bptip"); tipInto(tipBox, gameBpTip()); card.appendChild(tipBox);       // 体験会のハンター側も、同じタイミングで
       if (S.hunter_room_ready === false) card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
+      if (S.dummy_shot_at && S.hunter_room_ready !== false) { var dsn = el("div", "big", ""); dsn.id = "dshot"; card.appendChild(dsn); tick(); }   // ダミーのサバイバー：カウントダウン
     } else if (stg === "shot") {
       var mapName = ""; S.steps.forEach(function (s0) { if (s0.t === "m" && s0.a === "p" && s0.set && s0.ids && s0.ids[0] != null && CH[s0.ids[0]]) mapName = CH[s0.ids[0]].n; });
       var hinfo = OPENED.data && OPENED.data.hinfo;                                           // 敵ハンターの名前とID（正しい相手か、確かめるため。サバイバー側にだけ見える）
@@ -2185,7 +2191,7 @@
       }
       NULLS = 0;
       var lwk = $("work"); if (!S && lwk.firstChild && !lwk.querySelector(".blk, .selwrap")) lwk.textContent = "";
-      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.loadout_pending !== S.loadout_pending || d.hunter_room_ready !== S.hunter_room_ready || d.gate !== S.gate
+      var changed = !S || d.cur !== S.cur || d.n !== S.n || d.status !== S.status || d.stage !== S.stage || d.confirmed !== S.confirmed || d.start_at !== S.start_at || d.costume_pending !== S.costume_pending || d.loadout_pending !== S.loadout_pending || d.hunter_room_ready !== S.hunter_room_ready || d.dummy_shot_at !== S.dummy_shot_at || d.gate !== S.gate
         || JSON.stringify([d.ended, d.res_in, d.res_mismatch, d.res_done]) !== JSON.stringify([S.ended, S.res_in, S.res_mismatch, S.res_done])
         || JSON.stringify([d.select, d.sealed, d.pm, d.sync, d.rec]) !== JSON.stringify([S.select, S.sealed, S.pm, S.sync, S.rec]);
       if (changed) { SEL = []; NEWSTEP = true; HL = null; MOVING = null; TSLOT = null; PSLOT = {}; }
