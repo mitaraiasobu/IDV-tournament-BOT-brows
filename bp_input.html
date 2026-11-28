@@ -1457,15 +1457,26 @@
     var d = loDraft(); if (d.p.length !== 2 || d.t == null || LO.busy) return;
     var p = d.p.slice().sort(function (a, b) { return a - b; }), t = d.t;
     LO.busy = true; render();                                                             // すぐ「送信中…」にする
-    if (window.BP_DEMO) { setTimeout(function () { DEMO_LO = { p: p, t: t }; S.loadout_pending = false; S.hunter_room_ready = true; LO.busy = false; LO.edit = false; LO.p = null; render(); showLoNotice(); }, 1200); return; }
-    var ok = false;
+    showLoNotice();                                                                       // 「あとで変えてもOK」は、押した瞬間に出す（BOTの返事を待たない。下の行は「送信中…」）
+    if (window.BP_DEMO) { setTimeout(function () { DEMO_LO = { p: p, t: t }; S.loadout_pending = false; S.hunter_room_ready = true; LO.busy = false; LO.edit = false; LO.p = null; render(); loNoticeDone(true); }, 1200); return; }
+    var ok = false, err = "";
     sendAct("loadout", { p: p, t: t }).then(function (res) {
-      if (!(res && res.ok)) { SP_NOTE = { cls: "ng", text: "⚠ " + ((res && res.error) || "BOTからの返事がありません。") }; }
+      if (!(res && res.ok)) { err = "⚠ " + ((res && res.error) || "BOTからの返事がありません。"); SP_NOTE = { cls: "ng", text: err }; }
       else { ok = true; LO.edit = false; LO.p = null; }
+      if (ok) loNoticeDone(true);                                                         // 届いたら、すぐ次の案内に変える（描き直しを待たない）
       return refresh();
-    }).catch(function (e) { SP_NOTE = { cls: "ng", text: "⚠ " + (e.message || "つながりませんでした。") }; }).then(function () { LO.busy = false; render(); if (ok) showLoNotice(); });
+    }).catch(function (e) { err = "⚠ " + (e.message || "つながりませんでした。"); SP_NOTE = { cls: "ng", text: err }; }).then(function () { LO.busy = false; render(); if (ok) loNoticeDone(true); else loNoticeDone(false, err); });
   }
-  function showLoNotice() {                                                               // 決定したあと：画面いっぱいに、「あとで変えてもOK」と知らせる（OKは、目立つ色で）
+  function loNoticeDone(ok, err) {                                                        // 送信が終わった：次にやること（失敗なら、理由を出して、選ぶ画面に戻す）
+    var ov = $("lonotice"), nx = $("lonnext"); if (!ov || !nx || ov.getAttribute("data-done")) return;
+    ov.setAttribute("data-done", "1");
+    if (!ok) { nx.textContent = (err || "⚠ 送れませんでした。") + " もう一度「決定する」を押してください。"; nx.style.color = "#ff9aa5"; setTimeout(function () { if (ov.parentNode) ov.remove(); }, 4000); return; }
+    var cos = myCostumeCards().length || S.costume_pending;
+    nx.textContent = cos ? "✅ 決定しました！次に、使用する衣装を選んでください。"
+                         : "✅ 決定しました！" + (S.room_name ? "「" + S.room_name + "」という名前の" : "") + "カスタム戦の部屋に入ってください。";
+    setTimeout(function () { if (ov.parentNode) ov.remove(); }, 6000);
+  }
+  function showLoNotice() {                                                               // 決定したとき：画面いっぱいに、「あとで変えてもOK」と知らせる（OKは、目立つ色で）
     var old = $("lonotice"); if (old) old.remove();
     var ov = el("div", "lonotice"); ov.id = "lonotice";
     var t = el("div", "lonbig");
@@ -1475,13 +1486,10 @@
     t.appendChild(el("span", "lonok", "OK"));
     t.appendChild(document.createTextNode("です！"));
     ov.appendChild(t);
-    var cos = myCostumeCards().length || S.costume_pending;
-    ov.appendChild(el("div", "lonnext", cos ? "✅ 決定しました！次に、使用する衣装を選んでください。"
-                                           : "✅ 決定しました！" + (S.room_name ? "「" + S.room_name + "」という名前の" : "") + "カスタム戦の部屋に入ってください。"));
+    var nx = el("div", "lonnext", "⏳ 送信中…"); nx.id = "lonnext"; ov.appendChild(nx);       // 送れたら、次にやること（カスタム戦に入る／衣装を選ぶ）に変わる
     ov.appendChild(el("div", "lonsub", "（タップで閉じます）"));
     ov.addEventListener("click", function () { ov.remove(); });
     document.body.appendChild(ov);
-    setTimeout(function () { if (ov.parentNode) ov.remove(); }, 6000);
   }
   function loadoutBox() {                                                                 // 左の枠（衣装より上）：ハンターには、選ぶまで目立つように。ほかの人には、待っていると知らせる
     if (!S || S.status !== "done" || S.stage === "play" || !MY) return null;
@@ -1492,7 +1500,7 @@
     var cur = ownLoadout(), editing = LO.edit || !cur;
     if (!editing) {                                                                       // 選び終わった：まとめだけ（試合の前なら、選び直せる）
       var dn = el("div", "lobox done");
-      dn.appendChild(el("div", "lotitle", "🎭 ハンターの人格・特質（決定済み）"));
+      dn.appendChild(el("div", "lotitle", "🎭 ハンターの人格・特質"));
       var sm = el("div", "loicons");
       cur.p.forEach(function (i) { var f = el("figure"), im = el("img"); im.src = personaUrl("h", i); im.alt = PERSONA.h[i][1]; f.appendChild(im); f.appendChild(el("figcaption", "", PERSONA.h[i][1])); sm.appendChild(f); });
       sm.appendChild(el("div", "trait", TRAITS[cur.t]));
