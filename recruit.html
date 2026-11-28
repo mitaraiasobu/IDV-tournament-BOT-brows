@@ -388,14 +388,19 @@
     var a = el("a", "", "共有用URL"); a.href = shareUrl(); lk.appendChild(a); lk.appendChild(document.createTextNode("）")); c.appendChild(lk);
     if (setting) c.appendChild(el("div", "lead", "このページをはじめて開きました。次から使うアカウントパスワード（8〜20文字の英数字）を決めてください。"));
     var f = el("div", "frm");
+    var CLEANS = [];
     function pin(label, k) { f.appendChild(el("label", "", label)); var i = el("input"); i.type = "password"; i.maxLength = 20; i.autocomplete = setting ? "new-password" : "current-password"; i.value = PWIN[k];
-      i.addEventListener("input", function () { i.value = i.value.replace(/[^A-Za-z0-9]/g, ""); PWIN[k] = i.value; });
-      i.addEventListener("keydown", function (e) { if (e.key === "Enter") go.click(); }); f.appendChild(i); }
+      function clean() { var v = i.value.replace(/[０-９Ａ-Ｚａ-ｚ]/g, function (ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); }).replace(/[^A-Za-z0-9]/g, ""); if (v !== i.value) i.value = v; PWIN[k] = v; }   // 全角の英数字は、半角に
+      i.addEventListener("input", function (e) { if (e.isComposing) return; clean(); });                     // 日本語入力の変換中は、書き換えない（書き換えると、入力がおかしくなる）
+      i.addEventListener("compositionend", clean); i.addEventListener("change", clean); CLEANS.push(clean);
+      i.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.isComposing) { clean(); go.click(); } }); f.appendChild(i); }
     pin("アカウントパスワード", "a"); if (setting) pin("もう一度（確認）", "b");
     c.appendChild(f);
     if (PWERR) c.appendChild(el("div", "badtxt", "⚠ " + PWERR));
     var r = el("div", "row"), go = el("button", "go", BUSY ? "⏳ 確かめています…" : setting ? "このアカウントパスワードにする" : "開く"); go.type = "button"; go.disabled = BUSY;
     go.addEventListener("click", function () {
+      CLEANS.forEach(function (fn) { fn(); });                                              // ブラウザが自動で入れたパスワードも、読み直す
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();      // 入力欄から外す（入力中は描き直さないので、外さないと、決めたあとも画面が変わらない）
       if (!/^[A-Za-z0-9]{8,20}$/.test(PWIN.a)) { PWERR = "アカウントパスワードは、8〜20文字の英数字にしてください。"; render(); return; }
       if (setting && PWIN.a !== PWIN.b) { PWERR = "確認のアカウントパスワードが違います。"; render(); return; }
       phOf(PWIN.a).then(function (ph) {
@@ -2186,7 +2191,7 @@
         BUSY = false; WAIT = null; ORDER = null; if (r.ok) FORM = null;
         var WASPROF = !!(PEND && PEND.kind === "prof");
         if (r.ok) { LOGO = null; TN = null; }
-        if (PEND && PEND.kind === "pw") { if (r.ok) { UNLOCKED = true; PWIN = { a: "", b: "" }; PWERR = ""; try { sessionStorage.setItem("rc_ph_" + me.uid, PH); } catch (e) { /* そのまま */ } } else { PH = ""; } PEND = null; }
+        if (PEND && PEND.kind === "pw") { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); if (r.ok) { UNLOCKED = true; PWIN = { a: "", b: "" }; PWERR = ""; try { sessionStorage.setItem("rc_ph_" + me.uid, PH); } catch (e) { /* そのまま */ } } else { PH = ""; } PEND = null; }
         if (r.ok && PEND) {
           if (PEND.kind === "prof") { var q = PEND.data; var uu = U(); if (uu) uu.pf_ok = true;
             if (q.f === "any") { q.f = "both"; q.st = Object.assign({}, q.st || {}, { fx: true }); } else if (q.f === "both") q.st = Object.assign({}, q.st || {}, { fx: false });
@@ -2209,7 +2214,7 @@
         if (r.ok && SKIND) { if (PAGE !== SKIND) SKIND = null; SF = {}; var so = document.getElementById("ov"); if (so) so.remove(); }
         if (r.ok && OPEN != null && !((DSTEP === "confirm" || DSTEP === "extra") && WASPROF)) { OPEN = null; DSTEP = null; var o = document.getElementById("ov"); if (o) o.remove(); }
         IMG_FAIL = false;
-        render();
+        try { render(); } catch (e) { if (window.console) console.error(e); }               // 描けなくても、結果は必ず出す（くるくるのまま止まらない）
         setMsg(r.ok ? "ok" : "ng", r.ok ? "✅ " + (r.note || "受け付けました。") : "⚠ " + (r.error || "できませんでした。"));
         if (r.ok && IMG_AFTER && IMG && me.prof) { IMG_AFTER = false; PEND = { kind: "img" }; send({ act: "profile_image", image: IMG }, "画像を登録しています…"); }   // 選手情報を保存できた：続けて画像を送る
         else IMG_AFTER = false;
