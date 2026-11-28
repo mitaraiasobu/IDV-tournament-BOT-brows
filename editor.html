@@ -111,30 +111,36 @@
   .brdialog { border-color: var(--ac); } .brrow button.on { border-color: var(--ac); color: var(--ac); }
   .brwrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 10px 0; cursor: grab; max-height: 80vh; touch-action: auto; -webkit-overflow-scrolling: touch; }
   .brwrap.grab { cursor: grabbing; user-select: none; }
-  .bk { display: flex; gap: 34px; min-width: max-content; }
-  .bround { display: flex; flex-direction: column; width: 270px; flex: none; gap: 6px; } .bround.champ { width: 170px; }
+  /* 表：列ごとに「設定（上）」と「表の本体（下）」。本体は全部の列で同じ行にそろえて、次の試合を前の2試合のまん中に置く（大会ルールのページの表と同じ） */
+  .bk { display: grid; grid-auto-flow: column; grid-template-rows: auto 1fr; grid-auto-columns: 270px; column-gap: 40px; row-gap: 10px; min-width: max-content; }
+  .bround { display: contents; }
+  .bset { display: flex; flex-direction: column; gap: 6px; align-self: start; }
+  .bround.champ .bset, .bround.champ .bcol { width: 170px; }
   .bhd { display: flex; gap: 8px; align-items: center; font-size: 16px; color: var(--sub); } .bhd small { font-size: 12px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; }
   .bstart { display: flex; flex-direction: column; gap: 2px; } 
-  .bcol { display: flex; flex-direction: column; gap: 4px; }                      /* 上に詰めて並べる */
-  .bgroup { display: flex; flex-direction: column; position: relative; gap: 4px; }
+  .bcol { display: flex; flex-direction: column; }
+  .bgroup { flex: 1; display: flex; flex-direction: column; position: relative; }
   .bdur { font-size: 12px; color: var(--ac); font-weight: 700; }
-  .bround:not(.final):not(.champ) .bgroup::after { display: none; }
-  .x-unused-connector { content: ""; position: absolute; right: -17px; width: 17px; top: 25%; bottom: 25%; border: 2px solid var(--line); border-left: 0; pointer-events: none; }
-  .bslot { display: flex; align-items: center; padding: 2px 0; }
+  .bslot { flex: 1; display: flex; align-items: center; padding: 4px 0; position: relative; }
+  /* 線：右の「]」で2試合をまとめ、次の列のカードへ横の線でつなぐ（決勝から優勝へも） */
+  .bround:not(.final):not(.champ) .bgroup::after { content: ""; position: absolute; right: -20px; width: 20px; top: 25%; bottom: 25%;
+                                                   border: 2px solid var(--line); border-left: 0; pointer-events: none; }
+  .bround:not(.first) .bslot::before { content: ""; position: absolute; left: -20px; width: 20px; top: 50%; border-top: 2px solid var(--line); pointer-events: none; }
+  .bround.final .bslot::after { content: ""; position: absolute; right: -20px; width: 20px; top: 50%; border-top: 2px solid var(--line); pointer-events: none; }
   .bmatch { position: relative; width: 100%; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; }
-  .bround:not(.first) .bmatch::before, .bchamp::before { display: none; }
-  .x-unused-connector2 { content: ""; position: absolute; left: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
-  .bround.final .bmatch::after { display: none; }
-  .x-unused-connector3 { content: ""; position: absolute; right: -19px; width: 17px; top: 50%; border-top: 2px solid var(--line); }
-  .bmatch.is-bye { border-style: dashed; }
+  .bmatch.is-bye { border-style: dashed; } .bmatch.is-empty { opacity: .4; }      /* 空き（試合をしない枠）は薄く */
+  .bmatch.msel { outline: 3px solid var(--ac); } .bmatch.over { background: rgba(255, 176, 32, .12); }
+  .bhead[draggable=true] { cursor: move; }
+  .bmove { float: right; margin: -2px 0 0 6px; padding: 0 8px; font-size: 13px; line-height: 1.5; }
+  .bmove.on { background: var(--ac); color: #000; }
   .bhead { padding: 3px 10px; font-size: 12px; color: var(--sub); background: var(--panel2); border-radius: 8px 8px 0 0; }
   .bteam { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); font-weight: 700; font-size: 15px; }
   .bteam .tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .bteam .trank { font-size: 11px; color: var(--sub); font-weight: 400; }
   .bteam[draggable=true] { cursor: move; } .bteam.sel { outline: 2px solid var(--ac); } .bteam.over { background: rgba(255, 176, 32, .18); }
   .bteam.tbd .tname, .bteam.bye .tname { color: var(--sub); font-weight: 400; font-style: italic; }
   .bbreak { font-size: 12px; color: var(--ac); padding: 3px 10px; border-top: 1px dashed var(--line); }
-  .bround > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
-  .bchamp { position: relative; margin: 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
+  .bset > .bbreak { border: 1px dashed var(--ac); border-radius: 8px; }
+  .bchamp { position: relative; width: 100%; margin: 0; text-align: center; padding: 24px 10px; border: 2px solid var(--ac); border-radius: 12px; font-size: 32px; }
   .brsec { margin-top: 14px; } tr.slotrow td { font-size: 13px; color: var(--sub); padding-top: 2px; }
   .badtxt { color: var(--bad); font-size: 12px; font-weight: 700; margin-top: 4px; } input.bad { border-color: var(--bad) !important; color: var(--bad); } #dirty.bad { color: var(--bad); font-weight: 700; }
   .srow.dim { opacity: .4; } .srow.unset label { color: var(--bad); font-weight: 700; } .rankpick { display: flex; gap: 6px; }
@@ -715,7 +721,7 @@
   function OVR() { return TM.intro_overrides || {}; }
   // ───── 🏆 トーナメント表：公開用と同じ見た目。チームはドラッグ（またはチームを2つ順に押す）で入れ替え。横にスライドして見る。
   //        変えた内容は、上の「💾 保存」で、ほかのタブの変更といっしょに送る（抽選のあとは、裏で、対戦カードの用意とお知らせも行う） ─────
-  var BRS = null, BRSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
+  var BRS = null, BRSEL = null, BRMSEL = null;                                                     // 保存していない変更：{draw, swaps, modes, starts, breaks}／入れ替えで1つ目に選んだチーム
   function brState() { if (!BRS) BRS = { draw: null, swaps: [], modes: {}, starts: {}, fmts: {}, flex: {}, dls: {}, bases: {}, breaks: null }; return BRS; }
   function brDirty() { var b = BRS; return !!b && (!!b.draw || b.swaps.length > 0 || Object.keys(b.modes).length > 0 || Object.keys(b.flex || {}).length > 0 || Object.keys(b.dls || {}).length > 0 || Object.keys(b.bases || {}).length > 0 || Object.keys(b.streams || {}).length > 0 || Object.keys(b.pbreaks || {}).length > 0 || Object.keys(b.confirms || {}).length > 0 || Object.keys(b.starts).length > 0 || Object.keys(b.fmts || {}).length > 0 || b.breaks !== null || b.half !== undefined); }
   function fmtDT(s) { var d = parseLocal(s); return d ? (d.getMonth() + 1) + "/" + d.getDate() + " " + hhmm(d) : "--"; }
@@ -729,8 +735,14 @@
     var st = brState(), pairs;
     if (st.draw && st.draw.mode === "random") return null;                          // ランダムは、保存したときにBOTが決める
     var src = st.draw && st.draw.mode === "rating" ? B.rating.pairs : B.current;
-    pairs = src.map(function (c) { return { a: Object.assign({}, c.a), b: Object.assign({}, c.b) }; });
+    pairs = src.map(function (c) { return { mid: c.mid, empty: !!c.empty, a: Object.assign({}, c.a), b: Object.assign({}, c.b) }; });
     st.swaps.forEach(function (sw) {
+      if (sw.m) {                                                                     // ラウンド1の試合ごとの入れ替え（中の2チームは、そのまま）
+        var x = null, y = null;
+        pairs.forEach(function (pr) { if (pr.mid === sw.m[0]) x = pr; if (pr.mid === sw.m[1]) y = pr; });
+        if (x && y) { var ta = x.a, tb = x.b; x.a = y.a; x.b = y.b; y.a = ta; y.b = tb; }
+        return;
+      }
       var pa = null, pb = null;
       pairs.forEach(function (pr) { ["a", "b"].forEach(function (k) { if (pr[k].team === sw[0]) pa = [pr, k]; if (pr[k].team === sw[1]) pb = [pr, k]; }); });
       if (pa && pb) { var t = pa[0][pa[1]]; pa[0][pa[1]] = pb[0][pb[1]]; pb[0][pb[1]] = t; }
@@ -751,14 +763,30 @@
       row.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", String(t.team)); e.dataTransfer.effectAllowed = "move"; });
       row.addEventListener("dragover", function (e) { e.preventDefault(); row.classList.add("over"); });
       row.addEventListener("dragleave", function () { row.classList.remove("over"); });
-      row.addEventListener("drop", function (e) { e.preventDefault(); row.classList.remove("over"); brSwap(Number(e.dataTransfer.getData("text/plain")), t.team); });
+      row.addEventListener("drop", function (e) { var d = e.dataTransfer.getData("text/plain"); row.classList.remove("over"); if (d.indexOf("m:") === 0) return; e.preventDefault(); e.stopPropagation(); brSwap(Number(d), t.team); });
       row.addEventListener("click", function () { if (BRSEL == null) { BRSEL = t.team; renderBracket(); } else if (BRSEL === t.team) { BRSEL = null; renderBracket(); } else brSwap(BRSEL, t.team); });
     }
     return row;
   }
-  function brMatch(m, head, a, b, canSwap, brks) {
-    var c = el("div", "bmatch" + (m && m.bye ? " is-bye" : ""));
-    c.appendChild(el("div", "bhead", head));
+  function brMswap(a, b) {                                                          // ラウンド1の試合ごとの入れ替え
+    if (!a || !b || a === b) { BRMSEL = null; renderBracket(); return; }
+    brState().swaps.push({ m: [a, b] }); BRMSEL = null; BRSEL = null; renderBracket();
+  }
+  function brMatch(m, head, a, b, canSwap, brks, canMove) {
+    var c = el("div", "bmatch" + (m && m.bye ? " is-bye" : "") + (m && m.empty ? " is-empty" : "") + (canMove && BRMSEL === m.mid ? " msel" : ""));
+    var hd = el("div", "bhead", head);
+    c.appendChild(hd);
+    if (canMove) {                                                                    // 見出しをつかんで、別の試合の上で離す（または ⇅ を2つ順に押す）と、試合ごと入れ替わる
+      var mv = el("button", "bmove" + (BRMSEL === m.mid ? " on" : ""), "⇅"); mv.type = "button";
+      mv.title = "試合ごと入れ替える（別の試合の ⇅ を押すか、見出しをつかんで別の試合の上で離す）";
+      mv.addEventListener("click", function (e) { e.stopPropagation(); if (BRMSEL == null) { BRMSEL = m.mid; BRSEL = null; renderBracket(); } else brMswap(BRMSEL, m.mid); });
+      hd.appendChild(mv);
+      hd.draggable = !("ontouchstart" in window);
+      hd.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", "m:" + m.mid); e.dataTransfer.effectAllowed = "move"; });
+      c.addEventListener("dragover", function (e) { e.preventDefault(); c.classList.add("over"); });
+      c.addEventListener("dragleave", function () { c.classList.remove("over"); });
+      c.addEventListener("drop", function (e) { var d = e.dataTransfer.getData("text/plain"); c.classList.remove("over"); if (d.indexOf("m:") !== 0) return; e.preventDefault(); brMswap(d.slice(2), m.mid); });
+    }
     c.appendChild(brTeamRow(a, canSwap)); c.appendChild(brTeamRow(b, canSwap));
     (brks || []).forEach(function (bk) { c.appendChild(el("div", "bbreak", "☕ " + (bk.label || "休憩") + " " + bk.minutes + "分（この試合のあと）")); });
     return c;
@@ -767,7 +795,7 @@
     var on = false, sx = 0, sy = 0, sl = 0, st = 0;
     wrap.addEventListener("pointerdown", function (e) {
       if (e.pointerType && e.pointerType !== "mouse") return;                          // スマホ・タブレット：指のときは、ふつうのスクロール（ボタンが押せなくならないように）
-      if (e.target.closest && e.target.closest(".bteam, input, button, select, .seg")) return;
+      if (e.target.closest && e.target.closest(".bteam, .bhead[draggable=true], input, button, select, .seg")) return;
       on = true; sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop; wrap.classList.add("grab");
     });
     window.addEventListener("pointermove", function (e) { if (!on) return; wrap.scrollLeft = sl - (e.clientX - sx); wrap.scrollTop = st - (e.clientY - sy); });
@@ -1144,7 +1172,7 @@
   function brOps(B) {                                                               // 保存していない変更を、BOTへ送る操作に
     var st = brState(), ops = [];
     if (st.draw) ops.push(st.draw.mode === "rating" ? { op: "bracket_draw", mode: "rating", seed: B.seed, reset: B.has_results } : { op: "bracket_draw", mode: "random", reset: B.has_results });
-    st.swaps.forEach(function (sw) { ops.push({ op: "bracket_swap", a: sw[0], b: sw[1] }); });
+    st.swaps.forEach(function (sw) { ops.push(sw.m ? { op: "bracket_swap_match", a: sw.m[0], b: sw.m[1] } : { op: "bracket_swap", a: sw[0], b: sw[1] }); });
     Object.keys(st.fmts || {}).forEach(function (r) { ops.push({ op: "set_round_format", round: Number(r), fmt: st.fmts[r] }); });     // 試合形式（抽選の前だけ）
     Object.keys(st.modes).forEach(function (r) { ops.push({ op: "set_round_mode", round: Number(r), concurrent: st.modes[r] }); });
     Object.keys(st.flex || {}).forEach(function (r) { ops.push({ op: "set_round_flex", round: Number(r), on: st.flex[r] }); });                  // 任意の日時
@@ -1170,7 +1198,7 @@
     if (typeof refreshDirty === "function") refreshDirty();                            // 保存は、上の「💾 保存」だけ（ここの変更も、上の「変更があります」に出る）
     var bar = el("div", "brbar");
     var undo = el("button", "", "↺ 変更を取り消す"); undo.type = "button"; undo.disabled = !brDirty();
-    undo.addEventListener("click", function () { BRS = null; BRSEL = null; renderBracket(); });
+    undo.addEventListener("click", function () { BRS = null; BRSEL = null; BRMSEL = null; renderBracket(); });
     bar.appendChild(undo);
     bar.appendChild(el("span", "muted", "登録 " + B.registered + "/" + B.team_count + "チーム・" + (B.drawn ? "組み合わせ決定済み" : "組み合わせ未定") + (B.publish_pending ? "・保存の処理中" : "")));
     v.appendChild(bar);
@@ -1210,17 +1238,18 @@
     hm.appendChild(hi); hm.appendChild(el("span", "", "分"));
     hm.appendChild(el("span", "muted", "トーナメント表の時間の計算に使います（⚙ 大会設定の同じ項目と、同じ設定です）。"));
     v.appendChild(hm);
-    v.appendChild(el("div", "muted", "チームは、ドラッグして別のチームの上で離すか、2つ順に押すと、入れ替わります。表の何もないところをつかむと、横にスライドできます。各ラウンドの見出しで、進め方・開始日時（日を分けるとき）を変えられます。"));
+    v.appendChild(el("div", "muted", "チームは、ドラッグして別のチームの上で離すか、2つ順に押すと、入れ替わります。ラウンド1は、試合の見出しをつかんで別の試合の上で離すか、⇅ を2つ順に押すと、試合ごと（2チームのまま）入れ替わります。表の何もないところをつかむと、横にスライドできます。各ラウンドの見出しで、進め方・開始日時（日を分けるとき）を変えられます。"));
     // 表（公開用と同じ形：ラウンドごとの列・2試合ずつ線でつなぐ・優勝の箱）
     var wrap = el("div", "brwrap"), bk = el("div", "bk");
     var R = B.rounds.length;
     B.rounds.forEach(function (r) {
       var col = el("section", "bround" + (r.no === 1 ? " first" : "") + (r.no === R ? " final" : ""));
+      var set = el("div", "bset"); col.appendChild(set);                            // 上：このラウンドの設定（高さはラウンドごとに違う）。下の表の本体は、全部の列で同じ行にそろえる
       var fmt = (st.fmts || {})[r.no] || r.fmt;
       var h = el("div", "bhd"); h.appendChild(el("b", "", r.no === R ? "決勝" : r.name));
-      col.appendChild(h);
+      set.appendChild(h);
       var conc = st.modes[r.no] != null ? st.modes[r.no] : r.concurrent;
-      col.appendChild(sseg([["BO1", "BO1"], ["BO3", "BO3"]], fmt, function (x) {      // 試合形式（抽選の前だけ変えられる）
+      set.appendChild(sseg([["BO1", "BO1"], ["BO3", "BO3"]], fmt, function (x) {      // 試合形式（抽選の前だけ変えられる）
         if (B.drawn) { setResult("ng", "⚠ 組み合わせを抽選したあとは、試合形式は変えられません。"); return; }
         if (x === r.fmt) delete st.fmts[r.no]; else st.fmts[r.no] = x; renderBracket();
       }));
@@ -1229,11 +1258,11 @@
       if (half) {                                                                     // このラウンドにかかる時間（延長戦まで見込む。順番なら試合の数ぶん、同時なら1試合ぶん。試合のあとの休憩も）
         var halves = ((fmt === "BO3" ? 3 : 1) + 1) * 2, gap = B.half_gap != null ? B.half_gap : 5, est = half * halves + gap * (halves - 1), brk = brks.filter(function (x) { return String(x.after).indexOf("R" + r.no + "-") === 0; }).reduce(function (a, x) { return a + (x.minutes || 0); }, 0);
         var tot = conc ? prep + est : (prep + est) * nm + brk;
-        col.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分（半戦" + halves + "本と、その間の準備" + gap + "分×" + (halves - 1) + "）" + (brk ? "・休憩" + brk + "分" : "") + "）"));
-      } else col.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
+        set.appendChild(el("div", "bdur", "⏱ このラウンド：約" + (tot >= 60 ? Math.floor(tot / 60) + "時間" : "") + (tot % 60 ? tot % 60 + "分" : "") + "（" + (nm === 1 ? "1試合" : conc ? "同時に" + nm + "試合" : nm + "試合を順番に") + "・1試合＝準備" + prep + "分＋試合" + est + "分（半戦" + halves + "本と、その間の準備" + gap + "分×" + (halves - 1) + "）" + (brk ? "・休憩" + brk + "分" : "") + "）"));
+      } else set.appendChild(el("div", "bdur", "⏱ かかる時間は、前半戦・後半戦の想定時間を入れると出ます"));
       st.flex = st.flex || {}; st.dls = st.dls || {};
       var fx = st.flex[r.no] != null ? st.flex[r.no] : !!r.flex;                      // 任意の日時（開始日時より後なら、対戦相手と相談して、いつでも試合ができる）
-      col.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"], ["2", "任意の日時"]], fx ? "2" : conc ? "1" : "0", function (x) {
+      set.appendChild(sseg([["0", "順番に（実況・解説）"], ["1", "同時に"], ["2", "任意の日時"]], fx ? "2" : conc ? "1" : "0", function (x) {
         var wf = x === "2"; if (wf === !!r.flex) delete st.flex[r.no]; else st.flex[r.no] = wf;
         if (!wf) { var want = x === "1"; if (want === r.concurrent) delete st.modes[r.no]; else st.modes[r.no] = want; }
         renderBracket();
@@ -1242,16 +1271,16 @@
         var dl = el("input"); dl.type = "datetime-local"; dl.value = st.dls[r.no] !== undefined ? (st.dls[r.no] || "") : (r.deadline || "");
         dl.title = "結果報告の締切（この日時までに、試合が終わって、結果が入っている必要があります）";
         dl.addEventListener("change", function () { var o = r.deadline || ""; if ((dl.value || "") === o) delete st.dls[r.no]; else st.dls[r.no] = dl.value || null; renderBracket(); });
-        var dlw = el("label", "muted", "結果報告の締切："); dlw.appendChild(dl); col.appendChild(dlw);
+        var dlw = el("label", "muted", "結果報告の締切："); dlw.appendChild(dl); set.appendChild(dlw);
         st.bases = st.bases || {};
         var bs = el("input"); bs.type = "datetime-local"; bs.value = st.bases[r.no] !== undefined ? (st.bases[r.no] || "") : (r.base || "");
         bs.title = "試合日時の確認で選ぶ「基本の日時」（空＝このラウンドの開始日時）。大会の開始日時とは別に決められます";
         bs.addEventListener("change", function () { var o = r.base || ""; if ((bs.value || "") === o) delete st.bases[r.no]; else st.bases[r.no] = bs.value || null; renderBracket(); });
-        var bsw = el("label", "muted", "基本の日時："); bsw.appendChild(bs); col.appendChild(bsw);
+        var bsw = el("label", "muted", "基本の日時："); bsw.appendChild(bs); set.appendChild(bsw);
       }
       st.streams = st.streams || {};
       var strm = st.streams[r.no] != null ? st.streams[r.no] : r.stream;              // 生配信あり／なし（大会ルールの「BAN/PICK」タブに出る）
-      col.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
+      set.appendChild(sseg([["1", "📺 生配信あり"], ["0", "生配信なし"]], strm ? "1" : "0", function (x) {
         var want = x === "1"; if (want === !!r.stream) delete st.streams[r.no]; else st.streams[r.no] = want; renderBracket();
       }));
       var prevStream = B.rounds.some(function (q) { var sv = st.streams[q.no] != null ? st.streams[q.no] : q.stream; return q.no < r.no && sv; });
@@ -1263,7 +1292,7 @@
           var want = x === "1"; if (want === !!r.part_break) delete st.pbreaks[r.no]; else st.pbreaks[r.no] = want; renderBracket();
         }));
         pbw.title = "「分ける」にすると、前のラウンドの終わりで、配信をいったん終え（本日の全試合が終了しました）、このラウンドから、もう一度、開会の演出で始めます";
-        col.appendChild(pbw);
+        set.appendChild(pbw);
       }
       var cur = st.starts[r.no] !== undefined ? st.starts[r.no] : (r.no === 1 ? B.start_at : r.override);
       var dt = el("input"); dt.type = "datetime-local"; dt.value = cur || ""; dt.title = r.no === 1 ? "大会日時（ラウンド1の開始）" : "日を分けるときの、このラウンドの開始（空＝前のラウンドから自動）";
@@ -1274,19 +1303,23 @@
         renderBracket();
       });
       var sl = el("div", "bstart"); sl.appendChild(el("span", "muted", r.no === 1 ? "開始（大会日時）" : (cur ? "開始（日を分ける）" : "開始：自動 " + (r.start ? fmtDT(r.start) : ""))));
-      sl.appendChild(dt); col.appendChild(sl);
+      sl.appendChild(dt); set.appendChild(sl);
       var body = el("div", "bcol");
       var ms = r.matches.slice().sort(function (x, y) { return (x.pos != null ? x.pos - y.pos : x.no - y.no); });   // 線が正しくつながる順（組み合わせを入れ替えたラウンドも）
       var cards = ms.map(function (m, k) {
-        var a = { name: m.a || (m.empty ? "—" : m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye }, b = { name: m.b || (m.empty ? "—" : m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye };
-        var swap = false;
+        function side(nm, isBye) { return { name: nm || (m.empty ? "—" : isBye ? "シード（不戦勝）" : "（未定）"), bye: m.empty || isBye }; }
+        var a = side(m.a, m.a_bye != null ? m.a_bye : m.bye), b = side(m.b, m.b_bye != null ? m.b_bye : m.bye);
+        var swap = false, move = false;
         if (r.no === 1) {
-          if (pairs && pairs[k]) { a = pairs[k].a; b = pairs[k].b; swap = !B.locked; }
+          if (pairs && pairs[k]) {
+            a = pairs[k].a; b = pairs[k].b; swap = !B.locked; move = !B.locked && !m.empty && !pairs[k].empty;
+            m = Object.assign({}, m, { empty: !!pairs[k].empty, bye: !!pairs[k].empty || !!(a.bye || b.bye) });   // 入れ替えた見た目のまま（見出し・薄さも）
+          }
           else if (!pairs) { a = { name: "（保存したときに決まります）" }; b = { name: "（保存したときに決まります）" }; }
-        } else if (st.draw || st.swaps.length) { a = { name: "（未定）" }; b = { name: "（未定）" }; }
+        } else if (st.draw || st.swaps.length) { a = side("", m.a_bye); b = side("", m.b_bye); }        // 勝ち上がりは未定（シードの枠は、そのまま）
         var pe = parseLocal(m.play), pend = pe && half ? new Date(pe.getTime() + est * 60000) : null;
         var head = m.empty ? "空き" : m.bye ? "シード" : (m.play ? fmtDT(m.play) + "試合開始" + (pend ? "～" + (pend.getDate() !== pe.getDate() ? (pend.getMonth() + 1) + "/" + pend.getDate() + " " : "") + hhmm(pend) + "試合終了" : "") : "時間未定");
-        return brMatch(m, head, a, b, swap, brks.filter(function (x) { return x.after === m.mid; }));
+        return brMatch(m, head, a, b, swap, brks.filter(function (x) { return x.after === m.mid; }), move);
       });
       if (r.no === R) cards.forEach(function (c) { var sl2 = el("div", "bslot"); sl2.appendChild(c); body.appendChild(sl2); });
       else for (var q = 0; q < cards.length; q += 2) {
@@ -1295,14 +1328,14 @@
         body.appendChild(g);
       }
       col.appendChild(body);
-      brks.filter(function (x) { return x.after === "R" + r.no; }).forEach(function (x) { col.appendChild(el("div", "bbreak", "☕ " + (x.label || "休憩") + " " + x.minutes + "分（このラウンドのあと）")); });
+      brks.filter(function (x) { return x.after === "R" + r.no; }).forEach(function (x) { set.appendChild(el("div", "bbreak", "☕ " + (x.label || "休憩") + " " + x.minutes + "分（このラウンドのあと）")); });
       bk.appendChild(col);
     });
-    var champ = el("section", "bround champ"); champ.appendChild(el("div", "bhd", "優勝"));
-    var cbox = el("div", "bchamp"); cbox.appendChild(el("div", "", "🏆")); cbox.appendChild(el("div", "muted", "CHAMPION")); champ.appendChild(cbox);
-    bk.appendChild(champ);
-    var n1 = (B.rounds[0] || { matches: [] }).matches.length;
-    bk.style.minHeight = "";                                                           // 上に詰めて並べる
+    var champ = el("section", "bround champ"), cset = el("div", "bset"), cbody = el("div", "bcol"), cslot = el("div", "bslot");
+    cset.appendChild(el("div", "bhd", "優勝")); champ.appendChild(cset);
+    var cbox = el("div", "bchamp"); cbox.appendChild(el("div", "", "🏆")); cbox.appendChild(el("div", "muted", "CHAMPION"));
+    cslot.appendChild(cbox); cbody.appendChild(cslot); champ.appendChild(cbody);
+    bk.appendChild(champ);                                                             // 並び方・線は、大会ルールのページのトーナメント表と同じ（次の試合は、前の2試合のまん中）
     wrap.appendChild(bk); brPan(wrap); v.appendChild(wrap);
     wrap.scrollLeft = keepX; wrap.scrollTop = keepY;                                    // 押したところのまま（左上に戻さない）
     // 休憩

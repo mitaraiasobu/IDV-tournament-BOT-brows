@@ -66,10 +66,12 @@
 
   .match { position: relative; width: 100%; background: var(--panel); border: 2px solid var(--line);
            border-radius: 14px; overflow: hidden; }
-  .round:not(.first) .match::before, .round.champ .box::before {
-    content: ""; position: absolute; left: -22px; width: 22px; top: 50%; border-top: 3px solid var(--line); }
-  .round.final .match::after { content: ""; position: absolute; right: -22px; width: 22px; top: 50%;
-                               border-top: 3px solid var(--line); }
+  /* 前のラウンドから入る線・優勝へ出る線：カードは、はみ出しを隠すので、カードを入れている枠（.slot）に描く */
+  .round:not(.first):not(.champ) .slot { position: relative; }
+  .round:not(.first):not(.champ) .slot::before, .round.champ .box::before {
+    content: ""; position: absolute; left: -22px; width: 22px; top: 50%; border-top: 3px solid var(--line); pointer-events: none; }
+  .round.final .slot::after { content: ""; position: absolute; right: -22px; width: 22px; top: 50%;
+                              border-top: 3px solid var(--line); pointer-events: none; }
   /* ラウンド1が5試合以上（9〜16チーム）のときは、その列だけカードを小さくする */
   .round.dense .slot { padding: 3px 0; }
   .round.dense .mhead { padding: 2px 12px; font-size: 12px; }
@@ -220,7 +222,7 @@
   html.flow .round h2 { height: auto; font-size: 1.1em; margin-bottom: .4em; }
   html.flow .round h2 small { font-size: .7em; }
   html.flow .col, html.flow .group { display: block; flex: none; }
-  html.flow .group::after, html.flow .round .match::before, html.flow .round .match::after,
+  html.flow .group::after, html.flow .round .match::before, html.flow .round .match::after, html.flow .round .slot::before, html.flow .round .slot::after,
   html.flow .round.champ .box::before { display: none !important; }
   html.flow .round .slot { display: block; padding: .25em 0 !important; }
   html.flow .round .match { border-width: 2px !important; border-radius: .7em !important; }
