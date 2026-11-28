@@ -123,6 +123,7 @@
   .team.dq .tname { text-decoration: line-through; }
   .team.bye .tname { color: var(--sub); font-weight: 400; font-style: italic; }
   .st-finished.is-bye { border-style: dashed; }
+  .match.is-empty { border-style: dashed; opacity: .35; }
   .abbr { font-size: .62em; font-weight: 600; color: var(--sub); letter-spacing: .06em; margin-left: 6px; }
   .dqtag { font-size: 15px; font-weight: 700; background: var(--hot); color: #fff; padding: 1px 10px; border-radius: 6px; }
   .mfoot { min-height: 34px; padding: 6px 16px 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
@@ -597,6 +598,12 @@
   }
 
   function matchCard(m) {
+    if (m.empty) {                                                                      // チーム数が枠に足りない分の「空き」（試合はしない）
+      var ec = el("div", "match is-empty"), eh = el("div", "mhead");
+      eh.appendChild(el("span", null, m.round === ROUNDS ? "決勝" : m.round_name + " #" + (m.index + 1))); eh.appendChild(el("span", "badge", "空き"));
+      ec.appendChild(eh); ec.appendChild(el("div", "team tbd", "—")); ec.appendChild(el("div", "team tbd", "—"));
+      return ec;
+    }
     var card = el("div", "match st-" + m.status + (m.by_dq ? " by-dq" : "") + (m.bye ? " is-bye" : ""));
     card.appendChild(el("span", "orn", "✧"));                       // ゴシックのデザインのときだけ見える飾り
     var head = el("div", "mhead");
