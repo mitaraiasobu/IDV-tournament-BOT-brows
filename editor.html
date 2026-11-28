@@ -1276,7 +1276,7 @@
       var sl = el("div", "bstart"); sl.appendChild(el("span", "muted", r.no === 1 ? "開始（大会日時）" : (cur ? "開始（日を分ける）" : "開始：自動 " + (r.start ? fmtDT(r.start) : ""))));
       sl.appendChild(dt); col.appendChild(sl);
       var body = el("div", "bcol");
-      var ms = r.matches.slice().sort(function (x, y) { return x.no - y.no; });
+      var ms = r.matches.slice().sort(function (x, y) { return (x.pos != null ? x.pos - y.pos : x.no - y.no); });   // 線が正しくつながる順（組み合わせを入れ替えたラウンドも）
       var cards = ms.map(function (m, k) {
         var a = { name: m.a || (m.empty ? "—" : m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye }, b = { name: m.b || (m.empty ? "—" : m.bye ? "シード（不戦勝）" : "（未定）"), bye: m.bye };
         var swap = false;
