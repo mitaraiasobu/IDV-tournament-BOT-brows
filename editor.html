@@ -1107,7 +1107,31 @@
         if (tMg.length) c.appendChild(el("div", "note", "マネージャー：" + tMg.map(function (m) { return m.name + (m.status === "pending" ? "（承認待ち）" : ""); }).join("、")));
         var lg = el("div", "row"); lg.style.alignItems = "center";
         function im(src, cap) { var f = el("div", ""); f.style.textAlign = "center"; var i = document.createElement("img"); i.src = src; i.style.width = "72px"; i.style.height = "72px"; i.style.borderRadius = "8px"; f.appendChild(i); f.appendChild(el("div", "note", cap)); lg.appendChild(f); }
-        if (t.logo) im(t.logo, "いまのロゴ");
+        function saveBtn(label, key, part, fname) {                                   // 押したときだけ、そのチームの1つのファイルを読んで保存する（重いので）
+          var b = el("button", "primary", label); b.type = "button";
+          b.addEventListener("click", function () {
+            b.disabled = true; b.textContent = "読み込んでいます…";
+            fetch(BASE + key + "/" + part + "/" + t.team + ".json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (uri) {
+              if (typeof uri !== "string" || uri.indexOf("data:") !== 0) throw new Error("none");
+              var a = document.createElement("a"); a.href = uri; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+              b.disabled = false; b.textContent = label;
+            }).catch(function () { b.disabled = false; b.textContent = "⚠ 読み込めませんでした（少し待って、もう一度）"; });
+          });
+          return b;
+        }
+        function br(x) { x.appendChild(document.createElement("br")); }
+        var NO_ORIG = "元の画像：残っていません（この機能より前に送られたもの・大きいファイルをブラウザから送ったもの）";
+        if (t.logo) {
+          im(t.logo, "いまのロゴ");
+          var cinfo = el("div", "note"); cinfo.style.maxWidth = "18em";
+          cinfo.textContent = "背景の透過：" + (t.logo_tr || "—"); br(cinfo);
+          if (t.logo_key) {
+            cinfo.appendChild(saveBtn("⬇ 表示に使うファイル（縮めたもの）を保存", t.logo_key, "cur_png", (t.name || "team") + "_logo.png")); br(cinfo);
+            if (t.logo_cur_orig_name) cinfo.appendChild(saveBtn("⬇ 元の画像（送られたファイル）を保存", t.logo_key, "cur", t.logo_cur_orig_name));
+            else cinfo.appendChild(el("span", "", NO_ORIG));
+          }
+          lg.appendChild(cinfo);
+        }
         if (t.logo_pend) {
           im(t.logo_pend, "⏳ 承認待ち");                                               // 実際のファイル（市松模様の上：模様が見えるところが透明）
           var lpImg = lg.lastChild.firstChild; lpImg.style.width = "128px"; lpImg.style.height = "128px";
@@ -1115,27 +1139,31 @@
           var info = el("div", "note"); info.style.maxWidth = "18em";
           info.textContent = "背景の透過：" + (t.logo_pend_tr || "—") + "（灰色と白の模様が見えるところが透明）";
           var dl = document.createElement("a"); dl.href = t.logo_pend; dl.download = (t.name || "team") + "_logo.png"; dl.textContent = "⬇ 表示に使うファイル（縮めたもの）を保存";
-          info.appendChild(document.createElement("br")); info.appendChild(dl);
-          info.appendChild(document.createElement("br"));
-          if (t.logo_orig_key) {                                                       // 送られた元のファイル（縮める前のまま。重いので、押したときだけ読む）
-            var ob = el("button", "primary", "⬇ 元の画像（送られたファイル）を保存"); ob.type = "button";
-            ob.addEventListener("click", function () {
-              ob.disabled = true; ob.textContent = "読み込んでいます…";
-              fetch(BASE + t.logo_orig_key + ".json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-                var uri = ((d && d.files) || {})[String(t.team)];
-                if (!uri) throw new Error("none");
-                var a = document.createElement("a"); a.href = uri; a.download = t.logo_orig_name || "logo_original"; document.body.appendChild(a); a.click(); a.remove();
-                ob.disabled = false; ob.textContent = "⬇ 元の画像（送られたファイル）を保存";
-              }).catch(function () { ob.disabled = false; ob.textContent = "⚠ 読み込めませんでした（少し待って、もう一度）"; });
-            });
-            info.appendChild(ob);
-          } else info.appendChild(el("span", "", "元の画像：残っていません（この機能より前に送られたもの・大きいファイルをブラウザから送ったもの）"));
+          br(info); info.appendChild(dl); br(info);
+          if (t.logo_orig_key) info.appendChild(saveBtn("⬇ 元の画像（送られたファイル）を保存", t.logo_orig_key, "files", t.logo_orig_name || "logo_original"));
+          else info.appendChild(el("span", "", NO_ORIG));
           lg.appendChild(info);
           var ok = el("button", "primary", "✅ ロゴを承認"); ok.type = "button"; ok.addEventListener("click", function () { brSend([{ op: "team_logo_ok", team: t.team }], "ロゴを承認しています…"); });
           var ng = el("button", "", "❌ ロゴを却下"); ng.type = "button"; ng.addEventListener("click", function () { var rs = prompt("却下の理由を書いてください（リーダーに送ります）：", ""); if (rs && rs.trim()) brSend([{ op: "team_logo_ng", team: t.team, reason: rs.trim() }], "ロゴを却下しています…"); });
           lg.appendChild(ok); lg.appendChild(ng);
         }
         if (!t.logo && !t.logo_pend) lg.appendChild(el("span", "note", "ロゴ：まだ登録していません"));
+        if (t.logo_on) {                                                               // 管理者が、ロゴを差し替える（承認は要らない。いつでも）
+          var fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp,image/gif"; fi.style.display = "none";
+          var rb = el("button", "", t.logo || t.logo_pend ? "🖼 ロゴを差し替える" : "🖼 ロゴを登録する"); rb.type = "button";
+          rb.title = "管理者として、すぐに使います（承認は要りません。承認待ちのロゴは、取り消されます）";
+          rb.addEventListener("click", function () { fi.click(); });
+          fi.addEventListener("change", function () {
+            var f = fi.files && fi.files[0]; fi.value = ""; if (!f) return;
+            if (f.size > 8000000) { setResult("ng", "⚠ 画像のファイルが大きすぎます（8MBまで）。"); return; }
+            if (!confirm("「" + t.name + "」のロゴを、この画像に差し替えます（承認なしで、すぐに使われます" + (t.logo_pend ? "。承認待ちのロゴは、取り消されます" : "") + "）。よろしいですか？")) return;
+            var rd = new FileReader();
+            rd.onload = function () { brSend([{ op: "team_logo_set", team: t.team, image: rd.result, orig: true }], "ロゴを差し替えています…"); };
+            rd.onerror = function () { setResult("ng", "⚠ 画像を読めませんでした。"); };
+            rd.readAsDataURL(f);
+          });
+          lg.appendChild(rb); lg.appendChild(fi);
+        }
         c.appendChild(lg);
         box.appendChild(c);
       });
