@@ -1065,8 +1065,9 @@
       teamsA.forEach(function (t) {
         var c = el("div", "card"); c.style.marginTop = "10px";
         var h = el("div", ""); h.style.fontWeight = "800"; h.textContent = t.name + (t.abbr ? "（" + t.abbr + "）" : "") + (t.entered ? "　✅ エントリー済み" : "　📣 募集中"); c.appendChild(h);
-        var pl = el("div", "note"); pl.textContent = "選手：" + (t.players.length ? "" : "（まだいません）"); c.appendChild(pl);
-        t.players.forEach(function (p) {
+        var tPl = t.players || [], tMg = t.managers || [];                       // Firebase は空のリストを保存しない（無いときは空）
+        var pl = el("div", "note"); pl.textContent = "選手：" + (tPl.length ? "" : "（まだいません）"); c.appendChild(pl);
+        tPl.forEach(function (p) {
           var r = el("div", "row"); r.style.alignItems = "center";
           r.appendChild(el("span", "", (p.leader ? "👑 " : "") + p.name + (p.status === "pending" ? "（承認待ち）" : "")));
           var sel = el("select"), o0 = el("option", "", "別のチームへ移動…"); o0.value = ""; sel.appendChild(o0);
@@ -1075,12 +1076,19 @@
             if (confirm("「" + p.name + "」を「" + t.name + "」から「" + (to ? to.name : "") + "」へ移動します。よろしいですか？" + (p.leader ? "（リーダーを移動すると、元のチームの次に古い選手がリーダーになります）" : ""))) brSend([{ op: "team_move_player", pid: p.pid, team: Number(sel.value) }], "選手を移動しています…"); else sel.value = ""; });
           r.appendChild(sel); c.appendChild(r);
         });
-        if (t.managers.length) c.appendChild(el("div", "note", "マネージャー：" + t.managers.map(function (m) { return m.name + (m.status === "pending" ? "（承認待ち）" : ""); }).join("、")));
+        if (tMg.length) c.appendChild(el("div", "note", "マネージャー：" + tMg.map(function (m) { return m.name + (m.status === "pending" ? "（承認待ち）" : ""); }).join("、")));
         var lg = el("div", "row"); lg.style.alignItems = "center";
         function im(src, cap) { var f = el("div", ""); f.style.textAlign = "center"; var i = document.createElement("img"); i.src = src; i.style.width = "72px"; i.style.height = "72px"; i.style.borderRadius = "8px"; f.appendChild(i); f.appendChild(el("div", "note", cap)); lg.appendChild(f); }
         if (t.logo) im(t.logo, "いまのロゴ");
         if (t.logo_pend) {
-          im(t.logo_pend, "⏳ 承認待ち");
+          im(t.logo_pend, "⏳ 承認待ち");                                               // 実際のファイル（市松模様の上：模様が見えるところが透明）
+          var lpImg = lg.lastChild.firstChild; lpImg.style.width = "128px"; lpImg.style.height = "128px";
+          lpImg.style.background = "repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 16px 16px";
+          var info = el("div", "note"); info.style.maxWidth = "18em";
+          info.textContent = "背景の透過：" + (t.logo_pend_tr || "—") + "（灰色と白の模様が見えるところが透明）";
+          var dl = document.createElement("a"); dl.href = t.logo_pend; dl.download = (t.name || "team") + "_logo.png"; dl.textContent = "⬇ 実際のファイルを保存";
+          info.appendChild(document.createElement("br")); info.appendChild(dl);
+          lg.appendChild(info);
           var ok = el("button", "primary", "✅ ロゴを承認"); ok.type = "button"; ok.addEventListener("click", function () { brSend([{ op: "team_logo_ok", team: t.team }], "ロゴを承認しています…"); });
           var ng = el("button", "", "❌ ロゴを却下"); ng.type = "button"; ng.addEventListener("click", function () { var rs = prompt("却下の理由を書いてください（リーダーに送ります）：", ""); if (rs && rs.trim()) brSend([{ op: "team_logo_ng", team: t.team, reason: rs.trim() }], "ロゴを却下しています…"); });
           lg.appendChild(ok); lg.appendChild(ng);
