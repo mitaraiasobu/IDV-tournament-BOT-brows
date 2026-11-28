@@ -1086,8 +1086,22 @@
           lpImg.style.background = "repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 16px 16px";
           var info = el("div", "note"); info.style.maxWidth = "18em";
           info.textContent = "背景の透過：" + (t.logo_pend_tr || "—") + "（灰色と白の模様が見えるところが透明）";
-          var dl = document.createElement("a"); dl.href = t.logo_pend; dl.download = (t.name || "team") + "_logo.png"; dl.textContent = "⬇ 実際のファイルを保存";
+          var dl = document.createElement("a"); dl.href = t.logo_pend; dl.download = (t.name || "team") + "_logo.png"; dl.textContent = "⬇ 表示に使うファイル（縮めたもの）を保存";
           info.appendChild(document.createElement("br")); info.appendChild(dl);
+          info.appendChild(document.createElement("br"));
+          if (t.logo_orig_key) {                                                       // 送られた元のファイル（縮める前のまま。重いので、押したときだけ読む）
+            var ob = el("button", "primary", "⬇ 元の画像（送られたファイル）を保存"); ob.type = "button";
+            ob.addEventListener("click", function () {
+              ob.disabled = true; ob.textContent = "読み込んでいます…";
+              fetch(BASE + t.logo_orig_key + ".json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+                var uri = ((d && d.files) || {})[String(t.team)];
+                if (!uri) throw new Error("none");
+                var a = document.createElement("a"); a.href = uri; a.download = t.logo_orig_name || "logo_original"; document.body.appendChild(a); a.click(); a.remove();
+                ob.disabled = false; ob.textContent = "⬇ 元の画像（送られたファイル）を保存";
+              }).catch(function () { ob.disabled = false; ob.textContent = "⚠ 読み込めませんでした（少し待って、もう一度）"; });
+            });
+            info.appendChild(ob);
+          } else info.appendChild(el("span", "", "元の画像：残っていません（この機能より前に送られたもの・大きいファイルをブラウザから送ったもの）"));
           lg.appendChild(info);
           var ok = el("button", "primary", "✅ ロゴを承認"); ok.type = "button"; ok.addEventListener("click", function () { brSend([{ op: "team_logo_ok", team: t.team }], "ロゴを承認しています…"); });
           var ng = el("button", "", "❌ ロゴを却下"); ng.type = "button"; ng.addEventListener("click", function () { var rs = prompt("却下の理由を書いてください（リーダーに送ります）：", ""); if (rs && rs.trim()) brSend([{ op: "team_logo_ng", team: t.team, reason: rs.trim() }], "ロゴを却下しています…"); });
@@ -1163,20 +1177,29 @@
     var dlg = el("div", "card brdialog"); dlg.id = "brdialog"; dlg.hidden = true; v.appendChild(dlg);
     // 組み合わせの決め方
     var dc = el("div", "brrow");
-    var rb = el("button", st.draw && st.draw.mode === "random" ? "on" : "", "🎲 ランダムに抽選"); rb.type = "button"; rb.disabled = !B.full || B.locked;
-    rb.addEventListener("click", function () { st.draw = { mode: "random" }; st.swaps = []; renderBracket(); });
-    var ab = el("button", st.draw && st.draw.mode === "rating" ? "on" : "", "📊 段位で自動計算"); ab.type = "button"; ab.disabled = !B.full || B.locked || !B.rating;
-    ab.addEventListener("click", function () { st.draw = { mode: "rating" }; st.swaps = []; renderBracket(); });
+    var rb = el("button", st.draw && st.draw.mode === "random" ? "on" : "", "🎲 ランダムに抽選"); rb.type = "button"; rb.disabled = !B.can_draw || B.locked;
+    function brShrinkNow(mode) {                                                      // チームが足りず、ラウンドの数まで減るときは、表の形が変わるので、すぐ決めて保存する
+      if (!B.fitted_rounds || B.fitted_rounds === B.rounds.length) return false;
+      if (brDirty()) { setResult("ng", "⚠ 先に、ほかの変更を「💾 保存」してから、組み合わせを決めてください。"); return true; }
+      if (!confirm("いまの" + B.registered + "チームで組み合わせを決めて、保存します。\n出場チーム数は " + B.team_count + "→" + B.registered + "チーム、ラウンドは " + B.rounds.length + "→" + B.fitted_rounds + " になります（このあとは、チームを増やせません）。\nよろしいですか？")) return true;
+      BRS = null; brSend([mode === "rating" ? { op: "bracket_draw", mode: "rating", seed: B.seed, reset: B.has_results } : { op: "bracket_draw", mode: "random", reset: B.has_results }], "組み合わせを決めています…");
+      return true;
+    }
+    rb.addEventListener("click", function () { if (brShrinkNow("random")) return; st.draw = { mode: "random" }; st.swaps = []; renderBracket(); });
+    var ab = el("button", st.draw && st.draw.mode === "rating" ? "on" : "", "📊 段位で自動計算"); ab.type = "button"; ab.disabled = !B.can_draw || B.locked || !B.rating;
+    ab.addEventListener("click", function () { if (brShrinkNow("rating")) return; st.draw = { mode: "rating" }; st.swaps = []; renderBracket(); });
     dc.appendChild(rb); dc.appendChild(ab);
     if (st.draw && st.draw.mode === "rating") {
       var re = el("button", "", "🔄 計算し直す"); re.type = "button";
       re.addEventListener("click", function () { if (!brDirty() || confirm("計算し直すと、ほかの保存していない変更は消えます。よろしいですか？")) { BRS = null; brSend([{ op: "bracket_reseed" }], "計算し直しています…"); } });
       dc.appendChild(re);
     }
-    if (!B.full) dc.appendChild(el("span", "muted", "全チーム（" + B.team_count + "チーム）がそろってから、組み合わせを決められます（いま" + B.registered + "チーム）。"));
+    if (!B.can_draw) dc.appendChild(el("span", "muted", "2チーム以上になると、組み合わせを決められます（いま" + B.registered + "チーム）。"));
     else if (st.draw && st.draw.mode === "random") dc.appendChild(el("span", "fwarn", "ランダムの組み合わせは、保存したときにBOTが決めます（入れ替えは、そのあとで）。"));
     else if (st.draw && st.draw.mode === "rating" && B.rating) dc.appendChild(el("span", "muted", "段位の強さが近い相手同士です（強さの差：平均 " + B.rating.avg + "／最大 " + B.rating.max + "）。" +
                                                              (B.rating.missing.length ? "⚠ 選手が未登録のチーム（" + B.rating.missing.join("、") + "）は、全体の平均として扱っています。" : "")));
+    if (B.can_draw && !B.full && !B.drawn) dc.appendChild(st.draw ? el("span", "fwarn", "いまの" + B.registered + "チームで決めます。保存すると、出場チーム数を" + B.team_count + "→" + B.registered + "チームにします（このあとは、チームを増やせません）。")
+                                                           : el("span", "muted", "全チームがそろっていなくても、いまの" + B.registered + "チームで決められます。"));
     if (B.has_results && st.draw) dc.appendChild(el("span", "fwarn", "⚠ 保存すると、登録済みの試合結果は、すべて取り消されます。"));
     v.appendChild(dc);
     var hm = el("div", "brrow"); hm.appendChild(el("b", "", "前半戦・後半戦1つぶんの想定時間"));
