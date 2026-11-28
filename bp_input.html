@@ -363,6 +363,29 @@
   @keyframes si-line { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
   @keyframes si-drift { to { transform: translateX(6%); opacity: .7; } }
 
+  /* ウィンター（大会ライブブラウザの「ウィンター」と同じ）：氷のパネル（クリスタルのように角を切った形）・オーロラ・雪・氷の青 */
+  html[data-style="winter"] header h1, html[data-style="winter"] nav button, html[data-style="winter"] .corner .chd > h3, html[data-style="winter"] #hist h2, html[data-style="winter"] #theme h2 { font-family: "Hangyaku", "GName", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif; }
+  html[data-style="winter"] header h1 { font-weight: 900; letter-spacing: .1em; color: #eaf8ff; text-shadow: 0 0 10px color-mix(in srgb, #8fd0f8 70%, transparent), 0 0 22px color-mix(in srgb, var(--ac) 45%, transparent); animation: wi-glint 6s ease-in-out infinite; }
+  html[data-style="winter"] header h1::before { content: "❄ "; color: #bfe6ff; } html[data-style="winter"] header h1::after { content: " ❄"; color: #bfe6ff; }
+  html[data-style="winter"] #pal, html[data-style="winter"] .box, html[data-style="winter"] .rules .sec, html[data-style="winter"] #hist .card, html[data-style="winter"] #theme .card, html[data-style="winter"] #gate .card {
+    border-radius: 0; border: 2px solid color-mix(in srgb, #9fdcff 55%, var(--ac)); clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+    background: linear-gradient(160deg, color-mix(in srgb, #bfe6ff 12%, var(--panel)), var(--panel) 45%, color-mix(in srgb, #0a2a4a 60%, var(--panel))); box-shadow: inset 0 0 18px color-mix(in srgb, #8fd0f8 18%, transparent); }
+  html[data-style="winter"] .corner { border-radius: 0; clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 18px);
+    background: linear-gradient(160deg, color-mix(in srgb, #bfe6ff 10%, var(--panel)), color-mix(in srgb, #0a2a4a 45%, var(--panel))); box-shadow: inset 0 0 26px color-mix(in srgb, #8fd0f8 16%, transparent); }
+  html[data-style="winter"] .corner .box, html[data-style="winter"] .corner .chd > h3 { color: #dff4ff; }
+  html[data-style="winter"] nav button { border-radius: 0; letter-spacing: .06em; border-color: color-mix(in srgb, #9fdcff 45%, var(--line)); clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%, 0 8px); }
+  html[data-style="winter"] nav button.on { color: #eaf8ff; background: linear-gradient(180deg, color-mix(in srgb, #8fd0f8 30%, var(--panel2)), var(--panel2)); box-shadow: inset 0 2px 0 #bfe6ff; }
+  html[data-style="winter"] .tag { border-radius: 2px; } html[data-style="winter"] .btn { border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
+  html[data-style="winter"] #stage::before { display: block; left: -6%; right: -6%; top: 0; height: 46%; will-change: transform, opacity; mix-blend-mode: screen; animation: wi-aurora 14s ease-in-out infinite alternate;
+    background: radial-gradient(ellipse at 30% 0%, rgba(120, 230, 200, .20), transparent 60%), radial-gradient(ellipse at 72% 10%, rgba(120, 170, 255, .22), transparent 62%), radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--ac) 16%, transparent), transparent 70%); }
+  html[data-style="winter"] #stage::after { display: block; left: 0; right: 0; top: -320px; height: calc(100% + 320px); z-index: 2; will-change: transform; animation: wi-snow 16s linear infinite;
+    background-image: radial-gradient(circle, rgba(255,255,255,.85) 0 1.6px, transparent 2.2px), radial-gradient(circle, rgba(255,255,255,.55) 0 1.1px, transparent 1.6px), radial-gradient(circle, rgba(220,240,255,.7) 0 2.2px, transparent 2.8px);
+    background-size: 160px 160px, 110px 110px, 260px 260px; background-position: 0 0, 40px 60px, 90px 20px; }
+  html[data-style="winter"] #gate { background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, #8fd0f8 20%, var(--bg)), var(--bg) 62%); }
+  @keyframes wi-aurora { 0% { transform: translateX(-3%) scaleY(1); opacity: .75; } 100% { transform: translateX(3%) scaleY(1.15); opacity: 1; } }
+  @keyframes wi-snow { from { transform: translateY(0); } to { transform: translateY(320px); } }
+  @keyframes wi-glint { 50% { text-shadow: 0 0 16px #bfe6ff, 0 0 30px color-mix(in srgb, var(--ac) 60%, transparent); } }
+
   /* 背景が明るい色のとき（data-tone="light"）：濃い色の地に白い字の名札、読みにくい色の見出し、などを直す */
   html[data-tone="light"] .tag { color: #fff; } html[data-tone="light"] .tag.sel { outline-color: var(--ac); }
   html[data-tone="light"] .drop { background: color-mix(in srgb, var(--fg0) 5%, transparent); }
@@ -388,6 +411,7 @@
   #notice .bar.waiting { font-size: clamp(20px, 2.6vw, 26px); font-weight: 800; padding: 10px 16px; gap: 10px; }
   #notice .bar.my { font-weight: 800; }
   .wdots i { font-size: 9px; }
+  .recnote { margin: 10px 0; padding: 8px 12px; border: 2px solid #f0b43c; border-radius: 10px; background: rgba(240, 180, 60, .14); color: #ffe3a8; font-size: 16px; font-weight: 800; line-height: 1.5; text-align: center; }
   .hrnwarn { margin: 12px 0; padding: 10px 14px; border: 3px solid #ff5a6b; border-radius: 12px; background: rgba(255, 60, 80, .16); color: #ffd0d6; font-size: 22px; font-weight: 900; line-height: 1.5; text-align: center; }
   html.rot #notice .bar.waiting { font-size: 24px; }   /* 横向きに回した画面では、vw が回る前の幅になるので、決まった大きさで */
   #notice .bar.waiting { position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; }
@@ -469,6 +493,8 @@
   html[data-style="cute"] #shell.off { animation-name: bp-off-cute; }
   html[data-style="gothic"] #shell.off { animation-name: bp-off-gothic; animation-duration: 1.6s; }
   html[data-style="rock"] #shell.off { animation-name: bp-off-rock; animation-duration: .7s; }
+  html[data-style="winter"] #shell.off { animation-name: bp-off-winter; animation-duration: 1.3s; }
+  @keyframes bp-off-winter { 0% { filter: none; opacity: 1; } 45% { filter: brightness(1.6) saturate(.4) hue-rotate(-10deg); opacity: 1; } 100% { filter: brightness(2.2) blur(8px) saturate(0); opacity: 0; transform: scale(1.03); } }
   @keyframes bp-off-simple { 0% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes bp-off-cyber { 0% { transform: scale(1, 1); filter: brightness(1); opacity: 1; } 55% { transform: scale(1, .006); filter: brightness(4); opacity: 1; } 85% { transform: scale(.02, .006); filter: brightness(6); opacity: 1; } 100% { transform: scale(0, 0); filter: brightness(0); opacity: 0; } }
   @keyframes bp-off-cute { 0% { transform: scale(1) rotate(0); opacity: 1; } 25% { transform: scale(1.06) rotate(1deg); opacity: 1; } 100% { transform: scale(0) rotate(-14deg); opacity: 0; } }
@@ -522,6 +548,13 @@
   html[data-style="rock"] .tag.ban .pop { background: #e8203a; color: #fff; }
   html[data-style="rock"] .tag .xcut { height: 6px; background: #fff; box-shadow: 0 0 0 2px #111; }
   @keyframes bp-ins-rock { 0% { transform: translateY(-130px) scale(2) rotate(-10deg); opacity: 0; } 40% { transform: translateY(0) scale(1.18, .8) rotate(1deg); opacity: 1; } 55% { transform: translate(-5px, 3px) scale(.95, 1.06); } 70% { transform: translate(5px, -3px); } 100% { transform: none; } }
+  /* ウィンター：霜がつくように、白くにじんでから、くっきり。吹き出しは、氷のかけら */
+  html[data-style="winter"] .tag.ins, html[data-style="winter"] .tag.ins.ban { animation-name: bp-ins-winter; animation-duration: .8s; animation-timing-function: ease-out; }
+  html[data-style="winter"] .tag .shine::before { background: linear-gradient(105deg, transparent, rgba(200, 240, 255, .9), transparent); animation-duration: .7s; }
+  html[data-style="winter"] .tag .pop { border-radius: 0; background: linear-gradient(180deg, #eaf8ff, #a9dcff); color: #0b2a48; font-weight: 900; border: 1px solid #fff; box-shadow: 0 0 14px #8fd0f8; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); padding: 3px 14px; animation-duration: 1.4s; }
+  html[data-style="winter"] .tag.ban .pop { background: linear-gradient(180deg, #ffe3ea, #ff8fa8); color: #4a0a18; }
+  html[data-style="winter"] .tag .xcut { background: #dff4ff; box-shadow: 0 0 10px #8fd0f8; height: 3px; }
+  @keyframes bp-ins-winter { 0% { opacity: 0; transform: scale(1.15); filter: blur(8px) brightness(2.4) saturate(0); } 60% { opacity: 1; filter: blur(0) brightness(1.4) saturate(.6) drop-shadow(0 0 12px #8fd0f8); } 100% { transform: none; filter: none; } }
   /* シンプル：すっと出る。吹き出しは、控えめ */
   html[data-style="simple"] .tag.ins, html[data-style="simple"] .tag.ins.ban { animation-name: bp-ins-simple; animation-duration: .35s; animation-timing-function: ease-out; }
   html[data-style="simple"] .tag .shine { display: none; }
@@ -611,6 +644,7 @@
   #lofull .lotraits { grid-template-columns: repeat(4, 1fr); } #lofull .lotraits button { font-size: 16px; padding: 12px 4px; }
   #lofull .btn.go { display: block; width: 100%; font-size: 20px; padding: 14px; margin-top: 16px !important; }
   #lofull .losending { text-align: center; font-weight: 900; font-size: 18px; color: #ffd24a; margin-top: 10px; }
+  .lotimer { text-align: center; font-weight: 900; font-size: 20px; color: #9fe8ff; margin: 6px 0; } .lotimer.warn { color: #ffd24a; } .lotimer.lolate { font-size: 15px; text-align: left; }
   .lolate { font-weight: 900; font-size: 14px; color: #fff; background: #d12a2a; padding: 6px 8px; margin: 6px 0; border-radius: 6px; }
   .lonotice { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; background: rgba(4, 6, 16, .93); text-align: center; padding: 24px; cursor: pointer; }
   .lonbig { font-weight: 900; font-size: min(7.4vw, 60px); line-height: 1.5; color: #fff; text-shadow: 0 0 22px rgba(120, 160, 255, .6); }
@@ -652,6 +686,8 @@
   html[data-style="gothic"] .cdnum.fx { animation-name: bp-cd-goth; animation-duration: 1s; text-shadow: 0 0 26px #b01020; }
   html[data-style="rock"] .cdnum.fx { animation-name: bp-cd-rock; animation-duration: .8s; text-shadow: 4px 4px 0 #000; }
   html[data-style="simple"] .cdnum.fx { animation-name: bp-cd-simple; }
+  html[data-style="winter"] .cdnum.fx { animation-name: bp-cd-winter; animation-duration: .9s; color: #eaf8ff; text-shadow: 0 0 22px #8fd0f8, 0 0 40px color-mix(in srgb, var(--ac) 60%, transparent); }
+  @keyframes bp-cd-winter { 0% { opacity: 0; transform: scale(1.6); filter: blur(10px) brightness(2); } 45% { opacity: 1; transform: scale(1); filter: none; } 100% { opacity: .85; } }
   @keyframes bp-cd-cyber { 0% { transform: scale(1.9) skewX(14deg); opacity: 0; filter: blur(6px); } 20% { opacity: 1; transform: scale(1.05) skewX(-8deg); filter: none; } 40% { transform: translateX(5px); } 60% { transform: translateX(-5px); } 100% { transform: scale(.92); opacity: .5; } }
   @keyframes bp-cd-cute { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 50% { transform: scale(1.35) rotate(8deg); opacity: 1; } 70% { transform: scale(.9) rotate(-4deg); } 100% { transform: scale(1) rotate(0); opacity: .6; } }
   @keyframes bp-cd-goth { 0% { opacity: 0; filter: blur(14px); transform: scale(1.25); } 40% { opacity: 1; filter: blur(0); } 55% { opacity: .65; } 70% { opacity: .95; } 100% { opacity: .15; filter: blur(3px); } }
@@ -663,6 +699,7 @@
   html[data-style="gothic"] .gobig.fx { animation-name: bp-go-goth; animation-duration: 1.6s; text-shadow: 0 0 28px #b01020; }
   html[data-style="rock"] .gobig.fx { animation-name: bp-go-rock; animation-duration: .8s; text-shadow: 5px 5px 0 #000; }
   html[data-style="simple"] .gobig.fx { animation-name: bp-cd-simple; animation-duration: .6s; }
+  html[data-style="winter"] .gobig.fx { animation-name: bp-cd-winter; animation-duration: 1.2s; text-shadow: 0 0 26px #8fd0f8; }
   @keyframes bp-go-cyber { 0% { transform: scale(2.4) skewX(20deg); opacity: 0; } 25% { transform: scale(1) skewX(-10deg); opacity: 1; } 40% { transform: translateX(8px); } 55% { transform: translateX(-8px); } 100% { transform: none; } }
   @keyframes bp-go-cute { 0% { transform: scale(0) rotate(-30deg); } 55% { transform: scale(1.4) rotate(10deg); } 75% { transform: scale(.92) rotate(-5deg); } 100% { transform: none; } }
   @keyframes bp-go-goth { 0% { opacity: 0; transform: scale(1.5); filter: blur(16px); } 60% { opacity: 1; filter: blur(0); } 100% { transform: none; } }
@@ -1020,7 +1057,7 @@
   }
   function lum(hex) { var n = parseInt(hex.slice(1), 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   // デザイン（LABと同じ5種類）。体験会では、標準の見た目だけ（演出もなし）
-  var STYLES = ["cyber", "cute", "gothic", "rock", "simple"], STYLE_DEF = { cute: { bg: "#fff5f9", fg: "#6b3550" } }, CUR_STYLE = "";
+  var STYLES = ["cyber", "cute", "gothic", "rock", "simple", "winter"], STYLE_DEF = { cute: { bg: "#fff5f9", fg: "#6b3550" } }, CUR_STYLE = "";
   function applyStyle(st) { applyStyleRaw(st); }
   function applyStyleRaw(st) {
     if (STYLES.indexOf(st) < 0) st = "cyber";
@@ -1045,7 +1082,17 @@
   }
   // 1ステップの時間：前回の入力からの経過を出し、目安（90秒）を超えたら、お知らせを出す（Discordの催促と同じ基準・同じ文）
   function mmss(n) { return Math.floor(n / 60) + ":" + ("0" + (n % 60)).slice(-2); }
+  var LO_T0 = null;
+  function loTimer() {                                                                     // ハンターの人格・特質：90秒の目安の残り。過ぎたら、警告（選ぶのは、そのまま続けられる）
+    if (!S || !S.loadout_pending) { LO_T0 = null; return; }
+    var lt = document.getElementById("lotimer"); if (!lt) return;
+    if (LO_T0 == null) LO_T0 = Date.now() / 1000;                                            // BOTが始まりの時刻を、まだ記録していないとき：このページで見え始めた時刻から
+    var lim = S.loadout_limit || 90, t0 = S.loadout_since || LO_T0, rem = Math.ceil(t0 + lim - Date.now() / 1000);
+    if (rem > 0 && !S.loadout_late) { lt.textContent = "⏱ 残り " + mmss(rem); lt.className = "lotimer" + (rem <= 20 ? " warn" : ""); }
+    else { lt.textContent = "⏰ " + lim + "秒を過ぎました！早く選んでください！（選び終えるまで、部屋に入る案内は出ません）"; lt.className = "lotimer lolate"; }
+  }
   function tick() {
+    loTimer();
     var ss = document.getElementById("selstat");
     if (ss && S && S.select && S.select.since) {                                          // 選手選び：90秒の目安。過ぎたら、警告
       var el0 = Math.max(0, Math.floor(Date.now() / 1000 - S.select.since)), lim0 = S.select.limit || 90, over0 = el0 >= lim0;
@@ -1105,6 +1152,10 @@
     for (var k2 in LOCALP) out[k2] = LOCALP[k2];
     return out;
   }
+  function fixedHunter() {                                                                // 必須で1人に決まっているハンター：非公開にしない（だれにでも見せる）
+    var id = null; S.steps.forEach(function (s) { if (s.t === "h" && s.a === "p" && !s.hidden && s.ids && s.ids[0] != null) id = s.ids[0]; });
+    return id;
+  }
   function myHunterPick() {                                                               // ハンター側にだけ、ハンターのPICKが見える
     if (MY !== "h") return null;
     if (OPENED.data && OPENED.data.hp != null) return OPENED.data.hp;
@@ -1122,7 +1173,7 @@
   function personaMenu(side, id) {
     var ov = el("div", "ask pmod"), card = el("div", "card"), ch = CH[id];
     card.appendChild(el("div", "pt", (ch ? ch.n : "") + " の人格"));
-    card.appendChild(el("div", "pn", "キャラの名札を押すと人格を設定できます。ただの相談用なので、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
+    card.appendChild(el("div", "pn", "キャラをタップして、人格の相談に使ってください！"));
     var grid = el("div", "pgrid");
     function paint() {
       grid.textContent = "";
@@ -1145,7 +1196,7 @@
     ov.appendChild(card); $("stage").appendChild(ov);
   }
   function picksBlock(editable, vertical) {                                                         // PICKされたキャラの一覧：サバイバー目線＝サバイバー4人／ハンター目線＝サバイバー4人＋ハンター（サバイバー側には、ハンターは見えない）
-    var box = el("div", "picks" + (vertical ? " v" : "")), pers = ownPers(), canEdit = editable && !!UID && !!MY;
+    var box = el("div", "picks" + (vertical ? " v" : "")), pers = ownPers(), canEdit = editable && !!UID && MY === "s";          // 人格の名札：サバイバー側だけ（ハンターは、BAN/PICKのあとに、人格・特質を選ぶ）
     function group(side, title, ids, lock) {
       var g = el("div", "grp " + side); g.appendChild(el("h5", "", title));
       var row = el("div", "prow");
@@ -1153,7 +1204,7 @@
         var ch = CH[id]; if (!ch) return;
         var cell = el("div", "pk"), tg = makeTag(ch, "locked"), marks = el("div", "marks");
         cell.appendChild(tg);
-        if (MY === side) (pers[id] || []).forEach(function (m) { var im = el("img"); im.src = personaUrl(side, m); im.alt = PERSONA[side][m][1]; im.title = PERSONA[side][m][1]; marks.appendChild(im); });
+        if (MY === side && side === "s") (pers[id] || []).forEach(function (m) { var im = el("img"); im.src = personaUrl(side, m); im.alt = PERSONA[side][m][1]; im.title = PERSONA[side][m][1]; marks.appendChild(im); });
         cell.appendChild(marks);
         if (canEdit && MY === side) { tg.classList.add("edit"); tg.title = "タップして、人格をつける（相手には見えません）"; tg.addEventListener("click", function () { personaMenu(side, id); }); }
         row.appendChild(cell);
@@ -1162,15 +1213,15 @@
       g.appendChild(row); return g;
     }
     var sv = []; S.steps.forEach(function (s) { if (s.t === "s" && s.a === "p" && s.ids) sv = sv.concat(s.ids); });
-    var hp = myHunterPick(), hunterSet = S.steps.some(function (s) { return s.t === "h" && s.a === "p" && s.set; });
+    var hp = myHunterPick() != null ? myHunterPick() : fixedHunter(), hunterSet = S.steps.some(function (s) { return s.t === "h" && s.a === "p" && s.set; });
     if (vertical) {                                                                         // 縦：マップPICK → ハンターPICK → サバイバーPICK4人（横並び）
       var mp = null; S.steps.forEach(function (s) { if (s.t === "m" && s.a === "p" && s.ids && s.ids[0] != null) mp = s.ids[0]; });
       if (mp != null && CH[mp]) { var mg = el("div", "grp m"); mg.appendChild(el("h5", "", "🗺 マップPICK")); mg.appendChild(el("div", "mapname", CH[mp].n)); box.appendChild(mg); }       // マップは、名札ではなく、名前を、大きな文字で
-      if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンターPICK" : "🔴 ハンターPICK（非公開）", hp != null ? [hp] : [], hp == null));
+      if (hunterSet) box.appendChild(group("h", MY === "h" || hp != null ? "🔴 ハンターPICK" : "🔴 ハンターPICK（非公開）", hp != null ? [hp] : [], hp == null));
       box.appendChild(group("s", "🔵 サバイバーPICK", sv, false));
     } else {
       box.appendChild(group("s", "🔵 サバイバー", sv, false));
-      if (hunterSet) box.appendChild(group("h", MY === "h" ? "🔴 ハンター" : "🔴 ハンター（非公開）", hp != null ? [hp] : [], hp == null));
+      if (hunterSet) box.appendChild(group("h", MY === "h" || hp != null ? "🔴 ハンター" : "🔴 ハンター（非公開）", hp != null ? [hp] : [], hp == null));
     }
     if (canEdit) box.appendChild(el("div", "hint", "キャラをタップすると、人格をつけられます（自分の側だけに見えます）"));
     return box;
@@ -1195,7 +1246,7 @@
   function buildGate() {                                                                     // 「カスタム戦を開いてください」の確認の枠は、やめた。BANPICK完了の演出のあと、部屋を開く人のブラウザが、自動でOKを送る
     var old = $("gate"); if (old) old.remove();
     if (!S || !S.gate) { GATE_AUTO = false; return; }
-    if (HOST && UID && !GATE_AUTO && PANEL_READY) {                                         // 「BANPICK完了」の演出が終わってから
+    if (HOST && UID && !GATE_AUTO) {                                                         // BAN/PICKが終わったら、すぐ（「BANPICK完了」の演出の間に、BOTの返事が届くように）
       GATE_AUTO = true;
       sendAct("roomok").then(function () { return refresh(); }).catch(function () { GATE_AUTO = false; });
     }
@@ -1282,7 +1333,11 @@
   }
   var BPX_LOCK = false;                                                                  // 確認用（デモ）で、デザインを、手で選んでいるとき
   var GO_AT = 0, SHOT_IMG = "", SHOT_BUSY = false, PANEL_MIN = false, PLAY_AT = 0, SHUT = false, CD_LAST = "", GO_SHOWN = false, SP_NOTE = { cls: "", text: "" };
-  function stageNow() { return S && S.status === "done" ? (S.stage || "shot") : ""; }
+  function stageNow() {
+    if (!S || S.status !== "done") return "";
+    var st = S.stage || "shot";
+    return st === "room" && HOST && UID ? "shot" : st;                                        // 部屋を開く側：自動の「OK」の返事を待たずに、すぐ「試合モードを開いてください」へ（待ち時間をなくす）
+  }
   // ───── 認証が切れたとき：画面いっぱいに、大きく、やることを出す ─────
   function isAuthLost(res) { return !!(res && !res.ok && /このURLでは、操作できません/.test(res.error || "")); }
   function inboxErr(status) {                                                            // 受け箱に書けなかった：閉じた部屋（体験会は、操作がないまま5分で閉じる）なら、そう伝える
@@ -1372,6 +1427,9 @@
     box.appendChild(el("div", "sub2", "全部選び終わるまで、部屋には入らないでください。"));
     card.appendChild(box);
     return true;
+  }
+  function recordNote(card) {                                                               // 録画の保存のお願い（大会設定でオンのときだけ。両陣営に）
+    if (S && S.record_text) card.appendChild(el("div", "recnote", "🎥 " + S.record_text));
   }
   function holdNote(card) {                                                                 // ハンター側：部屋に入っても、合図があるまで始めない（強調）
     if (MY !== "h" || S.hunter_room_ready === false) return;
@@ -1498,10 +1556,7 @@
   }
   function loadoutBox() {                                                                 // 左の枠（衣装より上）：ハンターには、選ぶまで目立つように。ほかの人には、待っていると知らせる
     if (!S || S.status !== "done" || S.stage === "play" || !MY) return null;
-    if (MY !== "h" || !UID) {
-      if (!S.loadout_pending) return null;
-      var w = el("div", "lobox wait"); w.appendChild(el("div", "cosnote", "🎭 ハンターの選手が、人格と特質を選んでいます…")); return w;
-    }
+    if (MY !== "h" || !UID) return null;                                                     // ハンター以外には、左の枠に「選んでいます…」を出さない
     var cur = ownLoadout(), editing = LO.edit || !cur;
     if (!editing) {                                                                       // 選び終わった：まとめだけ（試合の前なら、選び直せる）
       var dn = el("div", "lobox done");
@@ -1517,7 +1572,7 @@
     }
     var d = loDraft(), box = el("div", "lobox lochoose");                                   // 選ぶ間は、画面全体に出す（ensurePickCol が #lofull に入れる）
     box.appendChild(el("div", "lotitle", "🎭 人格（2つ）と特質（1つ）を選んでください！"));
-    if (S.loadout_late) box.appendChild(el("div", "lolate", "⏰ 90秒を過ぎました！早く選んでください！（選び終えるまで、部屋に入る案内は出ません）"));
+    var lt = el("div", "lotimer"); lt.id = "lotimer"; box.appendChild(lt); loTimer();          // 90秒の残り（過ぎたら、警告だけ。終わりにはしない）
     box.appendChild(el("div", "lonote", "生配信でキャスターが紹介します。ただし試合の前に変えても大丈夫です！ここで決定したものが絶対ではないため、最善の人格・特質で試合開始してください！"));
     box.appendChild(el("div", "lolab", "人格（2つ）　" + d.p.length + "/2"));
     var pr = el("div", "lopers");
@@ -1560,7 +1615,7 @@
     else if (lb) pc.appendChild(lb);
     var cb = costumeBox(); if (cb) pc.appendChild(cb);                                       // 衣装を選ぶ人にだけ、いちばん上に、虹色で目立つように
     pc.appendChild(picksBlock(true, true));
-    pc.appendChild(el("div", "pknote", "キャラの名札を押すと人格を設定できます。ただの相談用なので、ゲーム内では別の人格にしても大丈夫です。PICKキャラとマップは変えないでください。"));
+    pc.appendChild(el("div", "pknote", MY === "h" ? "PICKキャラとマップは変えないでください。" : "キャラをタップして、人格の相談に使ってください！"));
     $("stage").appendChild(pc); pc.scrollTop = top;
     return pc;
   }
@@ -1679,7 +1734,7 @@
     card.appendChild(el("div", "big", stg === "shot" ? (MY === "h" ? (S.hunter_room_ready === false ? "⏳ サバイバーが、部屋を開いています" : "🚪 カスタム戦に入ってください") : "🚪 試合モードを開いてください") : !S.confirmed ? "⏳ 確認待ち" : "⏱ カウントダウン"));          // 「BANPICK完了」は、この前（最後の名札のあと）に、もう出している
     var can = !!(SIDE || VIEW) && !!UID;                                                 // 個人用のURLで開いている人
     if (stg === "shot" && MY === "h") {                                                       // ハンター側：部屋を開くのは、サバイバー。入る部屋の名前を、大きく教える
-      hunterRoomNote(card); holdNote(card);
+      hunterRoomNote(card); holdNote(card); recordNote(card);
       var tipBox = el("div", "sub2 bptip"); tipInto(tipBox, gameBpTip()); card.appendChild(tipBox);       // 体験会のハンター側も、同じタイミングで
       if (S.hunter_room_ready === false) card.appendChild(el("div", "sub2", "サバイバーの準備が終わるまで、少しお待ちください。"));
       if (S.dummy_shot_at && S.hunter_room_ready !== false) { var dsn = el("div", "big", ""); dsn.id = "dshot"; card.appendChild(dsn); tick(); }   // ダミーのサバイバー：カウントダウン
@@ -1694,7 +1749,8 @@
        S.hunter_dummy ? "敵ハンターを招待するために「" + (S.room_name || "") + "」という名前で公開募集を行ってください。（今回はハンターが不在（ダミー）なので、募集せずそのまま進んでください）"
                       : "敵ハンターを招待するために" + (S.room_name ? "「" + S.room_name + "」という名前で" : "") + "公開募集を行ってください。"
                         + (hinfo ? "ハンター名：" + (hinfo.name || "") + "　ID：" + (hinfo.id || "") + "　※正しい相手か必ず確認してください。" : ""),
-       "全員揃ったらゲームの準備画面をスクショします。それをモデレーターが確認し、必要な場合はキャスターが観戦に入ります。"].forEach(function (x) {
+       "全員揃ったらゲームの準備画面をスクショします。それをモデレーターが確認し、必要な場合はキャスターが観戦に入ります。",
+       S.record_text || null].forEach(function (x) {
         if (x == null) return;
         var li = el("li", "", typeof x === "string" ? x : "");
         if (typeof x !== "string") tipInto(li, x);
@@ -1744,14 +1800,14 @@
         card.appendChild(el("div", "warn", S.opener_team ? "スクショは、サバイバー側の選手が送ります。しばらくお待ちください。" : "スクショは、" + S.opener + " さんが送ります。しばらくお待ちください。"));
       } else card.appendChild(el("div", "warn", "このURLでは、送信できません（ボードの「🌐 ブラウザで開く」から、個人用のURLで開き直してください）。"));
     } else if (stg === "confirm" && !S.confirmed) {
-      hunterRoomNote(card); holdNote(card);
+      hunterRoomNote(card); holdNote(card); recordNote(card);
       card.appendChild(el("div", "sub2", "スクショを送信しました。"));
       if (S.casters_wait) card.appendChild(el("div", "cdtxt", "✅ スクショは確認されました。\n👥 いま、キャスターが試合に入るのを待っています。モデレーターが、キャスターの参加を確認すると、カウントダウンが始まります。"));
       else card.appendChild(el("div", "cdtxt", "📸 モデレーターが、スクショを確認します。確認が済むまで、少しお待ちください（確認は、Discordで行われます）。"));
       if (S.start_at) card.appendChild(el("div", "sub2", "試合開始の予定：" + hhmm(S.start_at)));
     } else if (stg === "confirm") {
       hunterRoomNote(card); holdNote(card);
-      var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box);
+      var box = el("div", "cdbox"); box.id = "cd"; card.appendChild(box); recordNote(card);
     }
     var n = el("div", "note " + SP_NOTE.cls, SP_NOTE.text); n.id = "spnote"; card.appendChild(n);
     ov.appendChild(card); $("stage").appendChild(ov); card.scrollTop = SP_TOP;                  // 描き直されても、読んでいる位置（スクロール）を、上に戻さない
@@ -1897,7 +1953,7 @@
     } else {
       col.appendChild(el("h3", "", "🔵 サバイバー側"));
       col.appendChild(el("div", "selhint selbig", "共感覚モード（脱落後の幽霊モード）をオフにしてください。"));
-      col.appendChild(el("div", "selhint selbig syncq", "本当にオフにしましたか？共感覚モード"));
+      col.appendChild(el("div", "selhint selbig syncq", "本当にオフにしましたか？"));
       col.appendChild(el("div", "selhint selmid", wait3 > 0 ? "（もう一度、確かめてください）" : isRep ? "オフにしたことを確かめたら、「OK」ボタンを押してください。" : "サバイバー代表が「OK」を押すのを待っています。"));
       col.appendChild(el("div", "selcount", "確認するメンバー（この枠に出場するサバイバー）"));
       var tiles = el("div", "seltiles");
@@ -2062,11 +2118,11 @@
            : VIEW ? "　あなたは、" + SIDE_NAME[VIEW] + "側の参加メンバーです。BAN/PICKは代表者が入力します（この画面は、見るだけです）。"
            : "　このURLは、閲覧だけです（ボードの「🌐 ブラウザで入力する」から、個人用のURLを開いてください）。";
     b1.appendChild(document.createTextNode(me)); nt.appendChild(b1);
-    var st = S.status !== "active" ? "✅ BAN/PICKは完了しました。Discordの案内に進んでください。"
+    var st = S.status !== "active" ? null                                                  // BAN/PICKのあと：案内のバーは出さない（次の案内は、この画面に出る）
            : S.wait ? "⏳ " + S.wait
            : myTurn() ? "👉 あなたの番です：名札をタップして選び、「確定」を押してください。" : "";
     if (st) nt.appendChild(el("div", "bar " + (myTurn() ? "my" : "info"), st));
-    else {                                                                                  // 相手の側の操作中：止まっていると思われないように、動くお知らせ（体験会でも、動かす）
+    else if (S.status === "active") {                                                                                  // 相手の側の操作中：止まっていると思われないように、動くお知らせ（体験会でも、動かす）
       var wb = el("div", "bar info waiting");
       wb.appendChild(el("span", "wspin", "⏳"));
       wb.appendChild(el("span", "", "現在は" + SIDE_NAME[S.side] + "の操作中です"));
